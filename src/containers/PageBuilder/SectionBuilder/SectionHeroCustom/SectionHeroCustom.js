@@ -2,18 +2,9 @@ import React from 'react';
 import classNames from 'classnames';
 
 import Field, { hasDataInFields } from '../../Field';
-import BlockBuilder from '../../BlockBuilder';
 
 import SectionContainer from '../SectionContainer';
-
-import css from './SectionFeatures.module.css';
-
-/**
- * @typedef {Object} BlockConfig
- * @property {string} blockId
- * @property {string} blockName
- * @property {'defaultBlock' | 'footerBlock' | 'socialMediaLink'} blockType
- */
+import css from './SectionHeroCustom.module.css';
 
 /**
  * @typedef {Object} FieldComponentConfig
@@ -22,11 +13,8 @@ import css from './SectionFeatures.module.css';
  */
 
 /**
- * Section component that shows features.
- * Block content are shown in a row-like way:
- * [image] text
- * text [image]
- * [image] text
+ * Section component for a website's hero section
+ * The Section Hero doesn't have any Blocks by default, all the configurations are made in the Section Hero settings
  *
  * @component
  * @param {Object} props
@@ -38,18 +26,16 @@ import css from './SectionFeatures.module.css';
  * @param {string} props.defaultClasses.description
  * @param {string} props.defaultClasses.ctaButton
  * @param {string} props.sectionId id of the section
- * @param {'features'} props.sectionType
+ * @param {'hero'} props.sectionType
  * @param {Object?} props.title
  * @param {Object?} props.description
  * @param {Object?} props.appearance
  * @param {Object?} props.callToAction
- * @param {Array<BlockConfig>?} props.blocks array of block configs
- * @param {boolean?} props.isInsideContainer
  * @param {Object} props.options extra options for the section component (e.g. custom fieldComponents)
  * @param {Object<string,FieldComponentConfig>?} props.options.fieldComponents custom fields
  * @returns {JSX.Element} Section for article content
  */
-const SectionFeatures = props => {
+const SectionHeroCustom = props => {
   const {
     sectionId,
     className,
@@ -59,10 +45,9 @@ const SectionFeatures = props => {
     description,
     appearance,
     callToAction,
-    blocks = [],
-    isInsideContainer = false,
+    callToAction2,
     options,
-    customOption,
+    classWrap,
   } = props;
 
   // If external mapping has been included for fields
@@ -71,42 +56,27 @@ const SectionFeatures = props => {
   const fieldOptions = { fieldComponents };
 
   const hasHeaderFields = hasDataInFields([title, description, callToAction], fieldOptions);
-  const hasBlocks = blocks?.length > 0;
 
   return (
     <SectionContainer
       id={sectionId}
-      className={className}
-      rootClassName={rootClassName}
+      className={classNames(className, css[classWrap] ?? '')}
+      rootClassName={classNames(rootClassName || css.root)}
       appearance={appearance}
       options={fieldOptions}
-      customOption={customOption}
     >
       {hasHeaderFields ? (
         <header className={defaultClasses.sectionDetails}>
           <Field data={title} className={defaultClasses.title} options={fieldOptions} />
           <Field data={description} className={defaultClasses.description} options={fieldOptions} />
-          <Field data={callToAction} className={defaultClasses.ctaButton} options={fieldOptions} />
+          <div className={css.buttonWrap}>
+            <Field data={callToAction} className={defaultClasses.ctaButtonPrimary} options={fieldOptions} />
+            <Field data={callToAction2} className={defaultClasses.ctaButtonSecondary} options={fieldOptions} />
+          </div>
         </header>
-      ) : null}
-      {hasBlocks ? (
-        <div
-          className={classNames(defaultClasses.blockContainer, css.featuresMain, {
-            [css.noSidePaddings]: isInsideContainer,
-          })}
-        >
-          <BlockBuilder
-            rootClassName={css.block}
-            ctaButtonClass={defaultClasses.ctaButton}
-            blocks={blocks}
-            sectionId={sectionId}
-            responsiveImageSizes="(max-width: 767px) 100vw, 568px"
-            options={options}
-          />
-        </div>
       ) : null}
     </SectionContainer>
   );
 };
 
-export default SectionFeatures;
+export default SectionHeroCustom;
