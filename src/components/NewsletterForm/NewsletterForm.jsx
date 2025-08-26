@@ -26,30 +26,21 @@ const NewsletterForm = ({
 
     setSubmitting(true);
     try {
-      const addContactResponse = await fetch('https://api.brevo.com/v3/contacts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'api-key': BREVO_API_KEY,
-          accept: 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          updateEnabled: true, // upsert
-        }),
-      });
+      const apiBase =
+        process.env.REACT_APP_ENV === 'development'
+          ? `${window.location.protocol}//${window.location.hostname}:${process.env.REACT_APP_DEV_API_SERVER_PORT}`
+          : ''; // same-origin in prod SSR
 
-      const addToListResponse = await fetch(`https://api.brevo.com/v3/contacts/lists/${BREVO_LIST_ID}/contacts/add`, {
+      const r = await fetch(`${apiBase}/api/brevo/subscribe`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'api-key': BREVO_API_KEY,
-          accept: 'application/json',
-        },
-        body: JSON.stringify({ emails: [email.trim()] }),
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: val, hp: '' }),
       });
+      const j = await r.json();
+      console.log(r, j);
 
-      if (addToListResponse.ok && addContactResponse.ok) {
+      if (j.ok && r.ok) {
         setMessage({ type: 'ok', text: okMsg });
         setEmail('');
       } else {
