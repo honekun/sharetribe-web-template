@@ -21,6 +21,7 @@ import SectionFooter from './SectionFooter';
 // E.g. share the same title styles
 const DEFAULT_CLASSES = {
   sectionDetails: css.sectionDetails,
+  sectionDetailsH: css.sectionDetailsH,
   title: css.title,
   description: css.description,
   ctaButton: css.ctaButton,
@@ -138,6 +139,8 @@ const SectionBuilder = props => {
         customOption.isMediumT = section.sectionName?.indexOf('- SmallTitle') >= 0;
 
         customOption.hasPaddings = section.sectionName?.indexOf('- Paddings') >= 0;
+
+        customOption.isHeadingH = section.sectionName?.indexOf('- Heading2') >= 0;
 
         // Content text is larger & gray.
         if (section.sectionName?.includes('- TextGray')) {

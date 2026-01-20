@@ -156,7 +156,7 @@ const SectionSelectedListings = props => {
       customOption={customOption}
     >
       {hasHeaderFields ? (
-        <header className={classNames(css.sectionHeader, defaultClasses.sectionDetails)}>
+        <header className={classNames(css.sectionHeader, defaultClasses.sectionDetailsH)}>
           <div className={css.textBlock}>
             <Field data={title} className={classNames(defaultClasses.title, css.title)} options={fieldOptions} />
             <Field data={description} className={classNames(defaultClasses.description, css.description)} options={fieldOptions} />
