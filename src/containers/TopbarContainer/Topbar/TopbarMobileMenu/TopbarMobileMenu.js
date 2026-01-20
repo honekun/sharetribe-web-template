@@ -2,7 +2,7 @@
  *  TopbarMobileMenu prints the menu content for authenticated user or
  * shows login actions for those who are not authenticated.
  */
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import classNames from 'classnames';
 
 import { ACCOUNT_SETTINGS_PAGES } from '../../../../routing/routeConfiguration';
@@ -16,6 +16,9 @@ import {
   NamedLink,
   NotificationBadge,
 } from '../../../../components';
+// TODO: THIS!
+import CustomLinksMenu from '../TopbarDesktop/CustomLinksMenu/CustomLinksMenu';
+// import { CreateListingMenuLink } from '../TopbarDesktop/CustomLinksMenu/PriorityLinks';
 
 import css from './TopbarMobileMenu.module.css';
 
@@ -77,9 +80,22 @@ const TopbarMobileMenu = props => {
     customLinks,
     onLogout,
     showCreateListingsLink,
+    intl,
   } = props;
 
   const user = ensureCurrentUser(currentUser);
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  const authenticatedOnClientSide = mounted && isAuthenticated;
+  const isAuthenticatedOrJustHydrated = isAuthenticated || !mounted;
+  /*
+  const createListingMaybe = authenticatedOnClientSide ? (
+    <CreateListingMenuLink customLinksMenuClass={css.createListingLinkOnly} />
+  ) : null;
+  */
 
   const extraLinks = customLinks.map((linkConfig, index) => {
     return (
@@ -124,6 +140,13 @@ const TopbarMobileMenu = props => {
               values={{ lineBreak: <br />, signupOrLogin }}
             />
           </div>
+
+          <CustomLinksMenu
+            currentPage={currentPage}
+            customLinks={customLinks}
+            intl={intl}
+            hasClientSideContentReady={authenticatedOnClientSide || !isAuthenticatedOrJustHydrated}
+          />
 
           <div className={css.customLinksWrapper}>{extraLinks}</div>
 

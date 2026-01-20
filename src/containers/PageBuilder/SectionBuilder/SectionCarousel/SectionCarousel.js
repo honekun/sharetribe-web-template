@@ -50,6 +50,7 @@ const getResponsiveImageSizes = numColumns => {
  * @param {string?} props.rootClassName overwrite components own css.root
  * @param {Object} props.defaultClasses
  * @param {string} props.defaultClasses.sectionDetails
+ * @param {string} props.defaultClasses.sectionDetailsH
  * @param {string} props.defaultClasses.title
  * @param {string} props.defaultClasses.description
  * @param {string} props.defaultClasses.ctaButton
@@ -150,7 +151,7 @@ const SectionCarousel = props => {
       customOption={customOption}
     >
       {hasHeaderFields ? (
-        <header className={defaultClasses.sectionDetails}>
+        <header className={defaultClasses.sectionDetailsH}>
           <Field data={title} className={defaultClasses.title} options={fieldOptions} />
           <Field data={description} className={defaultClasses.description} options={fieldOptions} />
           <Field data={callToAction} className={defaultClasses.ctaButton} options={fieldOptions} />
