@@ -21,7 +21,6 @@ import RequestQuotePage from './RequestQuotePage/RequestQuotePage.duck';
 import SearchPage from './SearchPage/SearchPage.duck';
 import StripePayoutPage from './StripePayoutPage/StripePayoutPage.duck';
 import TransactionPage from './TransactionPage/TransactionPage.duck';
-import LandingPage from './LandingPage/LandingPage.duck';
 
 export {
   CheckoutPage,
@@ -42,5 +41,4 @@ export {
   SearchPage,
   StripePayoutPage,
   TransactionPage,
-  LandingPage,
 };

@@ -271,7 +271,7 @@ const getSearchParams = config => {
   return {
     page: 1,
     perPage: 24,
-    include: ['author', 'images'],
+    include: ['author', 'author.profileImage', 'images'],
     'fields.listing': [
       'title',
       'geolocation',
@@ -288,9 +288,12 @@ const getSearchParams = config => {
       'publicData.shippingEnabled',
       'publicData.priceVariationsEnabled',
       'publicData.priceVariants',
+      'publicData.brand',
+      'publicData.talla',
     ],
     'fields.user': ['profile.displayName', 'profile.abbreviatedName'],
     'fields.image': [
+      'variants.square-xsmall2x',
       'variants.scaled-small',
       'variants.scaled-medium',
       `variants.${variantPrefix}`,
@@ -298,6 +301,7 @@ const getSearchParams = config => {
     ],
     ...createImageVariantConfig(`${variantPrefix}`, 400, aspectRatio),
     ...createImageVariantConfig(`${variantPrefix}-2x`, 800, aspectRatio),
+    ...createImageVariantConfig('square-xsmall2x', 60, aspectRatio),
     'limit.images': 1,
   };
 };
