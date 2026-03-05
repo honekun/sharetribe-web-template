@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Form as FinalForm, Field } from 'react-final-form';
 import arrayMutators from 'final-form-arrays';
+import classNames from 'classnames';
 
 // Import configs and util modules
 import { FormattedMessage, useIntl } from '../../../../util/reactIntl';
@@ -13,20 +14,25 @@ import { colorSchemes } from '../../../../util/types';
 // Import modules from this directory
 import css from './EditListingStyleForm.module.css';
 
+// A `cardStyle` attribute is stored in the listing extended data. This value is used to select the correct background
+// style when rendering the listing card. The colorSchemeMap object maps the value stored in extended data (cardStyle)
+// to a color value. This color is used to fill the radio button on the StyleForm page. See also types.js and ListingCardThumbnail.module.css
+// if you are modifying this map.
+const colorSchemeMap = {
+  white: '--colorWhite',
+  grey: '--colorGrey50',
+  black: '--colorBlack',
+  'main-brand': '--marketplaceColor',
+  'primary-button': '--colorPrimaryButton',
+};
+
+const colorForScreenReader = value => {
+  return value === 'main-brand' ? 'brand' : value === 'primary-button' ? 'button' : value;
+};
+
 const FieldCardStyle = props => {
   const { className, id, value, name } = props;
-
-  // A `cardStyle` attribute is stored in the listing extended data. This value is used to select the correct background
-  // style when rendering the listing card. The colorSchemeMap object maps the value stored in extended data (cardStyle)
-  // to a color value. This color is used to fill the radio button on the StyleForm page. See also types.js and ListingCardThumbnail.module.css
-  // if you are modifying this map.
-  const colorSchemeMap = {
-    white: '--colorWhite',
-    grey: '--colorGrey50',
-    black: '--colorBlack',
-    'main-brand': '--marketplaceColor',
-    'primary-button': '--colorPrimaryButton',
-  };
+  const intl = useIntl();
 
   return (
     <span className={css.fieldCardStyle}>
@@ -37,6 +43,10 @@ const FieldCardStyle = props => {
         value={value}
         className={css.radioButtonInput}
         component="input"
+        aria-label={intl.formatMessage(
+          { id: 'EditListingStyleForm.screenreader.chooseCardStyle' },
+          { option: colorForScreenReader(value) }
+        )}
       />
       <label htmlFor={id} className={css.radioButtonLabel}>
         <div className={css.radioButtonIcon}>
@@ -50,6 +60,25 @@ const FieldCardStyle = props => {
   );
 };
 
+// NOTE: PublishListingError is here since Style panel is the last visible panel
+// before creating a new listing. If that order is changed, these should be changed too.
+// Create and show listing errors are shown above submit button
+const PublishListingError = props => {
+  return props.error ? (
+    <p className={css.error}>
+      <FormattedMessage id="EditListingStyleForm.publishListingFailed" />
+    </p>
+  ) : null;
+};
+
+const UpdateListingError = props => {
+  return props.error ? (
+    <p className={css.error}>
+      <FormattedMessage id="EditListingStyleForm.updateFailed" />
+    </p>
+  ) : null;
+};
+
 export const EditListingStyleForm = props => {
   const { listingTitle } = props;
 
@@ -61,6 +90,8 @@ export const EditListingStyleForm = props => {
         const {
           formId = 'EditListingStyleForm',
           form,
+          className,
+          fetchErrors,
           handleSubmit,
           ready,
           saveActionMsg,
@@ -68,7 +99,8 @@ export const EditListingStyleForm = props => {
           updateInProgress,
           values,
         } = formRenderProps;
-        const intl = useIntl();
+        const classes = classNames(css.root, className);
+        const { publishListingError, updateListingError } = fetchErrors || {};
 
         const submitInProgress = updateInProgress;
         const submitReady = updated || ready;
@@ -86,7 +118,7 @@ export const EditListingStyleForm = props => {
         });
 
         return (
-          <Form className={css.root} onSubmit={handleSubmit}>
+          <Form className={classes} onSubmit={handleSubmit}>
             <div className={css.radioButtonsContainer}>{fieldOptions}</div>
             <H5 as="h2" className={css.previewText}>
               <FormattedMessage id="EditListingStyleForm.preview" />
@@ -98,6 +130,10 @@ export const EditListingStyleForm = props => {
               listingTitle={listingTitle}
               className={css.aspectRatioWrapper}
             ></ListingCardThumbnail>
+
+            <PublishListingError error={publishListingError} />
+            <UpdateListingError error={updateListingError} />
+
             <Button
               className={css.submitButton}
               inProgress={submitInProgress}

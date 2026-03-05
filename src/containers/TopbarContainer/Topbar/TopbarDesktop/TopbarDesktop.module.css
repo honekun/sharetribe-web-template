@@ -95,7 +95,7 @@
   font-size: 14px;
   line-height: 18px;
   letter-spacing: 0;
-  color: var(--colorGrey700);
+  color: var(--marketplaceColor);
 
   height: 100%;
   padding: 0 12px 0 12px;
@@ -263,7 +263,7 @@
   padding: 20px 24px;
 
   /* Layout details */
-  color: var(--colorGrey300);
+  color: var(--colorGrey600);
   text-align: left;
   white-space: nowrap;
   transition: var(--transitionStyleButton);

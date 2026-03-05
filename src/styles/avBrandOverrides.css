@@ -1,0 +1,45 @@
+/**
+ * Archivo Vintach brand overrides
+ *
+ * This file contains all AV-specific CSS custom property overrides.
+ * It is imported after marketplaceDefaults.css so that these values
+ * take precedence over upstream defaults. Keeping overrides here
+ * minimises merge conflicts when syncing with upstream.
+ */
+
+:root {
+  /* ================ AV Brand Palette ================ */
+  --avGray1: hsl(0 0% 80%);
+  --avBlue: hsl(234, 87%, 48%);
+  --avPink: hsl(326, 63%, 59%);
+
+  /* Extra grey shade */
+  --colorGrey25: hsl(240 3% 99%);
+
+  /* ================ Color Overrides ================ */
+  --colorSuccess: #2ecc71;
+  --colorFail: var(--avPink);
+
+  /* ================ CTA Colors ================ */
+  --ctaPrimary: var(--colorBlack);
+  --ctaPrimaryBG: var(--colorWhite);
+  --ctaSecondary: var(--colorWhite);
+  --ctaSecondaryBG: var(--avBlue);
+
+  /* ================ Font Families ================ */
+  --fontFamily: 'Archivo', -apple-system, BlinkMacSystemFont, 'Inter', Helvetica, Arial, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+
+  --fontFamilyRoboto: 'Roboto', -apple-system, BlinkMacSystemFont, 'Inter', Helvetica, Arial, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+
+  --fontFamilyHeadings: 'Archivo Black', -apple-system, BlinkMacSystemFont, 'Inter', Helvetica, Arial, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+
+  /* ================ Extra Border Radius ================ */
+  --borderRadiusLarger: 12px;
+
+  /* ================ Transition Shortcuts ================ */
+  --colorTransition: color 200ms ease-in, background-color 300ms ease-in, border 300ms ease-in;
+  --linkTransition: color 200ms ease-in, text-underline-offset 200ms ease-in;
+}

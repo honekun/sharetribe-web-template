@@ -14,7 +14,11 @@ import {
 } from '../../util/urlHelpers';
 import { hasPermissionToInitiateTransactions, isUserAuthorized } from '../../util/userHelpers';
 import { isErrorNoPermissionForInitiateTransactions } from '../../util/errors';
-import { INQUIRY_PROCESS_NAME, resolveLatestProcessName } from '../../transactions/transaction';
+import {
+  INQUIRY_PROCESS_NAME,
+  REQUEST,
+  resolveLatestProcessName,
+} from '../../transactions/transaction';
 import { requireListingImage } from '../../util/configHelpers';
 
 // Import global thunk functions
@@ -23,7 +27,7 @@ import { confirmCardPayment, retrievePaymentIntent } from '../../ducks/stripe.du
 import { savePaymentMethod } from '../../ducks/paymentMethods.duck';
 
 // Import shared components
-import { NamedRedirect, Page } from '../../components';
+import { NamedRedirect, Page, TopbarSimplified } from '../../components';
 
 // Session helpers file needs to be imported before CheckoutPageWithPayment and CheckoutPageWithInquiryProcess
 import { storeData, clearData, handlePageData } from './CheckoutPageSessionHelpers';
@@ -39,7 +43,6 @@ import {
   initiateInquiryWithoutPayment,
 } from './CheckoutPage.duck';
 
-import CustomTopbar from './CustomTopbar';
 import CheckoutPageWithPayment, {
   loadInitialDataForStripePayments,
 } from './CheckoutPageWithPayment';
@@ -111,9 +114,11 @@ const EnhancedCheckoutPage = props => {
 
   // Handle redirection to ListingPage, if this is own listing or if required data is not available
   const listing = pageData?.listing;
+  const unitType = listing?.attributes?.publicData?.unitType;
+  const isRequest = unitType === REQUEST;
   const isOwnListing = currentUser?.id && listing?.author?.id?.uuid === currentUser?.id?.uuid;
   const hasRequiredData = !!(listing?.id && listing?.author?.id && processName);
-  const shouldRedirect = isDataLoaded && !(hasRequiredData && !isOwnListing);
+  const shouldRedirect = isDataLoaded && !(hasRequiredData && (!isOwnListing || isRequest));
   const shouldRedirectUnathorizedUser = isDataLoaded && !isUserAuthorized(currentUser);
   // Redirect if the user has no transaction rights
   const shouldRedirectNoTransactionRightsUser =
@@ -197,7 +202,7 @@ const EnhancedCheckoutPage = props => {
     />
   ) : (
     <Page title={title} scrollingDisabled={scrollingDisabled}>
-      <CustomTopbar intl={intl} linkToExternalSite={config?.topbar?.logoLink} />
+      <TopbarSimplified />
     </Page>
   );
 };

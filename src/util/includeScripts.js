@@ -35,7 +35,10 @@ export const IncludeScripts = props => {
     // NOTE: remember to update mapbox-sdk.min.js to a new version regularly.
     // mapbox-sdk.min.js is included from static folder for CSP purposes.
     mapLibraries.push(
-      <script key="mapboxSDK" src={`${rootURL}/static/scripts/mapbox/mapbox-sdk.min.js`}></script>
+      <script
+        key="mapboxSDK"
+        src={`${rootURL}/static/scripts/mapbox/mapbox-sdk@0.16.2/mapbox-sdk.min.js`}
+      ></script>
     );
     // License information for v3.7.0 of the mapbox-gl-js library:
     // https://github.com/mapbox/mapbox-gl-js/blob/v3.7.0/LICENSE.txt
@@ -46,7 +49,7 @@ export const IncludeScripts = props => {
         key="mapbox_GL_CSS"
         href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css"
         rel="stylesheet"
-        crossOrigin
+        crossOrigin="anonymous"
       />
     );
     // Add Mapbox library
@@ -55,7 +58,7 @@ export const IncludeScripts = props => {
         id={MAPBOX_SCRIPT_ID}
         key="mapbox_GL_JS"
         src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"
-        crossOrigin
+        crossOrigin="anonymous"
       ></script>
     );
   } else if (isGoogleMapsInUse) {
@@ -65,7 +68,7 @@ export const IncludeScripts = props => {
         id={GOOGLE_MAPS_SCRIPT_ID}
         key="GoogleMapsApi"
         src={`https://maps.googleapis.com/maps/api/js?key=${googleMapsAPIKey}&libraries=places`}
-        crossOrigin
+        crossOrigin="anonymous"
       ></script>
     );
   }
@@ -81,7 +84,7 @@ export const IncludeScripts = props => {
         key="gtag.js"
         async
         src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
-        crossOrigin
+        crossOrigin="anonymous"
       ></script>
     );
 
@@ -106,7 +109,7 @@ export const IncludeScripts = props => {
         defer
         src="https://plausible.io/js/script.js"
         data-domain={plausibleDomains}
-        crossOrigin
+        crossOrigin="anonymous"
       ></script>
     );
   }

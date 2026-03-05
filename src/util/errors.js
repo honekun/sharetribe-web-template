@@ -328,6 +328,40 @@ export const isTransitionQuantityInfoMissingError = error =>
   error?.status === 400 &&
   error?.statusText.startsWith('Error: transition should contain quantity information');
 
+/**
+ * Check if the minimum provider commission is larger than the
+ * minimum price set for the listing.
+ */
+export const isProviderCommissionBiggerThanMinPrice = error =>
+  error?.status === 400 &&
+  error?.statusText.startsWith(
+    'Minimum commission amount is greater than the amount of money paid in'
+  );
+
+/**
+ * Check if the user has any unfinished transactions that include Stripe payment
+ * processing actions.
+ */
+export const isErrorUserHasUnfinishedTransactions = error => {
+  return (
+    error?.status === 409 &&
+    error?.statusText.startsWith(
+      'User has transactions on states that include incomplete payment processing'
+    )
+  );
+};
+
+/**
+ * Check if the request failed because Stripe prevented account deletion. This happens if the
+ * user's Stripe Connect account as a non-zero balance. See the [API reference]() for details.
+ */
+export const isStripeDeletionFailedNonZeroBalance = error => {
+  return (
+    error?.status === 400 &&
+    errorAPIErrors(error).some(apiError => apiError.code === 'delete-stripe-account-failed')
+  );
+};
+
 export const storableError = err => {
   const error = err || {};
   const { name, message, status, statusText } = error;

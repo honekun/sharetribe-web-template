@@ -12,7 +12,273 @@ way to update this template, but currently, we follow a pattern:
 
 ---
 
-## Upcoming version 2025-XX-XX
+## Upcoming version 2026-XX-XX
+
+## [v10.8.0] 2026-01-20
+
+- [fix] Menu: fix a bug with focus handling on iOS Safari.
+  [#747](https://github.com/sharetribe/web-template/pull/747)
+- [add] EditListingDetailsPanel: add support for preselected listing type through URLSearchParam:
+  listingType. [#748](https://github.com/sharetribe/web-template/pull/748)
+- [fix] Fix incorrect translation keys in default-negotiation transaction process
+  [#746](https://github.com/sharetribe/web-template/pull/746)
+- [fix] MakeOfferPage.duck.js and RequestQuotePage.duck.js: fix a bug with listingId fetching.
+  [#743](https://github.com/sharetribe/web-template/pull/743)
+- [add] Add currently available translations for DE, ES, FR.
+  [#745](https://github.com/sharetribe/web-template/pull/745)
+- [change] Update React Redux from v8.1.2 to v9.2.0 and Redux Toolkit from v2.9.0 to v2.11.2.
+  [#742](https://github.com/sharetribe/web-template/pull/742)
+
+## [v10.7.0] 2026-01-15
+
+- [add] Accessibility improvements. The focus is on keyboard navigation and focus handling.
+  [#723](https://github.com/sharetribe/web-template/pull/723)
+- [change] Update mapbox-sdk-js from v0.16.1 to v0.16.2 and add a long cache-control header for it.
+  [#741](https://github.com/sharetribe/web-template/pull/741)
+- [add] Fix an email template subject [#740](https://github.com/sharetribe/web-template/pull/740)
+- [add] Update a Marketplace text [#738](https://github.com/sharetribe/web-template/pull/738)
+
+  [v10.7.0]: https://github.com/sharetribe/web-template/compare/v10.6.0...v10.7.0
+
+## [v10.6.0] 2026-01-12
+
+- [fix] InboxPage: fix booking end time calculation for fixed booking type to use inclusive end
+  time. [#736](https://github.com/sharetribe/web-template/pull/736)
+- [remove] Bulgaria joined to Eurozone, so we removed BGN currency from the Stripe supported
+  currencies. [#734](https://github.com/sharetribe/web-template/pull/734)
+- [add] Improve banned and deleted user handling on Transaction Page
+  [729](https://github.com/sharetribe/web-template/pull/729)
+- [change] Add cache-control header with 1 year cache for generated main & chunck files.
+  [#727](https://github.com/sharetribe/web-template/pull/727)
+- [add] Add currently available translations for ES.
+  [#731](https://github.com/sharetribe/web-template/pull/731)
+- [add] Add currently available translations for DE, FR.
+  [#730](https://github.com/sharetribe/web-template/pull/730)
+
+  [v10.6.0]: https://github.com/sharetribe/web-template/compare/v10.5.0...v10.6.0
+
+## [v10.5.0] 2025-12-02
+
+- [add] Hide messages from banned users in ActivityFeed
+  [#724](https://github.com/sharetribe/web-template/pull/724)
+- [fix] This changes the height of modals related to mobile menu and order panel on mobile layout.
+  [#725](https://github.com/sharetribe/web-template/pull/725)
+- [fix] EditListingPage.duck.js: fix a bug with availability exceptions fetching. A race condition
+  was introduced when Redux TLK was taken into use.
+  [#722](https://github.com/sharetribe/web-template/pull/722)
+- [fix] Update the default-negotation transaction processe email templates to use the color from
+  Branding asset. [#721](https://github.com/sharetribe/web-template/pull/721)
+- [fix] Update the color of buttons in transaction processes email templates.
+  [#718](https://github.com/sharetribe/web-template/pull/718)
+
+  [v10.5.0]: https://github.com/sharetribe/web-template/compare/v10.4.0...v10.5.0
+
+## [v10.4.0] 2025-12-02
+
+- [add] Add Proxy around SDK instance on server that caches the responses for the page-asset
+  requests. [#713](https://github.com/sharetribe/web-template/pull/713)
+- [fix] Styleguide examples for booking forms were missing a mandatory prop.
+  [#719](https://github.com/sharetribe/web-template/pull/719)
+- [fix] PREVENT_DATA_LOADING_IN_SSR environment variable has not been working.
+  [#717](https://github.com/sharetribe/web-template/pull/717)
+- [add] Add accessibility improvements (Modals, filters, etc.).
+  [#716](https://github.com/sharetribe/web-template/pull/716)
+- [change] Upgrade Sharetribe SDK to 1.22.0.
+  [#715](https://github.com/sharetribe/web-template/pull/715)
+- [fix] ListingPageCoverPhoto: fix payoutDetailsWarning message.
+  [#714](https://github.com/sharetribe/web-template/pull/714)
+- [fix] AuthenticationPage: fix a bug with long words in the title on mobile layout.
+  [#711](https://github.com/sharetribe/web-template/pull/711)
+- [add] Add currently available translations for DE, ES, FR.
+  [#710](https://github.com/sharetribe/web-template/pull/710)
+
+  [v10.4.0]: https://github.com/sharetribe/web-template/compare/v10.3.0...v10.4.0
+
+## [v10.3.0] 2025-11-20
+
+- [add] Add currently available translations for DE, ES, FR.
+  [#708](https://github.com/sharetribe/web-template/pull/708)
+- [add] Add support for Console-configured private custom user fields
+  [#700](https://github.com/sharetribe/web-template/pull/700)
+- [change] make crossorigin attributes have an explicit default value.
+  [#703](https://github.com/sharetribe/web-template/pull/703)
+- [fix] LocationAutocompleteInputImpl: do not select current location automatically if it is the
+  only prediction. [#704](https://github.com/sharetribe/web-template/pull/704)
+- [add] Add currently available translations for DE, ES, FR.
+  [#706](https://github.com/sharetribe/web-template/pull/706)
+
+[v10.3.0]: https://github.com/sharetribe/web-template/compare/v10.2.0...v10.3.0
+
+## [v10.2.0] 2025-11-19
+
+- [add] Added ability to delete user account in a new account settings page.
+  [#660](https://github.com/sharetribe/web-template/pull/660/)
+- [change] SignupForm: check that the password is not copy-pasted to other fields.
+  [#702](https://github.com/sharetribe/web-template/pull/702)
+- [fix] ManageListingsPage.duck.js: fix a bug with pagination links not being rendered.
+  [#701](https://github.com/sharetribe/web-template/pull/701)
+- [add] Additional accesibility improvements to text and icon colors in search CTA.
+  [#696](https://github.com/sharetribe/web-template/pull/696)
+- [add] Improve template accessibility further
+
+  - Improved contrast for various colors throughout the Template
+  - Increased area around clickable elements
+  - Updated various component roles
+
+  [#691](https://github.com/sharetribe/web-template/pull/691)
+
+  [v10.2.0]: https://github.com/sharetribe/web-template/compare/v10.1.2...v10.2.0
+
+## [v10.1.2] 2025-11-10
+
+- [fix] ListingPage.duck.js: fix a bug with time slots fetching. This affects bookable listings with
+  hour or fixed durations. [#697](https://github.com/sharetribe/web-template/pull/697)
+- [add] Add currently available translations for DE, ES, FR.
+  [#695](https://github.com/sharetribe/web-template/pull/695)
+
+  [v10.1.2]: https://github.com/sharetribe/web-template/compare/v10.1.1...v10.1.2
+
+## [v10.1.1] 2025-11-06
+
+- [fix] RequestQuotePage: pass authorDisplayName to RequestQuoteForm.
+  [#693](https://github.com/sharetribe/web-template/pull/693)
+
+  [v10.1.1]: https://github.com/sharetribe/web-template/compare/v10.1.0...v10.1.1
+
+## [v10.1.0] 2025-11-06
+
+- [add] Add support for regular negotiation flow where provider creates listings representing offers
+  (e.g. projects) and customer can request for a quote.
+  [#685](https://github.com/sharetribe/web-template/pull/685)
+- [fix] Add line break to TopbarMobileMenu.signupOrLogin translation
+  [#690](https://github.com/sharetribe/web-template/pull/690)
+
+  [v10.1.0]: https://github.com/sharetribe/web-template/compare/v10.0.0...v10.1.0
+
+## [v10.0.0] 2025-11-04
+
+This major release introduces Redux Toolkit for state management. This is a big change and you
+should carefully check the changes before taking update from this repository.
+
+- [change] Start using Redux Toolkit for state management.
+
+  - All the \*.duck.js files have been converted to Redux Toolkit slices.
+  - The signature of 'configureStore' function has been changed.
+
+  [#682](https://github.com/sharetribe/web-template/pull/682)
+
+- [fix] Added missing getAriaLabel to various components used in Styleguide
+  [#687](https://github.com/sharetribe/web-template/pull/687)
+- [add] Add noindex metadata to closed listings.
+  [#688](https://github.com/sharetribe/web-template/pull/688)
+- [fix] coordinate parsing: "-0" was not parsed correctly to Number.
+  [#686](https://github.com/sharetribe/web-template/pull/686)
+- [fix] showPaymentDetailsForUser: handle case when currentUser is null.
+  [#684](https://github.com/sharetribe/web-template/pull/684)
+- [add] Add currently available translations for DE, ES, FR.
+  [#683](https://github.com/sharetribe/web-template/pull/683)
+- [fix] Only set TransactionPage pageHeading if processName resolves
+  [#681](https://github.com/sharetribe/web-template/pull/681)
+
+  [v10.0.0]: https://github.com/sharetribe/web-template/compare/v9.1.0...v10.0.0
+
+## [v9.1.0] 2025-10-23
+
+- [add] Improve template accessibility
+
+  - Improve contrast in grey texts
+  - Add translations for aria-labels
+  - Unify page title and heading texts
+
+  [#673](https://github.com/sharetribe/web-template/pull/673)
+
+- [change] Update browserlist-db aka caniuse-lite.
+  [#679](https://github.com/sharetribe/web-template/pull/679)
+- [add] Add currently available translations for DE, ES, FR.
+  [#678](https://github.com/sharetribe/web-template/pull/678)
+- [fix] BookingDateRangeFilter: don't add focus to the current date on mount.
+  [#677](https://github.com/sharetribe/web-template/pull/677)
+- [fix] Fix a bug with coordinate values in the URL.
+  [#676](https://github.com/sharetribe/web-template/pull/676)
+- [fix] Fix some Marketplace texts. [#675](https://github.com/sharetribe/web-template/pull/675)
+
+  [v9.1.0]: https://github.com/sharetribe/web-template/compare/v9.0.0...v9.1.0
+
+## [v9.0.0] 2025-10-14
+
+This major release introduces a new transaction process: default-negotiation. It adds support for
+reverse negotiation with customer-driven negotiation loop. The process is meant for regular
+negotiation too - we'll implement that side later. This is a big change and it touches also features
+used by other processes - you should carefully check the changes before taking update from this
+repository.
+
+- [add] Add a new process: default-negotiation. There are also 2 new unit types associated with this
+  new process: request and offer.With those unit types, this process can be used for regular and
+  reverse negotiation, but this pull request only implments the reverse negotiation (unitType:
+  request) with customer-driven negotiation loop.
+  [#648](https://github.com/sharetribe/web-template/pull/648)
+
+- [fix] IntegerRangeFilter & PriceFilter: add faulty mode for input elements.
+  [#670](https://github.com/sharetribe/web-template/pull/670)
+- [fix] CheckoutPageWithPayment: don't show location if it's unknown for bookings.
+  [#671](https://github.com/sharetribe/web-template/pull/671)
+- [add] Update README about translation files.
+  [#668](https://github.com/sharetribe/web-template/pull/668)
+- [add] Add currently available translations for DE, ES.
+  [#666](https://github.com/sharetribe/web-template/pull/666)
+- [add] Add currently available translations for DE, ES, FR.
+  [#664](https://github.com/sharetribe/web-template/pull/664)
+
+  [v9.0.0]: https://github.com/sharetribe/web-template/compare/v8.8.0...v9.0.0
+
+## [v8.8.0] 2025-09-11
+
+- [add] Add ability to sort user inbox messages
+  [#656](https://github.com/sharetribe/web-template/pull/656)
+- [add] Update one Marketplace text (to be aligned with the corresponding copy in Email texts).
+  [#661](https://github.com/sharetribe/web-template/pull/661)
+- [add] Add currently available translations for DE, ES, FR.
+  [#658](https://github.com/sharetribe/web-template/pull/658)
+- [add] Add accessibility improvements to components related to
+
+  - search pages
+  - listing page
+  - listing editing pages
+  - transaction page
+
+  [#649](https://github.com/sharetribe/web-template/pull/649)
+
+- [change] Remove pickup fee line-item from the order breakdown.
+  [#655](https://github.com/sharetribe/web-template/pull/655)
+- [add] Update EditListingPage README.md to describe the data gathered and updated.
+  [#654](https://github.com/sharetribe/web-template/pull/654)
+- [fix] SearchPage.shared.js: category ids are always strings, so we need to convert query params to
+  strings. [#653](https://github.com/sharetribe/web-template/pull/653)
+- [fix] SearchPage: fix a bug with integer range values. The range end value was not exclusive.
+  [#652](https://github.com/sharetribe/web-template/pull/652)
+- [fix] IntegerRangeFilter: fix a bug with small text on grid layout.
+  [#650](https://github.com/sharetribe/web-template/pull/650)
+
+- [add] render potential errors in EditListingStylePanel.
+  [#647](https://github.com/sharetribe/web-template/pull/647)
+
+  [v8.8.0]: https://github.com/sharetribe/web-template/compare/v8.7.0...v8.8.0
+
+## [v8.7.0] 2025-07-30
+
+- [add] Add currently available translations for DE, ES, FR.
+  [#644](https://github.com/sharetribe/web-template/pull/644)
+- [add] Added support for Provider and Customer minimum commission handling
+  [#631](https://github.com/sharetribe/web-template/pull/635)
+- [add] Add some accessibility improvements to Topbar, Footer, and AuthenticationPage.
+  [#639](https://github.com/sharetribe/web-template/pull/639)
+- [add] Add currently available translations for DE, ES, FR.
+  [#641](https://github.com/sharetribe/web-template/pull/641)
+- [fix] SearchPageWithMap: existing pagination page needs to be reset with map-based search. When
+  bounds change, the search results are different and the previous pagination page number is not
+  valid anymore. [#640](https://github.com/sharetribe/web-template/pull/640)
+
+  [v8.7.0]: https://github.com/sharetribe/web-template/compare/v8.6.0...v8.7.0
 
 ## [v8.6.0] 2025-07-17
 

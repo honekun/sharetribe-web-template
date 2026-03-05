@@ -12,7 +12,7 @@ import {
   dispatchedActions,
 } from '../../util/testHelpers';
 
-import { loadData, searchListingsRequest, searchListingsSuccess } from './SearchPage.duck';
+import { loadData } from './SearchPage.duck';
 import { addMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 
 const { screen, userEvent, waitFor } = testingLibrary;
@@ -73,7 +73,6 @@ const categories = generateCategories([
   ['fish', [['freshwater', ['grayling', 'arctic-char', 'pike']], 'saltwater']],
   ['birds', ['parrot', 'macaw']],
 ]);
-//console.log(JSON.stringify(categories, null, 2));
 
 const listingFields = [
   {
@@ -324,6 +323,7 @@ describe('SearchPage', () => {
         initialState,
         config,
         routeConfiguration,
+        messages: { 'FieldSelectTree.screenreader.option': 'Choose {optionName}.' },
       }
     );
 
@@ -346,8 +346,8 @@ describe('SearchPage', () => {
       expect(queryByText('Cat')).not.toBeInTheDocument();
       // Has no Boat filter (primary filter tied to 'sell-bicycles' listing type)
       expect(queryByText('Boat')).not.toBeInTheDocument();
-      // Has(!) Amenities filter (secondary filter)
-      expect(getByText('Amenities')).toBeInTheDocument();
+      // Has(!) Amenities filter (secondary filter) (it contains also legend for screen readers)
+      expect(getAllByText('Amenities')).toHaveLength(2);
       // Has Single Select Test filter
       expect(getByText('Single Select Test')).toBeInTheDocument();
       expect(getByText('Enum 1')).toBeInTheDocument();
@@ -383,7 +383,7 @@ describe('SearchPage', () => {
 
     // Test category intercation: click "Fish"
     await waitFor(() => {
-      userEvent.click(getByRole('button', { name: 'Fish' }));
+      userEvent.click(getByRole('button', { name: 'Choose Fish.' }));
     });
 
     expect(getByText('Dogs')).toBeInTheDocument();
@@ -404,14 +404,22 @@ describe('SearchPage', () => {
     const searchRouteConfig = routeConfiguration.find(conf => conf.name === 'SearchPage');
     const SearchPage = searchRouteConfig.component;
 
-    const { getByPlaceholderText, getByText, getAllByText, queryByText, getByRole } = render(
-      <SearchPage {...props} />,
-      {
-        initialState,
-        config,
-        routeConfiguration,
-      }
-    );
+    const {
+      getByPlaceholderText,
+      getByText,
+      getByLabelText,
+      getAllByText,
+      queryByText,
+      getByRole,
+    } = render(<SearchPage {...props} />, {
+      initialState,
+      config,
+      routeConfiguration,
+      messages: {
+        'SearchPage.screenreader.openFilterButton': 'Filter: {label}',
+        'FieldSelectTree.screenreader.option': 'Choose {optionName}.',
+      },
+    });
 
     await waitFor(() => {
       // Has main search in Topbar and it's a location search.
@@ -438,7 +446,7 @@ describe('SearchPage', () => {
       expect(queryByText('Enum 2')).not.toBeInTheDocument();
 
       // Has Category filter
-      expect(getByText('FilterComponent.categoryLabel')).toBeInTheDocument();
+      expect(getByLabelText('Filter: FilterComponent.categoryLabel')).toBeInTheDocument();
       expect(queryByText('Dogs')).not.toBeInTheDocument();
       expect(queryByText('Cats')).not.toBeInTheDocument();
       expect(queryByText('Fish')).not.toBeInTheDocument();
@@ -467,7 +475,7 @@ describe('SearchPage', () => {
 
     // Test category intercation
     await waitFor(() => {
-      userEvent.click(getByRole('button', { name: 'FilterComponent.categoryLabel' }));
+      userEvent.click(getByRole('button', { name: 'Filter: FilterComponent.categoryLabel' }));
     });
     expect(getByText('Dogs')).toBeInTheDocument();
     expect(queryByText('Poodle')).not.toBeInTheDocument();
@@ -478,7 +486,7 @@ describe('SearchPage', () => {
 
     // Test category intercation: click "Fish"
     await waitFor(() => {
-      userEvent.click(getByRole('button', { name: 'Fish' }));
+      userEvent.click(getByRole('button', { name: 'Choose Fish.' }));
     });
     expect(getByText('Dogs')).toBeInTheDocument();
     expect(queryByText('Poodle')).not.toBeInTheDocument();
@@ -504,6 +512,9 @@ describe('SearchPage', () => {
         initialState,
         config,
         routeConfiguration,
+        messages: {
+          'FieldSelectTree.screenreader.option': 'Choose {optionName}.',
+        },
       }
     );
 
@@ -521,13 +532,13 @@ describe('SearchPage', () => {
       expect(queryByText('Freshwater')).not.toBeInTheDocument();
     });
 
-    // Test category intercation: click "Fish"
+    // Test category intercation: click "Cats"
     await waitFor(() => {
-      userEvent.click(getByRole('button', { name: 'Cats' }));
+      userEvent.click(getByRole('button', { name: 'Choose Cats.' }));
     });
 
-    // Has no Cat filter (primary)
-    expect(getByText('Cat')).toBeInTheDocument();
+    // Has Cat filter (enum) using SelectMultipleFilter component (it contains also legend for screen readers)
+    expect(getAllByText('Cat')).toHaveLength(2);
 
     expect(getByText('Dogs')).toBeInTheDocument();
     expect(queryByText('Poodle')).not.toBeInTheDocument();
@@ -554,6 +565,9 @@ describe('SearchPage', () => {
         initialState,
         config,
         routeConfiguration,
+        messages: {
+          'FieldSelectTree.screenreader.option': 'Choose {optionName}.',
+        },
       }
     );
 
@@ -571,11 +585,11 @@ describe('SearchPage', () => {
 
     // Test category intercation: click "Sell bicycles"
     await waitFor(() => {
-      userEvent.click(getByRole('button', { name: 'Sell bicycles' }));
+      userEvent.click(getByRole('button', { name: 'Choose Sell bicycles.' }));
     });
 
-    // Has Boat filter filter (primary)
-    expect(getByText('Boat')).toBeInTheDocument();
+    // Has Boat filter (enum) using SelectMultipleFilter component (it contains also legend for screen readers)
+    expect(getAllByText('Boat')).toHaveLength(2);
   });
 
   it('Check that Listing type filter is not revealed when using a listing type path param', async () => {
@@ -653,11 +667,19 @@ describe('Duck', () => {
     // loadData() function is called. If you make customizations to the loadData() logic,
     // update this test accordingly!
     return loadData(null, null, config)(dispatch, getState, sdk).then(data => {
-      expect(dispatchedActions(dispatch)).toEqual([
-        searchListingsRequest(searchParams),
-        addMarketplaceEntities(fakeResponse([l1, l2]), sanitizeConfig),
-        searchListingsSuccess(fakeResponse([l1, l2])),
-      ]);
+      const actions = dispatchedActions(dispatch);
+      expect(actions).toHaveLength(3);
+
+      // First action should be searchListings.pending
+      expect(actions[0].type).toBe('SearchPage/searchListings/pending');
+      expect(actions[0].meta.arg.searchParams).toEqual(searchParams);
+
+      // Second action should be addMarketplaceEntities
+      expect(actions[1]).toEqual(addMarketplaceEntities(fakeResponse([l1, l2]), sanitizeConfig));
+
+      // Third action should be searchListings.fulfilled
+      expect(actions[2].type).toBe('SearchPage/searchListings/fulfilled');
+      expect(actions[2].payload).toEqual(fakeResponse([l1, l2]));
     });
   });
 

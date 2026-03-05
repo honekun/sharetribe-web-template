@@ -24,7 +24,6 @@ import IconPlus from './IconPlus/IconPlus';
  */
 const FilterComponent = props => {
   const {
-    idPrefix,
     config,
     urlQueryParams,
     initialValues,
@@ -42,25 +41,33 @@ const FilterComponent = props => {
   const { liveEdit, showAsPopup } = rest;
 
   const useHistoryPush = liveEdit || showAsPopup;
-  const prefix = idPrefix || 'SearchPage';
-  const componentId = `${prefix}.${key.toLowerCase()}`;
   const name = key.replace(/\s+/g, '-');
+  const getAriaLabel = (label, values) => {
+    const status = values ? 'active' : 'inactive';
+    const mode = liveEdit ? 'live' : 'normal';
+    return intl.formatMessage(
+      { id: 'SearchPage.screenreader.openFilterButton' },
+      { label, status, values, mode }
+    );
+  };
 
   // Default filters: price, keywords, dates
   switch (schemaType) {
     case 'category': {
       const { scope, isNestedEnum, nestedParams } = config;
       const queryParamNames = nestedParams?.map(p => constructQueryParamName(p, scope));
+      const label = intl.formatMessage({ id: 'FilterComponent.categoryLabel' });
+
       return (
         <SelectSingleFilter
-          id={componentId}
           name={key}
-          label={intl.formatMessage({ id: 'FilterComponent.categoryLabel' })}
+          label={label}
           queryParamNames={queryParamNames}
           initialValues={initialValues(queryParamNames, liveEdit)}
           onSubmit={getHandleChangedValueFn(useHistoryPush)}
           options={convertCategoriesToSelectTreeOptions(listingCategories)}
           isNestedEnum={isNestedEnum}
+          getAriaLabel={getAriaLabel}
           {...rest}
         />
       );
@@ -68,15 +75,17 @@ const FilterComponent = props => {
     case 'listingType': {
       const { scope, options } = config;
       const paramNames = [constructQueryParamName(key, scope)];
+      const label = intl.formatMessage({ id: 'FilterComponent.listingTypeLabel' });
+
       return (
         <SelectSingleFilter
-          id={componentId}
           name={key}
-          label={intl.formatMessage({ id: 'FilterComponent.listingTypeLabel' })}
+          label={label}
           queryParamNames={[paramNames]}
           initialValues={initialValues(paramNames, liveEdit)}
           onSubmit={getHandleChangedValueFn(useHistoryPush)}
           options={options}
+          getAriaLabel={getAriaLabel}
           {...rest}
         />
       );
@@ -85,7 +94,7 @@ const FilterComponent = props => {
       const { min, max, step } = config;
       return (
         <PriceFilter
-          id={componentId}
+          name={key}
           label={intl.formatMessage({ id: 'FilterComponent.priceLabel' })}
           queryParamNames={[key]}
           initialValues={initialValues([key], liveEdit)}
@@ -94,19 +103,22 @@ const FilterComponent = props => {
           max={max}
           step={step}
           marketplaceCurrency={marketplaceCurrency}
+          getAriaLabel={getAriaLabel}
           {...rest}
         />
       );
     }
     case 'keywords':
+      const label = intl.formatMessage({ id: 'FilterComponent.keywordsLabel' });
+
       return (
         <KeywordFilter
-          id={componentId}
-          label={intl.formatMessage({ id: 'FilterComponent.keywordsLabel' })}
+          label={label}
           name={name}
           queryParamNames={[key]}
           initialValues={initialValues([key], liveEdit)}
           onSubmit={getHandleChangedValueFn(useHistoryPush)}
+          getAriaLabel={getAriaLabel}
           {...rest}
         />
       );
@@ -115,25 +127,26 @@ const FilterComponent = props => {
       const isNightlyMode = dateRangeMode === 'night';
       return (
         <BookingDateRangeFilter
-          id={componentId}
           label={intl.formatMessage({ id: 'FilterComponent.datesLabel' })}
           queryParamNames={[key]}
           initialValues={initialValues([key], liveEdit)}
           onSubmit={getHandleChangedValueFn(useHistoryPush)}
           minimumNights={isNightlyMode ? 1 : 0}
+          getAriaLabel={getAriaLabel}
           {...rest}
         />
       );
     }
     case 'seats': {
+      const label = intl.formatMessage({ id: 'FilterComponent.seatsLabel' });
       return (
         <SeatsFilter
-          id={componentId}
           name={name}
-          label={intl.formatMessage({ id: 'FilterComponent.seatsLabel' })}
+          label={label}
           queryParamNames={[key]}
           initialValues={initialValues([key], liveEdit)}
           onSubmit={getHandleChangedValueFn(useHistoryPush)}
+          getAriaLabel={getAriaLabel}
           {...rest}
         />
       );
@@ -201,8 +214,8 @@ const FilterComponent = props => {
       const queryParamNames = [constructQueryParamName(key, scope)];
       return filterType === 'SelectSingleFilter' ? (
         <SelectSingleFilter
-          id={componentId}
           label={label}
+          getAriaLabel={getAriaLabel}
           name={name}
           queryParamNames={queryParamNames}
           initialValues={initialValues(queryParamNames, liveEdit)}
@@ -213,26 +226,27 @@ const FilterComponent = props => {
         />
       ) : (
         <SelectMultipleFilter
-          id={componentId}
           label={label}
+          getAriaLabel={getAriaLabel}
           name={name}
           queryParamNames={queryParamNames}
           initialValues={initialValues(queryParamNames, liveEdit)}
           onSubmit={getHandleChangedValueFn(useHistoryPush)}
           options={enumOptions}
           schemaType={schemaType}
+          useSwatches={filterType === 'ColorSwatchFilter' || key === 'color'}
           {...rest}
         />
       );
     }
     case SCHEMA_TYPE_MULTI_ENUM: {
       const { scope, enumOptions, filterConfig = {} } = config;
-      const { label, searchMode } = filterConfig;
+      const { label, filterType, searchMode } = filterConfig;
       const queryParamNames = [constructQueryParamName(key, scope)];
       return (
         <SelectMultipleFilter
-          id={componentId}
           label={label}
+          getAriaLabel={getAriaLabel}
           name={name}
           queryParamNames={queryParamNames}
           initialValues={initialValues(queryParamNames, liveEdit)}
@@ -240,6 +254,7 @@ const FilterComponent = props => {
           options={enumOptions}
           schemaType={schemaType}
           searchMode={searchMode}
+          useSwatches={filterType === 'ColorSwatchFilter' || key === 'color'}
           {...rest}
         />
       );
@@ -250,7 +265,6 @@ const FilterComponent = props => {
       const queryParamNames = [constructQueryParamName(key, scope)];
       return (
         <IntegerRangeFilter
-          id={componentId}
           label={label}
           name={name}
           queryParamNames={queryParamNames}
@@ -259,6 +273,7 @@ const FilterComponent = props => {
           min={minimum}
           max={maximum}
           step={step}
+          getAriaLabel={getAriaLabel}
           {...rest}
         />
       );

@@ -2,16 +2,18 @@ import React, { Component } from 'react';
 import classNames from 'classnames';
 
 import { FormattedMessage, injectIntl, intlShape } from '../../../util/reactIntl';
-import { displayPrice } from '../../../util/configHelpers';
 import { propTypes } from '../../../util/types';
 import { userDisplayNameAsString } from '../../../util/data';
 import { isMobileSafari } from '../../../util/userAgent';
 import { createSlug } from '../../../util/urlHelpers';
+import { NEGOTIATION_PROCESS_NAME } from '../../../transactions/transaction';
+import { displayPrice } from '../../../util/configHelpers';
 
 import { AvatarLarge, NamedLink, UserDisplayName } from '../../../components';
 
 import { stateDataShape } from '../TransactionPage.stateData';
 import SendMessageForm from '../SendMessageForm/SendMessageForm';
+import TextMaybe from '../TextMaybe/TextMaybe';
 
 // These are internal components that make this file more readable.
 import BreakdownMaybe from './BreakdownMaybe';
@@ -19,9 +21,7 @@ import DetailCardHeadingsMaybe from './DetailCardHeadingsMaybe';
 import DetailCardImage from './DetailCardImage';
 import DeliveryInfoMaybe from './DeliveryInfoMaybe';
 import BookingLocationMaybe from './BookingLocationMaybe';
-import InquiryMessageMaybe from './InquiryMessageMaybe';
 import FeedSection from './FeedSection';
-import ActionButtonsMaybe from './ActionButtonsMaybe';
 import DiminishedActionButtonMaybe from './DiminishedActionButtonMaybe';
 import PanelHeading from './PanelHeading';
 
@@ -55,6 +55,22 @@ const displayNames = (currentUser, provider, customer, intl) => {
   };
 };
 
+const allowShowingExtraInfo = (showExtraInfo, transactionPartyInfo) => {
+  const {
+    isCustomer,
+    isCustomerBanned,
+    isCustomerDeleted,
+    isProvider,
+    isProviderBanned,
+    isProviderDeleted,
+  } = transactionPartyInfo;
+  return (
+    !!showExtraInfo &&
+    ((isProvider && !isCustomerBanned && !isCustomerDeleted) ||
+      (isCustomer && !isProviderBanned && !isProviderDeleted))
+  );
+};
+
 /**
  * Transaction panel
  *
@@ -80,6 +96,7 @@ const displayNames = (currentUser, provider, customer, intl) => {
  * @param {stateDataShape} props.stateData - The state data
  * @param {boolean} props.showBookingLocation - Whether the booking location is shown
  * @param {React.ReactNode} props.activityFeed - The activity feed
+ * @param {Function} props.actionButtons - The action buttons function
  * @param {React.ReactNode} props.orderBreakdown - The order breakdown
  * @param {React.ReactNode} props.orderPanel - The order panel
  * @param {object} props.config - The config
@@ -154,7 +171,7 @@ export class TransactionPanelComponent extends Component {
       listing,
       customer,
       provider,
-      hasTransitions = false,
+      transitions,
       protectedData,
       messages,
       initialMessageFailed = false,
@@ -167,7 +184,10 @@ export class TransactionPanelComponent extends Component {
       intl,
       stateData = {},
       showBookingLocation = false,
+      requestQuote,
+      offer,
       activityFeed,
+      actionButtons,
       isInquiryProcess,
       orderBreakdown,
       orderPanel,
@@ -175,6 +195,7 @@ export class TransactionPanelComponent extends Component {
       hasViewingRights,
     } = this.props;
 
+    const hasTransitions = transitions.length > 0;
     const isCustomer = transactionRole === 'customer';
     const isProvider = transactionRole === 'provider';
 
@@ -183,6 +204,15 @@ export class TransactionPanelComponent extends Component {
     const isCustomerDeleted = !!customer?.attributes?.deleted;
     const isProviderBanned = !!provider?.attributes?.banned;
     const isProviderDeleted = !!provider?.attributes?.deleted;
+
+    const transactionPartyInfo = {
+      isCustomer,
+      isCustomerBanned,
+      isCustomerDeleted,
+      isProvider,
+      isProviderBanned,
+      isProviderDeleted,
+    };
 
     const { authorDisplayName, customerDisplayName, otherUserDisplayNameString } = displayNames(
       currentUser,
@@ -198,20 +228,11 @@ export class TransactionPanelComponent extends Component {
     const listingTitle = listingDeleted ? deletedListingTitle : listing?.attributes?.title;
     const firstImage = listing?.images?.length > 0 ? listing?.images[0] : null;
 
-    const actionButtons = (
-      <ActionButtonsMaybe
-        showButtons={stateData.showActionButtons}
-        primaryButtonProps={stateData?.primaryButtonProps}
-        secondaryButtonProps={stateData?.secondaryButtonProps}
-        isListingDeleted={listingDeleted}
-        isProvider={isProvider}
-      />
-    );
-
     const listingType = listing?.attributes?.publicData?.listingType;
     const listingTypeConfigs = config.listing.listingTypes;
     const listingTypeConfig = listingTypeConfigs.find(conf => conf.listingType === listingType);
     const showPrice = isInquiryProcess && displayPrice(listingTypeConfig);
+    const showBreakDown = stateData.showBreakDown !== false; // NOTE: undefined defaults to true due to historical reasons.
 
     const showSendMessageForm =
       !isCustomerBanned && !isCustomerDeleted && !isProviderBanned && !isProviderDeleted;
@@ -223,6 +244,10 @@ export class TransactionPanelComponent extends Component {
 
     const deliveryMethod = protectedData?.deliveryMethod || 'none';
     const priceVariantName = protectedData?.priceVariantName;
+
+    const inquiryMessage = !isCustomerBanned
+      ? protectedData?.inquiryMessage
+      : intl.formatMessage({ id: 'TransactionPage.messageSenderBanned' });
 
     const classes = classNames(rootClassName || css.root, className);
 
@@ -249,7 +274,7 @@ export class TransactionPanelComponent extends Component {
             <PanelHeading
               processName={stateData.processName}
               processState={stateData.processState}
-              showExtraInfo={stateData.showExtraInfo}
+              showExtraInfo={allowShowingExtraInfo(stateData.showExtraInfo, transactionPartyInfo)}
               showPriceOnMobile={showPrice}
               price={listing?.attributes?.price}
               intl={intl}
@@ -258,27 +283,34 @@ export class TransactionPanelComponent extends Component {
               transactionRole={transactionRole}
               providerName={authorDisplayName}
               customerName={customerDisplayName}
-              isCustomerBanned={isCustomerBanned}
               listingId={listing?.id?.uuid}
               listingTitle={listingTitle}
               listingDeleted={listingDeleted}
             />
 
-            <InquiryMessageMaybe
-              protectedData={protectedData}
-              showInquiryMessage={isInquiryProcess}
-              isCustomer={isCustomer}
+            <TextMaybe
+              rootClassName={css.inquiryMessageContainer}
+              heading={intl.formatMessage({ id: 'TransactionPanel.inquiryMessageHeading' })}
+              text={inquiryMessage}
+              isOwn={isCustomer}
+              showText={isInquiryProcess}
             />
+
+            {requestQuote}
+            {offer}
 
             {!isInquiryProcess ? (
               <div className={css.orderDetails}>
                 <div className={css.orderDetailsMobileSection}>
-                  <BreakdownMaybe
-                    orderBreakdown={orderBreakdown}
-                    processName={stateData.processName}
-                    priceVariantName={priceVariantName}
-                  />
+                  {showBreakDown ? (
+                    <BreakdownMaybe
+                      orderBreakdown={orderBreakdown}
+                      processName={stateData.processName}
+                      priceVariantName={priceVariantName}
+                    />
+                  ) : null}
                   <DiminishedActionButtonMaybe
+                    id="mobile_disputeOrderButton"
                     showDispute={stateData.showDispute}
                     onOpenDisputeModal={onOpenDisputeModal}
                   />
@@ -344,13 +376,15 @@ export class TransactionPanelComponent extends Component {
             {stateData.showActionButtons ? (
               <>
                 <div className={css.mobileActionButtonSpacer}></div>
-                <div className={css.mobileActionButtons}>{actionButtons}</div>
+                <div className={css.mobileActionButtons}>{actionButtons('mobile')}</div>
               </>
             ) : null}
           </div>
 
           <div className={css.asideDesktop}>
-            <div className={css.stickySection}>
+            <div
+              className={classNames(css.stickySection, { [css.noListingImage]: !showListingImage })}
+            >
               <div className={css.detailCard}>
                 <DetailCardImage
                   avatarWrapperClassName={css.avatarWrapperDesktop}
@@ -382,18 +416,21 @@ export class TransactionPanelComponent extends Component {
                   intl={intl}
                 />
                 {showOrderPanel ? orderPanel : null}
-                <BreakdownMaybe
-                  className={css.breakdownContainer}
-                  orderBreakdown={orderBreakdown}
-                  processName={stateData.processName}
-                  priceVariantName={priceVariantName}
-                />
+                {showBreakDown ? (
+                  <BreakdownMaybe
+                    className={css.breakdownContainer}
+                    orderBreakdown={orderBreakdown}
+                    processName={stateData.processName}
+                    priceVariantName={priceVariantName}
+                  />
+                ) : null}
 
                 {stateData.showActionButtons ? (
-                  <div className={css.desktopActionButtons}>{actionButtons}</div>
+                  <div className={css.desktopActionButtons}>{actionButtons('desktop')}</div>
                 ) : null}
               </div>
               <DiminishedActionButtonMaybe
+                id="desktop_disputeOrderButton"
                 showDispute={stateData.showDispute}
                 onOpenDisputeModal={onOpenDisputeModal}
               />
