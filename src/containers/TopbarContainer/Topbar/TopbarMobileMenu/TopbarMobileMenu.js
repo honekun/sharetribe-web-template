@@ -155,7 +155,7 @@ const TopbarMobileMenu = props => {
             hasClientSideContentReady={authenticatedOnClientSide || !isAuthenticatedOrJustHydrated}
           />
 
-          <div className={css.customLinksWrapper}>{extraLinks}</div>
+          <ul className={css.customLinksWrapper}>{extraLinks}</ul>
 
           <div className={css.spacer} />
         </div>

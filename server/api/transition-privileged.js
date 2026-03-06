@@ -6,6 +6,7 @@ const {
   isIntentionToMakeCounterOffer,
   isIntentionToMakeOffer,
   isIntentionToRevokeCounterOffer,
+  isIntentionToUpdateOffer,
   throwErrorIfNegotiationOfferHasInvalidHistory,
 } = require('../api-util/negotiation');
 const {
@@ -26,13 +27,54 @@ const getListingRelationShip = transactionShowAPIData => {
   return included.find(i => i.id.uuid === listingRef.data.id.uuid);
 };
 
+// When a provider is making an offer, make sure that customer related
+// protected data is not being saved
+const getRoleBasedBodyParams = (orderData, bodyParams) => {
+  const { offerInSubunits } = orderData || {};
+  const transitionName = bodyParams?.transition;
+  const isProviderOffer =
+    isIntentionToMakeOffer(offerInSubunits, transitionName) ||
+    isIntentionToUpdateOffer(offerInSubunits, transitionName);
+
+  if (!isProviderOffer) {
+    return bodyParams;
+  } else {
+    const protectedData = bodyParams?.params?.protectedData || {};
+
+    const filteredProtectedData = Object.entries(protectedData).reduce(
+      (validEntries, [key, value]) => {
+        if (key === 'customerDefaultMessage' || key.startsWith('customer_')) {
+          return validEntries;
+        } else {
+          return { ...validEntries, [key]: value };
+        }
+      },
+      {}
+    );
+
+    return {
+      ...bodyParams,
+      params: {
+        ...bodyParams.params,
+        protectedData: filteredProtectedData,
+      },
+    };
+  }
+};
+
 const getFullOrderData = (orderData, bodyParams, currency, offers) => {
   const { offerInSubunits } = orderData || {};
   const transitionName = bodyParams.transition;
-  const orderDataAndParams = { ...orderData, ...bodyParams.params, currency };
 
-  return isIntentionToMakeOffer(offerInSubunits, transitionName) ||
-    isIntentionToMakeCounterOffer(offerInSubunits, transitionName)
+  const roleBasedBodyParams = getRoleBasedBodyParams(orderData, bodyParams);
+  const orderDataAndParams = { ...orderData, ...roleBasedBodyParams.params, currency };
+
+  const isNewOffer =
+    isIntentionToMakeOffer(offerInSubunits, transitionName) ||
+    isIntentionToMakeCounterOffer(offerInSubunits, transitionName) ||
+    isIntentionToUpdateOffer(offerInSubunits, transitionName);
+
+  return isNewOffer
     ? {
         ...orderDataAndParams,
         offer: new Money(offerInSubunits, currency),
@@ -53,7 +95,8 @@ const getUpdatedMetadata = (orderData, transition, existingMetadata) => {
 
   const isNewOffer =
     isIntentionToMakeOffer(offerInSubunits, transition) ||
-    isIntentionToMakeCounterOffer(offerInSubunits, transition);
+    isIntentionToMakeCounterOffer(offerInSubunits, transition) ||
+    isIntentionToUpdateOffer(offerInSubunits, transition);
 
   return isNewOffer
     ? addOfferToMetadata(existingMetadata, {
@@ -71,7 +114,7 @@ const getUpdatedMetadata = (orderData, transition, existingMetadata) => {
 };
 
 module.exports = (req, res) => {
-  const { isSpeculative, orderData, bodyParams, queryParams } = req.body;
+  const { isSpeculative, orderData, bodyParams, queryParams } = req.body || {};
 
   const sdk = getSdk(req, res);
   const transitionName = bodyParams.transition;
@@ -111,8 +154,15 @@ module.exports = (req, res) => {
       return getTrustedSdk(req);
     })
     .then(trustedSdk => {
+      // Pass role based params to make sure that protectedData only contains protected data
+      // for the correct role.
+      // - For the default-negotiation process, this removes any customer
+      //   related protected data fields if the transition is from a provider
+      // - If you customize the transaction process to allow customers to update protected data
+      //   after a provider's offer, you can add that logic in this same function.
+      const roleBasedBodyParams = getRoleBasedBodyParams(orderData, bodyParams);
       // Omit listingId from params (transition/request-payment-after-inquiry does not need it)
-      const { listingId, ...restParams } = bodyParams?.params || {};
+      const { listingId, ...restParams } = roleBasedBodyParams?.params || {};
 
       // Add lineItems to the body params
       const body = {

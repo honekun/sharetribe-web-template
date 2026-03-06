@@ -14,6 +14,116 @@ way to update this template, but currently, we follow a pattern:
 
 ## Upcoming version 2026-XX-XX
 
+- [fix] Modify listing card price classes
+  [#796](https://github.com/sharetribe/web-template/pull/796)
+
+## [v10.13.0] 2026-02-26
+
+- [change] Hides listing description input/display when option is toggled off in Console > Listing
+  types > Default listing fields [#767](https://github.com/sharetribe/web-template/pull/767)
+- [change] ListingCard: refactor and add aria-label attribute to the component.
+  [#787](https://github.com/sharetribe/web-template/pull/787)
+- [fix] FieldSelectIntegerRange: fix aria-attributes.
+  [#786](https://github.com/sharetribe/web-template/pull/786)
+- [add] Add currently available translations for DE, ES, FR.
+  [#790](https://github.com/sharetribe/web-template/pull/790)
+
+  [v10.13.0]: https://github.com/sharetribe/web-template/compare/v10.12.1...v10.13.0
+
+## [v10.12.1] 2026-02-24
+
+- [fix] Fix submitting inquiry without transaction fields
+  [#788](https://github.com/sharetribe/web-template/pull/788)
+- [add] Prevent saving customer fields when provider is making an offer
+  [#785](https://github.com/sharetribe/web-template/pull/785)
+- [fix] Remove location heading for listing types with no location
+  [#783](https://github.com/sharetribe/web-template/pull/783)
+- [fix] Fix boolean support for transaction fields
+  [#782](https://github.com/sharetribe/web-template/pull/782)
+- [add] Fix a Marketplace text [#784](https://github.com/sharetribe/web-template/pull/784)
+- [add] Add currently available translations for DE, ES, FR.
+  [#781](https://github.com/sharetribe/web-template/pull/781)
+
+  [v10.12.0]: https://github.com/sharetribe/web-template/compare/v10.12.0...v10.12.1
+
+## [v10.12.0] 2026-02-19
+
+- [add] Add transaction fields based on Console configuration
+
+  This PR prepares the codebase for using transaction field configurations that will be a part of
+  the listing type asset. Operators can define transaction fields per listing type.
+
+  [#737](https://github.com/sharetribe/web-template/pull/737)
+
+  [v10.12.0]: https://github.com/sharetribe/web-template/compare/v10.11.0...v10.12.0
+
+## [v10.11.0] 2026-02-12
+
+- [add] Add AGENTS.md file to provide context for LLMs.
+  [#765](https://github.com/sharetribe/web-template/pull/765)
+- [fix] Routes.js: fix a bug with hash selector. (CSS.escape was not used correctly.)
+  [#774](https://github.com/sharetribe/web-template/pull/774)
+- [fix] SearchPage.shared.js: fix a bug with keywords search type. (SortBy doesn't pick relevance
+  option when keywords search is active.)
+  [#772](https://github.com/sharetribe/web-template/pull/772)
+- [change] SearchCTA/FilterDateRange: tune scroll behaviour.
+  [#771](https://github.com/sharetribe/web-template/pull/771)
+- [fix] Routes.js: document.querySelector must have valid CSS id.
+  [#773](https://github.com/sharetribe/web-template/pull/773)
+- [fix] richText.js: fix a bug with break chars configuration. Old comma rule caused text flow
+  issues. [#770](https://github.com/sharetribe/web-template/pull/770)
+- [fix] TopbarMobileMenu: logged out user saw bullet points in custom links.
+  [#769](https://github.com/sharetribe/web-template/pull/769)
+- [fix] ListingPage.duck.js: fix a bug where inquiry is not allowed for customer role on OFFER flow.
+  [#768](https://github.com/sharetribe/web-template/pull/768)
+
+- [fix] EditListingPage.duck.js: fix a bug where exception cache was not updated correctly.
+  [#766](https://github.com/sharetribe/web-template/pull/766)
+
+  [v10.11.0]: https://github.com/sharetribe/web-template/compare/v10.10.1...v10.11.0
+
+## [v10.10.1] 2026-02-04
+
+- [fix] SearchMapWithMapbox: fix a bug with info card marker container not being removed correctly.
+  [#763](https://github.com/sharetribe/web-template/pull/763)
+
+  [v10.10.1]: https://github.com/sharetribe/web-template/compare/v10.10.0...v10.10.1
+
+## [v10.10.0] 2026-02-03
+
+- [change] Improve map library loading strategy.
+  [#733](https://github.com/sharetribe/web-template/pull/733)
+- [fix] FilterDateRange: fix a bug with browser autoscrolling the dropdown too much.
+  [#761](https://github.com/sharetribe/web-template/pull/761)
+- [change] Update an Email text in the default-purchase transaction process
+  [#758](https://github.com/sharetribe/web-template/pull/758)
+- [fix] errors.js: fix a bug with error status checking.
+  [#756](https://github.com/sharetribe/web-template/pull/756)
+- [change] Remove or rewrite some lodash functions that could be achieved with native JavaScript.
+  [#755](https://github.com/sharetribe/web-template/pull/755)
+- [add] Update several dependencies. Including Express, body-parser, and
+  @testing-library/user-event. These might cause rewrites to some files in your project.
+  [#754](https://github.com/sharetribe/web-template/pull/754)
+- [add] Add currently available translations for DE, ES, FR.
+  [#753](https://github.com/sharetribe/web-template/pull/753)
+
+  [v10.10.0]: https://github.com/sharetribe/web-template/compare/v10.9.0...v10.10.0
+
+## [v10.9.0] 2026-01-26
+
+- [add] Add support for provider-driven negotiation loop ("Update offer" loop). With this loop, the
+  provider can update the offer they made on default-negotiation process.
+  [#735](https://github.com/sharetribe/web-template/pull/735)
+
+[v10.9.0]: https://github.com/sharetribe/web-template/compare/v10.8.1...v10.9.0
+
+## [v10.8.1] 2026-01-21
+
+- [fix] EditListingDetailsPanel: fix a bug with preselected listing type not being set correctly.
+  [#750](https://github.com/sharetribe/web-template/pull/750)
+
+  [v10.8.1]: https://github.com/sharetribe/web-template/compare/v10.8.0...v10.8.1
+
 ## [v10.8.0] 2026-01-20
 
 - [fix] Menu: fix a bug with focus handling on iOS Safari.
@@ -28,6 +138,8 @@ way to update this template, but currently, we follow a pattern:
   [#745](https://github.com/sharetribe/web-template/pull/745)
 - [change] Update React Redux from v8.1.2 to v9.2.0 and Redux Toolkit from v2.9.0 to v2.11.2.
   [#742](https://github.com/sharetribe/web-template/pull/742)
+
+  [v10.8.0]: https://github.com/sharetribe/web-template/compare/v10.7.0...v10.8.0
 
 ## [v10.7.0] 2026-01-15
 

@@ -3,12 +3,12 @@ import { connect } from 'react-redux';
 import { compose } from 'redux';
 import { useHistory, useLocation } from 'react-router-dom';
 import debounce from 'lodash/debounce';
-import omit from 'lodash/omit';
 import classNames from 'classnames';
 
 import { useConfiguration } from '../../context/configurationContext';
 import { useRouteConfiguration } from '../../context/routeConfigurationContext';
 
+import { omit } from '../../util/common';
 import { useIntl, FormattedMessage } from '../../util/reactIntl';
 import {
   isAnyFilterActive,
@@ -361,7 +361,7 @@ export class SearchPageComponent extends Component {
     const { listingType: listingTypePathParam } = currentPathParams;
 
     const { listingFields } = config?.listing || {};
-    const { defaultFilters: defaultFiltersRaw, sortConfig } = config?.search || {};
+    const { defaultFilters: defaultFiltersRaw, sortConfig, mainSearch } = config?.search || {};
 
     const activeListingTypes = config?.listing?.listingTypes.map(config => config.listingType);
     const defaultFiltersConfig = listingTypePathParam
@@ -384,6 +384,7 @@ export class SearchPageComponent extends Component {
       listingCategories,
       activeListingTypes,
       currentPathParams,
+      mainSearch,
     };
 
     // Page transition might initially use values from previous search
@@ -394,6 +395,7 @@ export class SearchPageComponent extends Component {
       searchParams,
       filterConfigs,
       sortConfig,
+      mainSearch,
       isOriginInUse(config)
     );
 

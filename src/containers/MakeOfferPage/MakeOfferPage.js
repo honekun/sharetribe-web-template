@@ -9,6 +9,7 @@ import { types as sdkTypes } from '../../util/sdkLoader.js';
 import { useConfiguration } from '../../context/configurationContext.js';
 import { useRouteConfiguration } from '../../context/routeConfigurationContext.js';
 import { userDisplayNameAsString } from '../../util/data.js';
+import { LISTING_UNIT_TYPES } from '../../util/types.js';
 import { isErrorNoPermissionForInitiateTransactions } from '../../util/errors.js';
 import {
   NO_ACCESS_PAGE_INITIATE_TRANSACTIONS,
@@ -16,14 +17,22 @@ import {
   parse,
 } from '../../util/urlHelpers.js';
 import { hasPermissionToInitiateTransactions, isUserAuthorized } from '../../util/userHelpers.js';
-import { displayPrice } from '../../util/configHelpers.js';
+import {
+  allowProviderUpdateOffer,
+  displayPrice,
+  requireListingImage,
+} from '../../util/configHelpers.js';
 import { pathByRouteName } from '../../util/routes.js';
 import {
+  getProcess,
   NEGOTIATION_PROCESS_NAME,
   REQUEST,
   resolveLatestProcessName,
 } from '../../transactions/transaction.js';
-import { requireListingImage } from '../../util/configHelpers.js';
+import {
+  initialValuesForTransactionFields,
+  pickTransactionFieldsData,
+} from '../../util/fieldHelpers.js';
 
 // Import global thunk functions
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck.js';
@@ -62,7 +71,7 @@ const getTransactionTypeData = (listingType, unitTypeInPublicData, config) => {
   return unitTypeInPublicData ? { unitType: unitTypeInPublicData, ...rest } : {};
 };
 
-const handleSubmit = (submitting, setSubmitting, props) => values => {
+const handleSubmit = (submitting, setSubmitting, props, transactionFieldConfigs) => values => {
   if (submitting) {
     return;
   }
@@ -82,17 +91,26 @@ const handleSubmit = (submitting, setSubmitting, props) => values => {
   const searchParams = parse(location.search);
   const transactionId = searchParams.transactionId;
 
-  const { providerDefaultMessage, customerDefaultMessage, quote } = values;
+  const { providerDefaultMessage, quote } = values;
 
   const { listingType, transactionProcessAlias, unitType } = listing?.attributes?.publicData || {};
+
+  const isOwnListing = listing.author.id === currentUser.id;
+  const isRequest = unitType === REQUEST;
+  const isCurrentUserCustomer = isOwnListing && isRequest;
 
   // These are the inquiry parameters for the (one and only) transition
   const makeOfferParams = {
     listingId: listing?.id,
     protectedData: {
       ...(providerDefaultMessage ? { providerDefaultMessage } : {}),
-      ...(customerDefaultMessage ? { customerDefaultMessage } : {}),
       ...getTransactionTypeData(listingType, unitType, config),
+      ...pickTransactionFieldsData(
+        values,
+        'protected',
+        isCurrentUserCustomer,
+        transactionFieldConfigs
+      ),
     },
     offerInSubunits: quote?.amount,
     currency: quote?.currency,
@@ -108,9 +126,9 @@ const handleSubmit = (submitting, setSubmitting, props) => values => {
 
       // Currently, only provider is going to see this page. They should be redirected to the SaleDetailsPage
       // If unitType is 'request', then the author of the listing is 'customer' ('offer' and other unit types are created by provider)
-      const isOwnListing = listing.author.id === currentUser.id;
-      const isRequest = unitType === REQUEST;
-      const isCurrentUserCustomer = isOwnListing && isRequest;
+      // const isOwnListing = listing.author.id === currentUser.id;
+      // const isRequest = unitType === REQUEST;
+      // const isCurrentUserCustomer = isOwnListing && isRequest;
       const transactionPage = isCurrentUserCustomer ? 'OrderDetailsPage' : 'SaleDetailsPage';
       const txDetailsPath = pathByRouteName(transactionPage, routeConfiguration, {
         id: transaction?.id?.uuid,
@@ -145,13 +163,13 @@ const MakeOfferPageComponent = props => {
     stripeAccount,
     stripeAccountFetched,
     listing,
+    transaction,
     pageTitle,
     makeOfferError,
   } = props;
 
-  const onSubmit = handleSubmit(submitting, setSubmitting, props);
   const listingTitle = listing?.attributes?.title;
-  const { price, publicData } = listing?.attributes || {};
+  const { price: listingPrice, publicData } = listing?.attributes || {};
   const firstImage = listing?.images?.length > 0 ? listing.images[0] : null;
 
   const listingType = publicData?.listingType;
@@ -160,6 +178,10 @@ const MakeOfferPageComponent = props => {
   const showPrice = displayPrice(listingTypeConfig);
   const showListingImage = requireListingImage(listingTypeConfig);
   const showLocation = publicData?.unitType !== 'offer';
+  const isUpdateOfferEnabled = allowProviderUpdateOffer(listingTypeConfig);
+  const transactionFieldConfigs = listingTypeConfig?.transactionFields || [];
+
+  const onSubmit = handleSubmit(submitting, setSubmitting, props, transactionFieldConfigs);
 
   const stripeConnected = currentUser?.attributes?.stripeConnected;
   const stripeAccountData = stripeConnected ? getStripeAccountData(stripeAccount) : null;
@@ -168,6 +190,32 @@ const MakeOfferPageComponent = props => {
     stripeAccountData &&
     (hasRequirements(stripeAccountData, 'past_due') ||
       hasRequirements(stripeAccountData, 'currently_due'));
+
+  const hasLineItems = transaction?.attributes?.lineItems?.length > 0;
+  const unitLineItem = hasLineItems
+    ? transaction.attributes?.lineItems?.find(
+        item => LISTING_UNIT_TYPES.includes(item.code) && !item.reversal
+      )
+    : null;
+  const currentOffer = unitLineItem?.lineTotal;
+
+  const process = processName ? getProcess(processName) : null;
+  const updateOfferStates = process
+    ? [process.states.OFFER_PENDING, process.states.UPDATE_PENDING].map(
+        stateId => `state/${stateId}`
+      )
+    : [];
+  const isUpdateOffer =
+    isUpdateOfferEnabled && updateOfferStates.includes(transaction?.attributes?.state);
+  const price = isUpdateOffer ? currentOffer : listingPrice;
+  const providerDefaultMessage = isUpdateOffer
+    ? transaction.attributes?.protectedData?.providerDefaultMessage
+    : null;
+
+  const transactionFieldInitialValues = initialValuesForTransactionFields(
+    transaction?.attributes?.protectedData,
+    transactionFieldConfigs
+  );
 
   return (
     <Page title={pageTitle} scrollingDisabled={scrollingDisabled}>
@@ -206,10 +254,13 @@ const MakeOfferPageComponent = props => {
               intl={intl}
               config={config}
               price={price}
+              providerDefaultMessage={providerDefaultMessage}
               stripeConnected={stripeConnected && stripeAccountData && !requirementsMissing}
               onSubmit={onSubmit}
               errorMessageComponent={ErrorMessage}
               makeOfferError={makeOfferError}
+              transactionFieldConfigs={transactionFieldConfigs}
+              transactionFieldInitialValues={transactionFieldInitialValues}
             />
           </section>
         </main>
@@ -250,7 +301,8 @@ const EnhancedMakeOfferPage = props => {
   const listing = getListing(listingId);
   const searchParams = parse(location.search);
   const transactionId = searchParams.transactionId;
-  const transaction = transactionId ? getTransaction(transactionId) : null;
+  const txId = new UUID(transactionId);
+  const transaction = transactionId ? getTransaction(txId) : null;
 
   const processName = getProcessName(transaction, listing);
   const isNegotiationProcess = processName === NEGOTIATION_PROCESS_NAME;
@@ -302,6 +354,7 @@ const EnhancedMakeOfferPage = props => {
       history={history}
       processName={processName}
       listing={listing}
+      transaction={transaction}
       pageTitle={pageTitle}
       onSubmitCallback={() => {}}
       {...props}

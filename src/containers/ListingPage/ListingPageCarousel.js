@@ -57,6 +57,7 @@ import {
   NamedRedirect,
   OrderPanel,
   LayoutSingleColumn,
+  SectionText,
 } from '../../components';
 
 // Related components and modules
@@ -84,7 +85,6 @@ import {
   priceForSchemaMaybe,
 } from './ListingPage.shared';
 import ActionBarMaybe from './ActionBarMaybe';
-import SectionTextMaybe from './SectionTextMaybe';
 import SectionReviews from './SectionReviews';
 import SectionAuthorMaybe from './SectionAuthorMaybe';
 import SectionMapMaybe from './SectionMapMaybe';
@@ -216,6 +216,7 @@ export const ListingPageComponent = props => {
   const validListingTypes = listingConfig.listingTypes;
   const foundListingTypeConfig = validListingTypes.find(conf => conf.listingType === listingType);
   const showListingImage = requireListingImage(foundListingTypeConfig);
+  const showDescription = foundListingTypeConfig?.defaultListingFields?.description;
 
   const processName = resolveLatestProcessName(transactionProcessAlias.split('/')[0]);
   const isBooking = isBookingProcess(processName);
@@ -393,7 +394,7 @@ export const ListingPageComponent = props => {
                 </H3>
               )}
             </div>
-            <SectionTextMaybe text={description} showAsIngress />
+            {showDescription && <SectionText text={description} showAsIngress />}
 
             <CustomListingFields
               publicData={publicData}
