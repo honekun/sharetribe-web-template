@@ -99,6 +99,24 @@ const ProfileMenu = ({ currentPage, currentUser, onLogout, showManageListingsLin
             </NamedLink>
           </MenuItem>
         ) : null}
+        <MenuItem key="MyPurchasesPage">
+          <NamedLink
+            className={classNames(css.menuLink, currentPageClass('MyPurchasesPage'))}
+            name="MyPurchasesPage"
+          >
+            <span className={css.menuItemBorder} />
+            <FormattedMessage id="TopbarDesktop.myPurchasesLink" />
+          </NamedLink>
+        </MenuItem>
+        <MenuItem key="MySalesPage">
+          <NamedLink
+            className={classNames(css.menuLink, currentPageClass('MySalesPage'))}
+            name="MySalesPage"
+          >
+            <span className={css.menuItemBorder} />
+            <FormattedMessage id="TopbarDesktop.mySalesLink" />
+          </NamedLink>
+        </MenuItem>
         <MenuItem key="ProfileSettingsPage">
           <NamedLink
             className={classNames(css.menuLink, currentPageClass('ProfileSettingsPage'))}

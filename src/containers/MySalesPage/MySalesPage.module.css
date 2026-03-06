@@ -1,0 +1,140 @@
+@import '../../styles/customMediaQueries.css';
+
+.mobileTopbar {
+  width: 100%;
+  height: var(--topbarHeight);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--colorWhite);
+  box-shadow: none;
+
+  @media (--viewportMedium) {
+    height: var(--topbarHeightDesktop);
+  }
+
+  @media (--viewportLarge) {
+    display: none;
+  }
+}
+
+.desktopTopbar,
+.mobileTopbar {
+  box-shadow: none;
+
+  @media (--viewportLarge) {
+    box-shadow: var(--boxShadowLight);
+  }
+}
+
+.title {
+  align-self: center;
+  padding: 0px 0 8px 0;
+  margin-top: 0;
+  margin-bottom: 0;
+
+  @media (--viewportMedium) {
+    padding: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  @media (--viewportLarge) {
+    padding: 5px 0 3px 0;
+    align-self: unset;
+  }
+}
+
+.navigation {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 29px 24px 0 24px;
+  border-top-width: 1px;
+  border-top-color: var(--colorGrey100);
+  border-top-style: solid;
+  background-color: var(--colorWhite);
+  box-shadow: var(--boxShadow);
+
+  @media (--viewportMedium) {
+    padding: 24px 24px 0 24px;
+  }
+
+  @media (--viewportLarge) {
+    flex-wrap: unset;
+    padding: 40px 0 82px 36px;
+    flex-direction: column;
+    justify-content: flex-start;
+    border: none;
+    box-shadow: none;
+    background-color: transparent;
+  }
+
+  @media (--viewportLargeWithPaddings) {
+    padding: 40px 0 82px calc((100% - 1056px) / 2);
+  }
+}
+
+.error {
+  color: var(--colorFail);
+  margin: 23px 24px 24px 24px;
+
+  @media (--viewportLarge) {
+    margin-top: 18px;
+  }
+}
+
+.noResults {
+  margin-left: 24px;
+  margin-right: 24px;
+  margin-top: 1px;
+
+  @media (--viewportLarge) {
+    margin-top: 25px;
+  }
+}
+
+.itemList {
+  margin: 0;
+  padding: 0;
+}
+
+@keyframes loadingSpinnerFadeIn {
+  0% { opacity: 0; }
+  50% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.listItemsLoading {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  height: 60px;
+  width: 100%;
+  opacity: 0;
+  animation-duration: 1s;
+  animation-name: loadingSpinnerFadeIn;
+  animation-fill-mode: forwards;
+}
+
+.listItem {
+  margin-bottom: 10px;
+  padding-bottom: 12px;
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+  border-bottom-color: var(--colorGrey100);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  @media (--viewportLarge) {
+    margin-bottom: 16px;
+  }
+}
+
+.pagination {
+  margin: auto 24px 0 24px;
+}
