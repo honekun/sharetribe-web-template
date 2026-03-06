@@ -25,6 +25,8 @@ const ListingPageCoverPhoto = loadable(() => import(/* webpackChunkName: "Listin
 const ListingPageCarousel = loadable(() => import(/* webpackChunkName: "ListingPageCarousel" */ /* webpackPrefetch: true */ '../containers/ListingPage/ListingPageCarousel'));
 const ManageListingsPage = loadable(() => import(/* webpackChunkName: "ManageListingsPage" */ '../containers/ManageListingsPage/ManageListingsPage'));
 const ManageAccountPage = loadable(() => import(/* webpackChunkName: "ManageAccountPage" */ '../containers/ManageAccountPage/ManageAccountPage'));
+const MyPurchasesPage = loadable(() => import(/* webpackChunkName: "MyPurchasesPage" */ '../containers/MyPurchasesPage/MyPurchasesPage'));
+const MySalesPage = loadable(() => import(/* webpackChunkName: "MySalesPage" */ '../containers/MySalesPage/MySalesPage'));
 const PasswordChangePage = loadable(() => import(/* webpackChunkName: "PasswordChangePage" */ '../containers/PasswordChangePage/PasswordChangePage'));
 const PasswordRecoveryPage = loadable(() => import(/* webpackChunkName: "PasswordRecoveryPage" */ '../containers/PasswordRecoveryPage/PasswordRecoveryPage'));
 const PasswordResetPage = loadable(() => import(/* webpackChunkName: "PasswordResetPage" */ '../containers/PasswordResetPage/PasswordResetPage'));
@@ -262,6 +264,22 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       authPage: 'LoginPage',
       component: InboxPage,
       loadData: pageDataLoadingAPI.InboxPage.loadData,
+    },
+    {
+      path: '/my-purchases',
+      name: 'MyPurchasesPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: MyPurchasesPage,
+      loadData: pageDataLoadingAPI.MyPurchasesPage.loadData,
+    },
+    {
+      path: '/my-sales',
+      name: 'MySalesPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: MySalesPage,
+      loadData: pageDataLoadingAPI.MySalesPage.loadData,
     },
     {
       path: '/order/:id',
