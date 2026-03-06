@@ -42,7 +42,7 @@ export const loadData = (params, search) => (dispatch, getState, sdk) => {
   // when multiple dispatches run concurrently. The data is stored in the
   // CMSPage's own slice rather than hostedAssets.
   const version = getState()?.hostedAssets?.version;
-  const fetchAsset = version
+  const fetchAsset = version != null
     ? path => sdk.assetByVersion({ path, version })
     : path => sdk.assetByAlias({ path, alias: 'latest' });
 

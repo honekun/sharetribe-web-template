@@ -5,6 +5,16 @@ import { getRecommendedListingIds, getSelectionsSections, hasCustomSections } fr
 
 const { UUID } = sdkTypes;
 
+// AV-specific listing fields fetched for landing page sections.
+// Keep in sync with publicData fields defined in configListing.js.
+const AV_LISTING_PUBLIC_DATA_FIELDS = [
+  'publicData.listingType',
+  'publicData.transactionProcessAlias',
+  'publicData.unitType',
+  'publicData.brand',
+  'publicData.talla',
+];
+
 const createListingsQueryParams = (config = {}, listingIds = []) => {
   const listingImage = config?.layout?.listingImage || {};
   const {
@@ -18,17 +28,7 @@ const createListingsQueryParams = (config = {}, listingIds = []) => {
   return {
     ids,
     include: ['author', 'author.profileImage', 'images'],
-    'fields.listing': [
-      'title',
-      'price',
-      'deleted',
-      'state',
-      'publicData.listingType',
-      'publicData.transactionProcessAlias',
-      'publicData.unitType',
-      'publicData.brand',
-      'publicData.talla',
-    ],
+    'fields.listing': ['title', 'price', 'deleted', 'state', ...AV_LISTING_PUBLIC_DATA_FIELDS],
     'fields.user': ['profile.displayName', 'profile.abbreviatedName', 'profile.image'],
     'fields.image': [
       'variants.square-xsmall2x',
