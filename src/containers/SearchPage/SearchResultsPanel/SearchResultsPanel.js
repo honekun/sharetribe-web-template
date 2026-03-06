@@ -30,6 +30,7 @@ const SearchResultsPanel = props => {
     setActiveListing,
     isMapVariant = true,
     listingTypeParam,
+    intl,
   } = props;
   const classes = classNames(rootClassName || css.root, className);
   const pageName = listingTypeParam ? 'SearchPageWithListingType' : 'SearchPage';
@@ -42,6 +43,7 @@ const SearchResultsPanel = props => {
         pagePathParams={{ listingType: listingTypeParam }}
         pageSearchParams={search}
         pagination={pagination}
+        aria-label={intl.formatMessage({ id: 'SearchResultsPanel.screenreader.pagination' })}
       />
     ) : null;
 
@@ -72,20 +74,21 @@ const SearchResultsPanel = props => {
 
   return (
     <div className={classes}>
-      <div className={isMapVariant ? css.listingCardsMapVariant : css.listingCards}>
+      <ul className={isMapVariant ? css.listingCardsMapVariant : css.listingCards}>
         {listings.map(l => (
-          <AVListingCard
-            className={css.listingCard}
-            key={l.id.uuid}
-            listing={l}
-            renderSizes={cardRenderSizes(isMapVariant)}
-            setActiveListing={setActiveListing}
-            showListingTitle={false}
-            showTallCards={false}
-          />
+          <li key={l.id.uuid} className={css.resultItem}>
+            <AVListingCard
+              className={css.listingCard}
+              listing={l}
+              renderSizes={cardRenderSizes(isMapVariant)}
+              setActiveListing={setActiveListing}
+              showListingTitle={true}
+              showTallCards={false}
+            />
+          </li>
         ))}
         {props.children}
-      </div>
+      </ul>
       {paginationLinks}
     </div>
   );

@@ -30,28 +30,33 @@ const PriceMaybe = props => {
   }
 
   const isBookable = isBookingProcessAlias(publicData?.transactionProcessAlias);
+  if (!price) {
+    return null;
+  }
 
-  const customFormatPrice = (amount, currency) => {
+  const customFormatPrice = money => {
+    const { amount, currency } = money || {};
     if (currency === 'MXN') {
-      const decimal = (amount / 100).toFixed(2); // Convert from cents
-      return `$${decimal.replace(',', '.')}`;   // Force dot
+      const decimal = (amount / 100).toFixed(2);
+      return `$${decimal.replace(',', '.')}`;
     }
 
-    return formatMoney(intl, { amount, currency });
+    return formatMoney(intl, money);
   };
-  const fixedPrice = customFormatPrice(price.amount, price.currency);
+  const fixedPrice = customFormatPrice(price);
   const priceTitle = fixedPrice;
+  const priceValue = <span className={css.priceValue}>{fixedPrice}</span>;
+  const pricePerUnit = isBookable ? (
+    <span className={css.perUnit}>
+      <FormattedMessage id="ListingCard.perUnit" values={{ unitType: publicData?.unitType }} />
+    </span>
+  ) : (
+    ''
+  );
 
   return (
-    <div className={css.price}>
-      <div className={css.priceValue} title={priceTitle}>
-        {fixedPrice}
-      </div>
-      {isBookable ? (
-        <div className={css.perUnit}>
-          <FormattedMessage id="ListingCard.perUnit" values={{ unitType: publicData?.unitType }} />
-        </div>
-      ) : null}
+    <div className={css.price} title={priceTitle}>
+      <FormattedMessage id="ListingCard.price" values={{ priceValue, pricePerUnit }} />
     </div>
   );
 };
@@ -87,8 +92,9 @@ export const AVListingCard = props => {
   const id = currentListing.id.uuid;
   const { title = '', price, publicData } = currentListing.attributes;
   const slug = createSlug(title);
-  const author = ensureUser(listing.author);
-  const authorName = author.attributes.profile.displayName;
+  const author = ensureUser(listing?.author);
+  const authorName = author?.attributes?.profile?.displayName || '';
+  const authorId = author?.id?.uuid;
   const firstImage =
     currentListing.images && currentListing.images.length > 0 ? currentListing.images[0] : null;
 
@@ -154,7 +160,7 @@ export const AVListingCard = props => {
 
         {publicData?.talla ? (
           <div className={css.sizes}>
-            Talla:{' '}
+            <FormattedMessage id="AVListingCard.sizeLabel" />{' '}
             {
               (config.listing.listingFields.find(f => f.key === 'talla')?.enumOptions || [])
                 .find(opt => opt.option === publicData?.talla)?.label || publicData?.talla
@@ -166,9 +172,15 @@ export const AVListingCard = props => {
           {showAuthorInfo ? (
             <div className={css.authorInfo}>
               <AvatarSmall user={author} className={css.providerAvatar} />
-              <NamedLink title={authorName} name="ProfilePage" params={{ id: author.id.uuid }}>
-                <FormattedMessage id="ListingCard.author" values={{ authorName }} />
-              </NamedLink>
+              {authorId ? (
+                <NamedLink title={authorName} name="ProfilePage" params={{ id: authorId }}>
+                  <FormattedMessage id="ListingCard.author" values={{ authorName }} />
+                </NamedLink>
+              ) : (
+                <span>
+                  <FormattedMessage id="ListingCard.author" values={{ authorName }} />
+                </span>
+              )}
             </div>
           ) : null}
         </div>

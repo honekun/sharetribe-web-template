@@ -1,5 +1,6 @@
 import React from 'react';
 import { parseSelectFilterOptions } from '../../../util/search';
+import { swatchColors } from '../../../components/FieldSwatch/FieldSwatch';
 import classNames from 'classnames';
 import css from './ColorFilter.module.css';
 
@@ -12,9 +13,6 @@ const ColorFilterComponent = props => {
     options,
     initialValues,
     onSelect,
-    name,
-
-    onSubmit,
     queryParamNames,
   } = props;
 
@@ -25,26 +23,19 @@ const ColorFilterComponent = props => {
     ? parseSelectFilterOptions(initialValues[queryParamName])
     : [];
 
-    console.log(selectedOptions)
-
-  // pass the initial values with the name key so that
-  // they can be passed to the correct field
-  //const namedInitialValues = { [name]: selectedOptions };
-
   return (
     <div className={css.container}>
       {options.map(opt => {
-        console.log(selectedOptions, opt)
-        //const hex = opt.metadata && opt.metadata.hex;
-        const hex2 = hexFromName(opt.option);
+        const hex = hexFromName(opt.option);
         const isSelected = selectedOptions.includes(opt.option);
         return (
           <button
             key={opt.key}
             className={classNames(css.swatch, { [css.selected]: isSelected })}
-            style={{ backgroundColor: hex2 }}
+            style={{ backgroundColor: hex }}
             onClick={() => onSelect(opt.key)}
-            title={opt.label}
+            aria-label={opt.label}
+            aria-pressed={isSelected}
           />
         );
       })}
@@ -53,10 +44,7 @@ const ColorFilterComponent = props => {
 };
 
 function hexFromName(name) {
-//    console.log(name)
-    // const hex = opt.metadata && opt.metadata.hex;
-
-    return '#000000';
+  return swatchColors[name] || '#000000';
 }
 
 export default ColorFilterComponent;

@@ -4,6 +4,11 @@
   --contentMaxWidthPages: 1370px;
   --contentPaddingX: 35px;
 
+  /* AV brand overrides — dark footer needs light text */
+  --footerCopyrightFontSize: 16px;
+  --footerCopyrightLineHeight: 24px;
+  --footerCopyrightColor: var(--colorWhite);
+
   border-top: 1px solid var(--colorGrey100);
 }
 
@@ -96,10 +101,10 @@
 
 .copyright {
   display: inline-block;
-  font-size: 16px;
-  line-height: 24px;
-  color: var(--colorWhite); /*var(--colorGrey500);*/
-  margin-top: 20px;
+  font-size: var(--footerCopyrightFontSize, 12px);
+  line-height: var(--footerCopyrightLineHeight, 16px);
+  color: var(--footerCopyrightColor, var(--colorGrey600));
+  margin-top: 24px;
 }
 
 .icons {

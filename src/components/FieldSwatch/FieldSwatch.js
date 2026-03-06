@@ -116,7 +116,7 @@ const FieldSwatch = props => {
   );
 };
 
-const swatchColors = {
+export const swatchColors = {
   rojo: '#ff0000',
   rosa: 'pink',
   amarillo: 'yellow',
@@ -133,7 +133,7 @@ const swatchColors = {
   cafe: 'brown',
 };
 
-const swatchBg = {
+export const swatchBg = {
   'animal-print': multicolorImg,
   'floral-print': multicolorImg,
   multicolor: multicolorImg,

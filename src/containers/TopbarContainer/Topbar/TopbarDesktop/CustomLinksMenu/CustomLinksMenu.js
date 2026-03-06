@@ -11,7 +11,6 @@ import { ExternalLink, NamedLink } from '../../../../../components';
 
 import css from './CustomLinksMenu.module.css';
 
-const draftId = '00000000-0000-0000-0000-000000000000';
 const createListingLinkConfigMaybe = (intl, showLink) =>
   showLink
     ? [
@@ -20,8 +19,7 @@ const createListingLinkConfigMaybe = (intl, showLink) =>
           text: intl.formatMessage({ id: 'TopbarDesktop.createListing' }),
           type: 'internal',
           route: {
-            name: 'EditListingPage',
-            params: { slug: 'draft', id: draftId, type: 'new', tab: 'details' },
+            name: 'NewListingPage',
           },
           highlight: true,
         },

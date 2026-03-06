@@ -1,0 +1,62 @@
+import {
+  AV_HERO_SECTION_TYPE,
+  AV_RECOMMENDEDS_SECTION_TYPE,
+  AV_SELECTIONS_SECTION_TYPE,
+} from './constants';
+import { loadCustomSectionListings, selectCustomSectionListings } from './listings';
+import { transformCustomSections } from './transform';
+
+let cachedSectionComponents;
+
+const getSectionComponents = () => {
+  if (cachedSectionComponents) {
+    return cachedSectionComponents;
+  }
+
+  const SectionHeroCustom = require('../../../containers/PageBuilder/SectionBuilder/SectionHeroCustom')
+    .default;
+  const SectionRecommendedListings = require('../../../containers/PageBuilder/SectionBuilder/SectionRecommendedListings')
+    .default;
+  const SectionSelectedListings = require('../../../containers/PageBuilder/SectionBuilder/SectionSelectedListings')
+    .default;
+
+  cachedSectionComponents = {
+    [AV_HERO_SECTION_TYPE]: { component: SectionHeroCustom },
+    [AV_RECOMMENDEDS_SECTION_TYPE]: { component: SectionRecommendedListings },
+    [AV_SELECTIONS_SECTION_TYPE]: { component: SectionSelectedListings },
+  };
+
+  return cachedSectionComponents;
+};
+
+export const loadDataExtension = ({ assetResp, dispatch, config }) => {
+  const pageData = assetResp?.landingPage?.data;
+  return loadCustomSectionListings({ pageData, dispatch, config });
+};
+
+export const selectExtensionProps = ({ state, pageData }) => {
+  return selectCustomSectionListings({ state, pageData });
+};
+
+export const getPageBuilderOptions = ({ extensionData }) => {
+  if (!extensionData?.hasCustomSections) {
+    return undefined;
+  }
+
+  return {
+    sectionComponents: getSectionComponents(),
+  };
+};
+
+export const transformPageData = ({ pageData, intl, extensionData }) => {
+  return transformCustomSections({ pageData, intl, extensionData });
+};
+
+export const avLandingPageExtension = {
+  loadDataExtension,
+  selectExtensionProps,
+  getPageBuilderOptions,
+  transformPageData,
+};
+
+export default avLandingPageExtension;

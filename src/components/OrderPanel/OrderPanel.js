@@ -26,15 +26,19 @@ import { formatMoney } from '../../util/currency';
 import { createSlug, parse, stringify } from '../../util/urlHelpers';
 import { userDisplayNameAsString } from '../../util/data';
 import {
-  INQUIRY_PROCESS_NAME,
+  OFFER,
+  REQUEST,
   getSupportedProcessesInfo,
   isBookingProcess,
+  isNegotiationProcess,
+  isInquiryProcess,
   isPurchaseProcess,
   resolveLatestProcessName,
 } from '../../transactions/transaction';
 
 import { ModalInMobile, PrimaryButton, AvatarSmall, H1, H2 } from '../../components';
 import PriceVariantPicker from './PriceVariantPicker/PriceVariantPicker';
+import SubmitFinePrint from './SubmitFinePrint/SubmitFinePrint';
 
 import css from './OrderPanel.module.css';
 
@@ -58,9 +62,20 @@ const ProductOrderForm = loadable(() =>
   import(/* webpackChunkName: "ProductOrderForm" */ './ProductOrderForm/ProductOrderForm')
 );
 
+const NegotiationForm = loadable(() =>
+  import(/* webpackChunkName: "NegotiationForm" */ './NegotiationForm/NegotiationForm')
+);
+
+const NegotiationRequestQuoteForm = loadable(() =>
+  import(
+    /* webpackChunkName: "NegotiationRequestQuoteForm" */ './NegotiationRequestQuoteForm/NegotiationRequestQuoteForm'
+  )
+);
+
 // This defines when ModalInMobile shows content as Modal
 const MODAL_BREAKPOINT = 1023;
 const TODAY = new Date();
+const ORDER_PANEL_SUBMIT_BUTTON_ID = 'orderPanelSubmitButton';
 
 const isPublishedListing = listing => {
   return listing.attributes.state === LISTING_STATE_PUBLISHED;
@@ -122,17 +137,10 @@ const closeOrderModal = (history, location) => {
   history.push(`${pathname}${searchString}`, state);
 };
 
-const handleSubmit = (
-  isOwnListing,
-  isClosed,
-  isInquiryWithoutPayment,
-  onSubmit,
-  history,
-  location
-) => {
+const handleSubmit = (isOwnListing, isClosed, isDirectSubmit, onSubmit, history, location) => {
   // TODO: currently, inquiry-process does not have any form to ask more order data.
   // We can submit without opening any inquiry/order modal.
-  return isInquiryWithoutPayment
+  return isDirectSubmit
     ? () => onSubmit({})
     : () => openOrderModal(isOwnListing, isClosed, history, location);
 };
@@ -324,15 +332,19 @@ const OrderPanel = props => {
   const lineItemUnitType = lineItemUnitTypeMaybe || `line-item/${unitType}`;
 
   const price = listing?.attributes?.price;
-  const isPaymentProcess = processName !== INQUIRY_PROCESS_NAME;
+  const isInquiry = isInquiryProcess(processName);
+  const isBooking = isBookingProcess(processName);
+  const isPurchase = isPurchaseProcess(processName);
+  const isNegotiation = isNegotiationProcess(processName);
+  const isPaymentProcess = isBooking || isPurchase || isNegotiation;
 
-  const showPriceMissing = isPaymentProcess && !price;
-  const showInvalidCurrency = isPaymentProcess && price?.currency !== marketplaceCurrency;
+  const showPriceMissing = isPaymentProcess && !isNegotiation && !price;
+  const showInvalidCurrency =
+    isPaymentProcess && !isNegotiation && price?.currency !== marketplaceCurrency;
 
   const timeZone = listing?.attributes?.availabilityPlan?.timezone;
   const isClosed = listing?.attributes?.state === LISTING_STATE_CLOSED;
 
-  const isBooking = isBookingProcess(processName);
   const shouldHaveFixedBookingDuration = isBooking && [LINE_ITEM_FIXED].includes(lineItemUnitType);
   const showBookingFixedDurationForm =
     mounted && shouldHaveFixedBookingDuration && !isClosed && timeZone && priceVariants?.length > 0;
@@ -346,7 +358,6 @@ const OrderPanel = props => {
 
   // The listing resource has a relationship: `currentStock`,
   // which you should include when making API calls.
-  const isPurchase = isPurchaseProcess(processName);
   const shouldHavePurchase = isPurchase && lineItemUnitType === LINE_ITEM_ITEM;
   const currentStock = listing.currentStock?.attributes?.quantity;
   const isOutOfStock = shouldHavePurchase && !isClosed && currentStock === 0;
@@ -356,7 +367,11 @@ const OrderPanel = props => {
   const showProductOrderForm =
     mounted && shouldHavePurchase && !isClosed && typeof currentStock === 'number';
 
-  const showInquiryForm = mounted && !isClosed && processName === INQUIRY_PROCESS_NAME;
+  const showInquiryForm = mounted && !isClosed && isInquiry;
+  // if listing is a request, we show the negotiation form (reverse negotiation). User (provider) needs to make an offer first.
+  const showNegotiationForm = mounted && !isClosed && isNegotiation && unitType === REQUEST;
+  // if listing is an offer, we show the "request a quote" form as user needs to ask for a quote first from the provider.
+  const showRequestQuoteForm = mounted && !isClosed && isNegotiation && unitType === OFFER;
 
   const supportedProcessesInfo = getSupportedProcessesInfo();
   const isKnownProcess = supportedProcessesInfo.map(info => info.name).includes(processName);
@@ -434,7 +449,10 @@ const OrderPanel = props => {
         containerClassName={css.modalContainer}
         id="OrderFormInModal"
         isModalOpenOnMobile={isOrderOpen}
-        onClose={() => closeOrderModal(history, location)}
+        onClose={() => {
+          closeOrderModal(history, location);
+          document.getElementById(ORDER_PANEL_SUBMIT_BUTTON_ID)?.focus();
+        }}
         showAsModalMaxWidth={MODAL_BREAKPOINT}
         onManageDisableScrolling={onManageDisableScrolling}
         usePortal
@@ -486,6 +504,7 @@ const OrderPanel = props => {
             startDatePlaceholder={intl.formatDate(TODAY, dateFormattingOptions)}
             startTimeInterval={startTimeInterval}
             timeZone={timeZone}
+            finePrintComponent={SubmitFinePrint}
             {...priceVariantsMaybe}
             {...sharedProps}
           />
@@ -501,6 +520,7 @@ const OrderPanel = props => {
             startDatePlaceholder={intl.formatDate(TODAY, dateFormattingOptions)}
             endDatePlaceholder={intl.formatDate(TODAY, dateFormattingOptions)}
             timeZone={timeZone}
+            finePrintComponent={SubmitFinePrint}
             {...priceVariantsMaybe}
             {...sharedProps}
           />
@@ -513,6 +533,7 @@ const OrderPanel = props => {
             monthlyTimeSlots={monthlyTimeSlots}
             onFetchTimeSlots={onFetchTimeSlots}
             timeZone={timeZone}
+            finePrintComponent={SubmitFinePrint}
             {...priceVariantsMaybe}
             {...sharedProps}
           />
@@ -528,7 +549,28 @@ const OrderPanel = props => {
             {...sharedProps}
           />
         ) : showInquiryForm ? (
-          <InquiryWithoutPaymentForm formId="OrderPanelInquiryForm" onSubmit={onSubmit} />
+          <InquiryWithoutPaymentForm
+            formId="OrderPanelInquiryForm"
+            onSubmit={onSubmit}
+            finePrintComponent={SubmitFinePrint}
+            isOwnListing={isOwnListing}
+          />
+        ) : showNegotiationForm ? (
+          <NegotiationForm
+            formId="OrderPanelNegotiationForm"
+            onSubmit={onSubmit}
+            finePrintComponent={SubmitFinePrint}
+            payoutDetailsWarning={payoutDetailsWarning}
+            isOwnListing={isOwnListing}
+          />
+        ) : showRequestQuoteForm ? (
+          <NegotiationRequestQuoteForm
+            formId="OrderPanelRequestQuoteForm"
+            onSubmit={onSubmit}
+            finePrintComponent={SubmitFinePrint}
+            payoutDetailsWarning={payoutDetailsWarning}
+            isOwnListing={isOwnListing}
+          />
         ) : !isKnownProcess ? (
           <p className={css.errorSidebar}>
             <FormattedMessage id="OrderPanel.unknownTransactionProcess" />
@@ -551,10 +593,11 @@ const OrderPanel = props => {
           </div>
         ) : (
           <PrimaryButton
+            id={ORDER_PANEL_SUBMIT_BUTTON_ID}
             onClick={handleSubmit(
               isOwnListing,
               isClosed,
-              showInquiryForm,
+              showInquiryForm || showNegotiationForm,
               onSubmit,
               history,
               location
@@ -567,6 +610,10 @@ const OrderPanel = props => {
               <FormattedMessage id="OrderPanel.ctaButtonMessageNoStock" />
             ) : isPurchase ? (
               <FormattedMessage id="OrderPanel.ctaButtonMessagePurchase" />
+            ) : showNegotiationForm ? (
+              <FormattedMessage id="OrderPanel.ctaButtonMessageMakeOffer" />
+            ) : showRequestQuoteForm ? (
+              <FormattedMessage id="OrderPanel.ctaButtonMessageRequestAQuote" />
             ) : (
               <FormattedMessage id="OrderPanel.ctaButtonMessageInquiry" />
             )}

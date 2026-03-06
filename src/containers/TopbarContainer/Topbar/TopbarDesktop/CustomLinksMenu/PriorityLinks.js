@@ -79,6 +79,7 @@ export const CreateCusomMenusLinks = props => {
 const PriorityLink = ({ linkConfig }) => {
   const { text, type, href, route, highlight } = linkConfig;
   const classes = classNames(css.priorityLink, { [css.highlight]: highlight });
+  const id = `priority-link-${text.toLowerCase().replace(/ /g, '-')}`;
 
   // Note: if the config contains 'route' keyword,
   // then in-app linking config has been resolved already.
@@ -86,7 +87,7 @@ const PriorityLink = ({ linkConfig }) => {
     // Internal link
     const { name, params, to } = route || {};
     return (
-      <NamedLink name={name} params={params} to={to} className={classes}>
+      <NamedLink name={name} params={params} to={to} className={classes} id={id}>
         <span className={css.priorityLinkLabel}>{text}</span>
       </NamedLink>
     );
