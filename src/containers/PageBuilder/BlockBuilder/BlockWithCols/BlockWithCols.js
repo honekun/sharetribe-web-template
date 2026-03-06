@@ -95,21 +95,19 @@ const BlockWithCols = props => {
           <Field data={text} options={options} />
           <Field data={callToAction} className={ctaButtonClass} options={options} />
 
-          <div className={classNames(textClassName, alignmentClass, css.text)}>
-            <div className={css.colWrap}>
-              <div>
-                <h3>{col1Title}</h3>
-                <p>{col1Text}</p>
-              </div>
-              <div>
-                <h3>{col2Title}</h3>
-                <p>{col2Text}</p>
-              </div>
+          <div className={css.colWrap}>
+            <div>
+              <h3>{col1Title}</h3>
+              <p>{col1Text}</p>
             </div>
-            <div className={css.buttonWrap}>
-              <Field data={callToAction1} className={ctaButtonPrimaryClass} options={options} />
-              <Field data={callToAction2} className={ctaButtonSecondaryClass} options={options} />
+            <div>
+              <h3>{col2Title}</h3>
+              <p>{col2Text}</p>
             </div>
+          </div>
+          <div className={css.buttonWrap}>
+            <Field data={callToAction1} className={ctaButtonPrimaryClass} options={options} />
+            <Field data={callToAction2} className={ctaButtonSecondaryClass} options={options} />
           </div>
         </div>
       ) : null}

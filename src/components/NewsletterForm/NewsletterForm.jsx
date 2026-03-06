@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import css from './NewsletterForm.module.css'; // or CSS module in the FTW style
-
-const BREVO_API_KEY = process.env.REACT_APP_BREVO_API_KEY;
-const BREVO_LIST_ID = process.env.REACT_APP_BREVO_LIST_ID;
+import { useIntl } from '../../util/reactIntl';
+import css from './NewsletterForm.module.css';
 
 const NewsletterForm = ({
   className,
   disclaimerText = "",
-  okMsg = "Thanks! Please check your inbox.",
-  errorMsg = "Subscription failed. Try again later.",
+  okMsg,
+  errorMsg,
 }) => {
+  const intl = useIntl();
+  const resolvedOkMsg = okMsg || intl.formatMessage({ id: 'NewsletterForm.successMessage' });
+  const resolvedErrorMsg = errorMsg || intl.formatMessage({ id: 'NewsletterForm.errorMessage' });
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState(null);
@@ -20,16 +21,16 @@ const NewsletterForm = ({
 
     const val = email.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
-      setMessage({ type: 'error', text: 'Please enter a valid email.' });
+      setMessage({ type: 'error', text: intl.formatMessage({ id: 'NewsletterForm.invalidEmail' }) });
       return;
     }
 
     setSubmitting(true);
     try {
       const apiBase =
-        process.env.REACT_APP_ENV === 'development'
+        process.env.REACT_APP_ENV === 'development' && typeof window !== 'undefined'
           ? `${window.location.protocol}//${window.location.hostname}:${process.env.REACT_APP_DEV_API_SERVER_PORT}`
-          : ''; // same-origin in prod SSR
+          : '';
 
       const r = await fetch(`${apiBase}/api/brevo/subscribe`, {
         method: 'POST',
@@ -38,16 +39,15 @@ const NewsletterForm = ({
         body: JSON.stringify({ email: val, hp: '' }),
       });
       const j = await r.json();
-      console.log(r, j);
 
       if (j.ok && r.ok) {
-        setMessage({ type: 'ok', text: okMsg });
+        setMessage({ type: 'ok', text: resolvedOkMsg });
         setEmail('');
       } else {
-        setMessage({ type: 'error', text: errorMsg });
+        setMessage({ type: 'error', text: resolvedErrorMsg });
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Network error. Try again.' });
+      setMessage({ type: 'error', text: intl.formatMessage({ id: 'NewsletterForm.networkError' }) });
     } finally {
       setSubmitting(false);
     }
@@ -73,7 +73,7 @@ const NewsletterForm = ({
             value={email}
             onChange={e => setEmail(e.target.value)}
             className={css.input}
-            placeholder="Tu Email"
+            placeholder={intl.formatMessage({ id: 'NewsletterForm.emailPlaceholder' })}
           />
         </label>
 

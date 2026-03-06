@@ -1,4 +1,5 @@
 {
+  "AVListingCard.sizeLabel": "Size:",
   "AddressLinkMaybe.viewOnGoogleMaps": "View on Google Maps",
   "AuthenticationPage.confirmSignupInfoText": "Please check that your information is correct.",
   "AuthenticationPage.confirmSignupWithIdpTitle": "Sign up with {idp}",
@@ -674,6 +675,11 @@
   "NoAccessPage.viewListings.content": "To view this content, you need to receive viewing rights from the {marketplaceName} team.",
   "NoAccessPage.viewListings.heading": "You don't have viewing rights",
   "NoAccessPage.viewListings.schemaTitle": "No viewing rights",
+  "NewsletterForm.emailPlaceholder": "Your Email",
+  "NewsletterForm.errorMessage": "Subscription failed. Try again later.",
+  "NewsletterForm.invalidEmail": "Please enter a valid email.",
+  "NewsletterForm.networkError": "Network error. Try again.",
+  "NewsletterForm.successMessage": "Thanks! Please check your inbox.",
   "NotFoundPage.SearchForm.placeholder": "Search listings…",
   "NotFoundPage.description": "We can't find the page you're looking for. Make sure you've typed in the URL correctly or try searching {marketplaceName}.",
   "NotFoundPage.heading": "Sorry, we couldn't find that page.",

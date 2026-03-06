@@ -5,6 +5,11 @@ import {
   ConditionalResolver,
 } from '../../transactions/transaction';
 
+// Business rule limits for negotiation UI
+const MAX_COUNTER_OFFERS = 50;
+const CHANGE_REQUEST_WINDOW_DAYS = 70;
+const MAX_CHANGE_REQUESTS = 90;
+
 /**
  * Get state data against booking process for TransactionPage's UI.
  * I.e. info about showing action buttons, current state etc.
@@ -119,7 +124,7 @@ export const getStateDataForNegotiationProcess = (txInfo, processInfo) => {
           {
             type: 'maxTransitions',
             action: 'disable',
-            max: 50,
+            max: MAX_COUNTER_OFFERS,
             disabledReason: {
               translationKey: `TransactionPage.${processName}.${CUSTOMER}.${states.OFFER_PENDING}.disabled.maxRequests`,
             },
@@ -217,7 +222,7 @@ export const getStateDataForNegotiationProcess = (txInfo, processInfo) => {
             type: 'durationSinceTransition',
             action: 'disable',
             sinceTransition: transitions.CONFIRM_PAYMENT, // transaction.attributes.transitions array contains createdAt
-            days: 70, // Note: for now, only days are supported
+            days: CHANGE_REQUEST_WINDOW_DAYS, // Note: for now, only days are supported
             disabledReason: {
               translationKey: `TransactionPage.${processName}.${CUSTOMER}.${states.DELIVERED}.disabled.outdated`,
             },
@@ -225,7 +230,7 @@ export const getStateDataForNegotiationProcess = (txInfo, processInfo) => {
           {
             type: 'maxTransitions',
             action: 'disable',
-            max: 90,
+            max: MAX_CHANGE_REQUESTS,
             disabledReason: {
               translationKey: `TransactionPage.${processName}.${CUSTOMER}.${states.DELIVERED}.disabled.maxRequests`,
             },

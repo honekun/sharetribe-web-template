@@ -1,4 +1,5 @@
 {
+  "AVListingCard.sizeLabel": "Talla:",
   "AddressLinkMaybe.viewOnGoogleMaps": "Ver en Google Maps",
   "AuthenticationPage.confirmSignupInfoText": "Por favor, verifica que tu información sea correcta",
   "AuthenticationPage.confirmSignupWithIdpTitle": "Regístrate con {idp}",
@@ -674,6 +675,11 @@
   "NoAccessPage.viewListings.content": "Para ver el contenido, necesitas permiso del equipo de {marketplaceName}.",
   "NoAccessPage.viewListings.heading": "No tienes permiso para ver el contenido",
   "NoAccessPage.viewListings.schemaTitle": "Sin permiso para ver",
+  "NewsletterForm.emailPlaceholder": "Tu Email",
+  "NewsletterForm.errorMessage": "Error en la suscripción. Inténtalo más tarde.",
+  "NewsletterForm.invalidEmail": "Introduce un email válido.",
+  "NewsletterForm.networkError": "Error de red. Inténtalo de nuevo.",
+  "NewsletterForm.successMessage": "¡Gracias! Revisa tu bandeja de entrada.",
   "NotFoundPage.SearchForm.placeholder": "Buscar anuncios…",
   "NotFoundPage.description": "No podemos encontrar la página que estás buscando. Asegúrate de haber escrito la URL correctamente o intenta buscar en {marketplaceName}.",
   "NotFoundPage.heading": "Lo sentimos, no hemos encontrado la página que buscas.",

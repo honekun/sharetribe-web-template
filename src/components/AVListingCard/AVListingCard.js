@@ -160,7 +160,7 @@ export const AVListingCard = props => {
 
         {publicData?.talla ? (
           <div className={css.sizes}>
-            Talla:{' '}
+            <FormattedMessage id="AVListingCard.sizeLabel" />{' '}
             {
               (config.listing.listingFields.find(f => f.key === 'talla')?.enumOptions || [])
                 .find(opt => opt.option === publicData?.talla)?.label || publicData?.talla

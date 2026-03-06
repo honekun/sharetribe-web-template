@@ -176,10 +176,10 @@ const SectionSelectedListings = props => {
               [css.hideArrows]: hideArrows,
             })}
           >
-            <button className={css.carouselArrow} onClick={onSlideLeft} onKeyDown={onKeyDown}>
+            <button className={css.carouselArrow} onClick={onSlideLeft} onKeyDown={onKeyDown} aria-label="Previous">
               ‹
             </button>
-            <button className={css.carouselArrow} onClick={onSlideRight} onKeyDown={onKeyDown}>
+            <button className={css.carouselArrow} onClick={onSlideRight} onKeyDown={onKeyDown} aria-label="Next">
               ›
             </button>
           </div>
