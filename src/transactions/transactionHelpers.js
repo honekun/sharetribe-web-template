@@ -1,0 +1,105 @@
+import { getProcess, getSupportedProcessesInfo, INQUIRY_PROCESS_NAME } from './transaction';
+
+/**
+ * Get the status category of a transaction based on its last transition and process.
+ *
+ * @param {string} processName - e.g. 'default-purchase'
+ * @param {string} lastTransition - the lastTransition value from tx.attributes
+ * @returns {'completed' | 'pending' | 'cancelled'}
+ */
+export const getStatusFromLastTransition = (processName, lastTransition) => {
+  const process = getProcess(processName);
+  if (!process) return 'pending';
+
+  if (process.isCompleted(lastTransition)) return 'completed';
+  if (process.isRefunded(lastTransition)) return 'cancelled';
+  return 'pending';
+};
+
+/**
+ * Get all transitions that lead to completed states across all payment processes.
+ * Excludes inquiry process (no payment).
+ */
+export const getCompletedTransitions = () => {
+  const transitions = [];
+  getSupportedProcessesInfo().forEach(({ name }) => {
+    if (name === INQUIRY_PROCESS_NAME) return;
+    const process = getProcess(name);
+    if (!process) return;
+    const { graph, states: stateNames } = process;
+    Object.keys(graph).forEach(fromState => {
+      const edges = graph[fromState];
+      Object.keys(edges).forEach(transition => {
+        if (process.isCompleted(transition) && !transitions.includes(transition)) {
+          transitions.push(transition);
+        }
+      });
+    });
+  });
+  return transitions;
+};
+
+/**
+ * Get all transitions that lead to refunded/cancelled states across all payment processes.
+ * Excludes inquiry process (no payment).
+ */
+export const getRefundedTransitions = () => {
+  const transitions = [];
+  getSupportedProcessesInfo().forEach(({ name }) => {
+    if (name === INQUIRY_PROCESS_NAME) return;
+    const process = getProcess(name);
+    if (!process) return;
+    const { graph } = process;
+    Object.keys(graph).forEach(fromState => {
+      const edges = graph[fromState];
+      Object.keys(edges).forEach(transition => {
+        if (process.isRefunded(transition) && !transitions.includes(transition)) {
+          transitions.push(transition);
+        }
+      });
+    });
+  });
+  return transitions;
+};
+
+/**
+ * Build SDK-compatible query params from URL search string for filtered transaction queries.
+ *
+ * @param {string} search - URL search string (e.g. '?status=completed&process=default-purchase&page=2')
+ * @param {Object} options
+ * @param {string} options.only - 'sale' or 'order'
+ * @returns {Object} params suitable for sdk.transactions.query()
+ */
+export const buildFilteredQueryParams = (searchParams, { only = 'sale' } = {}) => {
+  const { status, process, dateFrom, dateTo, page = 1 } = searchParams;
+
+  const params = { page: Number(page) };
+
+  // Filter by status → map to lastTransitions
+  if (status === 'completed') {
+    params.lastTransitions = getCompletedTransitions();
+  } else if (status === 'cancelled') {
+    params.lastTransitions = getRefundedTransitions();
+  }
+  // 'pending' status: we exclude completed and cancelled transitions
+  // This is not directly supported by SDK, so for pending we don't set lastTransitions
+  // and instead filter client-side (or accept all and let the component filter)
+
+  // Filter by process name
+  if (process && process !== 'all') {
+    params.processNames = [process];
+  }
+
+  // Filter by date range
+  if (dateFrom) {
+    params.createdAtStart = new Date(dateFrom).toISOString();
+  }
+  if (dateTo) {
+    // Set to end of day
+    const endDate = new Date(dateTo);
+    endDate.setHours(23, 59, 59, 999);
+    params.createdAtEnd = endDate.toISOString();
+  }
+
+  return params;
+};

@@ -398,80 +398,90 @@ const EditListingDetailsForm = props => (
         <Form className={classes} onSubmit={handleSubmit}>
           <ErrorMessage fetchErrors={fetchErrors} />
 
-          <FieldSelectListingType
-            name="listingType"
-            listingTypes={selectableListingTypes}
-            hasPredefinedListingType={hasPredefinedListingType}
-            onListingTypeChange={onListingTypeChange}
-            formApi={formApi}
-            formId={formId}
-            intl={intl}
-          />
-
-          {showCategories && isCompatibleCurrency && (
-            <FieldSelectCategory
-              values={values}
-              prefix={categoryPrefix}
-              listingCategories={selectableCategories}
-              formApi={formApi}
-              intl={intl}
-              allCategoriesChosen={allCategoriesChosen}
-              setAllCategoriesChosen={setAllCategoriesChosen}
-            />
-          )}
-
-          {showTitle && isCompatibleCurrency && (
-            <FieldTextInput
-              id={`${formId}title`}
-              name="title"
-              className={css.title}
-              type="text"
-              label={intl.formatMessage({ id: 'EditListingDetailsForm.title' })}
-              placeholder={intl.formatMessage({
-                id: 'EditListingDetailsForm.titlePlaceholder',
-              })}
-              maxLength={TITLE_MAX_LENGTH}
-              validate={composeValidators(required(titleRequiredMessage), maxLength60Message)}
-              autoFocus={autoFocus}
-            />
-          )}
-
-          {showDescription && isCompatibleCurrency && (
-            <FieldTextInput
-              id={`${formId}description`}
-              name="description"
-              className={css.description}
-              type="textarea"
-              label={intl.formatMessage({ id: 'EditListingDetailsForm.description' })}
-              placeholder={intl.formatMessage({
-                id: 'EditListingDetailsForm.descriptionPlaceholder',
-              })}
-              validate={required(
-                intl.formatMessage({
-                  id: 'EditListingDetailsForm.descriptionRequired',
-                })
-              )}
-            />
-          )}
-
-          {showListingFields && isCompatibleCurrency && (
-            <AddListingFields
-              listingType={listingType}
-              listingFieldsConfig={listingFieldsConfig}
-              selectedCategories={pickSelectedCategories(values)}
-              formId={formId}
-              intl={intl}
-            />
-          )}
-
-          {!isCompatibleCurrency && listingType && (
-            <p className={css.error}>
-              <FormattedMessage
-                id="EditListingDetailsForm.incompatibleCurrency"
-                values={{ marketplaceName, marketplaceCurrency }}
+          <div className={css.fieldsGrid}>
+            <div className={css.fullWidth}>
+              <FieldSelectListingType
+                name="listingType"
+                listingTypes={selectableListingTypes}
+                hasPredefinedListingType={hasPredefinedListingType}
+                onListingTypeChange={onListingTypeChange}
+                formApi={formApi}
+                formId={formId}
+                intl={intl}
               />
-            </p>
-          )}
+            </div>
+
+            {showCategories && isCompatibleCurrency && (
+              <div className={css.fullWidth}>
+                <FieldSelectCategory
+                  values={values}
+                  prefix={categoryPrefix}
+                  listingCategories={selectableCategories}
+                  formApi={formApi}
+                  intl={intl}
+                  allCategoriesChosen={allCategoriesChosen}
+                  setAllCategoriesChosen={setAllCategoriesChosen}
+                />
+              </div>
+            )}
+
+            {showTitle && isCompatibleCurrency && (
+              <div className={css.fullWidth}>
+                <FieldTextInput
+                  id={`${formId}title`}
+                  name="title"
+                  className={css.title}
+                  type="text"
+                  label={intl.formatMessage({ id: 'EditListingDetailsForm.title' })}
+                  placeholder={intl.formatMessage({
+                    id: 'EditListingDetailsForm.titlePlaceholder',
+                  })}
+                  maxLength={TITLE_MAX_LENGTH}
+                  validate={composeValidators(required(titleRequiredMessage), maxLength60Message)}
+                  autoFocus={autoFocus}
+                />
+              </div>
+            )}
+
+            {showDescription && isCompatibleCurrency && (
+              <div className={css.fullWidth}>
+                <FieldTextInput
+                  id={`${formId}description`}
+                  name="description"
+                  className={css.description}
+                  type="textarea"
+                  label={intl.formatMessage({ id: 'EditListingDetailsForm.description' })}
+                  placeholder={intl.formatMessage({
+                    id: 'EditListingDetailsForm.descriptionPlaceholder',
+                  })}
+                  validate={required(
+                    intl.formatMessage({
+                      id: 'EditListingDetailsForm.descriptionRequired',
+                    })
+                  )}
+                />
+              </div>
+            )}
+
+            {showListingFields && isCompatibleCurrency && (
+              <AddListingFields
+                listingType={listingType}
+                listingFieldsConfig={listingFieldsConfig}
+                selectedCategories={pickSelectedCategories(values)}
+                formId={formId}
+                intl={intl}
+              />
+            )}
+
+            {!isCompatibleCurrency && listingType && (
+              <p className={classNames(css.error, css.fullWidth)}>
+                <FormattedMessage
+                  id="EditListingDetailsForm.incompatibleCurrency"
+                  values={{ marketplaceName, marketplaceCurrency }}
+                />
+              </p>
+            )}
+          </div>
 
           <Button
             className={css.submitButton}

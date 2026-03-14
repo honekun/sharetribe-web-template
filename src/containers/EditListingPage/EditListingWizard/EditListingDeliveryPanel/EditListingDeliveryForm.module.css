@@ -78,6 +78,20 @@
   }
 }
 
+.fieldsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 24px;
+
+  @media (--viewportMedium) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
 .submitButton {
   margin-top: auto;
   margin-bottom: 24px;

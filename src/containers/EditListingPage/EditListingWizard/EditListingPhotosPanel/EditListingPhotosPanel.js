@@ -12,32 +12,43 @@ import { H3, ListingLink } from '../../../../components';
 import EditListingPhotosForm from './EditListingPhotosForm';
 import css from './EditListingPhotosPanel.module.css';
 
+const SLOT_KEYS = ['front', 'back', 'horizontal', 'details'];
+
 const getInitialValues = params => {
-  const { images = [] } = params;
-  return { images };
+  const { images = [], listing } = params;
+  const publicData = listing?.attributes?.publicData || {};
+  const imageSlots = publicData.imageSlots || {};
+
+  const initialValues = {};
+
+  // Try to populate slots from imageSlots mapping first
+  const hasSlotMapping = Object.keys(imageSlots).length > 0;
+
+  if (hasSlotMapping) {
+    SLOT_KEYS.forEach(slotKey => {
+      const imageUuid = imageSlots[slotKey];
+      if (imageUuid) {
+        const matchedImage = images.find(img => {
+          const uuid = img?.imageId?.uuid || img?.id?.uuid;
+          return uuid === imageUuid;
+        });
+        if (matchedImage) {
+          initialValues[`image_${slotKey}`] = matchedImage;
+        }
+      }
+    });
+  } else {
+    // Positional fallback for existing listings without imageSlots
+    SLOT_KEYS.forEach((slotKey, index) => {
+      if (images[index]) {
+        initialValues[`image_${slotKey}`] = images[index];
+      }
+    });
+  }
+
+  return initialValues;
 };
 
-/**
- * The EditListingPhotosPanel component.
- *
- * @component
- * @param {Object} props
- * @param {string} [props.className] - Custom class that extends the default class for the root element
- * @param {string} [props.rootClassName] - Custom class that overrides the default class for the root element
- * @param {Object} props.errors - The errors object
- * @param {boolean} props.disabled - Whether the form is disabled
- * @param {boolean} props.ready - Whether the form is ready
- * @param {Array} props.images - The images array
- * @param {propTypes.ownListing} props.listing - The listing object
- * @param {Function} props.onImageUpload - The image upload function
- * @param {string} props.submitButtonText - The submit button text
- * @param {boolean} props.panelUpdated - Whether the panel is updated
- * @param {boolean} props.updateInProgress - Whether the update is in progress
- * @param {Function} props.onSubmit - The submit function
- * @param {Function} props.onRemoveImage - The remove image function
- * @param {Object} props.listingImageConfig - The listing image config
- * @returns {JSX.Element}
- */
 const EditListingPhotosPanel = props => {
   const {
     className,
@@ -84,29 +95,28 @@ const EditListingPhotosPanel = props => {
       <H3 as="h1">
         <FormattedMessage id={panelHeadingProps.id} values={{ ...panelHeadingProps.values }} />
       </H3>
-      {/* <H3 as="h1">
-        {isPublished ? (
-          <FormattedMessage
-            id="EditListingPhotosPanel.title"
-            values={{ listingTitle: <ListingLink listing={listing} />, lineBreak: <br /> }}
-          />
-        ) : (
-          <FormattedMessage
-            id="EditListingPhotosPanel.createListingTitle"
-            values={{ lineBreak: <br /> }}
-          />
-        )}
-      </H3> */}
       <EditListingPhotosForm
         className={css.form}
         disabled={disabled}
         ready={ready}
         fetchErrors={errors}
-        initialValues={getInitialValues(props)}
+        images={props.images}
+        initialValues={getInitialValues({ images: props.images, listing })}
         onImageUpload={onImageUpload}
         onSubmit={values => {
-          const { addImage, ...updateValues } = values;
-          onSubmit(updateValues);
+          // Collect slot images into ordered images array
+          const images = SLOT_KEYS.map(k => values[`image_${k}`]).filter(Boolean);
+
+          // Build imageSlots publicData mapping
+          const imageSlots = {};
+          SLOT_KEYS.forEach(k => {
+            const img = values[`image_${k}`];
+            if (img) {
+              imageSlots[k] = img.imageId?.uuid || img.id?.uuid;
+            }
+          });
+
+          onSubmit({ images, publicData: { imageSlots } });
         }}
         onRemoveImage={onRemoveImage}
         saveActionMsg={submitButtonText}

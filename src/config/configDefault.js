@@ -60,6 +60,15 @@ const defaultConfig = {
   // By default, it doesn't add anything.
   analytics,
 
+  // Earnings estimator settings for the listing pricing form
+  earningsEstimate: {
+    providerCommissionPercentage:
+      parseFloat(process.env.REACT_APP_PROVIDER_COMMISSION_PERCENTAGE) || 10,
+    stripeFeePercentage: parseFloat(process.env.REACT_APP_STRIPE_FEE_PERCENTAGE) || 2.9,
+    stripeFeeFixedAmountInSubunits:
+      parseInt(process.env.REACT_APP_STRIPE_FEE_FIXED_AMOUNT, 10) || 30,
+  },
+
   // Note: Facebook app id is used for Facebook login, but it is also used for tracking:
   // Facebook counts shares with app or page associated by this id
   // Currently it is unset, but you can read more about fb:app_id from

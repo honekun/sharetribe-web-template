@@ -29,21 +29,7 @@
 }
 
 .title {
-  align-self: center;
-  padding: 0px 0 8px 0;
-  margin-top: 0;
-  margin-bottom: 0;
-
-  @media (--viewportMedium) {
-    padding: 0;
-    margin-top: 0;
-    margin-bottom: 0;
-  }
-
-  @media (--viewportLarge) {
-    padding: 5px 0 3px 0;
-    align-self: unset;
-  }
+  composes: sideNavPageTitle from global;
 }
 
 .navigation {

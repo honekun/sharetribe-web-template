@@ -213,3 +213,11 @@
 .closeIcon {
   composes: marketplaceModalCloseIcon from global;
 }
+
+.imageLabel {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey600);
+  text-align: center;
+  margin-top: 6px;
+  margin-bottom: 0;
+}

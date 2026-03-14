@@ -1,0 +1,118 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--colorGrey100);
+  gap: 12px;
+
+  @media (--viewportMedium) {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.infoSection {
+  flex: 1;
+  min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.listingLink {
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--marketplaceColor);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.details {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--colorGrey500);
+}
+
+.buyer {
+  white-space: nowrap;
+}
+
+.date {
+  white-space: nowrap;
+}
+
+.amountSection {
+  display: flex;
+  gap: 16px;
+  flex-shrink: 0;
+
+  @media (--viewportMedium) {
+    text-align: right;
+  }
+}
+
+.amountRow {
+  display: flex;
+  flex-direction: column;
+  min-width: 80px;
+}
+
+.amountLabel {
+  font-size: 12px;
+  color: var(--colorGrey500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.amountGross {
+  font-size: 14px;
+  color: var(--colorGrey700);
+}
+
+.amountNet {
+  font-size: 16px;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+}
+
+/* Status badges */
+.badgeCompleted,
+.badgePending,
+.badgeCancelled {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: var(--fontWeightSemiBold);
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.badgeCompleted {
+  background-color: color-mix(in srgb, var(--colorSuccess) 15%, transparent);
+  color: var(--colorSuccess);
+}
+
+.badgePending {
+  background-color: color-mix(in srgb, var(--colorAttention) 15%, transparent);
+  color: var(--colorAttention);
+}
+
+.badgeCancelled {
+  background-color: color-mix(in srgb, var(--colorFail) 15%, transparent);
+  color: var(--colorFail);
+}

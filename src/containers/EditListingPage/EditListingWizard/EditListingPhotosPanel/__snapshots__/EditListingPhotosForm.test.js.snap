@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`EditListingDeliveryForm matches snapshot 1`] = `
+exports[`EditListingPhotosForm matches snapshot 1`] = `
 <DocumentFragment>
   <form
     action="/"
@@ -8,55 +8,185 @@ exports[`EditListingDeliveryForm matches snapshot 1`] = `
     method="post"
   >
     <div
-      class="imagesFieldArray"
+      class="imageSlotsGrid"
     >
       <div
-        class="addImageWrapper"
+        class="root"
       >
         <div
-          class="root"
+          class="slotWrapper"
         >
           <div
-            class="aspectPadding"
-            style="padding-bottom: 100%;"
+            class="root"
           >
             <div
-              class="aspectBox"
+              class="aspectPadding"
+              style="padding-bottom: 100%;"
             >
-              <input
-                accept="image/*"
-                class="addImageInput"
-                id="addImage"
-                name="addImage"
-                type="file"
-              />
-              <label
-                class="addImage"
-                for="addImage"
+              <div
+                class="aspectBox"
               >
-                <span
-                  class="chooseImageText"
+                <input
+                  accept="image/*"
+                  class="fileInput"
+                  id="addImage_front"
+                  name="addImage_front"
+                  type="file"
+                />
+                <label
+                  class="uploadArea"
+                  for="addImage_front"
                 >
                   <span
-                    class="chooseImage"
+                    class="uploadText"
                   >
-                    <span>
-                      EditListingPhotosForm.chooseImage
-                    </span>
+                    +
                   </span>
-                  <span
-                    class="imageTypes"
-                  >
-                    <span>
-                      EditListingPhotosForm.imageTypes
-                    </span>
-                  </span>
-                </span>
-              </label>
+                </label>
+              </div>
             </div>
           </div>
         </div>
+        <p
+          class="required"
+        >
+          EditListingPhotosForm.slotLabel.front
+        </p>
       </div>
+      <div
+        class="root"
+      >
+        <div
+          class="slotWrapper"
+        >
+          <div
+            class="root"
+          >
+            <div
+              class="aspectPadding"
+              style="padding-bottom: 100%;"
+            >
+              <div
+                class="aspectBox"
+              >
+                <input
+                  accept="image/*"
+                  class="fileInput"
+                  id="addImage_back"
+                  name="addImage_back"
+                  type="file"
+                />
+                <label
+                  class="uploadArea"
+                  for="addImage_back"
+                >
+                  <span
+                    class="uploadText"
+                  >
+                    +
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p
+          class="slotLabel"
+        >
+          EditListingPhotosForm.slotLabel.back
+        </p>
+      </div>
+      <div
+        class="root"
+      >
+        <div
+          class="slotWrapper"
+        >
+          <div
+            class="root"
+          >
+            <div
+              class="aspectPadding"
+              style="padding-bottom: 100%;"
+            >
+              <div
+                class="aspectBox"
+              >
+                <input
+                  accept="image/*"
+                  class="fileInput"
+                  id="addImage_horizontal"
+                  name="addImage_horizontal"
+                  type="file"
+                />
+                <label
+                  class="uploadArea"
+                  for="addImage_horizontal"
+                >
+                  <span
+                    class="uploadText"
+                  >
+                    +
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p
+          class="slotLabel"
+        >
+          EditListingPhotosForm.slotLabel.horizontal
+        </p>
+      </div>
+      <div
+        class="root"
+      >
+        <div
+          class="slotWrapper"
+        >
+          <div
+            class="root"
+          >
+            <div
+              class="aspectPadding"
+              style="padding-bottom: 100%;"
+            >
+              <div
+                class="aspectBox"
+              >
+                <input
+                  accept="image/*"
+                  class="fileInput"
+                  id="addImage_details"
+                  name="addImage_details"
+                  type="file"
+                />
+                <label
+                  class="uploadArea"
+                  for="addImage_details"
+                >
+                  <span
+                    class="uploadText"
+                  >
+                    +
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p
+          class="slotLabel"
+        >
+          EditListingPhotosForm.slotLabel.details
+        </p>
+      </div>
+    </div>
+    <div
+      class="arrayError"
+    >
+      EditListingPhotosForm.frontImageRequired
     </div>
     <p
       class="tip"

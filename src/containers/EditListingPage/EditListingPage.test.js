@@ -888,8 +888,8 @@ describe('EditListingPage', () => {
       // Tab: panel title
       expect(getByText('EditListingPhotosPanel.title')).toBeInTheDocument();
 
-      expect(getByText('EditListingPhotosForm.chooseImage')).toBeInTheDocument();
-      expect(getByText('EditListingPhotosForm.imageTypes')).toBeInTheDocument();
+      expect(getByText('EditListingPhotosForm.slotLabel.front')).toBeInTheDocument();
+      expect(getByText('EditListingPhotosForm.slotLabel.back')).toBeInTheDocument();
       expect(getByText('EditListingPhotosForm.addImagesTip')).toBeInTheDocument();
       expect(getByText('EditListingWizard.edit.savePhotos')).toBeInTheDocument();
     });
@@ -2278,8 +2278,8 @@ describe('EditListingPage', () => {
       // Tab: panel title
       expect(getByText('EditListingPhotosPanel.title')).toBeInTheDocument();
 
-      expect(getByText('EditListingPhotosForm.chooseImage')).toBeInTheDocument();
-      expect(getByText('EditListingPhotosForm.imageTypes')).toBeInTheDocument();
+      expect(getByText('EditListingPhotosForm.slotLabel.front')).toBeInTheDocument();
+      expect(getByText('EditListingPhotosForm.slotLabel.back')).toBeInTheDocument();
       expect(getByText('EditListingPhotosForm.addImagesTip')).toBeInTheDocument();
       expect(getByText('EditListingWizard.edit.savePhotos')).toBeInTheDocument();
     });
@@ -2839,8 +2839,8 @@ describe('EditListingPage', () => {
       // Tab: panel title
       expect(getByText('EditListingPhotosPanel.title')).toBeInTheDocument();
 
-      expect(getByText('EditListingPhotosForm.chooseImage')).toBeInTheDocument();
-      expect(getByText('EditListingPhotosForm.imageTypes')).toBeInTheDocument();
+      expect(getByText('EditListingPhotosForm.slotLabel.front')).toBeInTheDocument();
+      expect(getByText('EditListingPhotosForm.slotLabel.back')).toBeInTheDocument();
       expect(getByText('EditListingPhotosForm.addImagesTip')).toBeInTheDocument();
       expect(getByText('EditListingWizard.edit.savePhotos')).toBeInTheDocument();
     });
