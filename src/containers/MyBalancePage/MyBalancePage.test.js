@@ -13,16 +13,15 @@ import {
 import { renderWithProviders as render, testingLibrary } from '../../util/testHelpers';
 import { getProcess } from '../../transactions/transaction';
 
-import MySalesPage from './MySalesPage';
-import reducer, { loadDataThunk } from './MySalesPage.duck';
+import MyBalancePage from './MyBalancePage';
+import reducer, { loadTransactionsThunk, fetchSummaryThunk } from './MyBalancePage.duck';
 
 const { Money } = sdkTypes;
 const { screen, waitFor } = testingLibrary;
-const noop = () => null;
 
 const purchaseTransitions = getProcess('default-purchase')?.transitions;
 
-describe('MySalesPage', () => {
+describe('MyBalancePage', () => {
   const provider = createUser('provider');
   const customer = createUser('customer');
   const currentUser = createCurrentUser('provider-user-id');
@@ -53,11 +52,16 @@ describe('MySalesPage', () => {
   ];
 
   const baseState = {
-    MySalesPage: {
+    MyBalancePage: {
       fetchInProgress: false,
-      fetchSalesError: null,
+      fetchError: null,
       pagination: null,
       transactionRefs: [],
+      summaryFetchInProgress: false,
+      completedTotalAmount: 0,
+      pendingTotalAmount: 0,
+      cancelledCount: 0,
+      currency: null,
     },
     marketplaceData: { entities: {} },
     user: {
@@ -68,18 +72,18 @@ describe('MySalesPage', () => {
   };
 
   it('renders page heading', async () => {
-    render(<MySalesPage />, { initialState: baseState });
+    render(<MyBalancePage />, { initialState: baseState });
 
     await waitFor(() => {
-      expect(screen.getByText('MySalesPage.heading')).toBeInTheDocument();
+      expect(screen.getByText('MyBalancePage.heading')).toBeInTheDocument();
     });
   });
 
   it('renders empty state', async () => {
-    render(<MySalesPage />, { initialState: baseState });
+    render(<MyBalancePage />, { initialState: baseState });
 
     await waitFor(() => {
-      expect(screen.getByText('MySalesPage.noResults')).toBeInTheDocument();
+      expect(screen.getByText('MyBalancePage.noResults')).toBeInTheDocument();
     });
   });
 
@@ -96,9 +100,8 @@ describe('MySalesPage', () => {
 
     const initialState = {
       ...baseState,
-      MySalesPage: {
-        fetchInProgress: false,
-        fetchSalesError: null,
+      MyBalancePage: {
+        ...baseState.MyBalancePage,
         pagination: { page: 1, perPage: 10, totalItems: 1, totalPages: 1 },
         transactionRefs: [{ id: sale1.id, type: sale1.type }],
       },
@@ -111,7 +114,7 @@ describe('MySalesPage', () => {
       },
     };
 
-    render(<MySalesPage />, { initialState });
+    render(<MyBalancePage />, { initialState });
 
     await waitFor(() => {
       const items = screen.queryAllByRole('link', { name: /listing1/i });
@@ -122,13 +125,13 @@ describe('MySalesPage', () => {
   it('renders loading spinner', async () => {
     const initialState = {
       ...baseState,
-      MySalesPage: {
-        ...baseState.MySalesPage,
+      MyBalancePage: {
+        ...baseState.MyBalancePage,
         fetchInProgress: true,
       },
     };
 
-    const { container } = render(<MySalesPage />, { initialState });
+    const { container } = render(<MyBalancePage />, { initialState });
 
     await waitFor(() => {
       const spinner = container.querySelector('svg');
@@ -139,77 +142,66 @@ describe('MySalesPage', () => {
   it('renders error state', async () => {
     const initialState = {
       ...baseState,
-      MySalesPage: {
-        ...baseState.MySalesPage,
-        fetchSalesError: { type: 'error', name: 'test', message: 'test error' },
+      MyBalancePage: {
+        ...baseState.MyBalancePage,
+        fetchError: { type: 'error', name: 'test', message: 'test error' },
       },
     };
 
-    render(<MySalesPage />, { initialState });
+    render(<MyBalancePage />, { initialState });
 
     await waitFor(() => {
-      expect(screen.getByText('MySalesPage.loadingError')).toBeInTheDocument();
+      expect(screen.getByText('MyBalancePage.loadingError')).toBeInTheDocument();
     });
   });
 
-  it('renders pagination', async () => {
-    const sale1 = createTransaction({
-      id: 'sale1',
-      lastTransition: purchaseTransitions.CONFIRM_PAYMENT,
-      customer,
-      provider,
-      listing,
-      lastTransitionedAt: new Date(Date.UTC(2023, 0, 15)),
-      lineItems,
-    });
-
+  it('renders balance summary cards', async () => {
     const initialState = {
       ...baseState,
-      MySalesPage: {
-        fetchInProgress: false,
-        fetchSalesError: null,
-        pagination: { page: 1, perPage: 10, totalItems: 25, totalPages: 3 },
-        transactionRefs: [{ id: sale1.id, type: sale1.type }],
-      },
-      marketplaceData: {
-        entities: {
-          transaction: { sale1 },
-          user: { customer, provider },
-          listing: { listing1: listing },
-        },
+      MyBalancePage: {
+        ...baseState.MyBalancePage,
+        completedTotalAmount: 5000,
+        pendingTotalAmount: 1000,
+        cancelledCount: 2,
+        currency: 'USD',
       },
     };
 
-    render(<MySalesPage />, { initialState });
+    render(<MyBalancePage />, { initialState });
 
     await waitFor(() => {
-      // PaginationLinks renders a <nav>, plus topbar and UserNav are also navs
-      const navs = screen.getAllByRole('navigation');
-      expect(navs.length).toBeGreaterThanOrEqual(3);
+      expect(screen.getByText('BalanceSummary.totalEarnings')).toBeInTheDocument();
+      expect(screen.getByText('BalanceSummary.pending')).toBeInTheDocument();
+      expect(screen.getByText('BalanceSummary.cancelled')).toBeInTheDocument();
     });
   });
 });
 
-describe('MySalesPage reducer', () => {
+describe('MyBalancePage reducer', () => {
   it('returns initial state', () => {
     const state = reducer(undefined, { type: '@@INIT' });
     expect(state).toEqual({
       fetchInProgress: false,
-      fetchSalesError: null,
+      fetchError: null,
       pagination: null,
       transactionRefs: [],
+      summaryFetchInProgress: false,
+      completedTotalAmount: 0,
+      pendingTotalAmount: 0,
+      cancelledCount: 0,
+      currency: null,
     });
   });
 
-  it('handles pending state', () => {
-    const state = reducer(undefined, { type: loadDataThunk.pending.type });
+  it('handles pending state for transactions', () => {
+    const state = reducer(undefined, { type: loadTransactionsThunk.pending.type });
     expect(state.fetchInProgress).toBe(true);
-    expect(state.fetchSalesError).toBeNull();
+    expect(state.fetchError).toBeNull();
   });
 
-  it('handles fulfilled state', () => {
+  it('handles fulfilled state for transactions', () => {
     const action = {
-      type: loadDataThunk.fulfilled.type,
+      type: loadTransactionsThunk.fulfilled.type,
       payload: {
         data: {
           data: [{ id: { uuid: 'tx1' }, type: 'transaction' }],
@@ -223,13 +215,31 @@ describe('MySalesPage reducer', () => {
     expect(state.pagination).toEqual(action.payload.data.meta);
   });
 
-  it('handles rejected state', () => {
+  it('handles rejected state for transactions', () => {
     const error = { type: 'error', name: 'test', message: 'fail' };
     const state = reducer(undefined, {
-      type: loadDataThunk.rejected.type,
+      type: loadTransactionsThunk.rejected.type,
       payload: error,
     });
     expect(state.fetchInProgress).toBe(false);
-    expect(state.fetchSalesError).toEqual(error);
+    expect(state.fetchError).toEqual(error);
+  });
+
+  it('handles fulfilled state for summary', () => {
+    const action = {
+      type: fetchSummaryThunk.fulfilled.type,
+      payload: {
+        completedTotalAmount: 5000,
+        pendingTotalAmount: 1000,
+        cancelledCount: 3,
+        currency: 'USD',
+      },
+    };
+    const state = reducer(undefined, action);
+    expect(state.summaryFetchInProgress).toBe(false);
+    expect(state.completedTotalAmount).toBe(5000);
+    expect(state.pendingTotalAmount).toBe(1000);
+    expect(state.cancelledCount).toBe(3);
+    expect(state.currency).toBe('USD');
   });
 });

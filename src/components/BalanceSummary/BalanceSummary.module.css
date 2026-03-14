@@ -1,0 +1,53 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 24px;
+  margin-bottom: 24px;
+
+  @media (--viewportMedium) {
+    flex-direction: row;
+    gap: 16px;
+  }
+}
+
+.card {
+  flex: 1;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--colorGrey100);
+  background-color: var(--colorWhite);
+}
+
+.cardEarnings {
+  composes: card;
+  border-left: 4px solid var(--colorSuccess);
+}
+
+.cardPending {
+  composes: card;
+  border-left: 4px solid var(--colorAttention);
+}
+
+.cardCancelled {
+  composes: card;
+  border-left: 4px solid var(--colorFail);
+}
+
+.cardLabel {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--colorGrey500);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cardValue {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+}

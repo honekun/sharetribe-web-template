@@ -1,0 +1,66 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  padding: 0 24px;
+  margin-bottom: 16px;
+}
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  @media (--viewportMedium) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+
+  @media (--viewportMedium) {
+    min-width: 140px;
+  }
+}
+
+.label {
+  font-size: 13px;
+  color: var(--colorGrey500);
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.select,
+.dateInput {
+  padding: 8px 12px;
+  border: 1px solid var(--colorGrey100);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--colorGrey900);
+  background-color: var(--colorWhite);
+  appearance: auto;
+
+  &:focus {
+    outline: none;
+    border-color: var(--marketplaceColor);
+  }
+}
+
+.clearButton {
+  margin-top: 12px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 14px;
+  color: var(--marketplaceColor);
+  cursor: pointer;
+  text-decoration: underline;
+
+  &:hover {
+    color: var(--marketplaceColorDark);
+  }
+}

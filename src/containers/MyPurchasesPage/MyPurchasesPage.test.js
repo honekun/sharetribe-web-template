@@ -183,8 +183,9 @@ describe('MyPurchasesPage', () => {
     render(<MyPurchasesPage />, { initialState });
 
     await waitFor(() => {
-      const nav = screen.getByRole('navigation');
-      expect(nav).toBeInTheDocument();
+      // PaginationLinks renders a <nav>, plus topbar and UserNav are also navs
+      const navs = screen.getAllByRole('navigation');
+      expect(navs.length).toBeGreaterThanOrEqual(3);
     });
   });
 });

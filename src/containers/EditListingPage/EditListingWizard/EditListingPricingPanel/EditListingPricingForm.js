@@ -16,6 +16,7 @@ import { Button, Form, FieldCurrencyInput } from '../../../../components';
 
 import BookingPriceVariants from './BookingPriceVariants';
 import StartTimeInterval from './StartTimeInverval';
+import EarningsEstimator from './EarningsEstimator';
 
 // Import modules from this directory
 import css from './EditListingPricingForm.module.css';
@@ -138,7 +139,7 @@ export const EditListingPricingForm = props => (
       const isUsingPriceVariants = isFixedLengthBooking || isBookingPriceVariationsInUse;
 
       return (
-        <Form onSubmit={handleSubmit} className={classes}>
+        <Form onSubmit={handleSubmit} className={classes}>dsds
           <ErrorMessages fetchErrors={fetchErrors} />
 
           {isUsingPriceVariants ? (
@@ -154,23 +155,29 @@ export const EditListingPricingForm = props => (
               listingMinimumPriceSubUnits={listingMinimumPriceSubUnits}
             />
           ) : (
-            <FieldCurrencyInput
-              id={`${formId}price`}
-              name="price"
-              className={css.input}
-              autoFocus={autoFocus}
-              label={intl.formatMessage(
-                { id: 'EditListingPricingForm.pricePerProduct' },
-                { unitType }
-              )}
-              placeholder={intl.formatMessage({
-                id: 'EditListingPricingForm.priceInputPlaceholder',
-              })}
-              currencyConfig={appSettings.getCurrencyFormatting(marketplaceCurrency)}
-              validate={priceValidators}
-            />
+            <>
+              <FieldCurrencyInput
+                id={`${formId}price`}
+                name="price"
+                className={css.input}
+                autoFocus={autoFocus}
+                label={intl.formatMessage(
+                  { id: 'EditListingPricingForm.pricePerProduct' },
+                  { unitType }
+                )}
+                placeholder={intl.formatMessage({
+                  id: 'EditListingPricingForm.priceInputPlaceholder',
+                })}
+                currencyConfig={appSettings.getCurrencyFormatting(marketplaceCurrency)}
+                validate={priceValidators}
+              /> s
+              <EarningsEstimator
+                price={formValues?.price}
+                marketplaceCurrency={marketplaceCurrency}
+              />
+            </>
           )}
-
+das
           {isFixedLengthBooking ? (
             <StartTimeInterval
               name="startTimeInterval"

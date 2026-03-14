@@ -4,6 +4,7 @@ import classNames from 'classnames';
 
 // Import configs and util modules
 import { FormattedMessage, useIntl } from '../../../../util/reactIntl';
+
 import { propTypes } from '../../../../util/types';
 import {
   autocompleteSearchRequired,
@@ -87,50 +88,54 @@ export const EditListingLocationForm = props => (
 
       return (
         <Form className={classes} onSubmit={handleSubmit}>
-          {updateListingError ? (
-            <p className={css.error}>
-              <FormattedMessage id="EditListingLocationForm.updateFailed" />
-            </p>
-          ) : null}
+          <div className={css.fieldsGrid}>
+            {updateListingError ? (
+              <p className={classNames(css.error, css.fullWidth)}>
+                <FormattedMessage id="EditListingLocationForm.updateFailed" />
+              </p>
+            ) : null}
 
-          {showListingsError ? (
-            <p className={css.error}>
-              <FormattedMessage id="EditListingLocationForm.showListingFailed" />
-            </p>
-          ) : null}
+            {showListingsError ? (
+              <p className={classNames(css.error, css.fullWidth)}>
+                <FormattedMessage id="EditListingLocationForm.showListingFailed" />
+              </p>
+            ) : null}
 
-          <FieldLocationAutocompleteInput
-            rootClassName={css.locationAddress}
-            inputClassName={css.locationAutocompleteInput}
-            iconClassName={css.locationAutocompleteInputIcon}
-            predictionsClassName={css.predictionsRoot}
-            validClassName={css.validLocation}
-            autoFocus={autoFocus}
-            name="location"
-            id={`${formId}.location`}
-            label={intl.formatMessage({ id: 'EditListingLocationForm.address' })}
-            placeholder={intl.formatMessage({
-              id: 'EditListingLocationForm.addressPlaceholder',
-            })}
-            useDefaultPredictions={false}
-            format={identity}
-            valueFromForm={values.location}
-            validate={composeValidators(
-              autocompleteSearchRequired(addressRequiredMessage),
-              autocompletePlaceSelected(addressNotRecognizedMessage)
-            )}
-          />
+            <div className={css.fullWidth}>
+              <FieldLocationAutocompleteInput
+                rootClassName={css.locationAddress}
+                inputClassName={css.locationAutocompleteInput}
+                iconClassName={css.locationAutocompleteInputIcon}
+                predictionsClassName={css.predictionsRoot}
+                validClassName={css.validLocation}
+                autoFocus={autoFocus}
+                name="location"
+                id={`${formId}.location`}
+                label={intl.formatMessage({ id: 'EditListingLocationForm.address' })}
+                placeholder={intl.formatMessage({
+                  id: 'EditListingLocationForm.addressPlaceholder',
+                })}
+                useDefaultPredictions={false}
+                format={identity}
+                valueFromForm={values.location}
+                validate={composeValidators(
+                  autocompleteSearchRequired(addressRequiredMessage),
+                  autocompletePlaceSelected(addressNotRecognizedMessage)
+                )}
+              />
+            </div>
 
-          <FieldTextInput
-            className={css.building}
-            type="text"
-            name="building"
-            id={`${formId}building`}
-            label={intl.formatMessage({ id: 'EditListingLocationForm.building' }, { optionalText })}
-            placeholder={intl.formatMessage({
-              id: 'EditListingLocationForm.buildingPlaceholder',
-            })}
-          />
+            <FieldTextInput
+              className={css.building}
+              type="text"
+              name="building"
+              id={`${formId}building`}
+              label={intl.formatMessage({ id: 'EditListingLocationForm.building' }, { optionalText })}
+              placeholder={intl.formatMessage({
+                id: 'EditListingLocationForm.buildingPlaceholder',
+              })}
+            />
+          </div>
 
           <Button
             className={css.submitButton}

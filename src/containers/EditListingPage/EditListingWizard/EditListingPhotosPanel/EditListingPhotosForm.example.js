@@ -5,7 +5,8 @@ const listingImageConfig = { aspectWidth: 1, aspectHeight: 1, variantPrefix: 'li
 export const Empty = {
   component: EditListingPhotosForm,
   props: {
-    initialValues: { country: 'US', images: [] },
+    initialValues: { country: 'US' },
+    images: [],
     stripeConnected: false,
     onImageUpload: values => {
       console.log(`onImageUpload with id (${values.id}) and file name (${values.file.name})`);

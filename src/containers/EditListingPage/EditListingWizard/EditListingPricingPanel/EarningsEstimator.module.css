@@ -1,0 +1,54 @@
+@import '../../../../styles/customMediaQueries.css';
+
+.root {
+  background-color: var(--colorGrey50);
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadiusMedium);
+  padding: 16px;
+  margin-bottom: 24px;
+
+  @media (--viewportMedium) {
+    margin-bottom: 32px;
+  }
+}
+
+.title {
+  composes: h5 from global;
+  font-weight: var(--fontWeightSemiBold);
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.lineItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.earningsLine {
+  composes: lineItem;
+  font-weight: var(--fontWeightSemiBold);
+  border-top: 1px solid var(--colorGrey200);
+  margin-top: 4px;
+  padding-top: 8px;
+}
+
+.deduction {
+  color: var(--colorGrey600);
+}
+
+.disclaimer {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
+.placeholder {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+  margin: 0;
+}

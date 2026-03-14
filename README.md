@@ -92,10 +92,28 @@ STRIPE_SECRET_KEY=sk_live_...
 REACT_APP_MAPBOX_ACCESS_TOKEN=...
 ```
 
+Additional variables for the notification system (AV-noti):
+
+```env
+# Sharetribe Integration API (Console → Build → Integrations)
+SHARETRIBE_INTEGRATION_CLIENT_ID=
+SHARETRIBE_INTEGRATION_CLIENT_SECRET=
+
+# WhatsApp Meta Cloud API
+WHATSAPP_ACCESS_TOKEN=
+WHATSAPP_PHONE_NUMBER_ID=
+WHATSAPP_ADMIN_PHONE=+521XXXXXXXXXX
+
+# Brevo transactional email sender
+BREVO_SENDER_EMAIL=hola@archinovintach.com
+BREVO_SENDER_NAME=Archivo Vintach
+```
+
 Notes:
 - Client-side variables use the `REACT_APP_` prefix.
 - Keep secrets only in secure environment configuration (never in git).
 - Use Stripe test keys (`pk_test_...` / `sk_test_...`) in staging.
+- AV-noti is silently disabled if `SHARETRIBE_INTEGRATION_CLIENT_ID` is absent — the server starts normally.
 
 ## Customization Areas
 
@@ -109,6 +127,50 @@ Project-specific additions include patterns such as:
 - `TrustBadges`
 - `CustomFooter`
 - `ReviewSummary`
+
+### My Purchases & My Sales
+
+Dedicated pages for transaction history, accessible from the profile menu and UserNav tab bar:
+
+- `/my-purchases` — Lists all transactions where the current user is the buyer
+- `/my-sales` — Lists all transactions where the current user is the seller
+
+Both pages reuse the `InboxItem` component from InboxPage for consistent transaction row rendering, include pagination, and support SSR. Links appear in the desktop profile dropdown, mobile menu, and the horizontal tab navigation (UserNav) alongside "Your listings".
+
+### My Balance (Seller Financial Dashboard)
+
+A seller-focused financial dashboard at `/my-balance` providing consolidated financial visibility:
+
+- **Balance summary cards** — Total Earnings (sum of completed sale payouts), Pending (in-progress payouts), and Cancelled count, displayed as color-coded cards at the top of the page
+- **Transaction filters** — URL-param-based filters for status (Completed/Pending/Cancelled), transaction type (Purchase/Booking/Negotiation), and date range. Filter state is persisted in the URL for shareable/bookmarkable filtered views
+- **Payout history** — Paginated list of sale transactions showing listing title, buyer name, date, gross and net amounts, and status badges
+
+Balance totals are computed client-side from `sdk.transactions.query()` responses (there is no direct Stripe balance API through Sharetribe SDK). The page shares the same `LayoutSideNavigation` + `UserNav` layout pattern as My Purchases and My Sales.
+
+### Notification System (AV-noti)
+
+Event-driven notifications triggered by Sharetribe Integration API events. The Express server polls for new events every 5 minutes and fires:
+
+- **Welcome email** — branded Brevo transactional email with a Getting Started PDF attached, sent on `user/created`
+- **WhatsApp messages** — Meta Cloud API template messages to users and the admin on registration, purchases, deliveries, cancellations, and new messages
+
+Requires a Sharetribe Integration (Console → Build → Integrations), a Meta WhatsApp Business Account with pre-approved message templates, and the env vars listed in the Environment Configuration section above.
+
+All notification logic lives in `server/services/`. The system is opt-in: if `SHARETRIBE_INTEGRATION_CLIENT_ID` is not set, the poller is skipped and the server runs normally.
+
+### Listing Form Customizations
+
+The listing creation and edit forms include three enhancements:
+
+- **Two-column layout** — The Details, Delivery, and Location panels use a responsive CSS grid that displays fields in two columns on desktop (768px+) and a single column on mobile.
+- **Labeled image slots** — The Photos panel replaces the free-form image gallery with 4 fixed upload positions (Front, Back, Horizontal, Details) in a 2x2 grid. Only the front photo is required. The slot mapping is saved to `publicData.imageSlots` and displayed as labels in the listing detail gallery.
+- **Earnings estimator** — The Pricing panel shows estimated seller earnings below the price input, breaking down the marketplace commission and Stripe processing fees. Fee percentages are configurable via environment variables:
+
+```env
+REACT_APP_PROVIDER_COMMISSION_PERCENTAGE=10    # Marketplace fee (default: 10%)
+REACT_APP_STRIPE_FEE_PERCENTAGE=2.9            # Stripe fee (default: 2.9%)
+REACT_APP_STRIPE_FEE_FIXED_AMOUNT=30           # Stripe fixed fee in sub-units/cents (default: 30)
+```
 
 ### Style customization
 

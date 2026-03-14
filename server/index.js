@@ -354,6 +354,12 @@ const server = app.listen(PORT, () => {
   if (dev) {
     console.log(`Open http://localhost:${PORT}/ and start hacking!\n`);
   }
+
+  // AV-noti: start Integration API event poller (welcome email + WhatsApp notifications)
+  if (process.env.SHARETRIBE_INTEGRATION_CLIENT_ID) {
+    const { startPoller } = require('./services/eventPoller');
+    startPoller();
+  }
 });
 
 // Graceful shutdown:

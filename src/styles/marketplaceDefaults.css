@@ -1620,3 +1620,27 @@ textarea {
     font-size: 28px;
   }
 }
+
+/* ================ LayoutSideNavigation page title ================ */
+
+.sideNavPageTitle {
+  align-self: center;
+  padding: 0px 0 8px 0;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  margin-right: 16px;
+  width: var(--TabNav_linkWidth);
+
+  @media (--viewportMedium) {
+    padding: 0;
+    margin-top: 16px;
+    margin-bottom: 16px;
+  }
+
+  @media (--viewportLarge) {
+    padding: 5px 0 3px 0;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    align-self: unset;
+  }
+}

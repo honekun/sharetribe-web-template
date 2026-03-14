@@ -15,11 +15,13 @@ import {
 
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
+import { showCreateListingLinkForUser } from '../../util/userHelpers';
 import {
   H2,
   Page,
   PaginationLinks,
   IconSpinner,
+  UserNav,
   LayoutSideNavigation,
 } from '../../components';
 
@@ -44,6 +46,7 @@ export const MyPurchasesPageComponent = props => {
   } = props;
 
   const title = intl.formatMessage({ id: 'MyPurchasesPage.title' });
+  const showManageListingsLink = showCreateListingLinkForUser(config, currentUser);
   const search = parse(location.search);
 
   const pickType = lt => conf => conf.listingType === lt;
@@ -95,10 +98,16 @@ export const MyPurchasesPageComponent = props => {
       <LayoutSideNavigation
         sideNavClassName={css.navigation}
         topbar={
-          <TopbarContainer
-            mobileRootClassName={css.mobileTopbar}
-            desktopClassName={css.desktopTopbar}
-          />
+          <>
+            <TopbarContainer
+              mobileRootClassName={css.mobileTopbar}
+              desktopClassName={css.desktopTopbar}
+            />
+            <UserNav
+              currentPage="MyPurchasesPage"
+              showManageListingsLink={showManageListingsLink}
+            />
+          </>
         }
         sideNav={
           <H2 as="h1" className={css.title}>

@@ -76,6 +76,7 @@
   margin-left: 24px;
   margin-right: 24px;
   margin-top: 1px;
+  color: var(--colorGrey500);
 
   @media (--viewportLarge) {
     margin-top: 25px;
@@ -103,22 +104,6 @@
   animation-duration: 1s;
   animation-name: loadingSpinnerFadeIn;
   animation-fill-mode: forwards;
-}
-
-.listItem {
-  margin-bottom: 10px;
-  padding-bottom: 12px;
-  border-bottom-style: solid;
-  border-bottom-width: 1px;
-  border-bottom-color: var(--colorGrey100);
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  @media (--viewportLarge) {
-    margin-bottom: 16px;
-  }
 }
 
 .pagination {

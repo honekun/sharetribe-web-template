@@ -21,6 +21,8 @@ import {
   FieldTextInput,
 } from '../../../../components';
 
+import EarningsEstimator from '../EditListingPricingPanel/EarningsEstimator';
+
 // Import modules from this directory
 import css from './EditListingPricingAndStockForm.module.css';
 
@@ -194,6 +196,10 @@ export const EditListingPricingAndStockForm = props => (
             })}
             currencyConfig={appSettings.getCurrencyFormatting(marketplaceCurrency)}
             validate={priceValidators}
+          />
+          <EarningsEstimator
+            price={values?.price}
+            marketplaceCurrency={marketplaceCurrency}
           />
 
           <UpdateStockToInfinityCheckboxMaybe

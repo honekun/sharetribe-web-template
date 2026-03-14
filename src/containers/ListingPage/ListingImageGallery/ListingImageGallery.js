@@ -61,10 +61,19 @@ const getFirstImageAspectRatio = (firstImage, scaledVariant) => {
  * @param {Array<string>} props.thumbnailVariants - The thumbnail variants
  * @returns {JSX.Element} listing image gallery component
  */
+const getSlotLabelForImage = (image, imageSlots, intl) => {
+  if (!imageSlots) return null;
+  const imageUuid = image?.id?.uuid;
+  if (!imageUuid) return null;
+  const slotKey = Object.keys(imageSlots).find(k => imageSlots[k] === imageUuid);
+  if (!slotKey) return null;
+  return intl.formatMessage({ id: `ListingImageGallery.imageLabel.${slotKey}` });
+};
+
 const ListingImageGallery = props => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const intl = useIntl();
-  const { rootClassName, className, images, imageVariants, thumbnailVariants } = props;
+  const { rootClassName, className, images, imageSlots, imageVariants, thumbnailVariants } = props;
   const thumbVariants = thumbnailVariants || imageVariants;
   // imageVariants are scaled variants.
   const { aspectWidth, aspectHeight } = getFirstImageAspectRatio(images?.[0], imageVariants[0]);
@@ -83,6 +92,7 @@ const ListingImageGallery = props => {
       ),
       thumbnail: img.attributes?.variants?.[thumbVariants[0]],
       image: img,
+      slotLabel: getSlotLabelForImage(img, imageSlots, intl),
     };
   });
   const imageSizesMaybe = isFullscreen
@@ -90,21 +100,24 @@ const ListingImageGallery = props => {
     : { sizes: `(max-width: 1024px) 100vw, (max-width: 1200px) calc(100vw - 192px), 708px` };
   const renderItem = item => {
     return (
-      <AspectRatioWrapper
-        width={aspectWidth || 1}
-        height={aspectHeight || 1}
-        className={isFullscreen ? css.itemWrapperFullscreen : css.itemWrapper}
-      >
-        <div className={css.itemCentering}>
-          <ResponsiveImage
-            rootClassName={css.item}
-            image={item.image}
-            alt={item.alt}
-            variants={imageVariants}
-            {...imageSizesMaybe}
-          />
-        </div>
-      </AspectRatioWrapper>
+      <div>
+        <AspectRatioWrapper
+          width={aspectWidth || 1}
+          height={aspectHeight || 1}
+          className={isFullscreen ? css.itemWrapperFullscreen : css.itemWrapper}
+        >
+          <div className={css.itemCentering}>
+            <ResponsiveImage
+              rootClassName={css.item}
+              image={item.image}
+              alt={item.alt}
+              variants={imageVariants}
+              {...imageSizesMaybe}
+            />
+          </div>
+        </AspectRatioWrapper>
+        {item.slotLabel ? <p className={css.imageLabel}>{item.slotLabel}</p> : null}
+      </div>
     );
   };
   const renderThumbInner = item => {

@@ -36,6 +36,27 @@ const UserNav = props => {
   const tabs = [
     ...manageListingsTabMaybe,
     {
+      text: <FormattedMessage id="UserNav.myPurchases" />,
+      selected: currentPage === 'MyPurchasesPage',
+      linkProps: {
+        name: 'MyPurchasesPage',
+      },
+    },
+    {
+      text: <FormattedMessage id="UserNav.mySales" />,
+      selected: currentPage === 'MySalesPage',
+      linkProps: {
+        name: 'MySalesPage',
+      },
+    },
+    {
+      text: <FormattedMessage id="UserNav.myBalance" />,
+      selected: currentPage === 'MyBalancePage',
+      linkProps: {
+        name: 'MyBalancePage',
+      },
+    },
+    {
       text: <FormattedMessage id="UserNav.profileSettings" />,
       selected: currentPage === 'ProfileSettingsPage',
       disabled: false,
