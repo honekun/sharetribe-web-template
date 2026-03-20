@@ -43,18 +43,23 @@
   }
 }
 
-.uploadText {
-  composes: h4 from global;
-  color: var(--colorGrey700);
-  font-weight: var(--fontWeightSemiBold);
-  margin-top: 0;
-  margin-bottom: 0;
+.cameraIcon {
+  width: 48px;
+  height: 48px;
+  color: var(--colorGrey300);
+  transition: color 0.15s ease;
+}
 
-  @media (--viewportLarge) {
-    font-weight: var(--fontWeightSemiBold);
-    margin-top: 0;
-    margin-bottom: 0;
-  }
+.uploadArea:hover .cameraIcon {
+  color: var(--colorGrey700);
+}
+
+.uploadLabel {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+  margin-top: 8px;
+  text-align: center;
+  line-height: 1.2;
 }
 
 .fileInput {

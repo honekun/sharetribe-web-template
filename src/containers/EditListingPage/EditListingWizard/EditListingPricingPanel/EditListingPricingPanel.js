@@ -47,7 +47,12 @@ const getInitialValues = props => {
         ...getInitialValuesForPriceVariants(props, isPriceVariationsInUse),
         ...getInitialValuesForStartTimeInterval(props),
       }
-    : { price: listing?.attributes?.price };
+    : {
+        price: listing?.attributes?.price,
+        ...(publicData?.originalPrice
+          ? { originalPrice: new Money(publicData.originalPrice.amount, publicData.originalPrice.currency) }
+          : {}),
+      };
 };
 
 // This is needed to show the listing's price consistently over XHR calls.
@@ -162,7 +167,7 @@ const EditListingPricingPanel = props => {
           className={css.form}
           initialValues={initialValues}
           onSubmit={values => {
-            const { price } = values;
+            const { price, originalPrice } = values;
 
             // New values for listing attributes
             let updateValues = {};
@@ -203,7 +208,17 @@ const EditListingPricingPanel = props => {
                     },
                   }
                 : {};
-              updateValues = { price, ...priceVariationsEnabledMaybe };
+              const originalPriceMaybe = originalPrice
+                ? { originalPrice: { amount: originalPrice.amount, currency: originalPrice.currency } }
+                : {};
+              updateValues = {
+                price,
+                ...priceVariationsEnabledMaybe,
+                publicData: {
+                  ...originalPriceMaybe,
+                  ...priceVariationsEnabledMaybe.publicData,
+                },
+              };
             }
 
             // Save the initialValues to state
