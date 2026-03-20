@@ -556,6 +556,7 @@
   "ListingCard.price": "{priceValue} {pricePerUnit}",
   "ListingCard.priceStartingFrom": "Desde {priceValue} {pricePerUnit}",
   "ListingCard.unsupportedPrice": "({currency})",
+  "ListingCard.screenreader.label": "{listingTitle}, {formattedPrice}",
   "ListingCard.unsupportedPriceTitle": "Moneda no admitida ({currency})",
   "ListingImageGallery.closeModal": "CERRAR",
   "ListingImageGallery.closeModalTitle": "Cerrar",
@@ -673,6 +674,8 @@
   "MyBalancePage.noResults": "No se encontraron transacciones.",
   "MyBalancePage.title": "Mi Balance | Archivo Vintach",
 
+  "BalanceSummary.tabAllTime": "Todo el tiempo",
+  "BalanceSummary.tabCurrentMonth": "Este mes",
   "BalanceSummary.totalEarnings": "Ganancias Totales",
   "BalanceSummary.pending": "Pendiente",
   "BalanceSummary.cancelled": "Canceladas",

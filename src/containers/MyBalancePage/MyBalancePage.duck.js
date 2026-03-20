@@ -34,6 +34,9 @@ const myBalancePageSlice = createSlice({
     completedTotalAmount: 0,
     pendingTotalAmount: 0,
     cancelledCount: 0,
+    currentMonthCompletedAmount: 0,
+    currentMonthPendingAmount: 0,
+    currentMonthCancelledCount: 0,
     currency: null,
   },
   reducers: {},
@@ -60,12 +63,22 @@ const myBalancePageSlice = createSlice({
         state.summaryFetchInProgress = true;
       })
       .addCase(fetchSummaryThunk.fulfilled, (state, action) => {
-        const { completedTotalAmount, pendingTotalAmount, cancelledCount, currency } =
-          action.payload;
+        const {
+          completedTotalAmount,
+          pendingTotalAmount,
+          cancelledCount,
+          currentMonthCompletedAmount,
+          currentMonthPendingAmount,
+          currentMonthCancelledCount,
+          currency,
+        } = action.payload;
         state.summaryFetchInProgress = false;
         state.completedTotalAmount = completedTotalAmount;
         state.pendingTotalAmount = pendingTotalAmount;
         state.cancelledCount = cancelledCount;
+        state.currentMonthCompletedAmount = currentMonthCompletedAmount;
+        state.currentMonthPendingAmount = currentMonthPendingAmount;
+        state.currentMonthCancelledCount = currentMonthCancelledCount;
         state.currency = currency;
       })
       .addCase(fetchSummaryThunk.rejected, (state, action) => {
@@ -141,11 +154,44 @@ export const loadTransactionsThunk = createAsyncThunk(
   loadTransactionsPayloadCreator
 );
 
-// Thunk: fetch summary totals (3 parallel queries)
+const sumPayoutAmounts = txs => {
+  let total = 0;
+  let currency = null;
+  txs.forEach(tx => {
+    const payout = tx.attributes.payoutTotal;
+    if (payout) {
+      total += payout.amount;
+      if (!currency) currency = payout.currency;
+    }
+  });
+  return { total, currency };
+};
+
+const computePending = (allTxs, completedTxs, cancelledTxs) => {
+  const completedIds = new Set(completedTxs.map(tx => tx.id.uuid));
+  const cancelledIds = new Set(cancelledTxs.map(tx => tx.id.uuid));
+  let pendingTotal = 0;
+  let currency = null;
+  allTxs.forEach(tx => {
+    if (!completedIds.has(tx.id.uuid) && !cancelledIds.has(tx.id.uuid)) {
+      const payout = tx.attributes.payoutTotal;
+      if (payout) {
+        pendingTotal += payout.amount;
+        if (!currency) currency = payout.currency;
+      }
+    }
+  });
+  return { pendingTotal, currency };
+};
+
+// Thunk: fetch summary totals (6 parallel queries: 3 all-time + 3 current month)
 const fetchSummaryPayloadCreator = (_, { rejectWithValue, extra: sdk }) => {
   const processNames = paymentProcessNames();
   const completedTransitions = getCompletedTransitions();
   const refundedTransitions = getRefundedTransitions();
+
+  const now = new Date();
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
   const baseParams = {
     only: 'sale',
@@ -154,71 +200,48 @@ const fetchSummaryPayloadCreator = (_, { rejectWithValue, extra: sdk }) => {
     perPage: SUMMARY_PER_PAGE,
   };
 
-  const completedQuery = sdk.transactions.query({
-    ...baseParams,
-    lastTransitions: completedTransitions,
-  });
+  const monthParams = { ...baseParams, createdAtStart: currentMonthStart };
 
-  const cancelledQuery = sdk.transactions.query({
-    ...baseParams,
-    lastTransitions: refundedTransitions,
-  });
-
-  // For pending: query all and we'll get total count minus completed and cancelled
-  // Actually, SDK doesn't support "NOT in transitions", so we query all
-  // and compute pending = all - completed - cancelled counts
-  // But a simpler approach: just query without lastTransitions filter
-  // and use the total from that alongside the completed/cancelled totals
-
-  return Promise.all([completedQuery, cancelledQuery])
-    .then(([completedRes, cancelledRes]) => {
+  return Promise.all([
+    sdk.transactions.query({ ...baseParams, lastTransitions: completedTransitions }),
+    sdk.transactions.query({ ...baseParams, lastTransitions: refundedTransitions }),
+    sdk.transactions.query(baseParams),
+    sdk.transactions.query({ ...monthParams, lastTransitions: completedTransitions }),
+    sdk.transactions.query({ ...monthParams, lastTransitions: refundedTransitions }),
+    sdk.transactions.query(monthParams),
+  ])
+    .then(([completedRes, cancelledRes, allRes, mCompletedRes, mCancelledRes, mAllRes]) => {
       const completedTxs = completedRes.data.data;
       const cancelledTxs = cancelledRes.data.data;
+      const allTxs = allRes.data.data;
+      const mCompletedTxs = mCompletedRes.data.data;
+      const mCancelledTxs = mCancelledRes.data.data;
+      const mAllTxs = mAllRes.data.data;
 
-      // Sum payoutTotal from completed transactions
-      let completedTotalAmount = 0;
-      let currency = null;
-      completedTxs.forEach(tx => {
-        const payout = tx.attributes.payoutTotal;
-        if (payout) {
-          completedTotalAmount += payout.amount;
-          if (!currency) currency = payout.currency;
-        }
-      });
+      const { total: completedTotalAmount, currency: c1 } = sumPayoutAmounts(completedTxs);
+      const { pendingTotal: pendingTotalAmount, currency: c2 } = computePending(
+        allTxs,
+        completedTxs,
+        cancelledTxs
+      );
+      const { total: currentMonthCompletedAmount, currency: c3 } = sumPayoutAmounts(mCompletedTxs);
+      const { pendingTotal: currentMonthPendingAmount } = computePending(
+        mAllTxs,
+        mCompletedTxs,
+        mCancelledTxs
+      );
 
-      // Sum payoutTotal from pending transactions (not completed, not cancelled)
-      // We need another query for pending totals
-      // For now, we'll do a 3rd query excluding completed and cancelled
-      // Since SDK doesn't support exclusion, let's query all and subtract
-      return sdk.transactions
-        .query({
-          ...baseParams,
-          perPage: SUMMARY_PER_PAGE,
-        })
-        .then(allRes => {
-          const allTxs = allRes.data.data;
-          const completedIds = new Set(completedTxs.map(tx => tx.id.uuid));
-          const cancelledIds = new Set(cancelledTxs.map(tx => tx.id.uuid));
+      const currency = c1 || c2 || c3 || null;
 
-          let pendingTotalAmount = 0;
-          allTxs.forEach(tx => {
-            const txId = tx.id.uuid;
-            if (!completedIds.has(txId) && !cancelledIds.has(txId)) {
-              const payout = tx.attributes.payoutTotal;
-              if (payout) {
-                pendingTotalAmount += payout.amount;
-                if (!currency) currency = payout.currency;
-              }
-            }
-          });
-
-          return {
-            completedTotalAmount,
-            pendingTotalAmount,
-            cancelledCount: cancelledRes.data.meta?.totalItems || cancelledTxs.length,
-            currency,
-          };
-        });
+      return {
+        completedTotalAmount,
+        pendingTotalAmount,
+        cancelledCount: cancelledRes.data.meta?.totalItems || cancelledTxs.length,
+        currentMonthCompletedAmount,
+        currentMonthPendingAmount,
+        currentMonthCancelledCount: mCancelledRes.data.meta?.totalItems || mCancelledTxs.length,
+        currency,
+      };
     })
     .catch(e => rejectWithValue(storableError(e)));
 };

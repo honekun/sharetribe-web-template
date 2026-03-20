@@ -673,6 +673,8 @@
   "MyBalancePage.noResults": "No transactions found.",
   "MyBalancePage.title": "My Balance | Archivo Vintach",
 
+  "BalanceSummary.tabAllTime": "All Time",
+  "BalanceSummary.tabCurrentMonth": "This Month",
   "BalanceSummary.totalEarnings": "Total Earnings",
   "BalanceSummary.pending": "Pending",
   "BalanceSummary.cancelled": "Cancelled",

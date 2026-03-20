@@ -78,6 +78,15 @@
   grid-column: 1 / -1;
 }
 
+.catCols {
+  display: flex;
+  gap: 24px;
+}
+
+.catCols > * {
+  flex-basis: 50%;
+}
+
 .submitButton {
   margin-top: auto;
   margin-bottom: 24px;

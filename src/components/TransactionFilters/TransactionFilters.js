@@ -15,9 +15,9 @@ const TransactionFilters = props => {
   const routeConfiguration = useRouteConfiguration();
 
   const currentParams = parse(location.search);
-  const { status = '', process = '', dateFrom = '', dateTo = '' } = currentParams;
+  const { status = '', dateFrom = '', dateTo = '' } = currentParams;
 
-  const hasFilters = status || process || dateFrom || dateTo;
+  const hasFilters = status || dateFrom || dateTo;
 
   const updateFilter = updates => {
     const newParams = { ...currentParams, ...updates, page: 1 };
@@ -58,29 +58,6 @@ const TransactionFilters = props => {
             </option>
             <option value="cancelled">
               {intl.formatMessage({ id: 'TransactionFilters.cancelled' })}
-            </option>
-          </select>
-        </div>
-
-        <div className={css.filterGroup}>
-          <label className={css.label} htmlFor="process-filter">
-            {intl.formatMessage({ id: 'TransactionFilters.process' })}
-          </label>
-          <select
-            id="process-filter"
-            className={css.select}
-            value={process}
-            onChange={e => updateFilter({ process: e.target.value })}
-          >
-            <option value="">{intl.formatMessage({ id: 'TransactionFilters.all' })}</option>
-            <option value="default-purchase">
-              {intl.formatMessage({ id: 'TransactionFilters.purchase' })}
-            </option>
-            <option value="default-booking">
-              {intl.formatMessage({ id: 'TransactionFilters.booking' })}
-            </option>
-            <option value="default-negotiation">
-              {intl.formatMessage({ id: 'TransactionFilters.negotiation' })}
             </option>
           </select>
         </div>

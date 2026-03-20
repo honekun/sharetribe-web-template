@@ -412,7 +412,7 @@ const EditListingDetailsForm = props => (
             </div>
 
             {showCategories && isCompatibleCurrency && (
-              <div className={css.fullWidth}>
+              <div className={classNames(css.fullWidth, css.catCols)}>
                 <FieldSelectCategory
                   values={values}
                   prefix={categoryPrefix}
