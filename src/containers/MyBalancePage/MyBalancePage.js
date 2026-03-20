@@ -48,6 +48,9 @@ export const MyBalancePageComponent = props => {
     completedTotalAmount,
     pendingTotalAmount,
     cancelledCount,
+    currentMonthCompletedAmount,
+    currentMonthPendingAmount,
+    currentMonthCancelledCount,
     currency,
   } = props;
 
@@ -85,6 +88,9 @@ export const MyBalancePageComponent = props => {
           completedTotalAmount={completedTotalAmount}
           pendingTotalAmount={pendingTotalAmount}
           cancelledCount={cancelledCount}
+          currentMonthCompletedAmount={currentMonthCompletedAmount}
+          currentMonthPendingAmount={currentMonthPendingAmount}
+          currentMonthCancelledCount={currentMonthCancelledCount}
           currency={currency}
           fetchInProgress={summaryFetchInProgress}
         />
@@ -135,6 +141,9 @@ const mapStateToProps = state => {
     completedTotalAmount,
     pendingTotalAmount,
     cancelledCount,
+    currentMonthCompletedAmount,
+    currentMonthPendingAmount,
+    currentMonthCancelledCount,
     currency,
   } = state.MyBalancePage;
   const { currentUser } = state.user;
@@ -149,6 +158,9 @@ const mapStateToProps = state => {
     completedTotalAmount,
     pendingTotalAmount,
     cancelledCount,
+    currentMonthCompletedAmount,
+    currentMonthPendingAmount,
+    currentMonthCancelledCount,
     currency,
   };
 };

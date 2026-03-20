@@ -26,10 +26,10 @@ export const getCompletedTransitions = () => {
     if (name === INQUIRY_PROCESS_NAME) return;
     const process = getProcess(name);
     if (!process) return;
-    const { graph, states: stateNames } = process;
-    Object.keys(graph).forEach(fromState => {
-      const edges = graph[fromState];
-      Object.keys(edges).forEach(transition => {
+    const { graph } = process;
+    Object.values(graph.states).forEach(stateNode => {
+      if (!stateNode.on) return;
+      Object.keys(stateNode.on).forEach(transition => {
         if (process.isCompleted(transition) && !transitions.includes(transition)) {
           transitions.push(transition);
         }
@@ -50,9 +50,9 @@ export const getRefundedTransitions = () => {
     const process = getProcess(name);
     if (!process) return;
     const { graph } = process;
-    Object.keys(graph).forEach(fromState => {
-      const edges = graph[fromState];
-      Object.keys(edges).forEach(transition => {
+    Object.values(graph.states).forEach(stateNode => {
+      if (!stateNode.on) return;
+      Object.keys(stateNode.on).forEach(transition => {
         if (process.isRefunded(transition) && !transitions.includes(transition)) {
           transitions.push(transition);
         }
