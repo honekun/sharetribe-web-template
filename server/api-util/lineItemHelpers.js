@@ -8,6 +8,10 @@ const { nightsBetween, daysBetween } = require('./dates');
 const LINE_ITEM_NIGHT = 'line-item/night';
 const LINE_ITEM_DAY = 'line-item/day';
 
+// Fixed fee component of provider commission (in currency sub-units, e.g. centavos).
+// This is additive on top of the percentage-based commission.
+const PROVIDER_COMMISSION_FIXED_FEE = parseInt(process.env.PROVIDER_COMMISSION_FIXED_FEE, 10) || 0;
+
 /** Helper functions for constructing line items*/
 
 const isNumber = value => {
@@ -374,7 +378,7 @@ exports.getProviderCommissionMaybe = (providerCommission, order, currency) => {
   // The provider commission is what the provider pays for the transaction, and
   // it is the subtracted from the order price to get the provider payout:
   // orderPrice - providerCommission = providerPayout
-  return useMinimumCommission
+  const lineItems = useMinimumCommission
     ? [
         {
           code: 'line-item/provider-commission',
@@ -391,6 +395,28 @@ exports.getProviderCommissionMaybe = (providerCommission, order, currency) => {
           includeFor: ['provider'],
         },
       ];
+
+  // Append fixed fee line item if configured (additive, not max-based)
+  if (PROVIDER_COMMISSION_FIXED_FEE > 0) {
+    // Validate that total commission doesn't exceed order total
+    const percentageAmount = useMinimumCommission
+      ? providerCommission.minimum_amount
+      : estimatedCommissionFromPercentage;
+    if (percentageAmount + PROVIDER_COMMISSION_FIXED_FEE > totalMoneyIn.amount) {
+      throw new Error(
+        'Total provider commission (percentage + fixed fee) exceeds the order total'
+      );
+    }
+
+    lineItems.push({
+      code: 'line-item/provider-commission-fixed',
+      unitPrice: new Money(PROVIDER_COMMISSION_FIXED_FEE, currency),
+      quantity: getNegation(1),
+      includeFor: ['provider'],
+    });
+  }
+
+  return lineItems;
 };
 
 /**

@@ -64,6 +64,8 @@ const defaultConfig = {
   earningsEstimate: {
     providerCommissionPercentage:
       parseFloat(process.env.REACT_APP_PROVIDER_COMMISSION_PERCENTAGE) || 10,
+    providerCommissionFixedAmountInSubunits:
+      parseInt(process.env.REACT_APP_PROVIDER_COMMISSION_FIXED_AMOUNT, 10) || 1500,
     stripeFeePercentage: parseFloat(process.env.REACT_APP_STRIPE_FEE_PERCENTAGE) || 2.9,
     stripeFeeFixedAmountInSubunits:
       parseInt(process.env.REACT_APP_STRIPE_FEE_FIXED_AMOUNT, 10) || 30,
