@@ -403,6 +403,7 @@ export const LINE_ITEM_OFFER = 'line-item/offer';
 export const LINE_ITEM_REQUEST = 'line-item/request';
 export const LINE_ITEM_CUSTOMER_COMMISSION = 'line-item/customer-commission';
 export const LINE_ITEM_PROVIDER_COMMISSION = 'line-item/provider-commission';
+export const LINE_ITEM_PROVIDER_COMMISSION_FIXED = 'line-item/provider-commission-fixed';
 export const LINE_ITEM_SHIPPING_FEE = 'line-item/shipping-fee';
 export const LINE_ITEM_PICKUP_FEE = 'line-item/pickup-fee';
 
@@ -416,6 +417,7 @@ export const LINE_ITEMS = [
   LINE_ITEM_REQUEST,
   LINE_ITEM_CUSTOMER_COMMISSION,
   LINE_ITEM_PROVIDER_COMMISSION,
+  LINE_ITEM_PROVIDER_COMMISSION_FIXED,
   LINE_ITEM_SHIPPING_FEE,
   LINE_ITEM_PICKUP_FEE,
 ];

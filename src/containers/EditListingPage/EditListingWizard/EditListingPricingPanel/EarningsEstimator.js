@@ -15,6 +15,7 @@ const EarningsEstimator = props => {
 
   const {
     providerCommissionPercentage = 10,
+    providerCommissionFixedAmountInSubunits = 1500,
     stripeFeePercentage = 2.9,
     stripeFeeFixedAmountInSubunits = 30,
   } = config.earningsEstimate || {};
@@ -31,13 +32,15 @@ const EarningsEstimator = props => {
 
   const gross = price.amount;
   const currency = price.currency || marketplaceCurrency;
-  const marketplaceCut = Math.round((gross * providerCommissionPercentage) / 100);
+  const marketplaceCut = Math.round((gross * providerCommissionPercentage) / 100)
+    + providerCommissionFixedAmountInSubunits;
   const stripeCut = includePaymentProcessing
     ? Math.round((gross * stripeFeePercentage) / 100) + stripeFeeFixedAmountInSubunits
     : 0;
   const earnings = gross - marketplaceCut - stripeCut;
 
   const fmt = amount => formatMoney(intl, new Money(amount, currency));
+  const fixedFeeFormatted = fmt(providerCommissionFixedAmountInSubunits);
 
   return (
     <div className={css.root}>
@@ -54,7 +57,7 @@ const EarningsEstimator = props => {
         <span className={css.deduction}>
           {intl.formatMessage(
             { id: 'EarningsEstimator.marketplaceFee' },
-            { percentage: providerCommissionPercentage }
+            { percentage: providerCommissionPercentage, fixedFee: fixedFeeFormatted }
           )}
         </span>
         <span className={css.deduction}>-{fmt(marketplaceCut)}</span>
