@@ -34,7 +34,6 @@
   font-weight: var(--fontWeightBold);
   font-size: 17px;
   line-height: 18px;
-  letter-spacing: -1px;
   color: var(--colorGrey700);
 
   display: inline;
@@ -95,13 +94,12 @@
   text-align: left;
   transition: var(--transitionStyleButton);
 
-  font-weight: var(--fontWeightBold);
+  font-weight: var(--fontWeightMedium);
   font-size: 17px;
   line-height: 18px;
-  letter-spacing: -1px;
 
   &:hover {
-    color: var(--colorBlack);
+    color: var(--marketplaceColor);
     text-decoration: none;
 
     & .menuItemBorder {

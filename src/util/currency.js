@@ -255,7 +255,8 @@ export const formatMoney = (intl, value) => {
   const options = {};
   const numberFormatOptions = getCurrencyFormatting(value.currency, options);
 
-  return intl.formatNumber(valueAsNumber, numberFormatOptions);
+  // Force en-US locale for number formatting so MXN displays as 23,456.00 (not 23.456,00)
+  return new Intl.NumberFormat('en-US', numberFormatOptions).format(valueAsNumber);
 };
 
 /**

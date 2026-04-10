@@ -1,0 +1,63 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  display: block;
+  text-decoration: none;
+  border-radius: var(--borderRadiusLarger);
+  overflow: hidden;
+  background: var(--colorGrey50);
+  transition: transform 150ms ease-in-out, box-shadow 150ms ease-in-out;
+
+  &:hover {
+    transform: scale(1.02);
+    box-shadow: var(--boxShadow);
+    text-decoration: none;
+  }
+}
+
+/* Portrait ratio matching AVListingCard tall variant (3:4.85) */
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4.85;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.imagePlaceholder {
+  width: 100%;
+  height: 100%;
+  background: var(--colorGrey100);
+}
+
+/* Frosted gradient overlay at the bottom — matches the Blazers card screenshot */
+.overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 48px 16px 20px;
+  background: linear-gradient(
+    to top,
+    rgba(235, 235, 235, 0.92) 0%,
+    rgba(235, 235, 235, 0.5) 50%,
+    rgba(235, 235, 235, 0) 100%
+  );
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.name {
+  font-family: var(--fontFamilyRoboto, sans-serif);
+  font-size: 22px;
+  font-weight: var(--fontWeightBold);
+  color: var(--colorGrey700);
+  text-align: center;
+  line-height: 1.2;
+}

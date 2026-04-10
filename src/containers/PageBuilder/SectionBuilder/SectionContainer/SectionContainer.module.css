@@ -52,7 +52,6 @@
 
   header > p {
     text-wrap: initial;
-    color: var(--colorGray300);
     font-size: 20px;
     font-weight: 700;
     line-height: 1.5;
@@ -129,10 +128,6 @@
 .sectionContentHasPaddings {
   padding: 90px 0 70px;
 
-  header > h2 + p {
-    color: #aaaaaa;
-  }
-
   header + div {
     margin-top: 50px;
     margin-bottom: 50px;
@@ -164,7 +159,6 @@
     font-weight: 700;
     line-height: 150%; /* 30px */
     line-height: 28px; /* 140% */
-    letter-spacing: -1px;
   }
 }
 

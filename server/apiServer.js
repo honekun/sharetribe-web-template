@@ -35,6 +35,8 @@ app.use('/.well-known', wellKnownRouter);
 const brevoRouter = require('./api/brevo');
 app.use('/api/brevo', brevoRouter);
 
+const bulkImportRouter = require('./api/bulk-import');
+app.use('/api/bulk-import', bulkImportRouter);
 
 app.use('/api', apiRouter);
 

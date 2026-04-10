@@ -40,6 +40,34 @@ export const getCompletedTransitions = () => {
 };
 
 /**
+ * Get all transitions that lead to pending (in-progress) states across all payment processes.
+ * These are all transitions that are neither completed nor refunded.
+ * Excludes inquiry process (no payment).
+ */
+export const getPendingTransitions = () => {
+  const pendingTransitions = [];
+  getSupportedProcessesInfo().forEach(({ name }) => {
+    if (name === INQUIRY_PROCESS_NAME) return;
+    const process = getProcess(name);
+    if (!process) return;
+    const { graph } = process;
+    Object.values(graph.states).forEach(stateNode => {
+      if (!stateNode.on) return;
+      Object.keys(stateNode.on).forEach(transition => {
+        if (
+          !process.isCompleted(transition) &&
+          !process.isRefunded(transition) &&
+          !pendingTransitions.includes(transition)
+        ) {
+          pendingTransitions.push(transition);
+        }
+      });
+    });
+  });
+  return pendingTransitions;
+};
+
+/**
  * Get all transitions that lead to refunded/cancelled states across all payment processes.
  * Excludes inquiry process (no payment).
  */
@@ -80,10 +108,9 @@ export const buildFilteredQueryParams = (searchParams, { only = 'sale' } = {}) =
     params.lastTransitions = getCompletedTransitions();
   } else if (status === 'cancelled') {
     params.lastTransitions = getRefundedTransitions();
+  } else if (status === 'pending') {
+    params.lastTransitions = getPendingTransitions();
   }
-  // 'pending' status: we exclude completed and cancelled transitions
-  // This is not directly supported by SDK, so for pending we don't set lastTransitions
-  // and instead filter client-side (or accept all and let the component filter)
 
   // Filter by process name
   if (process && process !== 'all') {

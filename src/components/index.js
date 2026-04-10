@@ -102,6 +102,8 @@ export { default as FieldSelectTree } from './FieldSelectTree/FieldSelectTree';
 export { default as FieldTextInput } from './FieldTextInput/FieldTextInput';
 
 export { default as FieldSwatch } from './FieldSwatch/FieldSwatch';
+export { default as FieldGroupedMultiSelect } from './FieldGroupedMultiSelect/FieldGroupedMultiSelect';
+export { default as FieldColorDropdown } from './FieldColorDropdown/FieldColorDropdown';
 
 // Fields that use other Fields
 export { default as FieldBoolean } from './FieldBoolean/FieldBoolean';

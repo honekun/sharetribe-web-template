@@ -60,12 +60,15 @@ const defaultConfig = {
   // By default, it doesn't add anything.
   analytics,
 
-  // Earnings estimator settings for the listing pricing form
+  // Earnings estimator settings for the listing pricing form.
+  // providerCommissionPercentage and providerCommissionFixedAmountInSubunits are overridden at runtime
+  // by the commission asset from Console (transactions/commission.json) via mergeConfig.
+  // These code defaults are only used if the asset is unavailable.
   earningsEstimate: {
     providerCommissionPercentage:
       parseFloat(process.env.REACT_APP_PROVIDER_COMMISSION_PERCENTAGE) || 10,
     providerCommissionFixedAmountInSubunits:
-      parseInt(process.env.REACT_APP_PROVIDER_COMMISSION_FIXED_AMOUNT, 10) || 1500,
+      parseInt(process.env.REACT_APP_PROVIDER_COMMISSION_FIXED_FEE, 10) || 0,
     stripeFeePercentage: parseFloat(process.env.REACT_APP_STRIPE_FEE_PERCENTAGE) || 2.9,
     stripeFeeFixedAmountInSubunits:
       parseInt(process.env.REACT_APP_STRIPE_FEE_FIXED_AMOUNT, 10) || 30,
@@ -112,10 +115,10 @@ const defaultConfig = {
     listingFields: '/listings/listing-fields.json',
     search: '/listings/listing-search.json',
     transactionSize: '/transactions/minimum-transaction-size.json',
+    commission: '/transactions/commission.json',
     analytics: '/integrations/analytics.json',
     googleSearchConsole: '/integrations/google-search-console.json',
     maps: '/integrations/map.json',
-    // NOTE: we don't fetch commission configuration here but on the server-side
   },
 
   // Optional

@@ -5,6 +5,7 @@ import classNames from 'classnames';
 
 // Import util modules
 import { FormattedMessage, useIntl } from '../../../../util/reactIntl';
+import { listingFieldDisplayOverrides } from '../../../../config/configListingDisplay';
 import { displayDescription } from '../../../../util/configHelpers.js';
 import { useConfiguration } from '../../../../context/configurationContext.js';
 import { EXTENDED_DATA_SCHEMA_TYPES, propTypes } from '../../../../util/types';
@@ -257,13 +258,18 @@ const AddListingFields = props => {
     const isTargetListingType = isFieldForListingType(listingType, fieldConfig);
     const isTargetCategory = isFieldForCategory(targetCategoryIds, fieldConfig);
 
+    const displayOverride = listingFieldDisplayOverrides[key];
+    const effectiveFieldConfig = displayOverride
+      ? { ...fieldConfig, saveConfig: { ...fieldConfig.saveConfig, ...displayOverride.saveConfig } }
+      : fieldConfig;
+
     return isKnownSchemaType && isProviderScope && isTargetListingType && isTargetCategory
       ? [
           ...pickedFields,
           <CustomExtendedDataField
             key={namespacedKey}
             name={namespacedKey}
-            fieldConfig={fieldConfig}
+            fieldConfig={effectiveFieldConfig}
             defaultRequiredMessage={intl.formatMessage({
               id: 'EditListingDetailsForm.defaultRequiredMessage',
             })}

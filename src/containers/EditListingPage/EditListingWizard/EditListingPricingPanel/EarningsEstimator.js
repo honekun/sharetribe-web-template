@@ -15,7 +15,7 @@ const EarningsEstimator = props => {
 
   const {
     providerCommissionPercentage = 10,
-    providerCommissionFixedAmountInSubunits = 1500,
+    providerCommissionFixedAmountInSubunits = 0,
     stripeFeePercentage = 2.9,
     stripeFeeFixedAmountInSubunits = 30,
   } = config.earningsEstimate || {};
@@ -32,15 +32,19 @@ const EarningsEstimator = props => {
 
   const gross = price.amount;
   const currency = price.currency || marketplaceCurrency;
-  const marketplaceCut = Math.round((gross * providerCommissionPercentage) / 100)
-    + providerCommissionFixedAmountInSubunits;
+  // Commission = percentage of price + fixed fee (always additive).
+  const marketplaceCut =
+    Math.round((gross * providerCommissionPercentage) / 100) +
+    providerCommissionFixedAmountInSubunits;
   const stripeCut = includePaymentProcessing
     ? Math.round((gross * stripeFeePercentage) / 100) + stripeFeeFixedAmountInSubunits
     : 0;
   const earnings = gross - marketplaceCut - stripeCut;
 
   const fmt = amount => formatMoney(intl, new Money(amount, currency));
-  const fixedFeeFormatted = fmt(providerCommissionFixedAmountInSubunits);
+  const fixedFeeFormatted = providerCommissionFixedAmountInSubunits > 0
+    ? fmt(providerCommissionFixedAmountInSubunits)
+    : null;
 
   return (
     <div className={css.root}>
@@ -55,10 +59,10 @@ const EarningsEstimator = props => {
 
       <div className={css.lineItem}>
         <span className={css.deduction}>
-          {intl.formatMessage(
-            { id: 'EarningsEstimator.marketplaceFee' },
-            { percentage: providerCommissionPercentage, fixedFee: fixedFeeFormatted }
-          )}
+          {intl.formatMessage({ id: 'EarningsEstimator.marketplaceFeeLabel' })}
+          {fixedFeeFormatted
+            ? ` (${providerCommissionPercentage}% + ${fixedFeeFormatted})`
+            : ` (${providerCommissionPercentage}%)`}
         </span>
         <span className={css.deduction}>-{fmt(marketplaceCut)}</span>
       </div>

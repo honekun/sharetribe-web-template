@@ -2,6 +2,8 @@ import {
   AV_HERO_SECTION_TYPE,
   AV_RECOMMENDEDS_SECTION_TYPE,
   AV_SELECTIONS_SECTION_TYPE,
+  AV_TAG_LISTINGS_SECTION_TYPE,
+  AV_SELECTED_CATS_SECTION_TYPE,
 } from './constants';
 import { loadCustomSectionListings, selectCustomSectionListings } from './listings';
 import { transformCustomSections } from './transform';
@@ -19,11 +21,17 @@ const getSectionComponents = () => {
     .default;
   const SectionSelectedListings = require('../../../containers/PageBuilder/SectionBuilder/SectionSelectedListings')
     .default;
+  const SectionTagCatListings = require('../../../containers/PageBuilder/SectionBuilder/SectionTagCatListings')
+    .default;
+  const SectionSelectedCat = require('../../../containers/PageBuilder/SectionBuilder/SectionSelectedCat')
+    .default;
 
   cachedSectionComponents = {
     [AV_HERO_SECTION_TYPE]: { component: SectionHeroCustom },
     [AV_RECOMMENDEDS_SECTION_TYPE]: { component: SectionRecommendedListings },
     [AV_SELECTIONS_SECTION_TYPE]: { component: SectionSelectedListings },
+    [AV_TAG_LISTINGS_SECTION_TYPE]: { component: SectionTagCatListings },
+    [AV_SELECTED_CATS_SECTION_TYPE]: { component: SectionSelectedCat },
   };
 
   return cachedSectionComponents;

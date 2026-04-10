@@ -1,6 +1,6 @@
 'use strict';
 
-const integrationSdkLib = require('sharetribe-flex-integration-sdk');
+const { getIntegrationSdk } = require('./integrationSdk');
 const { sendWelcomeEmail } = require('./welcomeEmailService');
 const { sendAdminAlert, sendUserWhatsApp, lookupUserPhone } = require('./whatsappService');
 
@@ -9,18 +9,6 @@ const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 // In-memory cursor; resets on server restart.
 // On first boot we look back 10 minutes to avoid missing events during deployments.
 let lastSequenceId = null;
-
-let integrationSdk = null;
-
-function getIntegrationSdk() {
-  if (!integrationSdk) {
-    integrationSdk = integrationSdkLib.createInstance({
-      clientId: process.env.SHARETRIBE_INTEGRATION_CLIENT_ID,
-      clientSecret: process.env.SHARETRIBE_INTEGRATION_CLIENT_SECRET,
-    });
-  }
-  return integrationSdk;
-}
 
 // ─── Event handlers ───────────────────────────────────────────────────────────
 

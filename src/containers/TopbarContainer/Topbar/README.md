@@ -34,9 +34,15 @@ ResizeObserver web API to monitor for changes in the viewport's width.
 This component is inherently somewhat fragile as it needs to deal with the DOM directly. If you
 customize the Topbar, make sure to test responsiveness thoroughly.
 
-## Hosted assets
+## Configuration sources
 
-The dynamic links in the menu use a hosted asset called top-bar.json. An example of the structure:
+The Topbar in this project reads configuration from two different places:
+
+- Sharetribe hosted `top-bar.json` asset for standard topbar settings such as `customLinks` and
+  `logoLink`
+- Local static file `public/static/data/top-bar.json` for the AV custom category dropdowns
+
+The hosted Sharetribe top-bar asset still follows the normal structure:
 
 ```
 {
@@ -57,6 +63,45 @@ The dynamic links in the menu use a hosted asset called top-bar.json. An example
     }
 }
 ```
+
+The AV custom category dropdowns are not read from the hosted Sharetribe top-bar asset. They are
+read from the local static file `public/static/data/top-bar.json`, which is served at
+`/static/data/top-bar.json`.
+
+That file supports the following shape:
+
+```json
+{
+  "categoryDropdowns": {
+    "menuLinksDropdown1": [
+      { "categoryPath": ["ropa"], "label": "Ver Todo" },
+      { "categoryPath": ["ropa", "ropa-tops"] },
+      { "categoryPath": ["ropa", "ropa-camisas"] }
+    ],
+    "menuLinksDropdown2": [
+      { "categoryPath": ["accesorios"], "label": "Ver Todo" },
+      { "categoryPath": ["bolsas"] },
+      { "categoryPath": ["accesorios", "accesorios-cinturones"] }
+    ]
+  }
+}
+```
+
+Each item points to a path in the hosted `listing-categories.json` tree. The app resolves the
+category ids into labels and search URLs automatically.
+
+Behavior:
+
+- If `public/static/data/top-bar.json` is missing or cannot be loaded, the app falls back to the
+  built-in dropdown definitions.
+- If the file exists but a dropdown key is omitted or set to an empty array, that dropdown renders
+  nothing.
+- `menuLinksDropdown3` is still generated from the `brand` listing field options, not from this
+  JSON file.
+
+Operationally, this means updating the dropdown menus requires editing
+`public/static/data/top-bar.json` in the codebase and deploying the change. It is not managed
+through the Sharetribe Console top bar UI.
 
 ## logoLink
 

@@ -151,6 +151,32 @@
         font-display: fallback;
         src: url("https://assets-sharetribecom.sharetribe.com/webfonts/inter/static-web/Inter-BlackItalic.woff2") format("woff2"), url("https://assets-sharetribecom.sharetribe.com/webfonts/inter/static-web/Inter-BlackItalic.woff") format("woff");
       }
+
+      /**
+       * AV custom fonts are self-hosted under /public/static/fonts.
+       * Prefer woff2 for modern browser support and smaller transfer size.
+       */
+      @font-face {
+        font-family: "Non Bureau";
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url("/static/fonts/Non Bureau-Regular.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "PPNeueCorp";
+        font-style: normal;
+        font-weight: 800;
+        font-display: swap;
+        src: url("/static/fonts/PPNeueCorp-NormalUltrabold.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Ticketing";
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url("/static/fonts/Ticketing.woff2") format("woff2");
+      }
     </style>
 
     <!--!script-->

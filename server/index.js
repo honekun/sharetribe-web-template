@@ -84,6 +84,10 @@ app.use(express.json());
 
 app.use('/api/brevo', brevoRouter);
 
+// Bulk import router (mounted separately to avoid Transit body-parser conflict with multer)
+const bulkImportRouter = require('./api/bulk-import');
+app.use('/api/bulk-import', bulkImportRouter);
+
 const errorPage500 = fs.readFileSync(path.join(buildPath, '500.html'), 'utf-8');
 const errorPage404 = fs.readFileSync(path.join(buildPath, '404.html'), 'utf-8');
 

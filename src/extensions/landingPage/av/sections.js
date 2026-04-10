@@ -2,6 +2,8 @@ import {
   AV_HERO_SECTION_ID,
   AV_RECOMMENDEDS_SECTION_ID,
   AV_SELECTIONS_SECTION_ID_PREFIX,
+  AV_TAG_LISTINGS_SECTION_ID_PREFIX,
+  AV_SELECTED_CATS_SECTION_ID_PREFIX,
 } from './constants';
 
 export const getListingIdsFromSection = section =>
@@ -9,6 +11,12 @@ export const getListingIdsFromSection = section =>
 
 export const isSelectionsSectionId = sectionId =>
   (sectionId || '').indexOf(AV_SELECTIONS_SECTION_ID_PREFIX) === 0;
+
+export const isTagListingsSectionId = sectionId =>
+  (sectionId || '').indexOf(AV_TAG_LISTINGS_SECTION_ID_PREFIX) === 0;
+
+export const isSelectedCatsSectionId = sectionId =>
+  (sectionId || '').indexOf(AV_SELECTED_CATS_SECTION_ID_PREFIX) === 0;
 
 export const getRecommendedListingIds = pageData => {
   const section = pageData?.sections?.find(s => s?.sectionId === AV_RECOMMENDEDS_SECTION_ID);
@@ -26,6 +34,25 @@ export const getSelectionsSections = pageData => {
   }, {});
 };
 
+/**
+ * Returns a map of { [sectionId]: firstBlockName } for all av-tag-listings-* sections.
+ * The firstBlockName encodes the filter value:
+ *   - "tag:hot-list"  → filter by pub_tags = hot-list
+ *   - "cat:blazers"   → filter by pub_categoryLevel1 = blazers
+ *   - "hot-list"      → defaults to pub_tags = hot-list
+ */
+export const getTagListingsSections = pageData => {
+  const sections = pageData?.sections || [];
+  return sections.reduce((collected, section) => {
+    const sectionId = section?.sectionId || '';
+    if (isTagListingsSectionId(sectionId)) {
+      const firstBlockName = section?.blocks?.[0]?.blockName || null;
+      return firstBlockName ? { ...collected, [sectionId]: firstBlockName } : collected;
+    }
+    return collected;
+  }, {});
+};
+
 export const hasCustomSections = pageData => {
   const sections = pageData?.sections || [];
   return sections.some(s => {
@@ -33,7 +60,9 @@ export const hasCustomSections = pageData => {
     return (
       sectionId === AV_HERO_SECTION_ID ||
       sectionId === AV_RECOMMENDEDS_SECTION_ID ||
-      isSelectionsSectionId(sectionId)
+      isSelectionsSectionId(sectionId) ||
+      isTagListingsSectionId(sectionId) ||
+      isSelectedCatsSectionId(sectionId)
     );
   });
 };

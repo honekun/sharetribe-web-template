@@ -102,7 +102,7 @@ const customFormatPrice = (price, currency, intl) => {
     return {formattedPrice, priceTitle: formattedPrice};   // Force dot.
   }
 
-  const formattedPrice = formatMoney(intl, { amount, currency });
+  const formattedPrice = formatMoney(intl, price);
   return { formattedPrice, priceTitle: formattedPrice };
 };
 

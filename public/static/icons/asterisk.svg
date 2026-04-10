@@ -1,0 +1,13 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="48"
+  height="48"
+  viewBox="0 0 48 48"
+  fill="none"
+>
+  <g stroke="currentColor" stroke-linecap="round" stroke-width="5.5">
+    <path d="M24 8v32" />
+    <path d="M10.144 16 37.856 32" />
+    <path d="M10.144 32 37.856 16" />
+  </g>
+</svg>
