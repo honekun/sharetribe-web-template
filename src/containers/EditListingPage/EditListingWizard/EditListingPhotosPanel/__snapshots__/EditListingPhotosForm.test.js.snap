@@ -37,21 +37,64 @@ exports[`EditListingPhotosForm matches snapshot 1`] = `
                   class="uploadArea"
                   for="addImage_front"
                 >
-                  <span
-                    class="uploadText"
+                  <svg
+                    class="cameraIcon"
+                    fill="none"
+                    viewBox="0 0 64 64"
+                    xmlns="http://www.w3.org/2000/svg"
                   >
-                    +
+                    <path
+                      d="M8 22h6l4-6h28l4 6h6a2 2 0 012 2v28a2 2 0 01-2 2H8a2 2 0 01-2-2V24a2 2 0 012-2z"
+                      fill="currentColor"
+                      opacity="0.15"
+                      stroke="currentColor"
+                      stroke-linejoin="round"
+                      stroke-width="2.5"
+                    />
+                    <circle
+                      cx="32"
+                      cy="36"
+                      fill="white"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                    />
+                    <circle
+                      cx="32"
+                      cy="36"
+                      r="6"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    />
+                    <line
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-width="2.5"
+                      x1="32"
+                      x2="32"
+                      y1="8"
+                      y2="16"
+                    />
+                    <line
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-width="2.5"
+                      x1="28"
+                      x2="36"
+                      y1="12"
+                      y2="12"
+                    />
+                  </svg>
+                  <span
+                    class="uploadLabel"
+                  >
+                    EditListingPhotosForm.slotLabel.front
                   </span>
                 </label>
               </div>
             </div>
           </div>
         </div>
-        <p
-          class="required"
-        >
-          EditListingPhotosForm.slotLabel.front
-        </p>
       </div>
       <div
         class="root"
@@ -80,21 +123,64 @@ exports[`EditListingPhotosForm matches snapshot 1`] = `
                   class="uploadArea"
                   for="addImage_back"
                 >
-                  <span
-                    class="uploadText"
+                  <svg
+                    class="cameraIcon"
+                    fill="none"
+                    viewBox="0 0 64 64"
+                    xmlns="http://www.w3.org/2000/svg"
                   >
-                    +
+                    <path
+                      d="M8 22h6l4-6h28l4 6h6a2 2 0 012 2v28a2 2 0 01-2 2H8a2 2 0 01-2-2V24a2 2 0 012-2z"
+                      fill="currentColor"
+                      opacity="0.15"
+                      stroke="currentColor"
+                      stroke-linejoin="round"
+                      stroke-width="2.5"
+                    />
+                    <circle
+                      cx="32"
+                      cy="36"
+                      fill="white"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                    />
+                    <circle
+                      cx="32"
+                      cy="36"
+                      r="6"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    />
+                    <line
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-width="2.5"
+                      x1="32"
+                      x2="32"
+                      y1="8"
+                      y2="16"
+                    />
+                    <line
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-width="2.5"
+                      x1="28"
+                      x2="36"
+                      y1="12"
+                      y2="12"
+                    />
+                  </svg>
+                  <span
+                    class="uploadLabel"
+                  >
+                    EditListingPhotosForm.slotLabel.back
                   </span>
                 </label>
               </div>
             </div>
           </div>
         </div>
-        <p
-          class="slotLabel"
-        >
-          EditListingPhotosForm.slotLabel.back
-        </p>
       </div>
       <div
         class="root"
@@ -123,21 +209,64 @@ exports[`EditListingPhotosForm matches snapshot 1`] = `
                   class="uploadArea"
                   for="addImage_horizontal"
                 >
-                  <span
-                    class="uploadText"
+                  <svg
+                    class="cameraIcon"
+                    fill="none"
+                    viewBox="0 0 64 64"
+                    xmlns="http://www.w3.org/2000/svg"
                   >
-                    +
+                    <path
+                      d="M8 22h6l4-6h28l4 6h6a2 2 0 012 2v28a2 2 0 01-2 2H8a2 2 0 01-2-2V24a2 2 0 012-2z"
+                      fill="currentColor"
+                      opacity="0.15"
+                      stroke="currentColor"
+                      stroke-linejoin="round"
+                      stroke-width="2.5"
+                    />
+                    <circle
+                      cx="32"
+                      cy="36"
+                      fill="white"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                    />
+                    <circle
+                      cx="32"
+                      cy="36"
+                      r="6"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    />
+                    <line
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-width="2.5"
+                      x1="32"
+                      x2="32"
+                      y1="8"
+                      y2="16"
+                    />
+                    <line
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-width="2.5"
+                      x1="28"
+                      x2="36"
+                      y1="12"
+                      y2="12"
+                    />
+                  </svg>
+                  <span
+                    class="uploadLabel"
+                  >
+                    EditListingPhotosForm.slotLabel.horizontal
                   </span>
                 </label>
               </div>
             </div>
           </div>
         </div>
-        <p
-          class="slotLabel"
-        >
-          EditListingPhotosForm.slotLabel.horizontal
-        </p>
       </div>
       <div
         class="root"
@@ -166,21 +295,64 @@ exports[`EditListingPhotosForm matches snapshot 1`] = `
                   class="uploadArea"
                   for="addImage_details"
                 >
-                  <span
-                    class="uploadText"
+                  <svg
+                    class="cameraIcon"
+                    fill="none"
+                    viewBox="0 0 64 64"
+                    xmlns="http://www.w3.org/2000/svg"
                   >
-                    +
+                    <path
+                      d="M8 22h6l4-6h28l4 6h6a2 2 0 012 2v28a2 2 0 01-2 2H8a2 2 0 01-2-2V24a2 2 0 012-2z"
+                      fill="currentColor"
+                      opacity="0.15"
+                      stroke="currentColor"
+                      stroke-linejoin="round"
+                      stroke-width="2.5"
+                    />
+                    <circle
+                      cx="32"
+                      cy="36"
+                      fill="white"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                    />
+                    <circle
+                      cx="32"
+                      cy="36"
+                      r="6"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    />
+                    <line
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-width="2.5"
+                      x1="32"
+                      x2="32"
+                      y1="8"
+                      y2="16"
+                    />
+                    <line
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-width="2.5"
+                      x1="28"
+                      x2="36"
+                      y1="12"
+                      y2="12"
+                    />
+                  </svg>
+                  <span
+                    class="uploadLabel"
+                  >
+                    EditListingPhotosForm.slotLabel.details
                   </span>
                 </label>
               </div>
             </div>
           </div>
         </div>
-        <p
-          class="slotLabel"
-        >
-          EditListingPhotosForm.slotLabel.details
-        </p>
       </div>
     </div>
     <div

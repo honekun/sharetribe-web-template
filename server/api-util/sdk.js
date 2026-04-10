@@ -180,7 +180,7 @@ exports.getTrustedSdk = req => {
 // Fetch commission asset with 'latest' alias.
 exports.fetchCommission = sdk => {
   return sdk
-    .assetsByAlias({ paths: ['transactions/commission.json'], alias: 'latest' })
+    .assetsByAlias({ paths: ['/transactions/commission.json'], alias: 'latest' })
     .then(response => {
       // Let's throw an error if we can't fetch commission for some reason
       const commissionAsset = response?.data?.data?.[0];

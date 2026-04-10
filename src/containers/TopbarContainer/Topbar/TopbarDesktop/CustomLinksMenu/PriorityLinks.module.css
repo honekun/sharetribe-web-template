@@ -78,7 +78,6 @@
 .priorityLinkLabel {
   font-weight: var(--fontWeightBold);
   font-size: 17px;
-  letter-spacing: -1px;
   display: inline-block;
   margin: 28px 0;
   text-decoration: inherit;

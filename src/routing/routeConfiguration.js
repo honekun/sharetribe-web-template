@@ -27,6 +27,7 @@ const ManageListingsPage = loadable(() => import(/* webpackChunkName: "ManageLis
 const ManageAccountPage = loadable(() => import(/* webpackChunkName: "ManageAccountPage" */ '../containers/ManageAccountPage/ManageAccountPage'));
 const MyPurchasesPage = loadable(() => import(/* webpackChunkName: "MyPurchasesPage" */ '../containers/MyPurchasesPage/MyPurchasesPage'));
 const MyBalancePage = loadable(() => import(/* webpackChunkName: "MyBalancePage" */ '../containers/MyBalancePage/MyBalancePage'));
+const BulkImportPage = loadable(() => import(/* webpackChunkName: "BulkImportPage" */ '../containers/BulkImportPage/BulkImportPage'));
 const MySalesPage = loadable(() => import(/* webpackChunkName: "MySalesPage" */ '../containers/MySalesPage/MySalesPage'));
 const PasswordChangePage = loadable(() => import(/* webpackChunkName: "PasswordChangePage" */ '../containers/PasswordChangePage/PasswordChangePage'));
 const PasswordRecoveryPage = loadable(() => import(/* webpackChunkName: "PasswordRecoveryPage" */ '../containers/PasswordRecoveryPage/PasswordRecoveryPage'));
@@ -291,6 +292,11 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       loadData: pageDataLoadingAPI.MyBalancePage.loadData,
     },
     {
+      path: '/admin/bulk-import',
+      name: 'BulkImportPage',
+      component: BulkImportPage,
+    },
+    {
       path: '/order/:id',
       name: 'OrderDetailsPage',
       auth: true,
@@ -473,7 +479,7 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
     {
       path: '/s',
       name: 'HotListPage',
-      extra: { pub_tags: 'hot-list' },
+      extra: { pub_tags: 'mas-nuevo' },
       component: SearchPage,
     },
   ];

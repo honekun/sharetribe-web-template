@@ -184,6 +184,7 @@ export const EditListingPricingForm = props => (
               <EarningsEstimator
                 price={formValues?.price}
                 marketplaceCurrency={marketplaceCurrency}
+                includePaymentProcessing
               />
             </>
           )}

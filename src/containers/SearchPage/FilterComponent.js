@@ -12,6 +12,8 @@ import KeywordFilter from './KeywordFilter/KeywordFilter';
 import PriceFilter from './PriceFilter/PriceFilter';
 import IntegerRangeFilter from './IntegerRangeFilter/IntegerRangeFilter';
 import SeatsFilter from './SeatsFilter/SeatsFilter';
+import GroupedMultiSelectFilter from './GroupedMultiSelectFilter/GroupedMultiSelectFilter';
+import { listingFieldDisplayOverrides } from '../../config/configListingDisplay';
 
 // TODO: move to component.
 import classNames from 'classnames';
@@ -255,6 +257,31 @@ const FilterComponent = props => {
       const { scope, enumOptions, filterConfig = {} } = config;
       const { label, filterType, searchMode } = filterConfig;
       const queryParamNames = [constructQueryParamName(key, scope)];
+
+      // If this field has a groupedMultiSelect display override, render the grouped filter.
+      const displayOverride = listingFieldDisplayOverrides[key];
+      const groups =
+        displayOverride?.saveConfig?.inputType === 'groupedMultiSelect'
+          ? displayOverride.saveConfig.groups
+          : null;
+
+      if (groups) {
+        return (
+          <GroupedMultiSelectFilter
+            id={componentId}
+            label={label}
+            getAriaLabel={getAriaLabel}
+            name={name}
+            queryParamNames={queryParamNames}
+            initialValues={initialValues(queryParamNames, liveEdit)}
+            onSubmit={getHandleChangedValueFn(useHistoryPush)}
+            groups={groups}
+            searchMode={searchMode}
+            {...rest}
+          />
+        );
+      }
+
       return (
         <SelectMultipleFilter
           id={componentId}

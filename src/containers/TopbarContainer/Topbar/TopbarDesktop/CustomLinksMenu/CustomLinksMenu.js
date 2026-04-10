@@ -1,30 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
-import classNames from 'classnames';
 
-import PriorityLinks, { CreateListingMenuLink, CreateCusomMenusLinks } from './PriorityLinks';
+import { useConfiguration } from '../../../../../context/configurationContext';
+import PriorityLinks, { CreateCusomMenusLinks } from './PriorityLinks';
 import LinksMenu from './LinksMenu';
-import LinksMenuDropdown from './LinksMenuDropdown';
-
-import { FormattedMessage } from '../../../../../util/reactIntl';
-
-import { ExternalLink, NamedLink } from '../../../../../components';
+import {
+  defaultTopbarCategoryDropdowns,
+  fetchLocalTopbarData,
+  getCategoryDropdownsConfig,
+  resolveDropdownMenuItems,
+} from './categoryDropdowns';
 
 import css from './CustomLinksMenu.module.css';
-
-const createListingLinkConfigMaybe = (intl, showLink) =>
-  showLink
-    ? [
-        {
-          group: 'primary',
-          text: intl.formatMessage({ id: 'TopbarDesktop.createListing' }),
-          type: 'internal',
-          route: {
-            name: 'NewListingPage',
-          },
-          highlight: true,
-        },
-      ]
-    : [];
 
 /**
  * Group links to 2 groups:
@@ -59,13 +45,13 @@ const groupMeasuredLinks = (links, containerWidth, menuMoreWidth) => {
 
       return isPrimary && hasSpace
         ? {
-          priorityLinks: [...pickedLinks.priorityLinks, link],
-          menuLinks: pickedLinks.menuLinks,
-        }
+            priorityLinks: [...pickedLinks.priorityLinks, link],
+            menuLinks: pickedLinks.menuLinks,
+          }
         : {
-          priorityLinks: pickedLinks.priorityLinks,
-          menuLinks: [...pickedLinks.menuLinks, link],
-        };
+            priorityLinks: pickedLinks.priorityLinks,
+            menuLinks: [...pickedLinks.menuLinks, link],
+          };
     },
     { priorityLinks: [], menuLinks: [] }
   );
@@ -116,10 +102,12 @@ const CustomLinksMenu = ({
   intl,
   showCreateListingsLink,
 }) => {
+  const config = useConfiguration();
   const containerRef = useRef(null);
   const observer = useRef(null);
   const [mounted, setMounted] = useState(false);
   const [moreLabelWidth, setMoreLabelWidth] = useState(0);
+  const [localTopbarData, setLocalTopbarData] = useState(null);
   const [links, setLinks] = useState([
     /// ...createListingLinkConfigMaybe(intl, showCreateListingsLink),
     ...customLinks,
@@ -133,6 +121,20 @@ const CustomLinksMenu = ({
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    fetchLocalTopbarData(window?.fetch?.bind(window)).then(data => {
+      if (isActive && data) {
+        setLocalTopbarData(data);
+      }
+    });
+
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -195,107 +197,40 @@ const CustomLinksMenu = ({
   }, [containerRef, hasClientSideContentReady, moreLabelWidth, links]);
 
   const { priorityLinks, menuLinks, containerWidth } = layoutData;
+  const categoryDropdowns = getCategoryDropdownsConfig(localTopbarData);
+  const fallbackDropdown1 = localTopbarData ? [] : defaultTopbarCategoryDropdowns.menuLinksDropdown1;
+  const fallbackDropdown2 = localTopbarData ? [] : defaultTopbarCategoryDropdowns.menuLinksDropdown2;
+  const menuLinksDropdown1 = resolveDropdownMenuItems(
+    categoryDropdowns.menuLinksDropdown1,
+    config?.categoryConfiguration,
+    fallbackDropdown1
+  );
+  const menuLinksDropdown2 = resolveDropdownMenuItems(
+    categoryDropdowns.menuLinksDropdown2,
+    config?.categoryConfiguration,
+    fallbackDropdown2
+  );
 
-  const menuLinksDropdown1 = [
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=ropa',
-      text: 'Ver Todo',
-    },
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=ropa&pub_categoryLevel2=ropa-tops',
-      text: 'Tops',
-    },
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=ropa&pub_categoryLevel2=ropa-camisetas',
-      text: 'Camisetas',
-    },
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=ropa&pub_categoryLevel2=ropa-camisas',
-      text: 'Camisas',
-    },
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=ropa&pub_categoryLevel2=ropa-sacos-chamarras',
-      text: 'Chamarras/Sacos',
-    },
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=ropa&pub_categoryLevel2=ropa-pantalones',
-      text: 'Pantalones',
-    },
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=ropa&pub_categoryLevel2=ropa-jeans',
-      text: 'Jeans',
-    },
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=ropa&pub_categoryLevel2=ropa-faldas',
-      text: 'Faldas',
-    },
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=ropa&pub_categoryLevel2=ropa-vestidos',
-      text: 'Vestidos',
-    },
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=ropa&pub_categoryLevel2=ropa-deportiva',
-      text: 'Ropa Deportiva',
-    },
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=ropa&pub_categoryLevel2=ropa-jumpsuits',
-      text: 'Jumpsuits',
-    },
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=ropa&pub_categoryLevel2=ropa-trajes',
-      text: 'Sets',
-    },
-  ];
-
-  const menuLinksDropdown2 = [
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=accesorios',
-      text: 'Ver Todo',
-    },
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=bolsas',
-      text: 'Bolsas',
-    },
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=zapatos',
-      text: 'Zapatos',
-    },
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=accesorios&pub_categoryLevel2=accesorios-cinturones',
-      text: 'Cinturones',
-    },
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=accesorios&pub_categoryLevel2=accesorios-gorras_gorros',
-      text: 'Gorras/Gorros',
-    },
-    {
-      group: 'primary',
-      href: '/s?pub_categoryLevel1=accesorios&pub_categoryLevel2=accesorios-joyerias',
-      text: 'Joyería',
-    },
-  ];
+  const brandField = config?.listing?.listingFields?.find(field => field.key === 'brand');
+  const menuLinksDropdown3 = (brandField?.enumOptions || []).map(option => ({
+    group: 'primary',
+    href: `/s?pub_brand=${encodeURIComponent(option.option)}`,
+    text: option.label,
+  }));
 
   // If there are no custom links, just render createListing link.
   if (customLinks?.length === 0) {
     const wrapperStyle = { display: 'flex', width: '100%' };
-    return <CreateCusomMenusLinks intl={intl} menuLinksDropdown1={menuLinksDropdown1} menuLinksDropdown2={menuLinksDropdown2} customLinksCss={css} wrapperStyle={wrapperStyle} />;
+    return (
+      <CreateCusomMenusLinks
+        intl={intl}
+        menuLinksDropdown1={menuLinksDropdown1}
+        menuLinksDropdown2={menuLinksDropdown2}
+        menuLinksDropdown3={menuLinksDropdown3}
+        customLinksCss={css}
+        wrapperStyle={wrapperStyle}
+      />
+    );
   }
 
   const styleMaybe = mounted ? { style: { width: `${containerWidth}px` } } : {};
@@ -306,11 +241,18 @@ const CustomLinksMenu = ({
 
   return (
     <div className={css.customLinksMenu} ref={containerRef} {...styleMaybe}>
-      <CreateCusomMenusLinks intl={intl} menuLinksDropdown1={menuLinksDropdown1} menuLinksDropdown2={menuLinksDropdown2} customLinksCss={css} wrapperStyle={wrapperStyle} />
+      <CreateCusomMenusLinks
+        intl={intl}
+        menuLinksDropdown1={menuLinksDropdown1}
+        menuLinksDropdown2={menuLinksDropdown2}
+        menuLinksDropdown3={menuLinksDropdown3}
+        customLinksCss={css}
+        wrapperStyle={wrapperStyle}
+      />
 
       <PriorityLinks links={links} priorityLinks={priorityLinks} setLinks={setLinks} />
 
-      { mounted && hasMenuLinks ? (
+      {mounted && hasMenuLinks ? (
         <LinksMenu
           id="linksMenu"
           currentPage={currentPage}
@@ -321,7 +263,7 @@ const CustomLinksMenu = ({
           intl={intl}
         />
       ) : null}
-    </div >
+    </div>
   );
 };
 

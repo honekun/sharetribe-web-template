@@ -54,6 +54,10 @@
   --avGray1: hsl(0 0% 80%);
   --avBlue: hsl(234, 87%, 48%);
   --avPink: hsl(326, 63%, 59%);
+  /* Accent: solid blue used for selected/active backgrounds (chips, option rows) */
+  --avAccent: var(--avPink);
+  /* Secondary: high-contrast foreground for text/icons on --avAccent backgrounds */
+  --avSecondary: var(--avBlue);
 
   /**
   * Marketplace color comes by default from src/config/brandingConfig.js
@@ -100,14 +104,20 @@
   --colorStatusFinalState: var(--colorGrey600);
 
   /* ================ Font ================ */
-  --fontFamily: 'Archivo', -apple-system, BlinkMacSystemFont, 'Inter', Helvetica, Arial, sans-serif,
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --fontFamily: 'Non Bureau', -apple-system, BlinkMacSystemFont, 'Inter', Helvetica, Arial,
+    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
 
-  --fontFamilyRoboto: 'Roboto', -apple-system, BlinkMacSystemFont, 'Inter', Helvetica, Arial, sans-serif,
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --fontFamilyRoboto: 'Ticketing', -apple-system, BlinkMacSystemFont, 'Inter', Helvetica, Arial,
+    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
 
-  --fontFamilyHeadings: 'Archivo Black', -apple-system, BlinkMacSystemFont, 'Inter', Helvetica, Arial, sans-serif,
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --fontFamilyAccent: 'Ticketing', -apple-system, BlinkMacSystemFont, 'Inter', Helvetica, Arial,
+    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+
+  --fontFamilyHeadings: 'PPNeueCorp', 'Non Bureau', -apple-system, BlinkMacSystemFont, 'Inter',
+    Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+
+  --fontFamilyDisplay: 'PPNeueCorp', 'Non Bureau', -apple-system, BlinkMacSystemFont, 'Inter',
+    Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
 
   --fontWeightRegular: 400;
   --fontWeightMedium: 500;
@@ -226,7 +236,7 @@
   --carouselWidth: 100vw;
 
   /* --TRANSITIONS */
-  --colorTransition: color 200ms ease-in,background-color 300ms ease-in, border 300ms ease-in;
+  --colorTransition: color 200ms ease-in, background-color 300ms ease-in, border 300ms ease-in;
   --linkTransition: color 200ms ease-in, text-underline-offset 200ms ease-in;
 }
 
@@ -441,7 +451,7 @@ pre {
 
 html {
   /* font is set earlier */
-  color: var(--colorGrey700);
+  color: var(--colorGrey900);
   padding: 0;
   margin: 0;
 }
@@ -1615,7 +1625,7 @@ textarea {
   line-height: 36px;
 
   @media (--viewportMedium) {
-  font-size: 24px;
+    font-size: 24px;
     line-height: 30px;
     font-size: 28px;
   }

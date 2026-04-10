@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AVCategoryCard matches snapshot 1`] = `
+<a
+  class="root"
+  href="/s?pub_categoryLevel1=blazers"
+>
+  <div
+    class="imageWrapper"
+  >
+    <img
+      alt="Blazers category"
+      class="image"
+      src="https://example.com/blazers-medium.jpg"
+    />
+    <div
+      class="overlay"
+    >
+      <span
+        class="name"
+      >
+        Blazers
+      </span>
+    </div>
+  </div>
+</a>
+`;

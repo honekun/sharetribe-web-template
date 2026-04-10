@@ -1,0 +1,502 @@
+'use strict';
+
+const { parseCsv, validateRows } = require('./csvParser');
+
+// Helper to build a CSV buffer from header + row arrays
+function buildCsv(headers, ...rows) {
+  const lines = [headers.join(','), ...rows.map(r => r.join(','))];
+  return Buffer.from(lines.join('\n'));
+}
+
+describe('parseCsv', () => {
+  it('parses a valid CSV buffer into row objects', () => {
+    const buf = buildCsv(['title', 'price', 'description'], ['"A Dress"', '100', '"Nice dress"']);
+    const rows = parseCsv(buf);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toEqual({ title: 'A Dress', price: '100', description: 'Nice dress' });
+  });
+
+  it('trims whitespace from values', () => {
+    const buf = Buffer.from('title,price,description\n  Hat  , 50 , A hat \n');
+    const rows = parseCsv(buf);
+    expect(rows[0].title).toBe('Hat');
+    expect(rows[0].price).toBe('50');
+  });
+
+  it('skips empty lines', () => {
+    const buf = Buffer.from('title,price,description\nA,10,B\n\nC,20,D\n');
+    const rows = parseCsv(buf);
+    expect(rows).toHaveLength(2);
+  });
+
+  it('throws on malformed CSV', () => {
+    const buf = Buffer.from('"unclosed quote');
+    expect(() => parseCsv(buf)).toThrow();
+  });
+});
+
+describe('validateRows', () => {
+  const imageMap = new Map();
+  imageMap.set('front.jpg', Buffer.from('img'));
+  imageMap.set('back.jpg', Buffer.from('img'));
+
+  function validRow(overrides = {}) {
+    return {
+      title: 'Test Item',
+      description: 'A description',
+      price: '250.00',
+      ...overrides,
+    };
+  }
+
+  // --- Required column checks ---
+
+  it('rejects empty row array', () => {
+    const result = validateRows([], imageMap);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('CSV file is empty.');
+  });
+
+  it('rejects CSV exceeding 100 rows', () => {
+    const rows = Array.from({ length: 101 }, () => validRow());
+    const result = validateRows(rows, imageMap);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/Maximum is 100/);
+  });
+
+  it('rejects rows missing required columns', () => {
+    const rows = [{ title: 'A', price: '10' }]; // missing description column
+    const result = validateRows(rows, imageMap);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([expect.stringContaining('Missing required column: "description"')])
+    );
+  });
+
+  // --- Per-row validation ---
+
+  it('rejects empty title', () => {
+    const result = validateRows([validRow({ title: '' })], imageMap);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/"title" is empty/);
+  });
+
+  it('rejects empty description', () => {
+    const result = validateRows([validRow({ description: '' })], imageMap);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/"description" is empty/);
+  });
+
+  it('rejects non-numeric price', () => {
+    const result = validateRows([validRow({ price: 'abc' })], imageMap);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/"price" must be a positive number/);
+  });
+
+  it('rejects zero price', () => {
+    const result = validateRows([validRow({ price: '0' })], imageMap);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/"price" must be a positive number/);
+  });
+
+  it('rejects negative price', () => {
+    const result = validateRows([validRow({ price: '-50' })], imageMap);
+    expect(result.valid).toBe(false);
+  });
+
+  it('rejects image reference not in imageMap', () => {
+    const result = validateRows(
+      [
+        validRow({
+          image_front: 'missing.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/not found in uploaded files/);
+  });
+
+  it.each(['image_front', 'image_back', 'image_horizontal'])(
+    'rejects missing required image column %s',
+    key => {
+      const result = validateRows(
+        [
+          validRow({
+            image_front: 'front.jpg',
+            image_back: 'back.jpg',
+            image_horizontal: 'front.jpg',
+            [key]: '',
+          }),
+        ],
+        imageMap
+      );
+      expect(result.valid).toBe(false);
+      expect(result.errors).toEqual(
+        expect.arrayContaining([expect.stringContaining(`"${key}" is required.`)])
+      );
+    }
+  );
+
+  it('rejects invalid geolocation', () => {
+    const result = validateRows(
+      [
+        validRow({
+          location_lat: 'abc',
+          location_lng: '10',
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/Invalid geolocation/);
+  });
+
+  // --- Successful validation ---
+
+  it('returns valid result for correct rows', () => {
+    const result = validateRows(
+      [
+        validRow({
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.rows).toHaveLength(1);
+  });
+
+  // --- Field parsing ---
+
+  it('parses price as a float', () => {
+    const result = validateRows(
+      [
+        validRow({
+          price: '99.50',
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].price).toBe(99.5);
+  });
+
+  it('defaults currency to MXN', () => {
+    const result = validateRows(
+      [
+        validRow({
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].currency).toBe('MXN');
+  });
+
+  it('respects currency column', () => {
+    const result = validateRows(
+      [
+        validRow({
+          currency: 'usd',
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].currency).toBe('USD');
+  });
+
+  it('defaults publish to true', () => {
+    const result = validateRows(
+      [
+        validRow({
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].publish).toBe(true);
+  });
+
+  it('publish=no sets publish to false', () => {
+    const result = validateRows(
+      [
+        validRow({
+          publish: 'no',
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].publish).toBe(false);
+  });
+
+  it('defaults stock to 1', () => {
+    const result = validateRows(
+      [
+        validRow({
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].stock).toBe(1);
+  });
+
+  it('parses stock column', () => {
+    const result = validateRows(
+      [
+        validRow({
+          stock: '5',
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].stock).toBe(5);
+  });
+
+  it('defaults shippingEnabled to true', () => {
+    const result = validateRows(
+      [
+        validRow({
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].shippingEnabled).toBe(true);
+  });
+
+  it('defaults pickupEnabled to false', () => {
+    const result = validateRows(
+      [
+        validRow({
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].pickupEnabled).toBe(false);
+  });
+
+  // --- Image slot mapping ---
+
+  it('maps image columns to imageSlots', () => {
+    const result = validateRows(
+      [validRow({ image_front: 'front.jpg', image_back: 'back.jpg' })],
+      imageMap
+    );
+    expect(result.rows[0].imageSlots).toEqual({ front: 'front.jpg', back: 'back.jpg' });
+  });
+
+  it('ignores empty image columns', () => {
+    const result = validateRows(
+      [
+        validRow({
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+          image_details: '',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].imageSlots).toEqual({
+      front: 'front.jpg',
+      back: 'back.jpg',
+      horizontal: 'front.jpg',
+    });
+  });
+
+  it('keeps image_details optional', () => {
+    const result = validateRows(
+      [
+        validRow({
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+          image_details: '',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.valid).toBe(true);
+    expect(result.rows[0].imageSlots.details).toBeUndefined();
+  });
+
+  // --- publicData extraction ---
+
+  it('extracts pd_* columns as publicData', () => {
+    const result = validateRows(
+      [
+        validRow({
+          pd_color: 'blue',
+          pd_brand: 'Levi',
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].publicData).toEqual({ color: 'blue', brand: 'Levi' });
+  });
+
+  it('splits pipe-separated pd_* values into arrays', () => {
+    const result = validateRows(
+      [
+        validRow({
+          pd_all_sizes: 's|m|l',
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].publicData.all_sizes).toEqual(['s', 'm', 'l']);
+  });
+
+  it('single pd_* value stays as string', () => {
+    const result = validateRows(
+      [
+        validRow({
+          pd_era: '80s',
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].publicData.era).toBe('80s');
+  });
+
+  it('ignores empty pd_* columns', () => {
+    const result = validateRows(
+      [
+        validRow({
+          pd_color: '',
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].publicData).toEqual({});
+  });
+
+  // --- Geolocation ---
+
+  it('parses lat/lng as floats', () => {
+    const result = validateRows(
+      [
+        validRow({
+          location_lat: '19.43',
+          location_lng: '-99.13',
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].lat).toBe(19.43);
+    expect(result.rows[0].lng).toBe(-99.13);
+  });
+
+  it('sets lat/lng to null when not provided', () => {
+    const result = validateRows(
+      [
+        validRow({
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].lat).toBeNull();
+    expect(result.rows[0].lng).toBeNull();
+  });
+
+  // --- Row numbering ---
+
+  it('assigns rowNum starting from 2 (accounting for header)', () => {
+    const result = validateRows(
+      [
+        validRow({
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+        validRow({
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].rowNum).toBe(2);
+    expect(result.rows[1].rowNum).toBe(3);
+  });
+
+  // --- Multiple errors ---
+
+  it('collects errors from multiple rows', () => {
+    const result = validateRows([validRow({ title: '' }), validRow({ price: 'bad' })], imageMap);
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('collects multiple validation errors for missing required images', () => {
+    const result = validateRows(
+      [
+        validRow({
+          image_front: '',
+          image_back: '',
+          image_horizontal: '',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('"image_front" is required.'),
+        expect.stringContaining('"image_back" is required.'),
+        expect.stringContaining('"image_horizontal" is required.'),
+      ])
+    );
+  });
+});

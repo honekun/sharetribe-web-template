@@ -95,8 +95,8 @@ const PhotosFormContent = props => {
   const submittedOnce = submittedImages.length > 0;
   const pristineSinceLastSubmit = submittedOnce && imageArrayHasSameImages;
 
-  const hasFrontImage = !!values.image_front;
-  const frontImageRequired = !hasFrontImage;
+  const filledSlots = SLOT_KEYS.filter(k => !!values[`image_${k}`]);
+  const tooFewImages = filledSlots.length < 3;
 
   const submitReady = (updated && pristineSinceLastSubmit) || ready;
   const submitInProgress = updateInProgress;
@@ -106,7 +106,7 @@ const PhotosFormContent = props => {
     submitInProgress ||
     imageUploadRequested ||
     ready ||
-    frontImageRequired;
+    tooFewImages;
 
   const classes = classNames(css.root, className);
 
@@ -148,14 +148,14 @@ const PhotosFormContent = props => {
             aspectHeight={aspectHeight}
             variantPrefix={variantPrefix}
             disabled={imageUploadRequested}
-            isRequired={slotKey === 'front'}
+            isRequired={['front', 'back', 'horizontal'].includes(slotKey)}
           />
         ))}
       </div>
 
-      {frontImageRequired ? (
+      {tooFewImages ? (
         <div className={css.arrayError}>
-          {intl.formatMessage({ id: 'EditListingPhotosForm.frontImageRequired' })}
+          {intl.formatMessage({ id: 'EditListingPhotosForm.minImagesRequired' })}
         </div>
       ) : null}
 

@@ -44,14 +44,14 @@
 }
 
 .cameraIcon {
-  width: 48px;
-  height: 48px;
-  color: var(--colorGrey300);
+  width: 64px;
+  height: 64px;
+  color: var(--avPink);
   transition: color 0.15s ease;
 }
 
 .uploadArea:hover .cameraIcon {
-  color: var(--colorGrey700);
+  color: var(--avBlue);
 }
 
 .uploadLabel {

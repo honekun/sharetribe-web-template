@@ -1,0 +1,187 @@
+.root {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.label {
+  display: block;
+  font-weight: var(--fontWeightSemiBold);
+  font-size: 14px;
+  line-height: 18px;
+  margin-bottom: 8px;
+  color: var(--colorGrey700);
+}
+
+.control {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  min-height: 48px;
+  border: 1px solid var(--colorGrey300);
+  border-bottom: 3px solid var(--marketplaceColor);
+  border-radius: 4px;
+  background: var(--colorWhite);
+  cursor: pointer;
+  transition: border-color 0.1s ease;
+}
+
+.control:hover,
+.controlOpen {
+  border: 1px solid var(--marketplaceColor);
+  border-bottom: 3px solid var(--marketplaceColor);
+}
+
+.controlError {
+  border: 1px solid var(--colorFail);
+  border-bottom: 3px solid var(--colorFail);
+}
+
+.selectedArea {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 8px;
+  min-height: 48px;
+  align-items: center;
+}
+
+.placeholder {
+  color: var(--colorGrey400);
+  font-size: 14px;
+  line-height: 32px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--avAccent);
+  color: var(--avSecondary);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 13px;
+  line-height: 24px;
+  font-weight: var(--fontWeightMedium);
+}
+
+.chipRemove {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--avSecondary);
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.chipRemove:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+  color: var(--avSecondary);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  padding: 8px 8px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.clearBtn,
+.toggleBtn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--colorGrey500);
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.clearBtn:hover,
+.toggleBtn:hover {
+  color: var(--colorGrey700);
+  background-color: var(--colorGrey100);
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--colorWhite);
+  border: 1px solid var(--colorGrey300);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  max-height: 320px;
+  overflow-y: auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.groupHeader {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: var(--fontWeightSemiBold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--colorGrey500);
+  background-color: var(--colorGrey50);
+  border-bottom: 1px solid var(--colorGrey100);
+  position: sticky;
+  top: 0;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--colorGrey100);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--colorGrey700);
+  text-align: left;
+  transition: background-color 0.1s ease;
+}
+
+.option:hover {
+  background-color: var(--colorGrey50);
+}
+
+.optionSelected {
+  background-color: var(--avAccent);
+  color: var(--avSecondary);
+  font-weight: var(--fontWeightMedium);
+}
+
+.optionSelected:hover {
+  background-color: var(--avAccent);
+  filter: brightness(1.1);
+}
+
+.optionCheck {
+  width: 20px;
+  flex-shrink: 0;
+  color: var(--avSecondary);
+  font-weight: var(--fontWeightBold);
+}
+
+.error {
+  color: var(--colorFail);
+  font-size: 13px;
+  margin-top: 4px;
+}

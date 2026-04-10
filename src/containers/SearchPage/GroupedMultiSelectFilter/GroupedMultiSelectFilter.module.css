@@ -1,0 +1,5 @@
+/* Remove the bottom margin that FieldGroupedMultiSelect adds by default —
+   the filter panel provides its own spacing. */
+.field {
+  margin-bottom: 0;
+}

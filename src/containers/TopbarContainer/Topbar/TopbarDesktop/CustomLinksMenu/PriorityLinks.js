@@ -39,6 +39,7 @@ export const CreateCusomMenusLinks = props => {
     currentPage,
     menuLinksDropdown1,
     menuLinksDropdown2,
+    menuLinksDropdown3,
     customLinksCss,
     wrapperStyle,
   } = props;
@@ -46,26 +47,43 @@ export const CreateCusomMenusLinks = props => {
   return (
     <div style={wrapperStyle}>
       <div className={customLinksCss.leftLinkWrapper}>
-        <NamedLink name="HotListPage" to={{ search: '?pub_tags=hot-list' }} className={customLinksCss.leftLink}>
+        <NamedLink
+          name="SearchPage"
+          to={{ search: intl.formatMessage({ id: 'Topbar.custom.leftOneHref' }) }}
+          className={customLinksCss.leftLink}
+        >
           <span className={customLinksCss.leftLinkLabel}>
             <FormattedMessage id="Topbar.custom.leftOne" />
           </span>
         </NamedLink>
       </div>
-      <LinksMenuDropdown
-        id="linksMenuDropdown1"
-        label={intl.formatMessage({ id: 'Topbar.custom.menuOne' })}
-        currentPage={currentPage}
-        items={menuLinksDropdown1}
-        intl={intl}
-      />
-      <LinksMenuDropdown
-        id="linksMenuDropdown2"
-        label={intl.formatMessage({ id: 'Topbar.custom.menuTwo' })}
-        currentPage={currentPage}
-        items={menuLinksDropdown2}
-        intl={intl}
-      />
+      {menuLinksDropdown1.length > 0 ? (
+        <LinksMenuDropdown
+          id="linksMenuDropdown1"
+          label={intl.formatMessage({ id: 'Topbar.custom.menuOne' })}
+          currentPage={currentPage}
+          items={menuLinksDropdown1}
+          intl={intl}
+        />
+      ) : null}
+      {menuLinksDropdown2.length > 0 ? (
+        <LinksMenuDropdown
+          id="linksMenuDropdown2"
+          label={intl.formatMessage({ id: 'Topbar.custom.menuTwo' })}
+          currentPage={currentPage}
+          items={menuLinksDropdown2}
+          intl={intl}
+        />
+      ) : null}
+      {menuLinksDropdown3.length > 0 ? (
+        <LinksMenuDropdown
+          id="linksMenuDropdown3"
+          label={intl.formatMessage({ id: 'Topbar.custom.menuThree' })}
+          currentPage={currentPage}
+          items={menuLinksDropdown3}
+          intl={intl}
+        />
+      ) : null}
     </div>
   );
 };
@@ -147,7 +165,7 @@ const PriorityLinks = props => {
   return isMeasured || isServer ? (
     <div className={css.priorityLinkWrapper} {...styleWrapper} ref={containerRef}>
       {linkConfigs.map((linkConfig, index) => {
-        if('' === linkConfig.text.trim()) {
+        if ('' === linkConfig.text.trim()) {
           return;
         }
         return <PriorityLink key={`${linkConfig.text}_${index}`} linkConfig={linkConfig} />;

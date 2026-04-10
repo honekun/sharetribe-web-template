@@ -1,7 +1,8 @@
 import { types as sdkTypes, createImageVariantConfig } from '../../../util/sdkLoader';
 import { addMarketplaceEntities, getListingsById } from '../../../ducks/marketplaceData.duck';
+import { setTagListingIds } from '../../../ducks/avExtension.duck';
 
-import { getRecommendedListingIds, getSelectionsSections, hasCustomSections } from './sections';
+import { getRecommendedListingIds, getSelectionsSections, getTagListingsSections, hasCustomSections } from './sections';
 
 const { UUID } = sdkTypes;
 
@@ -15,7 +16,7 @@ const AV_LISTING_PUBLIC_DATA_FIELDS = [
   'publicData.talla',
 ];
 
-const createListingsQueryParams = (config = {}, listingIds = []) => {
+const createListingsBaseQueryParams = (config = {}) => {
   const listingImage = config?.layout?.listingImage || {};
   const {
     aspectWidth = 1,
@@ -23,10 +24,8 @@ const createListingsQueryParams = (config = {}, listingIds = []) => {
     variantPrefix = 'listing-card',
   } = listingImage;
   const aspectRatio = aspectHeight / aspectWidth;
-  const ids = [...new Set(listingIds)];
 
   return {
-    ids,
     include: ['author', 'author.profileImage', 'images'],
     'fields.listing': ['title', 'price', 'deleted', 'state', ...AV_LISTING_PUBLIC_DATA_FIELDS],
     'fields.user': ['profile.displayName', 'profile.abbreviatedName', 'profile.image'],
@@ -44,12 +43,46 @@ const createListingsQueryParams = (config = {}, listingIds = []) => {
   };
 };
 
+const createListingsQueryParams = (config = {}, listingIds = []) => {
+  const ids = [...new Set(listingIds)];
+  return { ids, ...createListingsBaseQueryParams(config) };
+};
+
 const queryListingsByIds = (listingIds, config) => (dispatch, getState, sdk) => {
   if (!listingIds || listingIds.length === 0) {
     return Promise.resolve();
   }
 
   const params = createListingsQueryParams(config, listingIds);
+  return sdk.listings.query(params).then(response => {
+    const sanitizeConfig = { listingFields: config?.listing?.listingFields };
+    dispatch(addMarketplaceEntities(response, sanitizeConfig));
+    return response;
+  });
+};
+
+/**
+ * Parse a blockName into SDK filter params.
+ *   "tag:hot-list"  → { pub_tags: 'hot-list' }
+ *   "cat:blazers"   → { pub_categoryLevel1: 'blazers' }
+ *   "hot-list"      → { pub_tags: 'hot-list' }  (default: tag)
+ */
+export const parseFilterFromBlockName = blockName => {
+  if (!blockName) return null;
+  if (blockName.startsWith('tag:')) return { pub_tags: blockName.slice(4) };
+  if (blockName.startsWith('cat:')) return { pub_categoryLevel1: blockName.slice(4) };
+  return { pub_tags: blockName };
+};
+
+const queryListingsByFilter = (filterParams, config) => (dispatch, getState, sdk) => {
+  if (!filterParams) return Promise.resolve(null);
+
+  const params = {
+    ...createListingsBaseQueryParams(config),
+    ...filterParams,
+    perPage: 24,
+  };
+
   return sdk.listings.query(params).then(response => {
     const sanitizeConfig = { listingFields: config?.listing?.listingFields };
     dispatch(addMarketplaceEntities(response, sanitizeConfig));
@@ -80,6 +113,7 @@ export const loadCustomSectionListings = ({ pageData, dispatch, config }) => {
 
   const recommendedListingIds = getRecommendedListingIds(pageData);
   const selectionsSections = getSelectionsSections(pageData);
+  const tagListingsSectionsMap = getTagListingsSections(pageData);
   const calls = [];
 
   if (recommendedListingIds.length > 0) {
@@ -92,7 +126,27 @@ export const loadCustomSectionListings = ({ pageData, dispatch, config }) => {
     }
   });
 
-  return Promise.all(calls).then(() => undefined);
+  // For each tag/category filter section, query listings and store the returned IDs
+  const tagListingIdsAccumulator = {};
+  Object.entries(tagListingsSectionsMap).forEach(([sectionId, blockName]) => {
+    const filterParams = parseFilterFromBlockName(blockName);
+    if (filterParams) {
+      calls.push(
+        dispatch(queryListingsByFilter(filterParams, config)).then(response => {
+          const ids = (response?.data?.data || [])
+            .map(l => l?.id?.uuid)
+            .filter(Boolean);
+          tagListingIdsAccumulator[sectionId] = ids;
+        })
+      );
+    }
+  });
+
+  return Promise.all(calls).then(() => {
+    if (Object.keys(tagListingIdsAccumulator).length > 0) {
+      dispatch(setTagListingIds(tagListingIdsAccumulator));
+    }
+  });
 };
 
 export const selectCustomSectionListings = ({ state, pageData }) => {
@@ -108,9 +162,20 @@ export const selectCustomSectionListings = ({ state, pageData }) => {
     return { ...collected, [sectionId]: pickListingsById(state, ids) };
   }, {});
 
+  // Read tag listing IDs from Redux and denormalize
+  const tagListingIdsBySection = state.avLandingExtension?.tagListingIds || {};
+  const tagListingsSections = Object.entries(tagListingIdsBySection).reduce(
+    (collected, [sectionId, ids]) => ({
+      ...collected,
+      [sectionId]: pickListingsById(state, ids),
+    }),
+    {}
+  );
+
   return {
     hasCustomSections: true,
     listings,
     selectionsListings,
+    tagListingsSections,
   };
 };

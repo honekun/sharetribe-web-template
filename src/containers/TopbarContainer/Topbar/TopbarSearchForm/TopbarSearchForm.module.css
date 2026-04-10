@@ -46,8 +46,9 @@
   /* Layout */
   height: 50px;
 
-  /* Borders */
-  border: 0;
+  /* Borders — reset AV global override */
+  border: none !important;
+  border-bottom: none !important;
   border-radius: 0;
 
   /* Safari bugfix: without this Safari will print placeholder to a wrong place */
@@ -58,9 +59,10 @@
   &:hover,
   &:focus {
     border-radius: 0;
-    border: 0;
+    border: none !important;
+    border-bottom: none !important;
     outline: none;
-    box-shadow: none;
+    box-shadow: none !important;
   }
 }
 
@@ -81,7 +83,9 @@
   /* Font */
   height: var(--topbarHeightDesktop);
   line-height: unset;
-  border: none;
+  /* Borders — reset AV global override */
+  border: none !important;
+  border-bottom: none !important;
   padding-top: 0;
   padding-bottom: 0;
 
@@ -95,10 +99,10 @@
 
   &:hover,
   &:focus {
-    border-bottom-color: var(--marketplaceColor);
     outline: none;
-    border: 0;
-    box-shadow: none;
+    border: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
   }
 
   &:hover::placeholder,

@@ -1649,6 +1649,20 @@ export const mergeConfig = (configAsset = {}, defaultConfigs = {}) => {
     // Note: if footer asset is not set, Footer is not rendered.
     footer: configAsset.footer,
 
+    // Override earnings estimator commission percentage from Console's commission.json asset.
+    // providerCommission.percentage → commission percentage charged to sellers.
+    // Fixed fee (providerCommissionFixedAmountInSubunits) is always sourced from
+    // REACT_APP_PROVIDER_COMMISSION_FIXED_FEE env var — never from Console's minimum_amount.
+    earningsEstimate: (() => {
+      const hostedCommission = configAsset.commission?.providerCommission;
+      return {
+        ...defaultConfigs.earningsEstimate,
+        ...(hostedCommission?.percentage != null
+          ? { providerCommissionPercentage: hostedCommission.percentage }
+          : {}),
+      };
+    })(),
+
     // Check if all the mandatory info have been retrieved from hosted assets
     hasMandatoryConfigurations: hasMandatoryConfigs(configAsset),
   };

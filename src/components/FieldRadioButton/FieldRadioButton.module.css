@@ -59,7 +59,7 @@
 
 .radioButtonWrapper {
   /* This should follow line-height */
-  height: 24px;
+  height: 20px;
   margin-top: -1px;
   margin-right: 12px;
   align-self: center;
@@ -70,8 +70,8 @@
 }
 
 .checkedStyle {
-  stroke: var(--marketplaceColor);
-  fill: var(--marketplaceColor);
+  stroke: var(--avBlue);
+  fill: var(--avBlue);
 }
 
 .checked {
