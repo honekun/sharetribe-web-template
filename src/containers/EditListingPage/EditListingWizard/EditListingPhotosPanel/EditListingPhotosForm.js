@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Form as FinalForm } from 'react-final-form';
 import isEqual from 'lodash/isEqual';
 import classNames from 'classnames';
@@ -60,28 +60,14 @@ const PhotosFormContent = props => {
     updateInProgress,
     values,
     listingImageConfig,
-    allImages,
     onImageUploadHandler,
     imageUploadRequested,
-    pendingUploadRef,
   } = props;
 
   const intl = useIntl();
   const [submittedImages, setSubmittedImages] = useState([]);
 
   const { aspectWidth = 1, aspectHeight = 1, variantPrefix } = listingImageConfig;
-
-  // When a new image appears in allImages and we have a pending slot, assign it
-  useEffect(() => {
-    const pending = pendingUploadRef.current;
-    if (pending && pending.tempId && allImages) {
-      const newImage = allImages.find(img => img.id === pending.tempId);
-      if (newImage) {
-        form.change(`image_${pending.slotKey}`, newImage);
-        pendingUploadRef.current = null;
-      }
-    }
-  }, [allImages, form]);
 
   const { publishListingError, showListingsError, updateListingError, uploadImageError } =
     fetchErrors || {};
@@ -135,7 +121,7 @@ const PhotosFormContent = props => {
             })}
             image={values[`image_${slotKey}`]}
             onImageUpload={(file, key) => {
-              onImageUploadHandler(file, key);
+              onImageUploadHandler(file, key, form.change);
             }}
             onRemoveImage={key => {
               const img = values[`image_${key}`];
@@ -186,22 +172,26 @@ const PhotosFormContent = props => {
 
 export const EditListingPhotosForm = props => {
   const [imageUploadRequested, setImageUploadRequested] = useState(false);
-  const pendingUploadRef = useRef(null);
 
-  const onImageUploadHandler = (file, slotKey) => {
+  const onImageUploadHandler = (file, slotKey, formChange) => {
     const { listingImageConfig, onImageUpload } = props;
     if (file) {
       setImageUploadRequested(true);
       const tempId = `${file.name}_${Date.now()}`;
-      pendingUploadRef.current = { slotKey, tempId };
+
+      // Show a preview immediately while the upload is in progress
+      formChange(`image_${slotKey}`, { id: tempId, file });
 
       onImageUpload({ id: tempId, file }, listingImageConfig)
-        .then(() => {
+        .then(result => {
           setImageUploadRequested(false);
+          // Update slot with the real uploaded image (has imageId UUID)
+          formChange(`image_${slotKey}`, result.data);
         })
         .catch(() => {
           setImageUploadRequested(false);
-          pendingUploadRef.current = null;
+          // Clear the preview on error
+          formChange(`image_${slotKey}`, null);
         });
     }
   };
@@ -213,10 +203,8 @@ export const EditListingPhotosForm = props => {
         return (
           <PhotosFormContent
             {...formRenderProps}
-            allImages={props.images}
             onImageUploadHandler={onImageUploadHandler}
             imageUploadRequested={imageUploadRequested}
-            pendingUploadRef={pendingUploadRef}
           />
         );
       }}

@@ -26,21 +26,37 @@
 .input {
     width: 100%;
     padding: 10px 30px 0 2px;
-    border: 0;
-    border-bottom: 1px solid #E6E56A;
-    border-radius: 0;
+    /* !important needed to beat avBrandOverrides.css :root input:not(...) rule (specificity 0,3,1) */
+    border: 0 !important;
+    border-bottom: 1px solid var(--colorGrey300) !important;
+    border-radius: 0 !important;
     background-color: transparent;
     color: var(--avGray1);
 
-    &:-internal-autofill-selected,
-    &:hover,
+    /* Separated from :hover/:focus — browsers discard the entire rule block
+       when any selector in a comma list is unrecognised (e.g. :-internal-autofill-selected) */
+    &:-webkit-autofill {
+        -webkit-text-fill-color: var(--avGray1);
+        -webkit-box-shadow: 0 0 0 1000px transparent inset;
+        transition: background-color 5000s ease-in-out 0s;
+    }
+
+    &:hover {
+        color: var(--avGray1);
+        background-color: transparent;
+        outline: none;
+        border: 0 !important;
+        border-bottom: 1px solid var(--colorGrey300) !important;
+        box-shadow: none !important;
+    }
+
     &:focus {
         color: var(--avGray1);
         background-color: transparent;
         outline: none;
-        border: 0;
-        border-bottom: 1px solid #E6E56A;
-        box-shadow: none;
+        border: 0 !important;
+        border-bottom: 1px solid var(--colorGrey300) !important;
+        box-shadow: none !important;
     }
 }
 

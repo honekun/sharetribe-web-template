@@ -26,9 +26,11 @@ const AVCategoryCard = props => {
 
   const imageVariants = media?.image?.attributes?.variants || {};
   const imageUrl = (
-    imageVariants['scaled-medium'] ||
-    imageVariants['scaled-large'] ||
-    imageVariants['original']
+    imageVariants['original400'] ||
+    imageVariants['original800'] ||
+    imageVariants['original1200'] ||
+    imageVariants['original2400'] ||
+    Object.values(imageVariants)[0]
   )?.url;
   const alt = media?.alt || name || formatCategoryName(categoryId);
   const displayName = name || formatCategoryName(categoryId);

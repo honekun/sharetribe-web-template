@@ -3,7 +3,7 @@
 .root {
   display: block;
   text-decoration: none;
-  border-radius: var(--borderRadiusLarger);
+  border-radius: var(--borderRadius);
   overflow: hidden;
   background: var(--colorGrey50);
   transition: transform 150ms ease-in-out, box-shadow 150ms ease-in-out;
@@ -15,11 +15,10 @@
   }
 }
 
-/* Portrait ratio matching AVListingCard tall variant (3:4.85) */
 .imageWrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 3 / 4.85;
+  height: 300px;
 }
 
 .image {
@@ -41,13 +40,16 @@
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 48px 16px 20px;
-  background: linear-gradient(
+  padding: 12px;
+  background: rgba(235, 235, 235, 0.6);
+  /*
+  linear-gradient(
     to top,
     rgba(235, 235, 235, 0.92) 0%,
     rgba(235, 235, 235, 0.5) 50%,
     rgba(235, 235, 235, 0) 100%
   );
+  */
   display: flex;
   justify-content: center;
   align-items: flex-end;
@@ -55,9 +57,9 @@
 
 .name {
   font-family: var(--fontFamilyRoboto, sans-serif);
-  font-size: 22px;
+  font-size: 24px;
   font-weight: var(--fontWeightBold);
-  color: var(--colorGrey700);
+  color: var(--colorGrey900);
   text-align: center;
   line-height: 1.2;
 }
