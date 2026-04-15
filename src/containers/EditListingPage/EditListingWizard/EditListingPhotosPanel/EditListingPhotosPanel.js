@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import classNames from 'classnames';
 
 // Import configs and util modules
@@ -68,6 +68,19 @@ const EditListingPhotosPanel = props => {
     intl,
   } = props;
 
+  // Stabilize initialValues so React Final Form never reinitializes.
+  // RFF uses reference equality (===) on initialValues — a new object every render triggers
+  // reinitialization, which resets unregistered form fields (managed via form.change) back to
+  // initialValues, breaking both remove and upload-then-remove flows.
+  // We recompute only when the listing ID changes (different listing or first mount).
+  const stableInitialValuesRef = useRef(null);
+  const trackedListingIdRef = useRef(undefined);
+  const currentListingId = listing?.id?.uuid;
+  if (currentListingId !== trackedListingIdRef.current) {
+    trackedListingIdRef.current = currentListingId;
+    stableInitialValuesRef.current = getInitialValues({ images: listing?.images || [], listing });
+  }
+
   const rootClass = rootClassName || css.root;
   const classes = classNames(rootClass, className);
   const isPublished = listing?.id && listing?.attributes?.state !== LISTING_STATE_DRAFT;
@@ -101,7 +114,7 @@ const EditListingPhotosPanel = props => {
         ready={ready}
         fetchErrors={errors}
         images={props.images}
-        initialValues={getInitialValues({ images: props.images, listing })}
+        initialValues={stableInitialValuesRef.current}
         onImageUpload={onImageUpload}
         onSubmit={values => {
           // Collect slot images into ordered images array
