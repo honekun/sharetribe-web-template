@@ -17,6 +17,9 @@ import {
   selectExtensionProps,
   transformPageData,
 } from '../../extensions/landingPage';
+import { fetchFeaturedListings } from '../../ducks/featuredListings.duck';
+import { getListingsById } from '../../ducks/marketplaceData.duck';
+import { getFeaturedListingsProps } from '../../util/data';
 
 const PageBuilder = loadable(() =>
   import(/* webpackChunkName: "PageBuilder" */ '../PageBuilder/PageBuilder')
@@ -38,6 +41,7 @@ export const LandingPageComponent = props => {
       inProgress={inProgress}
       error={error}
       fallbackPage={<FallbackPage error={error} />}
+      featuredListings={getFeaturedListingsProps(camelize(ASSET_NAME), props)}
     />
   );
 };
@@ -53,20 +57,29 @@ const mapStateToProps = state => {
   const { pageAssetsData, inProgress, error } = state.hostedAssets || {};
   const pageData = pageAssetsData?.[camelize(ASSET_NAME)]?.data;
   const extensionData = selectExtensionProps({ state, pageData });
+  const featuredListingData = state.featuredListings || {};
+  const getListingEntitiesById = listingIds => getListingsById(state, listingIds);
+
   return {
     pageAssetsData,
     inProgress,
     error,
     extensionData,
+    featuredListingData,
+    getListingEntitiesById,
   };
 };
 
-// Note: it is important that the withRouter HOC is **outside** the
-// connect HOC, otherwise React Router won't rerender any Route
-// components since connect implements a shouldComponentUpdate
-// lifecycle hook.
-//
-// See: https://github.com/ReactTraining/react-router/issues/4671
-const LandingPage = compose(connect(mapStateToProps))(LandingPageComponent);
+const mapDispatchToProps = dispatch => ({
+  onFetchFeaturedListings: (sectionId, parentPage, listingImageConfig, allSections) =>
+    dispatch(fetchFeaturedListings({ sectionId, parentPage, listingImageConfig, allSections })),
+});
+
+const LandingPage = compose(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )
+)(LandingPageComponent);
 
 export default LandingPage;

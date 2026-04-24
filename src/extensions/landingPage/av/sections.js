@@ -1,6 +1,7 @@
 import {
   AV_HERO_SECTION_ID,
   AV_HERO2_SECTION_ID_PREFIX,
+  AV_HERO3_SECTION_ID_PREFIX,
   AV_VIDEO_SECTION_ID_PREFIX,
   AV_RECOMMENDEDS_SECTION_ID,
   AV_SELECTIONS_SECTION_ID_PREFIX,
@@ -14,6 +15,9 @@ export const getListingIdsFromSection = section =>
 
 export const isHero2SectionId = sectionId =>
   (sectionId || '').indexOf(AV_HERO2_SECTION_ID_PREFIX) === 0;
+
+export const isHero3SectionId = sectionId =>
+  (sectionId || '').indexOf(AV_HERO3_SECTION_ID_PREFIX) === 0;
 
 export const isVideoSectionId = sectionId =>
   (sectionId || '').indexOf(AV_VIDEO_SECTION_ID_PREFIX) === 0;
@@ -88,6 +92,7 @@ export const hasCustomSections = pageData => {
       sectionId === AV_HERO_SECTION_ID ||
       sectionId === AV_RECOMMENDEDS_SECTION_ID ||
       isHero2SectionId(sectionId) ||
+      isHero3SectionId(sectionId) ||
       isVideoSectionId(sectionId) ||
       isSelectionsSectionId(sectionId) ||
       isTagListingsSectionId(sectionId) ||

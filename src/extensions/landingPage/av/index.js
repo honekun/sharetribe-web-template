@@ -1,6 +1,7 @@
 import {
   AV_HERO_SECTION_TYPE,
   AV_HERO2_SECTION_TYPE,
+  AV_HERO3_SECTION_TYPE,
   AV_VIDEO_SECTION_TYPE,
   AV_RECOMMENDEDS_SECTION_TYPE,
   AV_SELECTIONS_SECTION_TYPE,
@@ -22,6 +23,8 @@ const getSectionComponents = () => {
     .default;
   const SectionHeroCustom2 = require('../../../containers/PageBuilder/SectionBuilder/SectionHeroCustom2')
     .default;
+  const SectionHeroCustom3 = require('../../../containers/PageBuilder/SectionBuilder/SectionHeroCustom3')
+    .default;
   const SectionVideoSection = require('../../../containers/PageBuilder/SectionBuilder/SectionVideoSection')
     .default;
   const SectionRecommendedListings = require('../../../containers/PageBuilder/SectionBuilder/SectionRecommendedListings')
@@ -38,6 +41,7 @@ const getSectionComponents = () => {
   cachedSectionComponents = {
     [AV_HERO_SECTION_TYPE]: { component: SectionHeroCustom },
     [AV_HERO2_SECTION_TYPE]: { component: SectionHeroCustom2 },
+    [AV_HERO3_SECTION_TYPE]: { component: SectionHeroCustom3 },
     [AV_VIDEO_SECTION_TYPE]: { component: SectionVideoSection },
     [AV_RECOMMENDEDS_SECTION_TYPE]: { component: SectionRecommendedListings },
     [AV_SELECTIONS_SECTION_TYPE]: { component: SectionSelectedListings },

@@ -53,8 +53,17 @@ const SectionSelectedUser = props => {
     isInsideContainer,
     options,
     customOption,
+    blocks = [],
     users = [],
   } = props;
+
+  // Build lookup: userId → block overrides (title text + media image)
+  const blocksByUserId = blocks.reduce((acc, block) => {
+    if (block.blockName) {
+      acc[block.blockName] = block;
+    }
+    return acc;
+  }, {});
 
   const sliderContainerRef = useRef(null);
   const sliderRef = useRef(null);
@@ -140,11 +149,20 @@ const SectionSelectedUser = props => {
             </button>
           </div>
           <div className={classNames(css.slider, getColumnClass(normalizedColumns))} ref={sliderRef}>
-            {users.map(user => (
-              <div key={user.id?.uuid} className={css.carouselItem}>
-                <AVUserCard user={user} className={css.userCard} />
-              </div>
-            ))}
+            {users.map(user => {
+              const userId = user.id?.uuid;
+              const block = blocksByUserId[userId] || {};
+              return (
+                <div key={userId} className={css.carouselItem}>
+                  <AVUserCard
+                    user={user}
+                    overrideTitle={block.title?.content || null}
+                    overrideMedia={block.media || null}
+                    className={css.userCard}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : null}

@@ -63,7 +63,7 @@ const BlockDefault = props => {
     callToAction,
     media,
     responsiveImageSizes,
-    options,
+    options = {},
     alignment,
     twoButtons,
     blueCols,
