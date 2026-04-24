@@ -7,6 +7,7 @@ import SectionCarousel from './SectionCarousel';
 import SectionColumns from './SectionColumns';
 import SectionFeatures from './SectionFeatures';
 import SectionHero from './SectionHero';
+import SectionListings from './SectionListings';
 
 // Styles
 // Note: these contain
@@ -28,6 +29,7 @@ const DEFAULT_CLASSES = {
   ctaButtonPrimary: css.ctaButtonPrimary,
   ctaButtonSecondary: css.ctaButtonSecondary,
   blockContainer: css.blockContainer,
+  defaultLink: css.defaultLink,
 };
 
 /////////////////////////////////////////////
@@ -41,6 +43,7 @@ const defaultSectionComponents = {
   features: { component: SectionFeatures },
   footer: { component: SectionFooter },
   hero: { component: SectionHero },
+  listings: { component: SectionListings },
 };
 
 //////////////////////
@@ -67,7 +70,7 @@ const defaultSectionComponents = {
  * @typedef {Object} SectionConfig
  * @property {string} sectionId
  * @property {string} sectionName
- * @property {('article' | 'carousel' | 'columns' | 'features' | 'hero')} sectionType
+ * @property {('article' | 'carousel' | 'columns' | 'features' | 'hero' | 'listings')} sectionType
  */
 
 /**
@@ -116,9 +119,15 @@ const SectionBuilder = props => {
     }
   };
 
+  // Resolve all section ids
+  const sectionsWithResolvedIds = sections.map((section, index) => ({
+    ...section,
+    sectionId: getUniqueSectionId(section.sectionId, index),
+  }));
+
   return (
     <>
-      {sections.map((section, index) => {
+      {sectionsWithResolvedIds.map((section, index) => {
         const Section = getComponent(section.sectionType);
         // If the default "dark" theme should be applied (when text color is white).
         // By default, this information is stored to customAppearance field
@@ -126,7 +135,7 @@ const SectionBuilder = props => {
           section?.appearance?.fieldType === 'customAppearance' &&
           section?.appearance?.textColor === 'white';
         const classes = classNames({ [css.darkTheme]: isDarkTheme });
-        const sectionId = getUniqueSectionId(section.sectionId, index);
+        const sectionId = section.sectionId;
 
         // TODO: Move to function.
         const customOption = {};
@@ -159,10 +168,11 @@ const SectionBuilder = props => {
               className={classes}
               defaultClasses={DEFAULT_CLASSES}
               isInsideContainer={isInsideContainer}
-              options={otherOption}
+              options={{ ...otherOption, defaultClasses: DEFAULT_CLASSES }}
               {...section}
               sectionId={sectionId}
               customOption={customOption}
+              allSections={sectionsWithResolvedIds}
             />
           );
         } else {

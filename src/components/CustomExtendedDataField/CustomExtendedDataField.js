@@ -5,6 +5,7 @@ import { useIntl } from '../../util/reactIntl';
 import {
   SCHEMA_TYPE_ENUM,
   SCHEMA_TYPE_MULTI_ENUM,
+  SCHEMA_TYPE_SHORT_TEXT,
   SCHEMA_TYPE_TEXT,
   SCHEMA_TYPE_LONG,
   SCHEMA_TYPE_BOOLEAN,
@@ -52,6 +53,7 @@ const CustomFieldEnum = props => {
       name={name}
       id={formId ? `${formId}.${name}` : name}
       label={label}
+      helpText={fieldConfig?.helpText}
       {...validateMaybe}
     >
       <option disabled value="">
@@ -110,10 +112,36 @@ const CustomFieldMultiEnum = props => {
       id={formId ? `${formId}.${name}` : name}
       name={name}
       label={label}
+      helpText={fieldConfig?.helpText}
       options={createFilterOptions(enumOptions)}
       {...validateMaybe}
     />
   ) : null;
+};
+
+const CustomFieldShortText = props => {
+  const { name, fieldConfig, defaultRequiredMessage, formId, intl } = props;
+  const { placeholderMessage, isRequired, requiredMessage } = fieldConfig?.saveConfig || {};
+  const label = getLabel(fieldConfig);
+  const validateMaybe = isRequired
+    ? { validate: required(requiredMessage || defaultRequiredMessage) }
+    : {};
+  const placeholder =
+    placeholderMessage || intl.formatMessage({ id: 'CustomExtendedDataField.placeholderText' });
+
+  return (
+    <FieldTextInput
+      className={css.customField}
+      id={formId ? `${formId}.${name}` : name}
+      name={name}
+      type="text"
+      maxLength={70}
+      label={label}
+      helpText={fieldConfig?.helpText}
+      placeholder={placeholder}
+      {...validateMaybe}
+    />
+  );
 };
 
 const CustomFieldText = props => {
@@ -133,6 +161,7 @@ const CustomFieldText = props => {
       name={name}
       type="textarea"
       label={label}
+      helpText={fieldConfig?.helpText}
       placeholder={placeholder}
       {...validateMaybe}
     />
@@ -170,6 +199,7 @@ const CustomFieldLong = props => {
       name={name}
       type="number"
       step="1"
+      helpText={fieldConfig?.helpText}
       parse={value => {
         const parsed = Number.parseInt(value, 10);
         return Number.isNaN(parsed) ? null : parsed;
@@ -209,6 +239,7 @@ const CustomFieldBoolean = props => {
       id={formId ? `${formId}.${name}` : name}
       name={name}
       label={label}
+      helpText={fieldConfig?.helpText}
       placeholder={placeholder}
       {...validateMaybe}
     />
@@ -241,6 +272,7 @@ const CustomFieldYoutube = props => {
       name={name}
       type="text"
       label={label}
+      helpText={fieldConfig?.helpText}
       placeholder={placeholder}
       validate={value => validate(value)}
     />
@@ -271,6 +303,8 @@ const CustomExtendedDataField = props => {
     ? renderFieldComponent(CustomFieldEnum, props)
     : schemaType === SCHEMA_TYPE_MULTI_ENUM && enumOptions
     ? renderFieldComponent(CustomFieldMultiEnum, props)
+    : schemaType === SCHEMA_TYPE_SHORT_TEXT
+    ? renderFieldComponent(CustomFieldShortText, props)
     : schemaType === SCHEMA_TYPE_TEXT
     ? renderFieldComponent(CustomFieldText, props)
     : schemaType === SCHEMA_TYPE_LONG

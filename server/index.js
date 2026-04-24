@@ -294,7 +294,7 @@ app.get('/{*splat}', async (req, res) => {
           loadDataMs: res.locals.timestampAfterLoadData - res.locals.beforeLoadDataTimestamp,
           renderingMs: res.locals.timestampAfterRender - res.locals.timestampAfterLoadData,
         };
-        console.log(`\nRender info:\n${JSON.stringify(debugData, null, '  ')}`);
+        console.log(`\nRender info:\n${JSON.stringify(debugData, null, '  ')}`); // eslint-disable-line no-console
       }
 
       if (context.unauthorized) {
@@ -354,9 +354,9 @@ if (cspEnabled) {
 
 const server = app.listen(PORT, () => {
   const mode = dev ? 'development' : 'production';
-  console.log(`Listening to port ${PORT} in ${mode} mode`);
+  console.log(`Listening to port ${PORT} in ${mode} mode`); // eslint-disable-line no-console
   if (dev) {
-    console.log(`Open http://localhost:${PORT}/ and start hacking!\n`);
+    console.log(`Open http://localhost:${PORT}/ and start hacking!\n`); // eslint-disable-line no-console
   }
 
   // AV-noti: start Integration API event poller (welcome email + WhatsApp notifications)
@@ -370,9 +370,9 @@ const server = app.listen(PORT, () => {
 // https://expressjs.com/en/advanced/healthcheck-graceful-shutdown.html
 ['SIGINT', 'SIGTERM'].forEach(signal => {
   process.on(signal, () => {
-    console.log('Shutting down...');
+    console.log('Shutting down...'); // eslint-disable-line no-console
     server.close(() => {
-      console.log('Server shut down.');
+      console.log('Server shut down.'); // eslint-disable-line no-console
     });
   });
 });
