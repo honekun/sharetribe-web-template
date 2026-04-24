@@ -128,7 +128,7 @@
 .slider {
   display: flex;
   flex-wrap: nowrap;
-  gap: var(--carouselGap);
+  gap: calc(var(--carouselGap) * 1.25);
   overflow-x: auto;
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
