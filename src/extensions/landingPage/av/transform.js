@@ -1,13 +1,23 @@
 import {
   AV_HERO_SECTION_ID,
   AV_HERO_SECTION_TYPE,
+  AV_HERO2_SECTION_TYPE,
+  AV_VIDEO_SECTION_TYPE,
   AV_RECOMMENDEDS_SECTION_ID,
   AV_RECOMMENDEDS_SECTION_TYPE,
   AV_SELECTIONS_SECTION_TYPE,
   AV_TAG_LISTINGS_SECTION_TYPE,
   AV_SELECTED_CATS_SECTION_TYPE,
+  AV_SELECTED_USERS_SECTION_TYPE,
 } from './constants';
-import { isSelectionsSectionId, isTagListingsSectionId, isSelectedCatsSectionId } from './sections';
+import {
+  isHero2SectionId,
+  isVideoSectionId,
+  isSelectionsSectionId,
+  isTagListingsSectionId,
+  isSelectedCatsSectionId,
+  isSelectedUsersSectionId,
+} from './sections';
 
 const formatMessage = (intl, id, defaultMessage) => {
   return intl?.formatMessage
@@ -24,6 +34,7 @@ export const transformCustomSections = ({ pageData, intl, extensionData }) => {
   const listings = extensionData?.listings || [];
   const selectionsListings = extensionData?.selectionsListings || {};
   const tagListingsSections = extensionData?.tagListingsSections || {};
+  const selectedUsersBySection = extensionData?.selectedUsersBySection || {};
 
   const customSections = sections.map(section => {
     const sectionId = section?.sectionId || '';
@@ -44,6 +55,47 @@ export const transformCustomSections = ({ pageData, intl, extensionData }) => {
           content: formatMessage(intl, 'AVHero.ctaSecondText', 'Browse all'),
         },
         isLanding: true,
+      };
+    }
+
+    if (isHero2SectionId(sectionId)) {
+      // "av-hero2-shop" → instanceId "shop"; falls back to full sectionId if no suffix
+      const instanceId = sectionId.slice('av-hero2-'.length) || sectionId;
+
+      const cta1Text = formatMessage(intl, `AVHero2.${instanceId}.cta1Text`, '');
+      const cta2Text = formatMessage(intl, `AVHero2.${instanceId}.cta2Text`, '');
+      const mobileBackgroundImageUrl =
+        formatMessage(intl, `AVHero2.${instanceId}.mobileBackgroundUrl`, '') || null;
+
+      return {
+        ...section,
+        sectionType: AV_HERO2_SECTION_TYPE,
+        callToAction: cta1Text
+          ? {
+              fieldType: 'internalButtonLink',
+              href: formatMessage(intl, `AVHero2.${instanceId}.cta1Link`, '/s'),
+              content: cta1Text,
+            }
+          : null,
+        callToAction2: cta2Text
+          ? {
+              fieldType: 'internalButtonLink',
+              href: formatMessage(intl, `AVHero2.${instanceId}.cta2Link`, '/s'),
+              content: cta2Text,
+            }
+          : null,
+        mobileBackgroundImageUrl,
+      };
+    }
+
+    if (isVideoSectionId(sectionId)) {
+      const instanceId = sectionId.slice('av-video-'.length) || sectionId;
+      const videoUrl = formatMessage(intl, `AVVideo.${instanceId}.videoUrl`, '') || null;
+
+      return {
+        ...section,
+        sectionType: AV_VIDEO_SECTION_TYPE,
+        videoUrl,
       };
     }
 
@@ -76,6 +128,14 @@ export const transformCustomSections = ({ pageData, intl, extensionData }) => {
       return {
         ...section,
         sectionType: AV_SELECTED_CATS_SECTION_TYPE,
+      };
+    }
+
+    if (isSelectedUsersSectionId(sectionId)) {
+      return {
+        ...section,
+        sectionType: AV_SELECTED_USERS_SECTION_TYPE,
+        users: selectedUsersBySection[sectionId] || [],
       };
     }
 

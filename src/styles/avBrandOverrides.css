@@ -10,8 +10,14 @@
 :root {
   /* ================ AV Brand Palette ================ */
   --avGray1: hsl(0 0% 80%);
-  --avBlue: hsl(234, 88%, 48%); /* hsl(234, 87%, 48%); */
-  --avPink: hsl(326, 63%, 59%);
+  --avBlue: hsl(234, 88%, 48%); /* #0f26e4 */
+  --avBlueLight: hsl(208, 89%, 63%); /* #4da8f5 */
+  --avPink: hsl(326, 63%, 59%); /* #d8559f */
+  --avPurple: hsl(284, 40%, 66%); /* #b986cb */
+  --avYellow: hsl(59, 71%, 66%); /* #e6e469 */
+  --avYellowLight: hsl(63, 71%, 89%); /* #f5f7d0 */
+
+  
 
   /* Accent: solid blue used for selected/active backgrounds (chips, option rows) */
   --avAccent: var(--avPink);

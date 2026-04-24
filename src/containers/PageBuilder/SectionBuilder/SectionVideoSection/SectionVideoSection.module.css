@@ -1,0 +1,92 @@
+/* Mobile-first: panes stack vertically */
+.root {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.videoPane {
+  position: relative;
+  overflow: hidden;
+  /* 16:9 aspect ratio on mobile for the video pane */
+  min-height: 56vw;
+}
+
+.video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.contentPane {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 24px;
+  background-color: var(--colorWhite);
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+/* ── Desktop: side-by-side equal halves ── */
+@media (min-width: 768px) {
+  .root {
+    flex-direction: row;
+    min-height: 60vh;
+  }
+
+  .videoPane {
+    flex: 1;
+    min-height: unset;
+  }
+
+  .contentPane {
+    flex: 1;
+    padding: 56px 64px;
+  }
+}
+
+/* ── Typography ── */
+.title {
+  margin: 0 0 16px;
+
+  h1,
+  h2,
+  h3 {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--colorGrey900);
+    margin: 0;
+  }
+
+  @media (min-width: 768px) {
+    h1,
+    h2,
+    h3 {
+      font-size: 42px;
+    }
+  }
+}
+
+.description {
+  margin: 0 0 32px;
+
+  p {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--colorGrey700);
+    margin: 0;
+  }
+
+  @media (min-width: 768px) {
+    p {
+      font-size: 18px;
+    }
+  }
+}

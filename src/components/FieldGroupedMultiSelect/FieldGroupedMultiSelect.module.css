@@ -56,7 +56,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background-color: var(--avAccent);
+  background-color: var(--avYellow);
   color: var(--avSecondary);
   border-radius: 12px;
   padding: 2px 8px;
@@ -163,13 +163,13 @@
 }
 
 .optionSelected {
-  background-color: var(--avAccent);
+  background-color: var(--avYellow);
   color: var(--avSecondary);
   font-weight: var(--fontWeightMedium);
 }
 
 .optionSelected:hover {
-  background-color: var(--avAccent);
+  background-color: var(--avYellow);
   filter: brightness(1.1);
 }
 

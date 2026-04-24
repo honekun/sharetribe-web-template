@@ -1,13 +1,22 @@
 import {
   AV_HERO_SECTION_ID,
+  AV_HERO2_SECTION_ID_PREFIX,
+  AV_VIDEO_SECTION_ID_PREFIX,
   AV_RECOMMENDEDS_SECTION_ID,
   AV_SELECTIONS_SECTION_ID_PREFIX,
   AV_TAG_LISTINGS_SECTION_ID_PREFIX,
   AV_SELECTED_CATS_SECTION_ID_PREFIX,
+  AV_SELECTED_USERS_SECTION_ID_PREFIX,
 } from './constants';
 
 export const getListingIdsFromSection = section =>
   section?.blocks?.map(block => block?.blockName).filter(Boolean) || [];
+
+export const isHero2SectionId = sectionId =>
+  (sectionId || '').indexOf(AV_HERO2_SECTION_ID_PREFIX) === 0;
+
+export const isVideoSectionId = sectionId =>
+  (sectionId || '').indexOf(AV_VIDEO_SECTION_ID_PREFIX) === 0;
 
 export const isSelectionsSectionId = sectionId =>
   (sectionId || '').indexOf(AV_SELECTIONS_SECTION_ID_PREFIX) === 0;
@@ -17,6 +26,9 @@ export const isTagListingsSectionId = sectionId =>
 
 export const isSelectedCatsSectionId = sectionId =>
   (sectionId || '').indexOf(AV_SELECTED_CATS_SECTION_ID_PREFIX) === 0;
+
+export const isSelectedUsersSectionId = sectionId =>
+  (sectionId || '').indexOf(AV_SELECTED_USERS_SECTION_ID_PREFIX) === 0;
 
 export const getRecommendedListingIds = pageData => {
   const section = pageData?.sections?.find(s => s?.sectionId === AV_RECOMMENDEDS_SECTION_ID);
@@ -53,6 +65,21 @@ export const getTagListingsSections = pageData => {
   }, {});
 };
 
+/**
+ * Returns a map of { [sectionId]: [userId, ...] } for all av-selected-users-* sections.
+ * Each block's blockName is a user UUID.
+ */
+export const getSelectedUsersSections = pageData => {
+  const sections = pageData?.sections || [];
+  return sections.reduce((collected, section) => {
+    const sectionId = section?.sectionId || '';
+    if (isSelectedUsersSectionId(sectionId)) {
+      return { ...collected, [sectionId]: getListingIdsFromSection(section) };
+    }
+    return collected;
+  }, {});
+};
+
 export const hasCustomSections = pageData => {
   const sections = pageData?.sections || [];
   return sections.some(s => {
@@ -60,9 +87,12 @@ export const hasCustomSections = pageData => {
     return (
       sectionId === AV_HERO_SECTION_ID ||
       sectionId === AV_RECOMMENDEDS_SECTION_ID ||
+      isHero2SectionId(sectionId) ||
+      isVideoSectionId(sectionId) ||
       isSelectionsSectionId(sectionId) ||
       isTagListingsSectionId(sectionId) ||
-      isSelectedCatsSectionId(sectionId)
+      isSelectedCatsSectionId(sectionId) ||
+      isSelectedUsersSectionId(sectionId)
     );
   });
 };

@@ -1,9 +1,12 @@
 import {
   AV_HERO_SECTION_TYPE,
+  AV_HERO2_SECTION_TYPE,
+  AV_VIDEO_SECTION_TYPE,
   AV_RECOMMENDEDS_SECTION_TYPE,
   AV_SELECTIONS_SECTION_TYPE,
   AV_TAG_LISTINGS_SECTION_TYPE,
   AV_SELECTED_CATS_SECTION_TYPE,
+  AV_SELECTED_USERS_SECTION_TYPE,
 } from './constants';
 import { loadCustomSectionListings, selectCustomSectionListings } from './listings';
 import { transformCustomSections } from './transform';
@@ -17,6 +20,10 @@ const getSectionComponents = () => {
 
   const SectionHeroCustom = require('../../../containers/PageBuilder/SectionBuilder/SectionHeroCustom')
     .default;
+  const SectionHeroCustom2 = require('../../../containers/PageBuilder/SectionBuilder/SectionHeroCustom2')
+    .default;
+  const SectionVideoSection = require('../../../containers/PageBuilder/SectionBuilder/SectionVideoSection')
+    .default;
   const SectionRecommendedListings = require('../../../containers/PageBuilder/SectionBuilder/SectionRecommendedListings')
     .default;
   const SectionSelectedListings = require('../../../containers/PageBuilder/SectionBuilder/SectionSelectedListings')
@@ -25,13 +32,18 @@ const getSectionComponents = () => {
     .default;
   const SectionSelectedCat = require('../../../containers/PageBuilder/SectionBuilder/SectionSelectedCat')
     .default;
+  const SectionSelectedUser = require('../../../containers/PageBuilder/SectionBuilder/SectionSelectedUser')
+    .default;
 
   cachedSectionComponents = {
     [AV_HERO_SECTION_TYPE]: { component: SectionHeroCustom },
+    [AV_HERO2_SECTION_TYPE]: { component: SectionHeroCustom2 },
+    [AV_VIDEO_SECTION_TYPE]: { component: SectionVideoSection },
     [AV_RECOMMENDEDS_SECTION_TYPE]: { component: SectionRecommendedListings },
     [AV_SELECTIONS_SECTION_TYPE]: { component: SectionSelectedListings },
     [AV_TAG_LISTINGS_SECTION_TYPE]: { component: SectionTagCatListings },
     [AV_SELECTED_CATS_SECTION_TYPE]: { component: SectionSelectedCat },
+    [AV_SELECTED_USERS_SECTION_TYPE]: { component: SectionSelectedUser },
   };
 
   return cachedSectionComponents;
