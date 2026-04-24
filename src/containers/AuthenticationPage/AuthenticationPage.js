@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
 import { withRouter, Redirect } from 'react-router-dom';
@@ -22,7 +22,7 @@ import { pickUserFieldsData, addScopePrefix } from '../../util/userHelpers';
 
 import { login, authenticationInProgress, signup, signupWithIdp } from '../../ducks/auth.duck';
 import { isScrollingDisabled, manageDisableScrolling } from '../../ducks/ui.duck';
-import { sendVerificationEmail } from '../../ducks/user.duck';
+import { sendVerificationEmail, markVendedorOnboarded } from '../../ducks/user.duck';
 
 import {
   Page,
@@ -518,6 +518,7 @@ export const AuthenticationPageComponent = props => {
   const [authInfo, setAuthInfo] = useState(getAuthInfoFromCookies());
   const [authError, setAuthError] = useState(getAuthErrorFromCookies());
   const [mounted, setMounted] = useState(false);
+  const vendedorOnboardingDispatched = useRef(false);
 
   const config = useConfiguration();
   const intl = useIntl();
@@ -536,9 +537,25 @@ export const AuthenticationPageComponent = props => {
     window.scrollTo(0, 0);
   }, [tosModalOpen, privacyModalOpen]);
 
+  useEffect(() => {
+    if (!mounted || !isAuthenticated || !currentUser?.id?.uuid) return;
+    if (vendedorOnboardingDispatched.current) return;
+    const publicData = currentUser.attributes?.profile?.publicData || {};
+    if (!publicData.onboardingCompleted) {
+      const landingByType = { 'vendedor-tienda': '/p/landing-tienda', vendedor: '/p/landing-vendedor' };
+      const landingPage = landingByType[publicData.userType];
+      if (landingPage) {
+        vendedorOnboardingDispatched.current = true;
+        onMarkVendedorOnboarded();
+        history.push(landingPage);
+      }
+    }
+  }, [mounted, isAuthenticated, currentUser?.id?.uuid]);
+
   const {
     authInProgress,
     currentUser,
+    history,
     isAuthenticated,
     location,
     params: pathParams,
@@ -554,6 +571,7 @@ export const AuthenticationPageComponent = props => {
     sendVerificationEmailError,
     onResendVerificationEmail,
     onManageDisableScrolling,
+    onMarkVendedorOnboarded,
     tosAssetsData,
     tosFetchInProgress,
     tosFetchError,
@@ -616,6 +634,18 @@ export const AuthenticationPageComponent = props => {
     // Already authenticated, redirect back to the page the user tried to access
     return <Redirect to={from} />;
   } else if (shouldRedirectToLandingPage) {
+    const publicData = user.attributes.profile.publicData || {};
+    const vendedorLandingPages = { 'vendedor-tienda': '/p/landing-tienda', vendedor: '/p/landing-vendedor' };
+    if (vendedorLandingPages[publicData.userType] && !publicData.onboardingCompleted) {
+      // useEffect will redirect to the vendedor landing page and update publicData — show blank page while it runs
+      return (
+        <BlankPage
+          schemaTitle={schemaTitle}
+          schemaDescription={schemaDescription}
+          topbarClasses={topbarClasses}
+        />
+      );
+    }
     // Already authenticated, redirect to the landing page (this was direct access to /login or /signup)
     return <NamedRedirect name="LandingPage" />;
   } else if (show404) {
@@ -766,6 +796,7 @@ const mapDispatchToProps = dispatch => ({
   onResendVerificationEmail: () => dispatch(sendVerificationEmail()),
   onManageDisableScrolling: (componentId, disableScrolling) =>
     dispatch(manageDisableScrolling(componentId, disableScrolling)),
+  onMarkVendedorOnboarded: () => dispatch(markVendedorOnboarded()),
 });
 
 // Note: it is important that the withRouter HOC is **outside** the

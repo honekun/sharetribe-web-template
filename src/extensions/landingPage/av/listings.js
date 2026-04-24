@@ -1,8 +1,15 @@
 import { types as sdkTypes, createImageVariantConfig } from '../../../util/sdkLoader';
 import { addMarketplaceEntities, getListingsById } from '../../../ducks/marketplaceData.duck';
+import { denormalisedEntities } from '../../../util/data';
 import { setTagListingIds } from '../../../ducks/avExtension.duck';
 
-import { getRecommendedListingIds, getSelectionsSections, getTagListingsSections, hasCustomSections } from './sections';
+import {
+  getRecommendedListingIds,
+  getSelectionsSections,
+  getTagListingsSections,
+  getSelectedUsersSections,
+  hasCustomSections,
+} from './sections';
 
 const { UUID } = sdkTypes;
 
@@ -106,6 +113,29 @@ const pickListingsById = (state, ids) => {
   return uuids.length > 0 ? getListingsById(state, uuids) : [];
 };
 
+const queryUserById = (userId) => (dispatch, getState, sdk) => {
+  return sdk.users
+    .show({
+      id: userId,
+      include: ['profileImage'],
+      'fields.image': ['variants.square-small', 'variants.square-small2x'],
+    })
+    .then(response => {
+      dispatch(addMarketplaceEntities(response));
+      return response;
+    });
+};
+
+const pickUsersById = (state, ids) => {
+  const { entities } = state.marketplaceData;
+  const refs = (ids || [])
+    .map(toUUID)
+    .filter(Boolean)
+    .map(id => ({ id, type: 'user' }));
+  if (!refs.length) return [];
+  return denormalisedEntities(entities, refs, false).filter(Boolean);
+};
+
 export const loadCustomSectionListings = ({ pageData, dispatch, config }) => {
   if (!hasCustomSections(pageData)) {
     return Promise.resolve();
@@ -114,6 +144,7 @@ export const loadCustomSectionListings = ({ pageData, dispatch, config }) => {
   const recommendedListingIds = getRecommendedListingIds(pageData);
   const selectionsSections = getSelectionsSections(pageData);
   const tagListingsSectionsMap = getTagListingsSections(pageData);
+  const selectedUsersSections = getSelectedUsersSections(pageData);
   const calls = [];
 
   if (recommendedListingIds.length > 0) {
@@ -140,6 +171,14 @@ export const loadCustomSectionListings = ({ pageData, dispatch, config }) => {
         })
       );
     }
+  });
+
+  // Fetch each unique user ID across all selected-users sections
+  const allUserIds = [
+    ...new Set(Object.values(selectedUsersSections).flat()),
+  ];
+  allUserIds.forEach(userId => {
+    calls.push(dispatch(queryUserById(userId)));
   });
 
   return Promise.all(calls).then(() => {
@@ -172,10 +211,21 @@ export const selectCustomSectionListings = ({ state, pageData }) => {
     {}
   );
 
+  // Pick selected users from marketplaceData (fetched during loadData)
+  const selectedUsersSections = getSelectedUsersSections(pageData);
+  const selectedUsersBySection = Object.entries(selectedUsersSections).reduce(
+    (collected, [sectionId, ids]) => ({
+      ...collected,
+      [sectionId]: pickUsersById(state, ids),
+    }),
+    {}
+  );
+
   return {
     hasCustomSections: true,
     listings,
     selectionsListings,
     tagListingsSections,
+    selectedUsersBySection,
   };
 };

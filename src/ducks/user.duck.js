@@ -393,6 +393,10 @@ export default userSlice.reducer;
 
 export const { clearCurrentUser, setCurrentUser, setCurrentUserHasOrders } = userSlice.actions;
 
+export const markVendedorOnboarded = () => (dispatch, getState, sdk) => {
+  return sdk.currentUser.updateProfile({ publicData: { onboardingCompleted: true } });
+};
+
 // ================ Selectors ================ //
 
 export const hasCurrentUserErrors = state => {
