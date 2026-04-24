@@ -193,6 +193,30 @@ const BlankPage = props => {
  * @returns {JSX.Element}
  */
 export const AuthenticationPageComponent = props => {
+  const {
+    authInProgress,
+    currentUser,
+    isAuthenticated,
+    location,
+    params: pathParams,
+    loginError,
+    scrollingDisabled,
+    signupError,
+    confirmError,
+    submitLogin,
+    submitSignup,
+    submitSingupWithIdp,
+    tab = 'signup',
+    sendVerificationEmailInProgress,
+    sendVerificationEmailError,
+    onResendVerificationEmail,
+    onManageDisableScrolling,
+    pageAssetsData,
+    pageAssetsFetchInProgress,
+    pageAssetsFetchError,
+    staticContext,
+  } = props;
+
   const [tosModalOpen, setTosModalOpen] = useState(false);
   const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
   const [authInfo, setAuthInfo] = useState(getAuthInfoFromCookies());
@@ -233,30 +257,6 @@ export const AuthenticationPageComponent = props => {
       }
     }
   }, [mounted, isAuthenticated, currentUser?.id?.uuid]);
-
-  const {
-    authInProgress,
-    currentUser,
-    isAuthenticated,
-    location,
-    params: pathParams,
-    loginError,
-    scrollingDisabled,
-    signupError,
-    confirmError,
-    submitLogin,
-    submitSignup,
-    submitSingupWithIdp,
-    tab = 'signup',
-    sendVerificationEmailInProgress,
-    sendVerificationEmailError,
-    onResendVerificationEmail,
-    onManageDisableScrolling,
-    pageAssetsData,
-    pageAssetsFetchInProgress,
-    pageAssetsFetchError,
-    staticContext,
-  } = props;
 
   // History API has potentially state tied to this route
   // We have used that state to store previous URL ("from"),

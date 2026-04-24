@@ -240,7 +240,7 @@ export class SearchPageComponent extends Component {
         <div className={css.layoutWrapperContainer}>
           <aside className={css.layoutWrapperFilterColumn} data-testid="filterColumnAside">
             <div className={css.filterColumnContent}>
-              {availableFiltered.map(filterConfig => {
+              {availableFilters.map(filterConfig => {
                 const key = `SearchFiltersDesktop.${filterConfig.scope || 'built-in'}.${
                   filterConfig.key
                 }`;
@@ -290,7 +290,7 @@ export class SearchPageComponent extends Component {
                 noResultsInfo={noResultsInfo}
                 location={location}
               >
-                {availableFiltered.map(filterConfig => {
+                {availableFilters.map(filterConfig => {
                   const key = `SearchFiltersMobile.${filterConfig.scope || 'built-in'}.${
                     filterConfig.key
                   }`;
