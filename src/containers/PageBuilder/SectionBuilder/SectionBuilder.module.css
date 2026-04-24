@@ -193,6 +193,94 @@
   }
 }
 
+/* ── AV base: reads theming vars set by each variant ── */
+.avCtaButton {
+  composes: ctaButton;
+  border: none;
+  outline-offset: 0;
+  background-color: var(--_av-bg);
+  color: var(--_av-color);
+  outline: 1px var(--_av-outline-style, solid) var(--_av-outline-color);
+  font-family: var(--_av-font, var(--fontFamily));
+  border-radius: var(--_av-radius, 26px);
+
+  &:hover {
+    background-color: var(--_av-bg-hover, var(--_av-bg));
+    color: var(--_av-color);
+    outline-color: var(--_av-outline-color);
+  }
+}
+
+/* Each variant only sets the theming vars */
+
+.ctaButtonBlue {
+  composes: avCtaButton;
+  --_av-bg: var(--avBlue);
+  --_av-bg-hover: #1d4ed8;
+  --_av-color: var(--avYellowLight);
+  --_av-outline-color: var(--avYellowLight);
+  --_av-outline-style: solid;
+}
+
+
+.ctaButtonLightBlue {
+  composes: avCtaButton;
+  --_av-bg: var(--avBlueLight);
+  --_av-bg-hover: #1d4ed8;
+  --_av-color: var(--avYellowLight);
+  --_av-outline-color: var(--avYellowLight);
+  --_av-outline-style: solid;
+}
+
+
+.ctaButtonPurple {
+  composes: avCtaButton;
+  --_av-bg: var(--avPurple);
+  --_av-bg-hover: #db2777;
+  --_av-color: var(--avYellowLight);
+  --_av-outline-color: var(--avYellowLight);
+  --_av-outline-style: solid;
+}
+
+
+.ctaButtonPink {
+  composes: avCtaButton;
+  --_av-bg: var(--avPink);
+  --_av-bg-hover: #db2777;
+  --_av-color: var(--avYellowLight);
+  --_av-outline-color: var(--avYellowLight);
+  --_av-outline-style: solid;
+}
+
+
+.ctaButtonYellow {
+  composes: avCtaButton;
+  --_av-bg: var(--avYellow);
+  --_av-bg-hover: #1d4ed8;
+  --_av-color: var(--avBlueLight);
+  --_av-outline-color: var(--avBlueLight);
+  --_av-outline-style: solid;
+}
+
+
+/* ── AV button modifiers — override single theming vars ── */
+/* Usage: space-separate with a base style, e.g. "blue roundedFull headingFont" */
+
+/* border-radius */
+.roundedFull  { --_av-radius: 9999px; }
+.rounded      { --_av-radius: 10px; }
+.square       { --_av-radius: 4px; }
+
+/* outline style */
+.dashed       { --_av-outline-style: dashed; }
+.solid        { --_av-outline-style: solid; }
+.noOutline    { --_av-outline-color: transparent; }
+
+/* font */
+.headingFont  { --_av-font: var(--fontFamilyHeadings); }
+.bodyFont     { --_av-font: var(--fontFamily); }
+.accentFont     { --_av-font: var(--fontFamilyAccent); }
+
 .defaultLink {
   display: inline;
   color: var(--marketplaceColor);
@@ -254,6 +342,11 @@
   &:hover {
     color: white;
   }
+}
+
+.darkTheme .ctaButtonPurpleDashed,
+.darkTheme .ctaButtonPink {
+  border: 1px solid transparent;
 }
 
 .darkTheme hr {

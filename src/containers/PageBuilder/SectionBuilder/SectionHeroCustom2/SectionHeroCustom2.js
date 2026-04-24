@@ -45,6 +45,8 @@ const SectionHeroCustom2 = props => {
     appearance,
     callToAction,
     callToAction2,
+    cta1Style,
+    cta2Style,
     mobileBackgroundImageUrl,
     options,
     classWrap,
@@ -55,6 +57,30 @@ const SectionHeroCustom2 = props => {
   const fieldOptions = { fieldComponents };
 
   const hasHeaderFields = hasDataInFields([title, description, callToAction, callToAction2], fieldOptions);
+
+  const styleClassMap = {
+    primary: defaultClasses?.ctaButtonPrimary,
+    secondary: defaultClasses?.ctaButtonSecondary,
+    blue: defaultClasses?.ctaButtonBlue,
+    lightBlue: defaultClasses?.ctaButtonLightBlue,
+    purple: defaultClasses?.ctaButtonPurple,
+    pink: defaultClasses?.ctaButtonPink,
+    yellow: defaultClasses?.ctaButtonYellow,
+    roundedFull: defaultClasses?.roundedFull,
+    rounded: defaultClasses?.rounded,
+    square: defaultClasses?.square,
+    dashed: defaultClasses?.dashed,
+    solid: defaultClasses?.solid,
+    noOutline: defaultClasses?.noOutline,
+    headingFont: defaultClasses?.headingFont,
+    bodyFont: defaultClasses?.bodyFont,
+    accentFont: css.accentFont,
+  };
+  const resolveCtaClass = style =>
+    classNames((style || '').trim().split(/\s+/).map(t => styleClassMap[t]).filter(Boolean)) ||
+    defaultClasses?.ctaButtonPrimary;
+  const cta1Class = resolveCtaClass(cta1Style);
+  const cta2Class = resolveCtaClass(cta2Style) || defaultClasses?.ctaButtonSecondary;
 
   const mobileStyle = mobileBackgroundImageUrl
     ? { '--av2-mobile-bg': `url("${mobileBackgroundImageUrl}")` }
@@ -80,8 +106,8 @@ const SectionHeroCustom2 = props => {
           <Field data={title} className={classNames(defaultClasses.title)} options={fieldOptions} />
           <Field data={description} className={defaultClasses.description} options={fieldOptions} />
           <div className={css.buttonWrap}>
-            <Field data={callToAction} className={defaultClasses.ctaButtonPrimary} options={fieldOptions} />
-            <Field data={callToAction2} className={defaultClasses.ctaButtonSecondary} options={fieldOptions} />
+            <Field data={callToAction} className={cta1Class} options={fieldOptions} />
+            <Field data={callToAction2} className={cta2Class} options={fieldOptions} />
           </div>
         </header>
       ) : null}

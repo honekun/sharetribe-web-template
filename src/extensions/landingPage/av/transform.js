@@ -2,6 +2,7 @@ import {
   AV_HERO_SECTION_ID,
   AV_HERO_SECTION_TYPE,
   AV_HERO2_SECTION_TYPE,
+  AV_HERO3_SECTION_TYPE,
   AV_VIDEO_SECTION_TYPE,
   AV_RECOMMENDEDS_SECTION_ID,
   AV_RECOMMENDEDS_SECTION_TYPE,
@@ -12,6 +13,7 @@ import {
 } from './constants';
 import {
   isHero2SectionId,
+  isHero3SectionId,
   isVideoSectionId,
   isSelectionsSectionId,
   isTagListingsSectionId,
@@ -64,6 +66,8 @@ export const transformCustomSections = ({ pageData, intl, extensionData }) => {
 
       const cta1Text = formatMessage(intl, `AVHero2.${instanceId}.cta1Text`, '');
       const cta2Text = formatMessage(intl, `AVHero2.${instanceId}.cta2Text`, '');
+      const cta1Style = formatMessage(intl, `AVHero2.${instanceId}.cta1Style`, 'primary') || 'primary';
+      const cta2Style = formatMessage(intl, `AVHero2.${instanceId}.cta2Style`, 'secondary') || 'secondary';
       const mobileBackgroundImageUrl =
         formatMessage(intl, `AVHero2.${instanceId}.mobileBackgroundUrl`, '') || null;
 
@@ -84,8 +88,17 @@ export const transformCustomSections = ({ pageData, intl, extensionData }) => {
               content: cta2Text,
             }
           : null,
+        cta1Style,
+        cta2Style,
         mobileBackgroundImageUrl,
       };
+    }
+
+    if (isHero3SectionId(sectionId)) {
+      const instanceId = sectionId.slice('av-hero3-'.length) || sectionId;
+      const cta1Style = formatMessage(intl, `AVHero3.${instanceId}.cta1Style`, 'primary') || 'primary';
+      const cta2Style = formatMessage(intl, `AVHero3.${instanceId}.cta2Style`, 'primary') || 'primary';
+      return { ...section, sectionType: AV_HERO3_SECTION_TYPE, cta1Style, cta2Style };
     }
 
     if (isVideoSectionId(sectionId)) {
