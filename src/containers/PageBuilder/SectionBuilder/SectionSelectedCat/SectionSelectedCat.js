@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { useIntl } from '../../../../util/reactIntl';
 import AVCategoryCard from '../../../../components/AVCategoryCard/AVCategoryCard';
@@ -22,6 +22,14 @@ const getColumnIndex = numColumns => {
   return Math.min(numColumns, COLUMN_CONFIG.length) - 1;
 };
 const getColumnClass = numColumns => COLUMN_CONFIG[getColumnIndex(numColumns)]?.css || COLUMN_CONFIG[0].css;
+
+const getEffectiveColumns = numColumns => {
+  if (typeof window === 'undefined') return numColumns;
+  const w = window.innerWidth;
+  if (w < 550) return 1;
+  if (w < 768) return Math.min(2, numColumns);
+  return numColumns;
+};
 
 const getGapValue = slider => {
   if (!slider || typeof window === 'undefined') return 0;
@@ -61,7 +69,9 @@ const SectionSelectedCat = props => {
 
   const sliderContainerRef = useRef(null);
   const sliderRef = useRef(null);
-  const normalizedColumns = Math.min(Math.max(numColumns || 1, 1), COLUMN_CONFIG.length);
+
+  const [effectiveColumns, setEffectiveColumns] = useState(() => getEffectiveColumns(numColumns));
+  const normalizedColumns = Math.min(Math.max(effectiveColumns, 1), COLUMN_CONFIG.length);
 
   useEffect(() => {
     if (!blocks.length || typeof window === 'undefined') return () => {};
@@ -75,6 +85,7 @@ const SectionSelectedCat = props => {
           ? window.innerWidth
           : container.clientWidth;
       container.style.setProperty('--carouselWidth', `${containerWidth - scrollbarWidth}px`);
+      setEffectiveColumns(getEffectiveColumns(numColumns));
     };
 
     setCarouselWidth();

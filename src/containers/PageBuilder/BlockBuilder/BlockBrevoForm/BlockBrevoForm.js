@@ -1,60 +1,39 @@
 import React, { useEffect, useRef } from 'react';
 import css from './BlockBrevoForm.module.css';
 
-// Strips markdown code fences if the snippet was pasted inside ``` blocks
 const stripCodeFences = raw => {
   const fenceMatch = raw.match(/^```[\w]*\n?([\s\S]*?)```$/m);
   return fenceMatch ? fenceMatch[1].trim() : raw.trim();
 };
 
-// Splits raw HTML into { html, scripts[] } so scripts can be executed after mount.
-// dangerouslySetInnerHTML does not execute <script> tags — we re-create them.
-const extractScripts = html => {
-  const scriptPattern = /<script([^>]*)>([\s\S]*?)<\/script>/gi;
-  const scripts = [];
-  const withoutScripts = html.replace(scriptPattern, (_, attrs, content) => {
-    const srcMatch = attrs.match(/src=["']([^"']+)["']/);
-    scripts.push({ src: srcMatch ? srcMatch[1] : null, content: content.trim() });
-    return '';
-  });
-  return { html: withoutScripts, scripts };
-};
-
 const BlockBrevoForm = ({ blockId, text }) => {
-  const containerRef = useRef(null);
+  const wrapRef = useRef(null);
   const raw = text?.content || (typeof text === 'string' ? text : '');
-  const snippet = stripCodeFences(raw);
-  const { html, scripts } = extractScripts(snippet);
+  const html = stripCodeFences(raw);
 
+  // Sibforms iframes post their content height to the parent window.
+  // Listen for it and update the iframe height so nothing is clipped.
   useEffect(() => {
-    if (!containerRef.current || !scripts.length) return;
-    const injected = [];
+    if (!wrapRef.current) return;
 
-    scripts.forEach(({ src, content }) => {
-      const el = document.createElement('script');
-      if (src) {
-        el.src = src;
-        el.async = true;
-      } else if (content) {
-        el.textContent = content;
-      }
-      document.body.appendChild(el);
-      injected.push(el);
-    });
-
-    return () => {
-      injected.forEach(el => el.remove());
+    const onMessage = e => {
+      if (!e.data || typeof e.data !== 'object') return;
+      const height = e.data.height || e.data.frameHeight;
+      if (!height || !wrapRef.current) return;
+      const iframe = wrapRef.current.querySelector('iframe');
+      if (iframe) iframe.style.height = `${height}px`;
     };
-  // Re-run only when the snippet changes (block reconfigured)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [snippet]);
+
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
 
   if (!html) return null;
 
   return (
     <div id={blockId} className={css.root}>
       <div
-        ref={containerRef}
+        ref={wrapRef}
         className={css.formWrap}
         dangerouslySetInnerHTML={{ __html: html }}
       />
