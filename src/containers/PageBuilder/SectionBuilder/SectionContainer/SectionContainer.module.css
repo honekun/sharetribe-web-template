@@ -64,6 +64,10 @@
   header > h3 {
     color: var(--avBlue);
   }
+
+  header + div {
+    margin-top: 30px;
+  }
 }
 
 .sectionContentFullW {
