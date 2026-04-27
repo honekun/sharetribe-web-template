@@ -21,10 +21,16 @@ import { useIntl } from '../../util/reactIntl';
 
 // Import custom sections.
 import SectionHeroCustom from '../PageBuilder/SectionBuilder/SectionHeroCustom';
+import SectionHeroCustom2 from '../PageBuilder/SectionBuilder/SectionHeroCustom2';
+import SectionHeroCustom3 from '../PageBuilder/SectionBuilder/SectionHeroCustom3';
+import SectionVideoSection from '../PageBuilder/SectionBuilder/SectionVideoSection';
 import SectionPriceSelector from '../PageBuilder/SectionBuilder/SectionPriceSelector';
 
 // Define custom section types. (Based on what default section type?)
 const avHeroSectionType = 'hero';
+const avHero2SectionType = 'avHero2';
+const avHero3SectionType = 'avHero3';
+const avVideoSectionType = 'avVideo';
 const avPriceSelectorSectionType = 'price-columns';
 
 // Feature delimiter used in hosted translation strings (fallback mode only).
@@ -72,6 +78,63 @@ const buildPricingSectionFromIntl = (intl, baseSection) => ({
     cta2: intl.formatMessage({ id: 'PricingToggle.toggleSet2', defaultMessage: '' }),
   },
 });
+
+// --- avHero2 section ---
+
+const buildHero2SectionData = (intl, section) => {
+  const instanceId = section.sectionId.slice('av-hero2-'.length) || section.sectionId;
+  const fmt = (id, def = '') => {
+    const result = intl.formatMessage({ id, defaultMessage: def }).trim();
+    return result === id ? def : result;
+  };
+  const cta1Text = fmt(`AVHero2.${instanceId}.cta1Text`, '').trim();
+  const cta2Text = fmt(`AVHero2.${instanceId}.cta2Text`, '').trim();
+
+  return {
+    ...section,
+    sectionType: avHero2SectionType,
+    cta1Style: fmt(`AVHero2.${instanceId}.cta1Style`, 'primary') || 'primary',
+    cta2Style: fmt(`AVHero2.${instanceId}.cta2Style`, 'secondary') || 'secondary',
+    callToAction: cta1Text
+      ? { fieldType: 'internalButtonLink', href: fmt(`AVHero2.${instanceId}.cta1Link`, '/s'), content: cta1Text }
+      : section.callToAction || null,
+    callToAction2: cta2Text
+      ? { fieldType: 'internalButtonLink', href: fmt(`AVHero2.${instanceId}.cta2Link`, '/s'), content: cta2Text }
+      : section.callToAction2 || null,
+    mobileBackgroundImageUrl: fmt(`AVHero2.${instanceId}.mobileBackgroundUrl`, '') || null,
+  };
+};
+
+// --- avHero3 section ---
+
+const buildHero3SectionData = (intl, section) => {
+  const instanceId = section.sectionId.slice('av-hero3-'.length) || section.sectionId;
+  const fmt = (id, def = '') => {
+    const result = intl.formatMessage({ id, defaultMessage: def }).trim();
+    return result === id ? def : result;
+  };
+  return {
+    ...section,
+    sectionType: avHero3SectionType,
+    cta1Style: fmt(`AVHero3.${instanceId}.cta1Style`, 'primary') || 'primary',
+    cta2Style: fmt(`AVHero3.${instanceId}.cta2Style`, 'primary') || 'primary',
+  };
+};
+
+// --- avVideo section ---
+
+const buildVideoSectionData = (intl, section) => {
+  const instanceId = section.sectionId.slice('av-video-'.length) || section.sectionId;
+  const fmt = (id, def = '') => {
+    const result = intl.formatMessage({ id, defaultMessage: def }).trim();
+    return result === id ? def : result;
+  };
+  return {
+    ...section,
+    sectionType: avVideoSectionType,
+    videoUrl: fmt(`AVVideo.${instanceId}.videoUrl`, '') || null,
+  };
+};
 
 // --- Hero section ---
 
@@ -124,6 +187,15 @@ export const CMSPageComponent = props => {
             ? buildPricingSectionFromAsset(pricingAssetData, s)
             : buildPricingSectionFromIntl(intl, s);
         }
+        if (s.sectionId?.startsWith('av-hero2-')) {
+          return buildHero2SectionData(intl, s);
+        }
+        if (s.sectionId?.startsWith('av-hero3-')) {
+          return buildHero3SectionData(intl, s);
+        }
+        if (s.sectionId?.startsWith('av-video-')) {
+          return buildVideoSectionData(intl, s);
+        }
         return s;
       })
     : null;
@@ -138,6 +210,9 @@ export const CMSPageComponent = props => {
       options={{
         sectionComponents: {
           [avHeroSectionType]: { component: SectionHeroCustom },
+          [avHero2SectionType]: { component: SectionHeroCustom2 },
+          [avHero3SectionType]: { component: SectionHeroCustom3 },
+          [avVideoSectionType]: { component: SectionVideoSection },
           [avPriceSelectorSectionType]: { component: SectionPriceSelector },
         },
       }}

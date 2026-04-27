@@ -58,6 +58,14 @@
   }
 }
 
+.sectionContentBlueTitle {
+  header > h1,
+  header > h2,
+  header > h3 {
+    color: var(--avBlue);
+  }
+}
+
 .sectionContentFullW {
   --contentMaxWidthPages: 100%;
   --contentPaddingX: 0;

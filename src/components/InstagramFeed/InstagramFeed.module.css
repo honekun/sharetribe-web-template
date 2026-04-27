@@ -1,0 +1,237 @@
+.root {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  padding: 8px 0;
+}
+
+/* ---- Track ---- */
+.track {
+  display: flex;
+  gap: 16px;
+  overflow-x: scroll;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 8px 16px;
+  /* hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---- Card ---- */
+.card {
+  flex: 0 0 calc(50% - 8px);
+  scroll-snap-align: start;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .card {
+    flex: 0 0 82%;
+  }
+}
+
+/* ---- Card header ---- */
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px 10px;
+  gap: 8px;
+}
+
+.profileInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.avatarPlaceholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+  flex-shrink: 0;
+}
+
+.profileText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.profileName {
+  font-weight: 600;
+  font-size: 13px;
+  color: #111;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profileHandle {
+  font-size: 12px;
+  color: #737373;
+  line-height: 1.2;
+}
+
+.moreBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: #111;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.moreBtn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---- Post image ---- */
+.imageLink {
+  display: block;
+  width: 100%;
+  line-height: 0;
+}
+
+.postImage {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+}
+
+/* ---- Card body ---- */
+.cardBody {
+  padding: 10px 12px 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.postMeta {
+  font-size: 13px;
+  color: #111;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.postHandle {
+  font-weight: 400;
+  color: #737373;
+}
+
+.caption {
+  font-size: 13px;
+  color: #333;
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---- Card footer ---- */
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 12px;
+  gap: 8px;
+}
+
+.footerActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.actionItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: #111;
+}
+
+.actionItem svg {
+  width: 18px;
+  height: 18px;
+}
+
+.bookmarkBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: #111;
+  display: flex;
+  align-items: center;
+}
+
+.bookmarkBtn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ---- Navigation arrows ---- */
+.navBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  color: #111;
+  padding: 0;
+  padding-bottom: 2px;
+  transition: box-shadow 0.15s;
+}
+
+.navBtn:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.navBtnPrev {
+  left: 4px;
+}
+
+.navBtnNext {
+  right: 4px;
+}

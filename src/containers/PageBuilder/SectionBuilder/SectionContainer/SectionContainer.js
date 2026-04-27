@@ -33,6 +33,7 @@ const SectionContainer = props => {
   const classes = classNames(rootClassName || css.root, className);
   const innerCss = classNames(
     css.sectionContent,
+    customOption?.isBlueTitle ? css.sectionContentBlueTitle : '',
     customOption?.isLarge ? css.sectionContentLarge : '',
     customOption?.isMedium ? css.sectionContentMedium : '',
     customOption?.isFullH ? css.sectionContentFullH : '',

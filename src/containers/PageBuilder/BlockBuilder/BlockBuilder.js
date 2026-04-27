@@ -6,10 +6,12 @@ import BlockWithCols from './BlockWithCols';
 import BlockPriceSelector from './BlockPriceSelector';
 import BlockFooter from './BlockFooter';
 import BlockSocialMediaLink from './BlockSocialMediaLink';
+import BlockInstagramFeed from './BlockInstagramFeed/BlockInstagramFeed';
 
 // To load Marketplace texts.
 import { useIntl } from '../../../util/reactIntl';
 
+import classNames from 'classnames';
 import sectionCss from './../SectionBuilder/SectionBuilder.module.css';
 
 ///////////////////////////////////////////
@@ -20,6 +22,7 @@ const defaultBlockComponents = {
   defaultBlock: { component: BlockDefault },
   blockWithCols: { component: BlockWithCols },
   blockPriceSelector: { component: BlockPriceSelector },
+  blockInstagramFeed: { component: BlockInstagramFeed },
   footerBlock: { component: BlockFooter },
   socialMediaLink: { component: BlockSocialMediaLink },
 };
@@ -27,6 +30,42 @@ const defaultBlockComponents = {
 const DEFAULT_CLASSES = {
   ctaButtonPrimary: sectionCss.ctaButtonPrimary,
   ctaButtonSecondary: sectionCss.ctaButtonSecondary,
+};
+
+//////////////////////////////////////////////////
+// CTA button style tokens parsed from blockName //
+//////////////////////////////////////////////////
+
+const BLOCK_CTA_BASE_MAP = {
+  blockCtaBtnBlue: sectionCss.ctaButtonBlue,
+  blockCtaBtnLightBlue: sectionCss.ctaButtonLightBlue,
+  blockCtaBtnPurple: sectionCss.ctaButtonPurple,
+  blockCtaBtnPink: sectionCss.ctaButtonPink,
+  blockCtaBtnYellow: sectionCss.ctaButtonYellow,
+};
+const BLOCK_CTA_MODIFIER_MAP = {
+  roundedFull: sectionCss.roundedFull,
+  rounded: sectionCss.rounded,
+  square: sectionCss.square,
+  dashed: sectionCss.dashed,
+  solid: sectionCss.solid,
+  noOutline: sectionCss.noOutline,
+  headingFont: sectionCss.headingFont,
+  bodyFont: sectionCss.bodyFont,
+  accentFont: sectionCss.accentFont,
+};
+
+// Extracts tokens written as "token ::" — e.g. "blockCtaBtnBlue :: rounded :: dashed ::"
+const parseBlockCtaClass = blockName => {
+  if (!blockName) return null;
+  const tokens = [...blockName.matchAll(/(\S+)\s*::/g)].map(m => m[1]);
+  if (!tokens.length) return null;
+  const classes = [];
+  for (const token of tokens) {
+    if (BLOCK_CTA_BASE_MAP[token]) classes.push(BLOCK_CTA_BASE_MAP[token]);
+    else if (BLOCK_CTA_MODIFIER_MAP[token]) classes.push(BLOCK_CTA_MODIFIER_MAP[token]);
+  }
+  return classes.length ? classNames(classes.filter(Boolean)) : null;
 };
 
 ////////////////////
@@ -89,16 +128,23 @@ const BlockBuilder = props => {
   // Combine component-mapping from props together with the default one:
   const components = { ...defaultBlockComponents, ...blockComponents };
 
-  const blockCustomPropsList = blocks.map((block, index) => {
-    return createBlockCustomProps(block);
+  const blockCustomPropsList = blocks.map(block => {
+    const customProps = createBlockCustomProps(block);
+    const blockCtaOverride = parseBlockCtaClass(block.blockName);
+    if (blockCtaOverride) {
+      customProps.ctaButtonClass = blockCtaOverride;
+    }
+    return customProps;
   });
 
   return (
     <>
       {blocks.map((block, index) => {
-        const config = components[block.blockType];
-        const Block = config?.component;
         const blockId = block.blockId || `${sectionId}-block-${index + 1}`;
+        const effectiveBlockType =
+          blockId === 'av-insta-feed' ? 'blockInstagramFeed' : block.blockType;
+        const config = components[effectiveBlockType];
+        const Block = config?.component;
         const blockCustomProps = blockCustomPropsList[index];
 
         if (Block) {

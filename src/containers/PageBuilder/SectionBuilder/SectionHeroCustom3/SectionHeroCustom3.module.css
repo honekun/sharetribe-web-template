@@ -19,7 +19,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.28);
+  background: rgba(0, 0, 0, 0.08);
   z-index: 1;
 }
 
@@ -30,7 +30,7 @@
   padding: 40px 32px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-end;
 
   /* Default heading + text color for overlay */
   h1, h2, h3, h4, h5, h6 {
