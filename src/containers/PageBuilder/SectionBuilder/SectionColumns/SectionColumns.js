@@ -104,9 +104,13 @@ const SectionColumns = props => {
       ) : null}
       {hasBlocks ? (
         <div
-          className={classNames(defaultClasses.blockContainer, getColumnCSS(numColumns), {
-            [css.noSidePaddings]: isInsideContainer,
-          })}
+          className={classNames(
+            defaultClasses.blockContainer,
+            customOption?.isTwoThirdsCols && numColumns === 2
+              ? css.twoThirdsCols
+              : getColumnCSS(numColumns),
+            { [css.noSidePaddings]: isInsideContainer }
+          )}
         >
           <BlockBuilder
             ctaButtonClass={defaultClasses.ctaButton}

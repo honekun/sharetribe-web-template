@@ -123,8 +123,11 @@ const defaultDirectives = {
     'js.stripe.com',
     // Plausible analytics
     'plausible.io',
+    // Brevo contact form
+    'sibforms.com',
+    '*.sibforms.com',
   ],
-  styleSrc: [self, unsafeInline, 'fonts.googleapis.com', 'api.mapbox.com'],
+  styleSrc: [self, unsafeInline, 'fonts.googleapis.com', 'api.mapbox.com', 'sibforms.com', '*.sibforms.com'],
 };
 
 /**
