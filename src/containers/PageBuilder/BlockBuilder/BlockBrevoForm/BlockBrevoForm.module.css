@@ -1,0 +1,12 @@
+.root {
+  width: 100%;
+}
+
+.formWrap {
+  width: 100%;
+}
+
+/* Scope Brevo's injected styles so they don't bleed out */
+.formWrap :global(#sib-container) {
+  border-radius: 8px;
+}

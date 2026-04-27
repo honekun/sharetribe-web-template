@@ -8,6 +8,7 @@ import BlockFooter from './BlockFooter';
 import BlockSocialMediaLink from './BlockSocialMediaLink';
 import BlockInstagramFeed from './BlockInstagramFeed/BlockInstagramFeed';
 import BlockMarkdownTable from './BlockMarkdownTable/BlockMarkdownTable';
+import BlockBrevoForm from './BlockBrevoForm/BlockBrevoForm';
 
 // To load Marketplace texts.
 import { useIntl } from '../../../util/reactIntl';
@@ -25,6 +26,7 @@ const defaultBlockComponents = {
   blockPriceSelector: { component: BlockPriceSelector },
   blockInstagramFeed: { component: BlockInstagramFeed },
   blockMarkdownTable: { component: BlockMarkdownTable },
+  blockBrevoForm: { component: BlockBrevoForm },
   footerBlock: { component: BlockFooter },
   socialMediaLink: { component: BlockSocialMediaLink },
 };
@@ -146,6 +148,7 @@ const BlockBuilder = props => {
         const effectiveBlockType =
           blockId === 'av-insta-feed' ? 'blockInstagramFeed'
           : blockId?.startsWith('av-table-') ? 'blockMarkdownTable'
+          : blockId === 'av-contact-form' ? 'blockBrevoForm'
           : block.blockType;
         const config = components[effectiveBlockType];
         const Block = config?.component;

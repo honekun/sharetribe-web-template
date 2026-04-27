@@ -204,6 +204,7 @@ const SectionBuilder = props => {
         customOption.hasPaddings = section.sectionName?.indexOf('- Paddings') >= 0;
 
         customOption.isHeadingH = section.sectionName?.indexOf('- Heading2') >= 0;
+        customOption.isTwoThirdsCols = section.sectionName?.indexOf('- 2/3 cols') >= 0;
 
         // Content text is larger & gray.
         if (section.sectionName?.includes('- TextGray')) {

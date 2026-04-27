@@ -37,6 +37,14 @@
   }
 }
 
+.twoThirdsCols {
+  composes: baseColumn;
+  @media (--viewportMedium) {
+    grid-template-columns: 2fr 1fr;
+    gap: 64px;
+  }
+}
+
 .noSidePaddings {
   padding-left: 0;
   padding-right: 0;
