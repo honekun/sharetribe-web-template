@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { useIntl } from '../../../../util/reactIntl';
 import { AVListingCard } from '../../../../components';
@@ -38,6 +38,14 @@ const getResponsiveImageSizes = numColumns => {
   return config ? config.responsiveImageSizes : COLUMN_CONFIG[0].responsiveImageSizes;
 };
 
+const getEffectiveColumns = numColumns => {
+  if (typeof window === 'undefined') return numColumns;
+  const w = window.innerWidth;
+  if (w < 550) return 1;
+  if (w < 768) return Math.min(2, numColumns);
+  return numColumns;
+};
+
 const getGapValue = slider => {
   if (!slider || typeof window === 'undefined') {
     return 0;
@@ -70,7 +78,8 @@ const SectionSelectedListings = props => {
   const sliderContainerRef = useRef(null);
   const sliderRef = useRef(null);
 
-  const normalizedColumns = Math.min(Math.max(numColumns || 1, 1), COLUMN_CONFIG.length);
+  const [effectiveColumns, setEffectiveColumns] = useState(() => getEffectiveColumns(numColumns));
+  const normalizedColumns = Math.min(Math.max(effectiveColumns, 1), COLUMN_CONFIG.length);
 
   useEffect(() => {
     if (!listings.length || typeof window === 'undefined') {
@@ -90,6 +99,7 @@ const SectionSelectedListings = props => {
       const carouselWidth = containerWidth - scrollbarWidth;
 
       container.style.setProperty('--carouselWidth', `${carouselWidth}px`);
+      setEffectiveColumns(getEffectiveColumns(numColumns));
     };
 
     setCarouselWidth();
