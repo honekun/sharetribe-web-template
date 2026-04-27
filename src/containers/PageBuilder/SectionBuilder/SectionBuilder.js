@@ -71,14 +71,16 @@ const CTA_MODIFIER_MAP = {
   accentFont: css.accentFont,
 };
 
+const hasToken = (str, token) => new RegExp(`- ${token}(?!\\w)`).test(str);
+
 const parseSectionCtaClass = sectionName => {
   if (!sectionName) return null;
   const classes = [];
   for (const [token, cls] of Object.entries(SECTION_CTA_BASE_MAP)) {
-    if (sectionName.includes(`- ${token}`)) { classes.push(cls); break; }
+    if (hasToken(sectionName, token)) { classes.push(cls); break; }
   }
   for (const [token, cls] of Object.entries(CTA_MODIFIER_MAP)) {
-    if (sectionName.includes(`- ${token}`)) classes.push(cls);
+    if (hasToken(sectionName, token)) classes.push(cls);
   }
   return classes.length ? classNames(classes.filter(Boolean)) : null;
 };

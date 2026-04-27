@@ -1,0 +1,35 @@
+.root {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.th {
+  background-color: var(--avBlue);
+  color: #fff;
+  font-weight: 700;
+  text-align: left;
+  padding: 12px 16px;
+  border: 1px solid var(--avBlue);
+}
+
+.td {
+  padding: 12px 16px;
+  border: 1px solid #d0d5dd;
+  vertical-align: top;
+  color: var(--colorGrey700);
+}
+
+.rowEven {
+  background-color: #ffffff;
+}
+
+.rowOdd {
+  background-color: #f8f9fb;
+}

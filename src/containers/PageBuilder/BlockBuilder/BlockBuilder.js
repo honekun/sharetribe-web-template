@@ -7,6 +7,7 @@ import BlockPriceSelector from './BlockPriceSelector';
 import BlockFooter from './BlockFooter';
 import BlockSocialMediaLink from './BlockSocialMediaLink';
 import BlockInstagramFeed from './BlockInstagramFeed/BlockInstagramFeed';
+import BlockMarkdownTable from './BlockMarkdownTable/BlockMarkdownTable';
 
 // To load Marketplace texts.
 import { useIntl } from '../../../util/reactIntl';
@@ -23,6 +24,7 @@ const defaultBlockComponents = {
   blockWithCols: { component: BlockWithCols },
   blockPriceSelector: { component: BlockPriceSelector },
   blockInstagramFeed: { component: BlockInstagramFeed },
+  blockMarkdownTable: { component: BlockMarkdownTable },
   footerBlock: { component: BlockFooter },
   socialMediaLink: { component: BlockSocialMediaLink },
 };
@@ -142,7 +144,9 @@ const BlockBuilder = props => {
       {blocks.map((block, index) => {
         const blockId = block.blockId || `${sectionId}-block-${index + 1}`;
         const effectiveBlockType =
-          blockId === 'av-insta-feed' ? 'blockInstagramFeed' : block.blockType;
+          blockId === 'av-insta-feed' ? 'blockInstagramFeed'
+          : blockId?.startsWith('av-table-') ? 'blockMarkdownTable'
+          : block.blockType;
         const config = components[effectiveBlockType];
         const Block = config?.component;
         const blockCustomProps = blockCustomPropsList[index];
