@@ -48,6 +48,7 @@ const sdkUtils = require('./api-util/sdk');
 const { getSDKProxy } = require('./api-util/sdkCacheProxy');
 
 const brevoRouter = require('./api/brevo');
+const instagramRouter = require('./api/instagram');
 
 const buildPath = path.resolve(__dirname, '..', 'build');
 const dev = process.env.REACT_APP_ENV === 'development';
@@ -83,6 +84,7 @@ const app = express();
 app.use(express.json());
 
 app.use('/api/brevo', brevoRouter);
+app.use('/api/instagram', instagramRouter);
 
 // Bulk import router (mounted separately to avoid Transit body-parser conflict with multer)
 const bulkImportRouter = require('./api/bulk-import');

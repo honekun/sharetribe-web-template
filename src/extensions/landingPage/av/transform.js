@@ -22,9 +22,10 @@ import {
 } from './sections';
 
 const formatMessage = (intl, id, defaultMessage) => {
-  return intl?.formatMessage
-    ? intl.formatMessage({ id, defaultMessage })
-    : defaultMessage || id;
+  if (!intl?.formatMessage) return defaultMessage ?? '';
+  const result = intl.formatMessage({ id, defaultMessage: defaultMessage ?? '' });
+  // When a key is missing, React Intl returns the id itself — treat that as empty
+  return result === id ? (defaultMessage ?? '') : result;
 };
 
 export const transformCustomSections = ({ pageData, intl, extensionData }) => {
@@ -64,8 +65,8 @@ export const transformCustomSections = ({ pageData, intl, extensionData }) => {
       // "av-hero2-shop" → instanceId "shop"; falls back to full sectionId if no suffix
       const instanceId = sectionId.slice('av-hero2-'.length) || sectionId;
 
-      const cta1Text = formatMessage(intl, `AVHero2.${instanceId}.cta1Text`, '');
-      const cta2Text = formatMessage(intl, `AVHero2.${instanceId}.cta2Text`, '');
+      const cta1Text = formatMessage(intl, `AVHero2.${instanceId}.cta1Text`, '').trim();
+      const cta2Text = formatMessage(intl, `AVHero2.${instanceId}.cta2Text`, '').trim();
       const cta1Style = formatMessage(intl, `AVHero2.${instanceId}.cta1Style`, 'primary') || 'primary';
       const cta2Style = formatMessage(intl, `AVHero2.${instanceId}.cta2Style`, 'secondary') || 'secondary';
       const mobileBackgroundImageUrl =

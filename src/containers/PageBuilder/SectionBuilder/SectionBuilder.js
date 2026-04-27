@@ -48,6 +48,41 @@ const DEFAULT_CLASSES = {
   defaultLink: css.defaultLink,
 };
 
+////////////////////////////////////////////////////
+// CTA button style tokens parsed from sectionName //
+////////////////////////////////////////////////////
+
+const SECTION_CTA_BASE_MAP = {
+  sectionCtaBtnBlue: css.ctaButtonBlue,
+  sectionCtaBtnLightBlue: css.ctaButtonLightBlue,
+  sectionCtaBtnPurple: css.ctaButtonPurple,
+  sectionCtaBtnPink: css.ctaButtonPink,
+  sectionCtaBtnYellow: css.ctaButtonYellow,
+};
+const CTA_MODIFIER_MAP = {
+  roundedFull: css.roundedFull,
+  rounded: css.rounded,
+  square: css.square,
+  dashed: css.dashed,
+  solid: css.solid,
+  noOutline: css.noOutline,
+  headingFont: css.headingFont,
+  bodyFont: css.bodyFont,
+  accentFont: css.accentFont,
+};
+
+const parseSectionCtaClass = sectionName => {
+  if (!sectionName) return null;
+  const classes = [];
+  for (const [token, cls] of Object.entries(SECTION_CTA_BASE_MAP)) {
+    if (sectionName.includes(`- ${token}`)) { classes.push(cls); break; }
+  }
+  for (const [token, cls] of Object.entries(CTA_MODIFIER_MAP)) {
+    if (sectionName.includes(`- ${token}`)) classes.push(cls);
+  }
+  return classes.length ? classNames(classes.filter(Boolean)) : null;
+};
+
 /////////////////////////////////////////////
 // Mapping of section types and components //
 /////////////////////////////////////////////
@@ -155,6 +190,7 @@ const SectionBuilder = props => {
 
         // TODO: Move to function.
         const customOption = {};
+        customOption.isBlueTitle = section.sectionName?.indexOf('- BlueTitle') >= 0;
         customOption.isLarge = section.sectionName?.indexOf('- Large') >= 0;
         customOption.isMedium = section.sectionName?.indexOf('- Medium') >= 0;
         customOption.isFullH = section.sectionName?.indexOf('- FullH') >= 0;
@@ -177,14 +213,19 @@ const SectionBuilder = props => {
           customOption.starDeco = parseInt(section.sectionName?.substring(starPos + 6, starPos + 7));
         }
 
+        const ctaOverride = parseSectionCtaClass(section.sectionName);
+        const resolvedDefaultClasses = ctaOverride
+          ? { ...DEFAULT_CLASSES, ctaButton: ctaOverride, ctaButtonPrimary: ctaOverride }
+          : DEFAULT_CLASSES;
+
         if (Section) {
           return (
             <Section
               key={`${sectionId}_i${index}`}
               className={classes}
-              defaultClasses={DEFAULT_CLASSES}
+              defaultClasses={resolvedDefaultClasses}
               isInsideContainer={isInsideContainer}
-              options={{ ...otherOption, defaultClasses: DEFAULT_CLASSES }}
+              options={{ ...otherOption, defaultClasses: resolvedDefaultClasses }}
               {...section}
               sectionId={sectionId}
               customOption={customOption}

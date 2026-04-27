@@ -100,11 +100,13 @@ const SectionHeroCustom3 = props => {
             <div className={classNames(css.content, alignmentClass(block.alignment))}>
               <Field data={block.title} options={fieldOptions} />
               <Field data={block.text} options={fieldOptions} />
-              <Field
-                data={block.callToAction}
-                className={ctaStyles[i]}
-                options={fieldOptions}
-              />
+              {block.callToAction ? (
+                <Field
+                  data={block.callToAction}
+                  className={ctaStyles[i]}
+                  options={fieldOptions}
+                />
+              ) : null}
             </div>
           </div>
         );

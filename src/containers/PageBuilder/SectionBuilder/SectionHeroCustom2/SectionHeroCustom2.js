@@ -57,7 +57,6 @@ const SectionHeroCustom2 = props => {
   const fieldOptions = { fieldComponents };
 
   const hasHeaderFields = hasDataInFields([title, description, callToAction, callToAction2], fieldOptions);
-
   const styleClassMap = {
     primary: defaultClasses?.ctaButtonPrimary,
     secondary: defaultClasses?.ctaButtonSecondary,
@@ -105,10 +104,12 @@ const SectionHeroCustom2 = props => {
         >
           <Field data={title} className={classNames(defaultClasses.title)} options={fieldOptions} />
           <Field data={description} className={defaultClasses.description} options={fieldOptions} />
-          <div className={css.buttonWrap}>
-            <Field data={callToAction} className={cta1Class} options={fieldOptions} />
-            <Field data={callToAction2} className={cta2Class} options={fieldOptions} />
-          </div>
+          {(callToAction || callToAction2) ? (
+            <div className={css.buttonWrap}>
+              {callToAction ? <Field data={callToAction} className={cta1Class} options={fieldOptions} /> : null}
+              {callToAction2 ? <Field data={callToAction2} className={cta2Class} options={fieldOptions} /> : null}
+            </div>
+          ) : null}
         </header>
       ) : null}
     </SectionContainer>
