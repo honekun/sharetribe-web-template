@@ -149,15 +149,34 @@ const GridItem = ({ post, onClick }) => (
   </button>
 );
 
+const getColumns = () => {
+  if (typeof window === 'undefined') return 6;
+  const w = window.innerWidth;
+  if (w < 550) return 2;
+  if (w < 768) return 3;
+  if (w < 1024) return 4;
+  return 6;
+};
+
 const InstagramFeed = ({ profile, posts }) => {
   const [activePost, setActivePost] = useState(null);
+  const [columns, setColumns] = useState(6);
+
+  useEffect(() => {
+    const update = () => setColumns(getColumns());
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   if (!posts?.length) return null;
+
+  const visiblePosts = posts.slice(0, columns * 2);
 
   return (
     <div className={css.root}>
       <div className={css.grid}>
-        {posts.map(post => (
+        {visiblePosts.map(post => (
           <GridItem key={post.id} post={post} onClick={setActivePost} />
         ))}
       </div>
