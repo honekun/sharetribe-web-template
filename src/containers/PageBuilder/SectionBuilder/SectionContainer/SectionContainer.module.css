@@ -137,6 +137,11 @@
   } 
 }
 
+.sectionContentNoPaddings {
+  --contentPaddingY: 0px;
+  --contentPaddingX: 0px;
+}
+
 .sectionContentHasPaddings {
   padding: 90px 0 70px;
 

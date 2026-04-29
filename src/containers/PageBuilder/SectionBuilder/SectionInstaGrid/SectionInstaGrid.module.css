@@ -6,42 +6,43 @@
   overflow: hidden;
 }
 
-/* ── Grid: 2 rows always visible, columns expand with viewport ── */
+/* ── Grid: always 2 rows, columns grow with viewport ──
+ *
+ *  < --viewportSmall (550px) : 2 cols  →  items ~195–274px
+ *  --viewportSmall  (550px+) : 3 cols  →  items ~183–341px
+ *  --viewportMedium (768px+) : 4 cols  →  items ~192–256px  (≥220px from ~880px)
+ *  --viewportLarge (1024px+) : 6 cols  →  items ~170px+  (≥220px from ~1320px)
+ *
+ *  aspect-ratio keeps the container to exactly 2 row heights,
+ *  overflow:hidden clips anything beyond. */
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  aspect-ratio: 1; /* 2 cols / 2 rows = 1:1 */
+  aspect-ratio: 1; /* 2 cols / 2 rows */
   overflow: hidden;
   gap: 3px;
   width: 100%;
   background: #f0f0f0;
 }
 
-@media (min-width: 480px) {
+@media (--viewportSmall) {
   .grid {
     grid-template-columns: repeat(3, 1fr);
     aspect-ratio: 3/2;
   }
 }
 
-@media (min-width: 768px) {
+@media (--viewportMedium) {
   .grid {
     grid-template-columns: repeat(4, 1fr);
-    aspect-ratio: 2;
+    aspect-ratio: 2; /* 4/2 */
   }
 }
 
-@media (min-width: 1024px) {
-  .grid {
-    grid-template-columns: repeat(5, 1fr);
-    aspect-ratio: 5/2;
-  }
-}
-
-@media (min-width: 1280px) {
+@media (--viewportLarge) {
   .grid {
     grid-template-columns: repeat(6, 1fr);
-    aspect-ratio: 3;
+    aspect-ratio: 3; /* 6/2 */
   }
 }
 
