@@ -281,7 +281,20 @@
 /* font */
 .headingFont  { --_av-font: var(--fontFamilyHeadings); }
 .bodyFont     { --_av-font: var(--fontFamily); }
-.accentFont     { --_av-font: var(--fontFamilyAccent); }
+.accentFont   { --_av-font: var(--fontFamilyAccent); }
+
+/* layout: center a single CTA button */
+.ctaBtnCenter {
+  display: block;
+  margin-inline: auto;
+  width: fit-content;
+}
+
+/* layout: center a row of CTA buttons (two-button wrappers) */
+.ctaBtnCenterWrap {
+  justify-content: center;
+  gap: 12px;
+}
 
 .defaultLink {
   display: inline;

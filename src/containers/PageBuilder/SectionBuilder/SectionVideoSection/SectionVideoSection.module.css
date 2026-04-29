@@ -51,6 +51,31 @@
   }
 }
 
+/* ── Layout modifiers ── */
+.rootFullH {
+  min-height: 100vh;
+
+  @media (min-width: 768px) {
+    & .videoPane,
+    & .contentPane {
+      min-height: 100vh;
+    }
+  }
+}
+
+.contentPaneCentered {
+  align-items: center;
+  text-align: center;
+}
+
+.contentPanePadded {
+  padding: 64px 40px;
+
+  @media (min-width: 768px) {
+    padding: 80px 80px;
+  }
+}
+
 /* ── Typography ── */
 .title {
   margin: 0 0 16px;
@@ -74,6 +99,18 @@
   }
 }
 
+.titleSmall {
+  h1, h2, h3 { font-size: 22px; }
+
+  @media (min-width: 768px) {
+    h1, h2, h3 { font-size: 28px; }
+  }
+}
+
+.titleBlue {
+  h1, h2, h3 { color: var(--avBlue); }
+}
+
 .description {
   margin: 0 0 32px;
 
@@ -89,4 +126,8 @@
       font-size: 18px;
     }
   }
+}
+
+.descriptionGray {
+  p { color: var(--colorGrey500); }
 }

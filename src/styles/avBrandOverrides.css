@@ -52,6 +52,8 @@
     Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
 
   /* ================ Extra Border Radius ================ */
+  --borderRadiusNone: 0;
+  --borderRadiusNormal: 8px;
   --borderRadiusLarger: 12px;
 
   /* ================ Transition Shortcuts ================ */

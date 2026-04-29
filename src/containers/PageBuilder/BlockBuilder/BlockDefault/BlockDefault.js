@@ -86,6 +86,7 @@ const BlockDefault = props => {
     hasCTASecondary,
     hasCTATertiary,
     sliderImages,
+    ctaButtonWrapClass,
     ...customProps
   } = props;
   const classes = classNames(rootClassName || css.root, className, hasLargeList ? css.reverseMediaPos : '');
@@ -188,8 +189,8 @@ const BlockDefault = props => {
           ) : null}
 
           {contactButtons ? (
-            <div> 
-              <div className={css.buttonWrap}>
+            <div>
+              <div className={classNames(css.buttonWrap, ctaButtonWrapClass)}>
                 <Field data={contactButtons.callToAction1} className={customProps.ctaButtonPrimaryClass} options={options} />
                 <Field data={contactButtons.callToAction2} className={customProps.ctaButtonSecondaryClass} options={options} />
 
@@ -223,7 +224,7 @@ const BlockDefault = props => {
             </div>
           ) : null}
           {twoButtons ? (
-            <div className={css.buttonWrap}>
+            <div className={classNames(css.buttonWrap, ctaButtonWrapClass)}>
               <Field data={twoButtons.callToAction1} className={customProps.ctaButtonPrimaryClass} options={options} />
               <Field data={twoButtons.callToAction2} className={customProps.ctaButtonSecondaryClass} options={options} />
             </div>

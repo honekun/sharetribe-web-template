@@ -57,6 +57,7 @@ const BLOCK_CTA_MODIFIER_MAP = {
   headingFont: sectionCss.headingFont,
   bodyFont: sectionCss.bodyFont,
   accentFont: sectionCss.accentFont,
+  ctaBtnCenter: sectionCss.ctaBtnCenter,
 };
 
 // Extracts tokens written as "token ::" — e.g. "blockCtaBtnBlue :: rounded :: dashed ::"
@@ -65,10 +66,13 @@ const parseBlockCtaClass = blockName => {
   const tokens = [...blockName.matchAll(/(\S+)\s*::/g)].map(m => m[1]);
   if (!tokens.length) return null;
   const classes = [];
+  let hasBase = false;
   for (const token of tokens) {
-    if (BLOCK_CTA_BASE_MAP[token]) classes.push(BLOCK_CTA_BASE_MAP[token]);
+    if (BLOCK_CTA_BASE_MAP[token]) { classes.push(BLOCK_CTA_BASE_MAP[token]); hasBase = true; }
     else if (BLOCK_CTA_MODIFIER_MAP[token]) classes.push(BLOCK_CTA_MODIFIER_MAP[token]);
   }
+  // When only layout modifiers are present, preserve the default button appearance
+  if (!hasBase && classes.length) classes.unshift(sectionCss.ctaButton);
   return classes.length ? classNames(classes.filter(Boolean)) : null;
 };
 
@@ -137,6 +141,10 @@ const BlockBuilder = props => {
     const blockCtaOverride = parseBlockCtaClass(block.blockName);
     if (blockCtaOverride) {
       customProps.ctaButtonClass = blockCtaOverride;
+    }
+    const tokens = block.blockName ? [...block.blockName.matchAll(/(\S+)\s*::/g)].map(m => m[1]) : [];
+    if (tokens.includes('ctaBtnCenter')) {
+      customProps.ctaButtonWrapClass = sectionCss.ctaBtnCenterWrap;
     }
     return customProps;
   });

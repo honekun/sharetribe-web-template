@@ -37,6 +37,7 @@ const SectionVideoSection = props => {
     callToAction,
     videoUrl,
     options,
+    customOption = {},
   } = props;
 
   const fieldComponents = options?.fieldComponents;
@@ -44,30 +45,46 @@ const SectionVideoSection = props => {
 
   const hasContent = hasDataInFields([title, description, callToAction], fieldOptions);
 
+  const ctaClass = defaultClasses?.ctaButtonPrimary || defaultClasses?.ctaButton || '';
+
+  const rootClass = classNames(
+    rootClassName || css.root,
+    className,
+    customOption.isFullH ? css.rootFullH : null,
+  );
+
+  const titleClass = classNames(
+    css.title,
+    customOption.isSmallerT || customOption.isMediumT ? css.titleSmall : null,
+    customOption.isBlueTitle ? css.titleBlue : null,
+  );
+
+  const descriptionClass = classNames(
+    css.description,
+    customOption.hasTextGray ? css.descriptionGray : null,
+  );
+
+  const contentPaneClass = classNames(
+    css.contentPane,
+    !videoUrl ? css.fullWidth : null,
+    customOption.hasPaddings ? css.contentPanePadded : null,
+  );
+
   return (
-    <section
-      id={sectionId}
-      className={classNames(rootClassName || css.root, className)}
-    >
+    <section id={sectionId} className={rootClass}>
       {videoUrl ? (
         <div className={css.videoPane}>
-          <video
-            className={css.video}
-            autoPlay
-            muted
-            loop
-            playsInline
-          >
+          <video className={css.video} autoPlay muted loop playsInline>
             <source src={videoUrl} type="video/mp4" />
           </video>
         </div>
       ) : null}
 
       {hasContent ? (
-        <div className={classNames(css.contentPane, !videoUrl ? css.fullWidth : '')}>
-          <Field data={title} className={css.title} options={fieldOptions} />
-          <Field data={description} className={css.description} options={fieldOptions} />
-          <Field data={callToAction} className={defaultClasses?.ctaButtonPrimary} options={fieldOptions} />
+        <div className={contentPaneClass}>
+          <Field data={title} className={titleClass} options={fieldOptions} />
+          <Field data={description} className={descriptionClass} options={fieldOptions} />
+          <Field data={callToAction} className={ctaClass} options={fieldOptions} />
         </div>
       ) : null}
     </section>
