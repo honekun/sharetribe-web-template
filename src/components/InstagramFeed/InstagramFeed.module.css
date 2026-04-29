@@ -1,3 +1,5 @@
+@import '../../styles/customMediaQueries.css';
+
 /* ---- Grid ---- */
 .root {
   width: 100%;
@@ -5,13 +7,33 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
   gap: 3px;
+  overflow: hidden;
+  width: 100%;
+
+  /* below --viewportSmall: 2 cols */
+  grid-template-columns: repeat(2, 1fr);
+  aspect-ratio: 1; /* 2/2 */
 }
 
-@media (max-width: 480px) {
+@media (--viewportSmall) {
   .grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    aspect-ratio: 3/2;
+  }
+}
+
+@media (--viewportMedium) {
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+    aspect-ratio: 2; /* 4/2 */
+  }
+}
+
+@media (--viewportLarge) {
+  .grid {
+    grid-template-columns: repeat(6, 1fr);
+    aspect-ratio: 3; /* 6/2 */
   }
 }
 
