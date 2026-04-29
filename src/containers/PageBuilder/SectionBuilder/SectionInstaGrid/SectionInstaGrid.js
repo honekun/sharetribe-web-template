@@ -3,6 +3,15 @@ import classNames from 'classnames';
 import Field from '../../Field';
 import css from './SectionInstaGrid.module.css';
 
+const getColumns = () => {
+  if (typeof window === 'undefined') return 6;
+  const w = window.innerWidth;
+  if (w < 550) return 2;
+  if (w < 768) return 3;
+  if (w < 1024) return 4;
+  return 6;
+};
+
 const getImageUrl = (media, preferSmall = false) => {
   const variants = media?.image?.attributes?.variants || {};
   if (preferSmall) {
@@ -100,15 +109,25 @@ const SectionInstaGrid = props => {
   } = props;
 
   const [activeBlock, setActiveBlock] = useState(null);
+  const [columns, setColumns] = useState(6);
   const fieldOptions = { fieldComponents: options?.fieldComponents };
   const username = title?.content;
 
+  useEffect(() => {
+    const update = () => setColumns(getColumns());
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
   if (!blocks.length) return null;
+
+  const visibleBlocks = blocks.slice(0, columns * 2);
 
   return (
     <section id={sectionId} className={classNames(rootClassName || css.root, className)}>
       <div className={css.grid}>
-        {blocks.map((block, i) => {
+        {visibleBlocks.map((block, i) => {
           const thumb = getImageUrl(block.media, true);
           return (
             <button

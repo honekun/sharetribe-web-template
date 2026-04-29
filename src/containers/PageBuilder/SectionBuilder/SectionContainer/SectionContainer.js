@@ -42,6 +42,7 @@ const SectionContainer = props => {
     customOption?.isSmallerT ? css.sectionContentSmallerTitle : '',
     customOption?.isMediumT ? css.sectionContentMediumTitle : '',
     customOption?.hasPaddings ? css.sectionContentHasPaddings : '',
+    customOption?.hasNoPaddings ? css.sectionContentNoPaddings : '',
     customOption?.hasTextGray ? css.sectionContentHasTextGray : '',
     customOption?.hasStar ? css.starDeco : '',
     customOption?.hasStar ? (
