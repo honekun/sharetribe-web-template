@@ -1,113 +1,173 @@
-import React, { useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import css from './InstagramFeed.module.css';
 
-const HeartIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+const InstagramIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+    <circle cx="12" cy="12" r="4" />
+    <circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none" />
   </svg>
 );
 
-const CommentIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-  </svg>
-);
-
-const BookmarkIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-  </svg>
-);
-
-const MoreIcon = () => (
+const PlayIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <circle cx="12" cy="5" r="1.5" />
-    <circle cx="12" cy="12" r="1.5" />
-    <circle cx="12" cy="19" r="1.5" />
+    <polygon points="5,3 19,12 5,21" />
   </svg>
 );
 
-const PostCard = ({ post, profile }) => {
-  const { mediaUrl, permalink, caption, likeCount, commentsCount } = post;
-  const { name, username, profilePictureUrl } = profile;
-  const displayCaption = caption.length > 120 ? caption.slice(0, 117) + '...' : caption;
+const PauseIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <rect x="5" y="3" width="4" height="18" rx="1" />
+    <rect x="15" y="3" width="4" height="18" rx="1" />
+  </svg>
+);
+
+const MuteIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+    <polygon points="11,5 6,9 2,9 2,15 6,15 11,19" fill="currentColor" stroke="none" />
+    <line x1="23" y1="9" x2="17" y2="15" />
+    <line x1="17" y1="9" x2="23" y2="15" />
+  </svg>
+);
+
+const UnmuteIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+    <polygon points="11,5 6,9 2,9 2,15 6,15 11,19" fill="currentColor" stroke="none" />
+    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+  </svg>
+);
+
+const VideoIndicatorIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M23 7l-7 5 7 5V7z" />
+    <rect x="1" y="5" width="15" height="14" rx="2" />
+  </svg>
+);
+
+const formatDate = ts => {
+  if (!ts) return '';
+  try {
+    return new Date(ts).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  } catch {
+    return '';
+  }
+};
+
+const VideoPlayer = ({ src }) => {
+  const videoRef = useRef(null);
+  const [playing, setPlaying] = useState(true);
+  const [muted, setMuted] = useState(true);
+
+  const togglePlay = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.paused) { v.play(); setPlaying(true); }
+    else { v.pause(); setPlaying(false); }
+  };
+
+  const toggleMute = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = !v.muted;
+    setMuted(v.muted);
+  };
 
   return (
-    <article className={css.card}>
-      <div className={css.cardHeader}>
-        <div className={css.profileInfo}>
-          {profilePictureUrl ? (
-            <img src={profilePictureUrl} alt={name} className={css.avatar} />
-          ) : (
-            <div className={css.avatarPlaceholder} aria-hidden="true" />
-          )}
-          <div className={css.profileText}>
-            <span className={css.profileName}>{name}</span>
-            <span className={css.profileHandle}>@{username}</span>
-          </div>
-        </div>
-        <button className={css.moreBtn} aria-label="More options">
-          <MoreIcon />
+    <div className={css.videoWrap}>
+      <video
+        ref={videoRef}
+        src={src}
+        className={css.modalVideo}
+        autoPlay
+        muted
+        loop
+        playsInline
+      />
+      <div className={css.videoControls}>
+        <button className={css.controlBtn} onClick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'}>
+          {muted ? <MuteIcon /> : <UnmuteIcon />}
+        </button>
+        <button className={css.controlBtn} onClick={togglePlay} aria-label={playing ? 'Pause' : 'Play'}>
+          {playing ? <PauseIcon /> : <PlayIcon />}
         </button>
       </div>
-
-      <a href={permalink} target="_blank" rel="noopener noreferrer" className={css.imageLink}>
-        <img src={mediaUrl} alt={caption.slice(0, 80) || `Post by @${username}`} className={css.postImage} loading="lazy" />
-      </a>
-
-      <div className={css.cardBody}>
-        <p className={css.postMeta}>
-          <strong>{name}</strong> <span className={css.postHandle}>@{username}</span>
-        </p>
-        {displayCaption ? <p className={css.caption}>{displayCaption}</p> : null}
-      </div>
-
-      <div className={css.cardFooter}>
-        <div className={css.footerActions}>
-          <span className={css.actionItem}>
-            <HeartIcon />
-            {likeCount != null ? <span>{likeCount}</span> : null}
-          </span>
-          <span className={css.actionItem}>
-            <CommentIcon />
-            {commentsCount != null ? <span>{commentsCount}</span> : null}
-          </span>
-        </div>
-        <button className={css.bookmarkBtn} aria-label="Save post">
-          <BookmarkIcon />
-        </button>
-      </div>
-    </article>
+    </div>
   );
 };
 
+const PostModal = ({ post, profile, onClose }) => {
+  useEffect(() => {
+    const onKey = e => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  const isVideo = post.mediaType === 'VIDEO' && post.videoUrl;
+
+  return (
+    <div className={css.overlay} onClick={onClose} role="dialog" aria-modal="true">
+      <div className={css.modal} onClick={e => e.stopPropagation()}>
+        <button className={css.closeBtn} onClick={onClose} aria-label="Close">✕</button>
+
+        <div className={css.modalMedia}>
+          {isVideo
+            ? <VideoPlayer src={post.videoUrl} />
+            : <img src={post.mediaUrl} alt={post.caption.slice(0, 80) || 'Instagram post'} className={css.modalImage} />
+          }
+        </div>
+
+        <div className={css.modalInfo}>
+          <div className={css.modalHeader}>
+            <InstagramIcon />
+            <span className={css.modalUsername}>{profile.username}</span>
+          </div>
+          <p className={css.modalCaption}>{post.caption}</p>
+          <div className={css.modalFooter}>
+            <span className={css.modalDate}>{formatDate(post.timestamp)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const GridItem = ({ post, onClick }) => (
+  <button className={css.gridItem} onClick={() => onClick(post)} aria-label="View post">
+    <img src={post.mediaUrl} alt="" className={css.gridThumb} loading="lazy" />
+    {post.mediaType === 'VIDEO' && (
+      <span className={css.videoIndicator}>
+        <VideoIndicatorIcon />
+      </span>
+    )}
+  </button>
+);
+
 const InstagramFeed = ({ profile, posts }) => {
-  const trackRef = useRef(null);
+  const [activePost, setActivePost] = useState(null);
 
-  const scroll = direction => {
-    if (!trackRef.current) return;
-    const card = trackRef.current.querySelector(`.${css.card}`);
-    const amount = card ? card.offsetWidth + 16 : 300;
-    trackRef.current.scrollBy({ left: direction * amount, behavior: 'smooth' });
-  };
-
-  if (!posts || posts.length === 0) return null;
+  if (!posts?.length) return null;
 
   return (
     <div className={css.root}>
-      <button className={`${css.navBtn} ${css.navBtnPrev}`} onClick={() => scroll(-1)} aria-label="Previous posts">
-        &#8249;
-      </button>
-
-      <div className={css.track} ref={trackRef}>
+      <div className={css.grid}>
         {posts.map(post => (
-          <PostCard key={post.id} post={post} profile={profile} />
+          <GridItem key={post.id} post={post} onClick={setActivePost} />
         ))}
       </div>
-
-      <button className={`${css.navBtn} ${css.navBtnNext}`} onClick={() => scroll(1)} aria-label="Next posts">
-        &#8250;
-      </button>
+      {activePost && (
+        <PostModal
+          post={activePost}
+          profile={profile}
+          onClose={() => setActivePost(null)}
+        />
+      )}
     </div>
   );
 };

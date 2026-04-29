@@ -60,6 +60,30 @@ const BLOCK_CTA_MODIFIER_MAP = {
   ctaBtnCenter: sectionCss.ctaBtnCenter,
 };
 
+// Short-name tokens for cta1Style / cta2Style translation strings (e.g. "blue roundedFull solid")
+const CTA_STYLE_BASE_MAP = {
+  blue:      sectionCss.ctaButtonBlue,
+  lightBlue: sectionCss.ctaButtonLightBlue,
+  purple:    sectionCss.ctaButtonPurple,
+  pink:      sectionCss.ctaButtonPink,
+  yellow:    sectionCss.ctaButtonYellow,
+  primary:   sectionCss.ctaButtonPrimary,
+  secondary: sectionCss.ctaButtonSecondary,
+};
+
+const parseCtaStyleString = styleStr => {
+  if (!styleStr?.trim()) return null;
+  const tokens = styleStr.trim().split(/\s+/);
+  const classes = [];
+  let hasBase = false;
+  for (const token of tokens) {
+    if (CTA_STYLE_BASE_MAP[token])          { classes.push(CTA_STYLE_BASE_MAP[token]); hasBase = true; }
+    else if (BLOCK_CTA_MODIFIER_MAP[token])   classes.push(BLOCK_CTA_MODIFIER_MAP[token]);
+  }
+  if (!hasBase && classes.length) classes.unshift(sectionCss.ctaButton);
+  return classes.length ? classNames(classes.filter(Boolean)) : null;
+};
+
 // Extracts tokens written as "token ::" — e.g. "blockCtaBtnBlue :: rounded :: dashed ::"
 const parseBlockCtaClass = blockName => {
   if (!blockName) return null;
@@ -141,6 +165,11 @@ const BlockBuilder = props => {
     const blockCtaOverride = parseBlockCtaClass(block.blockName);
     if (blockCtaOverride) {
       customProps.ctaButtonClass = blockCtaOverride;
+      if (customProps.twoButtons) {
+        // Apply to each button unless a per-button cta*Style translation already overrides it
+        if (!customProps.twoButtons.cta1ClassName) customProps.ctaButtonPrimaryClass = blockCtaOverride;
+        if (!customProps.twoButtons.cta2ClassName) customProps.ctaButtonSecondaryClass = blockCtaOverride;
+      }
     }
     const tokens = block.blockName ? [...block.blockName.matchAll(/(\S+)\s*::/g)].map(m => m[1]) : [];
     if (tokens.includes('ctaBtnCenter')) {
@@ -229,6 +258,12 @@ function createBlockCustomProps(block) {
   }
   // Adds 2 buttons to the end of the block content.
   if (block.blockName?.includes('2 buttons ::')) {
+    const cta1ClassName = parseCtaStyleString(
+      intl.formatMessage({ id: 'TwoButtons.' + block.blockId + '.cta1Style', defaultMessage: '' })
+    );
+    const cta2ClassName = parseCtaStyleString(
+      intl.formatMessage({ id: 'TwoButtons.' + block.blockId + '.cta2Style', defaultMessage: '' })
+    );
     blockCustomProps.twoButtons = {
       titleEyebrow: intl.formatMessage({ id: 'TwoButtons.' + block.blockId + '.titleEyebrow', defaultMessage:'' }),
       callToAction1: {
@@ -241,6 +276,8 @@ function createBlockCustomProps(block) {
         href: intl.formatMessage({ id: 'TwoButtons.' + block.blockId + '.cta2Link', defaultMessage:'Hello' }),
         content: intl.formatMessage({ id: 'TwoButtons.' + block.blockId + '.cta2Text', defaultMessage:'Hello' }),
       },
+      ...(cta1ClassName ? { cta1ClassName } : {}),
+      ...(cta2ClassName ? { cta2ClassName } : {}),
     };
   }
   if (block.blockName?.includes('full height media ::')) {
