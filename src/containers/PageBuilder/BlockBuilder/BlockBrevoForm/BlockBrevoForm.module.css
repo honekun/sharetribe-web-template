@@ -1,17 +1,55 @@
+@import '../../../../styles/customMediaQueries.css';
+
 .root {
   width: 100%;
 }
 
 .formWrap {
   width: 100%;
-  height: 100%;
 }
 
-/* Force the Brevo iframe to fill parent width and shed its inline constraints */
+/*
+ * Brevo/Sibforms iframes have a hardcoded height in the embed code and send no
+ * postMessage resize events. The JS strips that inline height so CSS controls it.
+ * Heights are tuned per breakpoint: the form fields stack taller on mobile.
+ */
 .formWrap :global(iframe) {
   display: block;
   width: 100% !important;
-  height: 100% !important;
   max-width: 100% !important;
-  margin: 0 !important;
+  margin: 0 auto !important;
+  border: none;
+  overflow: hidden;
+
+  /* mobile — fields wrap and need extra vertical room */
+  height: 900px;
+
+  
+  @media (--viewportXSmall) {
+    height: 850px;
+  }
+  @media (--viewportSmall) {
+    height: 756px;
+  }
+
+  @media (--viewportMedium) {
+    height: 805px;
+  }
+
+  @media (--viewportXMedium) {
+    height: 728px;
+  }
+
+  @media (--viewportLarge) {
+    height: 680px;
+  }
+}
+
+/* Inline JS embed — override Brevo's fixed max-width so form fills column */
+.formWrap :global(#sib-form-container),
+.formWrap :global(.sib-form) {
+  max-width: 100% !important;
+  width: 100% !important;
+  font-family: inherit;
+  box-sizing: border-box;
 }
