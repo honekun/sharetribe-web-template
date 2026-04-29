@@ -32,7 +32,7 @@ router.get('/feed', async (_req, res) => {
   try {
     const [mediaData, profileData] = await Promise.all([
       fetchJSON(
-        `${GRAPH_BASE}/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count&limit=6&access_token=${ACCESS_TOKEN}`
+        `${GRAPH_BASE}/me/media?fields=id,caption,media_type,media_url,thumbnail_url,video_url,permalink,timestamp,like_count,comments_count&limit=12&access_token=${ACCESS_TOKEN}`
       ),
       fetchJSON(
         `${GRAPH_BASE}/me?fields=name,username,profile_picture_url&access_token=${ACCESS_TOKEN}`
@@ -49,11 +49,13 @@ router.get('/feed', async (_req, res) => {
       posts: (mediaData.data || []).map(p => ({
         id: p.id,
         mediaUrl: p.media_type === 'VIDEO' ? p.thumbnail_url : p.media_url,
+        videoUrl: p.media_type === 'VIDEO' ? (p.video_url || null) : null,
         permalink: p.permalink,
         caption: p.caption || '',
         likeCount: p.like_count ?? null,
         commentsCount: p.comments_count ?? null,
         mediaType: p.media_type,
+        timestamp: p.timestamp || null,
       })),
     };
 

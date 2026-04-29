@@ -225,8 +225,8 @@ const BlockDefault = props => {
           ) : null}
           {twoButtons ? (
             <div className={classNames(css.buttonWrap, ctaButtonWrapClass)}>
-              <Field data={twoButtons.callToAction1} className={customProps.ctaButtonPrimaryClass} options={options} />
-              <Field data={twoButtons.callToAction2} className={customProps.ctaButtonSecondaryClass} options={options} />
+              <Field data={twoButtons.callToAction1} className={twoButtons.cta1ClassName || customProps.ctaButtonPrimaryClass} options={options} />
+              <Field data={twoButtons.callToAction2} className={twoButtons.cta2ClassName || customProps.ctaButtonSecondaryClass} options={options} />
             </div>
           ) : null}
         </div>
