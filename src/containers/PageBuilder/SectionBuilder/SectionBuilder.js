@@ -69,6 +69,7 @@ const CTA_MODIFIER_MAP = {
   headingFont: css.headingFont,
   bodyFont: css.bodyFont,
   accentFont: css.accentFont,
+  ctaBtnCenter: css.ctaBtnCenter,
 };
 
 const hasToken = (str, token) => new RegExp(`- ${token}(?!\\w)`).test(str);
@@ -76,12 +77,15 @@ const hasToken = (str, token) => new RegExp(`- ${token}(?!\\w)`).test(str);
 const parseSectionCtaClass = sectionName => {
   if (!sectionName) return null;
   const classes = [];
+  let hasBase = false;
   for (const [token, cls] of Object.entries(SECTION_CTA_BASE_MAP)) {
-    if (hasToken(sectionName, token)) { classes.push(cls); break; }
+    if (hasToken(sectionName, token)) { classes.push(cls); hasBase = true; break; }
   }
   for (const [token, cls] of Object.entries(CTA_MODIFIER_MAP)) {
     if (hasToken(sectionName, token)) classes.push(cls);
   }
+  // When only layout modifiers are present, preserve the default button appearance
+  if (!hasBase && classes.length) classes.unshift(css.ctaButton);
   return classes.length ? classNames(classes.filter(Boolean)) : null;
 };
 

@@ -30,7 +30,7 @@
 
 .description {
   font-family: var(--fontFamilyRoboto);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 400;
   line-height: 150%;
   width: 100%;
@@ -59,7 +59,7 @@
   position: relative;
   margin: 0 auto;
   overflow: hidden;
-  max-width: var(--contentMaxWidthPages);
+  max-width: min(var(--contentMaxWidthPages), 100vw);
 }
 
 .carouselOuter:hover .carouselArrows {
