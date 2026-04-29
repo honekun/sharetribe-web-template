@@ -474,6 +474,7 @@
   "FilterForm.clear": "Borrar",
   "FilterForm.submit": "OK",
   "FilterPlain.clear": "Borrar",
+  "Footer.belowSlogan": "",
   "IconSpinner.screenreader.loading": "Cargando...",
   "ImageCarousel.imageAltText": "foto del anuncio {index}/{count}",
   "ImageFromFile.couldNotReadFile": "No se pudo leer el archivo",

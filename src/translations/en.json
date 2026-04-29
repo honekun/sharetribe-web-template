@@ -475,6 +475,7 @@
   "FilterForm.clear": "Clear",
   "FilterForm.submit": "Apply",
   "FilterPlain.clear": "Clear",
+  "Footer.belowSlogan": "",
   "IconSpinner.screenreader.loading": "Loading...",
   "ImageCarousel.imageAltText": "listing photo {index}/{count}",
   "ImageFromFile.couldNotReadFile": "Couldn't read file",

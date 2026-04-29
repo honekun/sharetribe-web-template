@@ -83,6 +83,7 @@ const defaultDirectives = {
     blob,
     ...devImagesMaybe,
     '*.imgix.net',
+    '*.cdninstagram.com',
     'sharetribe.imgix.net', // Safari 9.1 didn't recognize asterisk rule.
 
     // Styleguide placeholder images

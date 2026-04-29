@@ -228,7 +228,7 @@
 .ctaButtonLightBlue {
   composes: avCtaButton;
   --_av-bg: var(--avBlueLight);
-  --_av-bg-hover: #1d4ed8;
+  --_av-bg-hover: #3489d2;
   --_av-color: var(--avYellowLight);
   --_av-outline-color: var(--avYellowLight);
   --_av-outline-style: solid;
@@ -238,7 +238,7 @@
 .ctaButtonPurple {
   composes: avCtaButton;
   --_av-bg: var(--avPurple);
-  --_av-bg-hover: #db2777;
+  --_av-bg-hover: #a468bc;
   --_av-color: var(--avYellowLight);
   --_av-outline-color: var(--avYellowLight);
   --_av-outline-style: solid;
@@ -258,7 +258,7 @@
 .ctaButtonYellow {
   composes: avCtaButton;
   --_av-bg: var(--avYellow);
-  --_av-bg-hover: #1d4ed8;
+  --_av-bg-hover: #bfbd59;
   --_av-color: var(--avBlueLight);
   --_av-outline-color: var(--avBlueLight);
   --_av-outline-style: solid;

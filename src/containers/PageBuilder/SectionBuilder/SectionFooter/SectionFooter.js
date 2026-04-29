@@ -1,9 +1,11 @@
 import React from 'react';
 import classNames from 'classnames';
 import { LinkedLogo } from '../../../../components';
+import { useIntl } from '../../../../util/reactIntl';
 
 import Field from '../../Field';
 import BlockBuilder from '../../BlockBuilder';
+import renderMarkdown from '../../markdownProcessor';
 
 import SectionContainer from '../SectionContainer';
 import css from './SectionFooter.module.css';
@@ -84,6 +86,10 @@ const SectionFooter = props => {
     linkLogoToExternalSite,
   } = props;
 
+  const intl = useIntl();
+  const belowSloganText = intl.formatMessage({ id: 'Footer.belowSlogan' });
+  const belowSlogan = belowSloganText ? renderMarkdown(belowSloganText.replace(/\n/g, '  \n')) : null;
+
   // If external mapping has been included for fields
   // E.g. { h1: { component: MyAwesomeHeader } }
   const fieldComponents = options?.fieldComponents;
@@ -128,10 +134,12 @@ const SectionFooter = props => {
           </div>
           <div className={css.sloganMobile}>
             <Field data={slogan} className={css.slogan} />
+            {belowSlogan ? <div className={css.belowSlogan}>{belowSlogan}</div> : null}
           </div>
           <div className={css.detailsInfo}>
             <div className={css.sloganDesktop}>
               <Field data={slogan} className={css.slogan} />
+              {belowSlogan ? <div className={css.belowSlogan}>{belowSlogan}</div> : null}
             </div>
             {!blocksHasSocial && showSocialMediaLinks ? (
               <div className={css.icons}>

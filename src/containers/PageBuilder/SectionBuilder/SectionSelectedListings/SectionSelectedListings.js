@@ -78,7 +78,7 @@ const SectionSelectedListings = props => {
   const sliderContainerRef = useRef(null);
   const sliderRef = useRef(null);
 
-  const [effectiveColumns, setEffectiveColumns] = useState(() => getEffectiveColumns(numColumns));
+  const [effectiveColumns, setEffectiveColumns] = useState(numColumns);
   const normalizedColumns = Math.min(Math.max(effectiveColumns, 1), COLUMN_CONFIG.length);
 
   useEffect(() => {

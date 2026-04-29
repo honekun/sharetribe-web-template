@@ -79,6 +79,11 @@
   font-size: 16px;
   line-height: 24px;
 }
+.belowSlogan {
+  font-size: 14px;
+  line-height: 20px;
+  margin-top: 8px;
+}
 .sloganMobile {
   grid-area: details;
   padding-bottom: 24px;
