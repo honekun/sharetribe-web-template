@@ -17,3 +17,5 @@ export const AV_SELECTIONS_SECTION_TYPE = 'avSelections';
 export const AV_TAG_LISTINGS_SECTION_TYPE = 'avTagListings';
 export const AV_SELECTED_CATS_SECTION_TYPE = 'avSelectedCats';
 export const AV_SELECTED_USERS_SECTION_TYPE = 'avSelectedUsers';
+export const AV_INSTA_GRID_SECTION_ID_PREFIX = 'av-insta-grid';
+export const AV_INSTA_GRID_SECTION_TYPE = 'avInstaGrid';
