@@ -10,6 +10,7 @@ import {
   AV_TAG_LISTINGS_SECTION_TYPE,
   AV_SELECTED_CATS_SECTION_TYPE,
   AV_SELECTED_USERS_SECTION_TYPE,
+  AV_INSTA_GRID_SECTION_TYPE,
 } from './constants';
 import {
   isHero2SectionId,
@@ -19,6 +20,7 @@ import {
   isTagListingsSectionId,
   isSelectedCatsSectionId,
   isSelectedUsersSectionId,
+  isInstaGridSectionId,
 } from './sections';
 
 const formatMessage = (intl, id, defaultMessage) => {
@@ -150,6 +152,13 @@ export const transformCustomSections = ({ pageData, intl, extensionData }) => {
         ...section,
         sectionType: AV_SELECTED_USERS_SECTION_TYPE,
         users: selectedUsersBySection[sectionId] || [],
+      };
+    }
+
+    if (isInstaGridSectionId(sectionId)) {
+      return {
+        ...section,
+        sectionType: AV_INSTA_GRID_SECTION_TYPE,
       };
     }
 

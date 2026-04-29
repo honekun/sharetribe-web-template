@@ -8,6 +8,7 @@ import {
   AV_TAG_LISTINGS_SECTION_ID_PREFIX,
   AV_SELECTED_CATS_SECTION_ID_PREFIX,
   AV_SELECTED_USERS_SECTION_ID_PREFIX,
+  AV_INSTA_GRID_SECTION_ID_PREFIX,
 } from './constants';
 
 export const getListingIdsFromSection = section =>
@@ -33,6 +34,9 @@ export const isSelectedCatsSectionId = sectionId =>
 
 export const isSelectedUsersSectionId = sectionId =>
   (sectionId || '').indexOf(AV_SELECTED_USERS_SECTION_ID_PREFIX) === 0;
+
+export const isInstaGridSectionId = sectionId =>
+  (sectionId || '').indexOf(AV_INSTA_GRID_SECTION_ID_PREFIX) === 0;
 
 export const getRecommendedListingIds = pageData => {
   const section = pageData?.sections?.find(s => s?.sectionId === AV_RECOMMENDEDS_SECTION_ID);
@@ -97,7 +101,8 @@ export const hasCustomSections = pageData => {
       isSelectionsSectionId(sectionId) ||
       isTagListingsSectionId(sectionId) ||
       isSelectedCatsSectionId(sectionId) ||
-      isSelectedUsersSectionId(sectionId)
+      isSelectedUsersSectionId(sectionId) ||
+      isInstaGridSectionId(sectionId)
     );
   });
 };

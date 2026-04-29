@@ -8,6 +8,7 @@ import {
   AV_TAG_LISTINGS_SECTION_TYPE,
   AV_SELECTED_CATS_SECTION_TYPE,
   AV_SELECTED_USERS_SECTION_TYPE,
+  AV_INSTA_GRID_SECTION_TYPE,
 } from './constants';
 import { loadCustomSectionListings, selectCustomSectionListings } from './listings';
 import { transformCustomSections } from './transform';
@@ -37,6 +38,8 @@ const getSectionComponents = () => {
     .default;
   const SectionSelectedUser = require('../../../containers/PageBuilder/SectionBuilder/SectionSelectedUser')
     .default;
+  const SectionInstaGrid = require('../../../containers/PageBuilder/SectionBuilder/SectionInstaGrid')
+    .default;
 
   cachedSectionComponents = {
     [AV_HERO_SECTION_TYPE]: { component: SectionHeroCustom },
@@ -48,6 +51,7 @@ const getSectionComponents = () => {
     [AV_TAG_LISTINGS_SECTION_TYPE]: { component: SectionTagCatListings },
     [AV_SELECTED_CATS_SECTION_TYPE]: { component: SectionSelectedCat },
     [AV_SELECTED_USERS_SECTION_TYPE]: { component: SectionSelectedUser },
+    [AV_INSTA_GRID_SECTION_TYPE]: { component: SectionInstaGrid },
   };
 
   return cachedSectionComponents;
