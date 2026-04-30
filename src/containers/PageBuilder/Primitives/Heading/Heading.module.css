@@ -10,6 +10,7 @@
   margin-top: 0;
   margin-bottom: 0;
   line-height: 1.33;
+  letter-spacing: .5px;
   font-weight: 400;
   color: var(--colorBlack);
   font-family: var(--fontFamilyHeadings);
@@ -88,7 +89,7 @@
 }
 
 .h4 {
-  font-size: 21px;
+  font-size: 22px;
 }
 
 .h3,

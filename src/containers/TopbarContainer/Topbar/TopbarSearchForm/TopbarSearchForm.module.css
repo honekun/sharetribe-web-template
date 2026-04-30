@@ -83,6 +83,7 @@
   /* Font */
   height: var(--topbarHeightDesktop);
   line-height: unset;
+  
   /* Borders — reset AV global override */
   border: none !important;
   border-bottom: none !important;

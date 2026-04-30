@@ -1,9 +1,10 @@
 .ingress {
-  font-size: 18px;
-  line-height: 1.66;
+  font-size: 20px;
+  line-height: 1.46;
+  letter-spacing: 1px;
   margin-top: 0;
   margin-bottom: 0;
-  letter-spacing: 0;
+  letter-spacing: 1px;
   /* Note: text-wrap is experimental CSS feature. Most browsers don't support it */
   text-wrap: balance;
 

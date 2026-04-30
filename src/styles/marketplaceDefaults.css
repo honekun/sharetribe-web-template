@@ -251,6 +251,7 @@
 
 body {
   font-family: var(--fontFamily);
+  letter-spacing: 1px;
 
   /* A non-standard feature: https://developer.mozilla.org/en-US/docs/Web/CSS/font-smooth */
   -webkit-font-smoothing: antialiased;
@@ -425,12 +426,12 @@ pre {
   font-weight: var(--fontWeightMedium);
 
   /* No margins for default font */
-  font-size: 16px;
+  font-size: 18px;
   line-height: 24px;
   padding: 0;
 
   @media (--viewportMedium) {
-    font-size: 18px;
+    font-size: 20px;
     line-height: 24px;
     padding: 5px 0 3px 0;
   }
@@ -511,7 +512,7 @@ select,
 input,
 textarea {
   font-family: var(--fontFamily);
-  font-size: 16px;
+  font-size: 18px;
 }
 
 select {
@@ -723,7 +724,7 @@ textarea {
 
 .h4 {
   font-weight: var(--fontWeightBold);
-  font-size: 16px;
+  font-size: 18px;
   line-height: 30px;
   padding: 5px 0 1px 0;
   /* x * 6px */
@@ -810,12 +811,12 @@ textarea {
   font-weight: var(--fontWeightMedium);
 
   /* No margins for default font */
-  font-size: 14px;
+  font-size: 16px;
   line-height: 24px;
   padding: 0;
 
   @media (--viewportMedium) {
-    font-size: 16px;
+    font-size: 18px;
     line-height: 24px;
     padding: 5px 0 3px 0;
   }

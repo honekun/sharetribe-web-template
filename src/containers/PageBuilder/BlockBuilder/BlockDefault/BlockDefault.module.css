@@ -118,8 +118,8 @@
   gap: 24px;
 
   h3 {
-    font-family: var(--fontFamilyRoboto);
-    font-size: 20px;
+    font-family: var(--fontFamilyHeadings);
+    font-size: 22px;
     font-style: normal;
     font-weight: var(--fontWeightBold);
     line-height: 140%; /* 28px */
@@ -127,6 +127,10 @@
 
   h3, p {
     padding: 0;
+  }
+
+  > * {
+    flex-basis: 33%;
   }
 }
 
@@ -161,7 +165,8 @@
 
 .textLarger {
   p {
-    font-size: 18px;
+    font-size: 22px;
+    line-height: 1.33;
   }
 }
 
@@ -190,7 +195,7 @@
       padding: 14px 0;
 
       &::marker {
-        font-family: var(--fontFamilyRoboto);
+        font-family: var(--fontFamilyAccent);
         font-size: 24px;
         font-weight: var(--fontWeightBold);
         color: var(--colorGrey300);
@@ -284,7 +289,7 @@ ol.titleList {
 
 .slimContent {
   h3, h4 {
-    font-family: var(--fontFamilyRoboto);
+    font-family: var(--fontFamilyHeadings);
     font-size: 20px;
     font-weight: 700;
     line-height: 140%; /* 28px */
