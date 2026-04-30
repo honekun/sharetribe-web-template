@@ -108,6 +108,7 @@
   display: inline-block;
   font-size: var(--footerCopyrightFontSize, 12px);
   line-height: var(--footerCopyrightLineHeight, 16px);
+  letter-spacing: 1px;
   color: var(--footerCopyrightColor, var(--colorGrey600));
   margin-top: 24px;
 }

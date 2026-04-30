@@ -24,7 +24,7 @@
   font-weight: var(--fontWeightMedium);
   font-size: 14px;
   line-height: 18px;
-  letter-spacing: 0;
+  letter-spacing: 1px;
   color: var(--colorGrey700);
 
   flex-shrink: 0;

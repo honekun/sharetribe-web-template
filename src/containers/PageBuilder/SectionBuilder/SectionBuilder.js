@@ -206,7 +206,9 @@ const SectionBuilder = props => {
         customOption.isMediumT = section.sectionName?.indexOf('- SmallTitle') >= 0;
 
         customOption.hasPaddings = section.sectionName?.indexOf('- Paddings') >= 0;
-        customOption.hasNoPaddings = section.sectionName?.indexOf('- NoPaddings') >= 0;
+        customOption.hasNoPaddings = /- NoPaddings(?![XY])/.test(section.sectionName);
+        customOption.hasNoPaddingsX = section.sectionName?.indexOf('- NoPaddingsX') >= 0;
+        customOption.hasNoPaddingsY = section.sectionName?.indexOf('- NoPaddingsY') >= 0;
 
         customOption.isHeadingH = section.sectionName?.indexOf('- Heading2') >= 0;
         customOption.isTwoThirdsCols = section.sectionName?.indexOf('- 2/3 cols') >= 0;

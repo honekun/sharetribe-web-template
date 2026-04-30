@@ -14,12 +14,11 @@
 
 .disclaimerText {
     color: var(--avGray1);
-    font-family: var(--fontFamilyRoboto);
     font-weight: var(--fontWeightMedium);
     font-style: normal;
     font-size: 12px;
     line-height: 14px;
-    letter-spacing: 0;
+    letter-spacing: 1px;
     word-break: auto-phrase;
 }
 
@@ -32,6 +31,7 @@
     border-radius: 0 !important;
     background-color: transparent;
     color: var(--avGray1);
+    letter-spacing: 1px;
 
     /* Separated from :hover/:focus — browsers discard the entire rule block
        when any selector in a comma list is unrecognised (e.g. :-internal-autofill-selected) */
@@ -78,7 +78,6 @@
 }
 
 .msgOk {
-    font-family: var(--fontFamilyRoboto);
     font-weight: var(--fontWeightBold);
     font-size: 14px;
     color: #E6E56A;
@@ -86,7 +85,6 @@
 }
 
 .msgError {
-    font-family: var(--fontFamilyRoboto);
     font-weight: var(--fontWeightBold);
     font-size: 14px;
     color: var(--avPink);

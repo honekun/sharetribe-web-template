@@ -125,8 +125,18 @@ const PostModal = ({ post, profile, onClose }) => {
 
         <div className={css.modalInfo}>
           <div className={css.modalHeader}>
-            <InstagramIcon />
-            <span className={css.modalUsername}>{profile.username}</span>
+            {profile.profilePictureUrl
+              ? <img src={profile.profilePictureUrl} alt={profile.username} className={css.modalAvatar} />
+              : <InstagramIcon />
+            }
+            <a
+              href={`https://www.instagram.com/${profile.username}/`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={css.modalUsernameLink}
+            >
+              {profile.username}
+            </a>
           </div>
           <p className={css.modalCaption}>{post.caption}</p>
           <div className={css.modalFooter}>
