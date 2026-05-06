@@ -127,6 +127,51 @@ const listingFields = [
       group: 'secondary',
     },
   },
+  {
+    key: 'color',
+    scope: 'public',
+    schemaType: 'multi-enum',
+    enumOptions: [
+      { option: 'amarillo', label: 'Amarillo' },
+      { option: 'negro', label: 'Negro' },
+      { option: 'multicolor', label: 'Multicolor' },
+    ],
+    showConfig: {
+      label: 'Color',
+      unselectedOptions: false,
+    },
+  },
+  {
+    key: 'all_sizes',
+    scope: 'public',
+    schemaType: 'multi-enum',
+    enumOptions: [
+      { option: 'xxs', label: 'XXS' },
+      { option: 'xs', label: 'XS' },
+      { option: 's', label: 'S' },
+      { option: 'm', label: 'M' },
+      { option: 'l', label: 'L' },
+    ],
+    showConfig: {
+      label: 'Tallas',
+      unselectedOptions: false,
+    },
+  },
+  {
+    key: 'tags',
+    scope: 'public',
+    schemaType: 'multi-enum',
+    enumOptions: [
+      { option: 'hot-list', label: 'HotList' },
+      { option: 'ofertas', label: 'Ofertas' },
+      { option: 'mas-nuevo', label: 'Mas Nuevo' },
+    ],
+    showConfig: {
+      label: 'Tags',
+      displayOnListingPage: false,
+      unselectedOptions: false,
+    },
+  },
 ];
 
 const getConfig = variantType => {
@@ -155,6 +200,9 @@ const publicData = {
   unitType: 'item',
   categoryLevel1: 'cats', // Ensure listing field can be tied to category
   cat: 'cat_1',
+  color: ['amarillo', 'negro'],
+  all_sizes: ['xxs', 'm'],
+  tags: ['hot-list', 'ofertas'],
 };
 const listing1 = createListing(id, { publicData }, { author: createUser('user-1') });
 const listing1Own = createOwnListing(id, {}, { author: createCurrentUser('user-1') });
@@ -249,6 +297,15 @@ describe('ListingPage variants', () => {
       expect(getByRole('heading', { name: 'ListingPage.detailsTitle' })).toBeInTheDocument();
       expect(getByText('Cat')).toBeInTheDocument();
       expect(getByText('Cat 1')).toBeInTheDocument();
+      expect(getByRole('heading', { name: 'Color' })).toBeInTheDocument();
+      expect(getByText('Amarillo')).toBeInTheDocument();
+      expect(getByText('Negro')).toBeInTheDocument();
+      expect(getByRole('heading', { name: 'Tallas' })).toBeInTheDocument();
+      expect(getByText('XXS')).toBeInTheDocument();
+      expect(getByText('M')).toBeInTheDocument();
+      expect(getByRole('heading', { name: 'Tags' })).toBeInTheDocument();
+      expect(getByText('HotList')).toBeInTheDocument();
+      expect(getByText('Ofertas')).toBeInTheDocument();
 
       // Has details location title
       expect(getByRole('heading', { name: 'ListingPage.locationTitle' })).toBeInTheDocument();
@@ -304,6 +361,15 @@ describe('ListingPage variants', () => {
       expect(getByRole('heading', { name: 'ListingPage.detailsTitle' })).toBeInTheDocument();
       expect(getByText('Cat')).toBeInTheDocument();
       expect(getByText('Cat 1')).toBeInTheDocument();
+      expect(getByRole('heading', { name: 'Color' })).toBeInTheDocument();
+      expect(getByText('Amarillo')).toBeInTheDocument();
+      expect(getByText('Negro')).toBeInTheDocument();
+      expect(getByRole('heading', { name: 'Tallas' })).toBeInTheDocument();
+      expect(getByText('XXS')).toBeInTheDocument();
+      expect(getByText('M')).toBeInTheDocument();
+      expect(getByRole('heading', { name: 'Tags' })).toBeInTheDocument();
+      expect(getByText('HotList')).toBeInTheDocument();
+      expect(getByText('Ofertas')).toBeInTheDocument();
 
       // Has details location title
       expect(getByRole('heading', { name: 'ListingPage.locationTitle' })).toBeInTheDocument();
