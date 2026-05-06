@@ -49,6 +49,7 @@ const SectionHeroCustom = props => {
     options,
     classWrap,
     isLanding,
+    customOption,
   } = props;
 
   // If external mapping has been included for fields
@@ -62,9 +63,10 @@ const SectionHeroCustom = props => {
     <SectionContainer
       id={sectionId}
       className={classNames(className, css[classWrap] ?? '')}
-      rootClassName={classNames(rootClassName || css.root)}
+      rootClassName={classNames(rootClassName || css.root, customOption?.isShortHero ? css.shortHero : '')}
       appearance={appearance}
       options={fieldOptions}
+      customOption={customOption}
     >
       {hasHeaderFields ? (
         <header className={classNames(defaultClasses.sectionDetails, isLanding ? css.landingVersion : '')}>
