@@ -88,11 +88,13 @@
   "BulkImportPage.errorNoApiKey": "Por favor ingresa tu clave API de importación.",
   "BulkImportPage.errorNoZip": "Por favor selecciona un archivo ZIP.",
   "BulkImportPage.errorsCapped": "Algunos errores fueron omitidos — solo se muestran los primeros 200.",
+  "NewsletterForm.disclaimerText": "Al ingresar tu correo, aceptas recibir correos promocionales de Archivo Vintach y nuestra Política de Privacidad. Puedes darte de baja en cualquier momento.",
   "NewsletterForm.emailPlaceholder": "Tu Email",
   "NewsletterForm.errorMessage": "Error en la suscripción. Inténtalo más tarde.",
   "NewsletterForm.invalidEmail": "Introduce un email válido.",
   "NewsletterForm.networkError": "Error de red. Inténtalo de nuevo.",
   "NewsletterForm.successMessage": "¡Gracias! Revisa tu bandeja de entrada.",
+  "LayoutWrapperAccountSettingsSideNav.profileTabTitle": "Perfil",
   "OrderBreakdown.providerCommissionFixed": "Cuota fija de {marketplaceName}",
   "Topbar.custom.leftOne": "Lista destacada",
   "Topbar.custom.menuOne": "Comprar",
@@ -106,5 +108,10 @@
   "UserNav.myPurchases": "Mis Compras",
   "UserNav.myBalance": "Mi Balance",
   "UserNav.mySales": "Mis Ventas",
-  "EditListingPhotosForm.minImagesRequired": "Se requieren al menos 3 fotos (frontal, posterior y horizontal)."
+  "EditListingPhotosForm.minImagesRequired": "Se requieren al menos 3 fotos (frontal, posterior y horizontal).",
+  "EditListingDetailsPanel.photosTitle": "Fotos",
+  "EditListingDetailsPanel.photosMinRequired": "Agrega al menos 3 fotos para continuar.",
+  "EditListingDetailsPanel.photosAddTip": "Puedes agregar hasta 100 fotos.",
+  "EditListingDetailsPanel.photosMaxReached": "Has alcanzado el máximo de 100 fotos.",
+  "EditListingDetailsPanel.photosUploadInProgress": "Espera a que terminen de subir todas las fotos."
 }
