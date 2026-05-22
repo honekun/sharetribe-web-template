@@ -617,7 +617,7 @@
   "MakeOfferPage.tooManyRequestsError": "Making the offer failed due to too many requests made in a short amount of time. If the error persists, try refreshing the page or contact support.",
   "ManageAccountPage.heading": "Manage account",
   "ManageAccountPage.deleteAccountSubtitle": "Delete your account",
-  "ManageAccountPage.title": "Manage account",
+  "ManageAccountPage.title": "Manage account",  
   "ManageListingCard.actionFailed": "Oops, something went wrong. Please refresh the page and try again.",
   "ManageListingCard.closeListing": "Close listing",
   "ManageListingCard.closeListingText": "Close listing",
@@ -1431,5 +1431,20 @@
   "UserNav.accountSettings": "Account settings",
   "UserNav.profileSettings": "Profile settings",
   "UserNav.screenreader.userNav": "User profile navigation",
-  "UserNav.yourListings": "Your listings"
+  "UserNav.yourListings": "Your listings",
+
+  "AVWelcomePopup.vendedor.imageUrl": "",
+  "AVWelcomePopup.vendedor.title": "",
+  "AVWelcomePopup.vendedor.text": "",
+  "AVWelcomePopup.vendedor.primaryButtonLabel": "",
+  "AVWelcomePopup.vendedor.primaryButtonUrl": "",
+  "AVWelcomePopup.vendedor.secondaryButtonLabel": "",
+  "AVWelcomePopup.vendedor.secondaryButtonUrl": "",
+  "AVWelcomePopup.vendedor-tienda.imageUrl": "",
+  "AVWelcomePopup.vendedor-tienda.title": "",
+  "AVWelcomePopup.vendedor-tienda.text": "",
+  "AVWelcomePopup.vendedor-tienda.primaryButtonLabel": "",
+  "AVWelcomePopup.vendedor-tienda.primaryButtonUrl": "",
+  "AVWelcomePopup.vendedor-tienda.secondaryButtonLabel": "",
+  "AVWelcomePopup.vendedor-tienda.secondaryButtonUrl": ""
 }

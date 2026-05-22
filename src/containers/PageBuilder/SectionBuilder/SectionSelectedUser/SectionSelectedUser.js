@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 import AVUserCard from '../../../../components/AVUserCard/AVUserCard';
+import { useIntl } from '../../../../util/reactIntl';
 import useDebouncedWindowResize from '../../../../hooks/useDebouncedWindowResize';
 
 import Field, { hasDataInFields } from '../../Field';
-import SectionContainer from '../SectionContainer';
+import AVSectionContainer from '../SectionContainer/AVSectionContainer';
 import css from './SectionSelectedUser.module.css';
 
 const COLUMN_CONFIG = [
@@ -19,7 +20,8 @@ const getColumnIndex = numColumns => {
   return Math.min(numColumns, COLUMN_CONFIG.length) - 1;
 };
 
-const getColumnClass = numColumns => COLUMN_CONFIG[getColumnIndex(numColumns)]?.css || COLUMN_CONFIG[0].css;
+const getColumnClass = numColumns =>
+  COLUMN_CONFIG[getColumnIndex(numColumns)]?.css || COLUMN_CONFIG[0].css;
 
 const getEffectiveColumns = numColumns => {
   if (typeof window === 'undefined') return numColumns;
@@ -46,6 +48,7 @@ const getGapValue = slider => {
  * sectionId prefix: av-selected-users
  */
 const SectionSelectedUser = props => {
+  const intl = useIntl();
   const {
     sectionId,
     className,
@@ -78,6 +81,7 @@ const SectionSelectedUser = props => {
   const normalizedColumns = Math.min(Math.max(effectiveColumns, 1), COLUMN_CONFIG.length);
 
   const setCarouselWidth = () => {
+    if (typeof window === 'undefined') return;
     if (!users.length) return;
     const container = sliderContainerRef.current;
     if (!container) return;
@@ -96,6 +100,8 @@ const SectionSelectedUser = props => {
   const hasHeaderFields = hasDataInFields([title, description, callToAction], fieldOptions);
   const hasUsers = users.length > 0;
   const hideArrows = users.length <= normalizedColumns;
+  const previousLabel = intl.formatMessage({ id: 'AVCarousel.previous' });
+  const nextLabel = intl.formatMessage({ id: 'AVCarousel.next' });
 
   const slide = direction => {
     const slider = sliderRef.current;
@@ -111,15 +117,26 @@ const SectionSelectedUser = props => {
     });
   };
 
-  const onSlideLeft = e => { slide('left'); e.target.focus(); };
-  const onSlideRight = e => { slide('right'); e.target.focus(); };
+  const onSlideLeft = e => {
+    slide('left');
+    e.target.focus();
+  };
+  const onSlideRight = e => {
+    slide('right');
+    e.target.focus();
+  };
   const onKeyDown = e => {
-    if (e.key === 'ArrowLeft') { e.preventDefault(); slide('left'); }
-    else if (e.key === 'ArrowRight') { e.preventDefault(); slide('right'); }
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      slide('left');
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      slide('right');
+    }
   };
 
   return (
-    <SectionContainer
+    <AVSectionContainer
       id={sectionId}
       className={className}
       rootClassName={rootClassName}
@@ -130,10 +147,22 @@ const SectionSelectedUser = props => {
       {hasHeaderFields ? (
         <header className={classNames(css.sectionHeader, defaultClasses.sectionDetailsH)}>
           <div className={css.textBlock}>
-            <Field data={title} className={classNames(defaultClasses.title, css.title)} options={fieldOptions} />
-            <Field data={description} className={classNames(defaultClasses.description, css.description)} options={fieldOptions} />
+            <Field
+              data={title}
+              className={classNames(defaultClasses.title, css.title)}
+              options={fieldOptions}
+            />
+            <Field
+              data={description}
+              className={classNames(defaultClasses.description, css.description)}
+              options={fieldOptions}
+            />
           </div>
-          <Field data={callToAction} className={classNames(defaultClasses.ctaButton, css.ctaButton)} options={fieldOptions} />
+          <Field
+            data={callToAction}
+            className={classNames(defaultClasses.ctaButton, css.ctaButton)}
+            options={fieldOptions}
+          />
         </header>
       ) : null}
       {hasUsers ? (
@@ -144,14 +173,27 @@ const SectionSelectedUser = props => {
           ref={sliderContainerRef}
         >
           <div className={classNames(css.carouselArrows, { [css.hideArrows]: hideArrows })}>
-            <button className={css.carouselArrow} onClick={onSlideLeft} onKeyDown={onKeyDown} aria-label="Previous">
+            <button
+              className={css.carouselArrow}
+              onClick={onSlideLeft}
+              onKeyDown={onKeyDown}
+              aria-label={previousLabel}
+            >
               ‹
             </button>
-            <button className={css.carouselArrow} onClick={onSlideRight} onKeyDown={onKeyDown} aria-label="Next">
+            <button
+              className={css.carouselArrow}
+              onClick={onSlideRight}
+              onKeyDown={onKeyDown}
+              aria-label={nextLabel}
+            >
               ›
             </button>
           </div>
-          <div className={classNames(css.slider, getColumnClass(normalizedColumns))} ref={sliderRef}>
+          <div
+            className={classNames(css.slider, getColumnClass(normalizedColumns))}
+            ref={sliderRef}
+          >
             {users.map(user => {
               const userId = user.id?.uuid;
               const block = blocksByUserId[userId] || {};
@@ -169,7 +211,7 @@ const SectionSelectedUser = props => {
           </div>
         </div>
       ) : null}
-    </SectionContainer>
+    </AVSectionContainer>
   );
 };
 

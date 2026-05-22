@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { AVListingCard } from '../../../../components';
+import { useIntl } from '../../../../util/reactIntl';
 import useDebouncedWindowResize from '../../../../hooks/useDebouncedWindowResize';
 
 import Field, { hasDataInFields } from '../../Field';
-import SectionContainer from '../SectionContainer';
+import AVSectionContainer from '../SectionContainer/AVSectionContainer';
 import css from './SectionTagCatListings.module.css';
 
 const KEY_CODE_ARROW_LEFT = 37;
@@ -21,9 +22,11 @@ const getColumnIndex = numColumns => {
   if (!numColumns || numColumns < 1) return 0;
   return Math.min(numColumns, COLUMN_CONFIG.length) - 1;
 };
-const getColumnClass = numColumns => COLUMN_CONFIG[getColumnIndex(numColumns)]?.css || COLUMN_CONFIG[0].css;
+const getColumnClass = numColumns =>
+  COLUMN_CONFIG[getColumnIndex(numColumns)]?.css || COLUMN_CONFIG[0].css;
 const getResponsiveImageSizes = numColumns =>
-  COLUMN_CONFIG[getColumnIndex(numColumns)]?.responsiveImageSizes || COLUMN_CONFIG[0].responsiveImageSizes;
+  COLUMN_CONFIG[getColumnIndex(numColumns)]?.responsiveImageSizes ||
+  COLUMN_CONFIG[0].responsiveImageSizes;
 
 const getEffectiveColumns = numColumns => {
   if (typeof window === 'undefined') return numColumns;
@@ -52,6 +55,7 @@ const getGapValue = slider => {
  * Listings are loaded by the AV landing page extension during loadData.
  */
 const SectionTagCatListings = props => {
+  const intl = useIntl();
   const {
     sectionId,
     className,
@@ -75,6 +79,7 @@ const SectionTagCatListings = props => {
   const normalizedColumns = Math.min(Math.max(effectiveColumns, 1), COLUMN_CONFIG.length);
 
   const setCarouselWidth = () => {
+    if (typeof window === 'undefined') return;
     if (!listings.length) return;
     const container = sliderContainerRef.current;
     if (!container) return;
@@ -93,6 +98,8 @@ const SectionTagCatListings = props => {
   const hasHeaderFields = hasDataInFields([title, description, callToAction], fieldOptions);
   const hasListings = listings.length > 0;
   const hideArrows = listings.length <= normalizedColumns;
+  const previousLabel = intl.formatMessage({ id: 'AVCarousel.previous' });
+  const nextLabel = intl.formatMessage({ id: 'AVCarousel.next' });
   const renderSizes = getResponsiveImageSizes(normalizedColumns);
 
   const slide = direction => {
@@ -109,15 +116,26 @@ const SectionTagCatListings = props => {
     });
   };
 
-  const onSlideLeft = e => { slide('left'); e.target.focus(); };
-  const onSlideRight = e => { slide('right'); e.target.focus(); };
+  const onSlideLeft = e => {
+    slide('left');
+    e.target.focus();
+  };
+  const onSlideRight = e => {
+    slide('right');
+    e.target.focus();
+  };
   const onKeyDown = e => {
-    if (e.keyCode === KEY_CODE_ARROW_LEFT) { e.preventDefault(); slide('left'); }
-    else if (e.keyCode === KEY_CODE_ARROW_RIGHT) { e.preventDefault(); slide('right'); }
+    if (e.keyCode === KEY_CODE_ARROW_LEFT) {
+      e.preventDefault();
+      slide('left');
+    } else if (e.keyCode === KEY_CODE_ARROW_RIGHT) {
+      e.preventDefault();
+      slide('right');
+    }
   };
 
   return (
-    <SectionContainer
+    <AVSectionContainer
       id={sectionId}
       className={className}
       rootClassName={rootClassName}
@@ -128,10 +146,22 @@ const SectionTagCatListings = props => {
       {hasHeaderFields ? (
         <header className={classNames(css.sectionHeader, defaultClasses.sectionDetailsH)}>
           <div className={css.textBlock}>
-            <Field data={title} className={classNames(defaultClasses.title, css.title)} options={fieldOptions} />
-            <Field data={description} className={classNames(defaultClasses.description, css.description)} options={fieldOptions} />
+            <Field
+              data={title}
+              className={classNames(defaultClasses.title, css.title)}
+              options={fieldOptions}
+            />
+            <Field
+              data={description}
+              className={classNames(defaultClasses.description, css.description)}
+              options={fieldOptions}
+            />
           </div>
-          <Field data={callToAction} className={classNames(defaultClasses.ctaButton, css.ctaButton)} options={fieldOptions} />
+          <Field
+            data={callToAction}
+            className={classNames(defaultClasses.ctaButton, css.ctaButton)}
+            options={fieldOptions}
+          />
         </header>
       ) : null}
       {hasListings ? (
@@ -142,14 +172,27 @@ const SectionTagCatListings = props => {
           ref={sliderContainerRef}
         >
           <div className={classNames(css.carouselArrows, { [css.hideArrows]: hideArrows })}>
-            <button className={css.carouselArrow} onClick={onSlideLeft} onKeyDown={onKeyDown} aria-label="Previous">
+            <button
+              className={css.carouselArrow}
+              onClick={onSlideLeft}
+              onKeyDown={onKeyDown}
+              aria-label={previousLabel}
+            >
               ‹
             </button>
-            <button className={css.carouselArrow} onClick={onSlideRight} onKeyDown={onKeyDown} aria-label="Next">
+            <button
+              className={css.carouselArrow}
+              onClick={onSlideRight}
+              onKeyDown={onKeyDown}
+              aria-label={nextLabel}
+            >
               ›
             </button>
           </div>
-          <div className={classNames(css.slider, getColumnClass(normalizedColumns))} ref={sliderRef}>
+          <div
+            className={classNames(css.slider, getColumnClass(normalizedColumns))}
+            ref={sliderRef}
+          >
             {listings.map(l => (
               <div key={l.id.uuid} className={css.carouselItem}>
                 <AVListingCard listing={l} className={css.listingCard} renderSizes={renderSizes} />
@@ -158,7 +201,7 @@ const SectionTagCatListings = props => {
           </div>
         </div>
       ) : null}
-    </SectionContainer>
+    </AVSectionContainer>
   );
 };
 

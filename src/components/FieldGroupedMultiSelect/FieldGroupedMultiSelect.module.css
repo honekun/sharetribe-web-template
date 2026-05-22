@@ -14,9 +14,10 @@
 
 .control {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   min-height: 48px;
+  padding: 8px 12px;
   border: 1px solid var(--colorGrey300);
   border-bottom: 3px solid var(--marketplaceColor);
   border-radius: 4px;
@@ -41,9 +42,26 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  padding: 8px 8px;
-  min-height: 48px;
   align-items: center;
+}
+
+.trigger {
+  flex: 1;
+  align-self: stretch;
+  min-width: 120px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--marketplaceColor);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .placeholder {
@@ -71,13 +89,14 @@
   padding: 0;
   cursor: pointer;
   color: var(--avSecondary);
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
+  margin-right: -4px;
   border-radius: 50%;
 }
 
@@ -86,10 +105,14 @@
   color: var(--avSecondary);
 }
 
+.chipRemove:focus-visible {
+  outline: 2px solid var(--marketplaceColor);
+  outline-offset: 2px;
+}
+
 .controls {
   display: flex;
   align-items: center;
-  padding: 8px 8px;
   gap: 4px;
   flex-shrink: 0;
 }
@@ -98,14 +121,16 @@
 .toggleBtn {
   background: none;
   border: none;
-  padding: 4px;
+  padding: 0;
   cursor: pointer;
   color: var(--colorGrey500);
-  font-size: 14px;
+  font-size: 18px;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 32px;
+  height: 32px;
   border-radius: 4px;
 }
 
@@ -113,6 +138,12 @@
 .toggleBtn:hover {
   color: var(--colorGrey700);
   background-color: var(--colorGrey100);
+}
+
+.clearBtn:focus-visible,
+.toggleBtn:focus-visible {
+  outline: 2px solid var(--marketplaceColor);
+  outline-offset: 2px;
 }
 
 .dropdown {
@@ -160,6 +191,11 @@
 
 .option:hover {
   background-color: var(--colorGrey50);
+}
+
+.optionActive {
+  outline: 2px solid var(--marketplaceColor);
+  outline-offset: -2px;
 }
 
 .optionSelected {
