@@ -6,10 +6,10 @@
 .label {
   display: block;
   font-weight: var(--fontWeightSemiBold);
-  font-size: 14px;
-  line-height: 18px;
-  margin-bottom: 8px;
-  color: var(--colorGrey700);
+  font-size: 13px;
+  line-height: 16px;
+  margin-bottom: 0;
+  color: var(--colorGrey900);
 }
 
 .control {
@@ -56,6 +56,20 @@
   color: inherit;
   cursor: pointer;
   text-align: left;
+}
+
+/* Invisible trigger rendered alongside chips — no visual space needed */
+.triggerCollapsed {
+  flex: 0 0 0;
+  min-width: 0;
+  min-height: 0;
+  width: 0;
+  height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  overflow: hidden;
 }
 
 .trigger:focus-visible {

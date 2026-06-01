@@ -33,6 +33,7 @@ const AV_LISTING_PUBLIC_DATA_FIELDS = [
   'publicData.unitType',
   'publicData.brand',
   'publicData.all_sizes',
+  'publicData.originalPrice',
 ];
 
 const createListingsBaseQueryParams = (config = {}) => {
@@ -43,7 +44,14 @@ const createListingsBaseQueryParams = (config = {}) => {
   return {
     include: ['author', 'author.profileImage', 'images'],
     'fields.listing': ['title', 'price', 'deleted', 'state', ...AV_LISTING_PUBLIC_DATA_FIELDS],
-    'fields.user': ['profile.displayName', 'profile.abbreviatedName', 'profile.image'],
+    'fields.user': [
+      'profile.displayName',
+      'profile.abbreviatedName',
+      'profile.image',
+      // AV: needed by StoreTypeTags overlay on AVListingCard
+      'profile.publicData.userType',
+      'profile.publicData.tipoTienda',
+    ],
     'fields.image': [
       'variants.square-xsmall2x',
       'variants.scaled-small',

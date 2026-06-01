@@ -105,6 +105,7 @@ export { default as FieldTextInput } from './FieldTextInput/FieldTextInput';
 export { default as FieldSwatch } from './FieldSwatch/FieldSwatch';
 export { default as FieldGroupedMultiSelect } from './FieldGroupedMultiSelect/FieldGroupedMultiSelect';
 export { default as FieldColorDropdown } from './FieldColorDropdown/FieldColorDropdown';
+export { default as FieldSearchableSelect } from './FieldSearchableSelect/FieldSearchableSelect';
 
 // Fields that use other Fields
 export { default as FieldBoolean } from './FieldBoolean/FieldBoolean';
@@ -134,6 +135,7 @@ export { default as OrderBreakdown } from './OrderBreakdown/OrderBreakdown';
 export { default as OrderPanel } from './OrderPanel/OrderPanel';
 export { default as ListingCard } from './ListingCard/ListingCard';
 export { default as AVListingCard } from './AVListingCard/AVListingCard';
+export { default as StoreTypeTags } from './StoreTypeTags/StoreTypeTags';
 export { default as AVWelcomePopup } from './AVWelcomePopup/AVWelcomePopup';
 export { default as BalanceSummary } from './BalanceSummary/BalanceSummary';
 export { default as PayoutItem } from './PayoutItem/PayoutItem';

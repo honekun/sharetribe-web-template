@@ -1,0 +1,50 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`FieldSearchableSelect matches snapshot (empty state) 1`] = `
+<form>
+  <div
+    class="root"
+  >
+    <label
+      class="label"
+      for="brand"
+    >
+      Brand
+    </label>
+    <div
+      class="control  "
+    >
+      <input
+        aria-autocomplete="list"
+        aria-controls="brand-listbox"
+        aria-expanded="false"
+        aria-haspopup="listbox"
+        autocomplete="off"
+        class="input"
+        id="brand"
+        placeholder="Search brand…"
+        role="combobox"
+        style="border-radius: 0; box-shadow: none; outline: none; background-color: transparent;"
+        type="text"
+        value=""
+      />
+      <div
+        class="controls"
+      >
+        <button
+          aria-label="FieldSearchableSelect.expand"
+          class="toggleBtn"
+          type="button"
+        >
+          ▼
+        </button>
+      </div>
+    </div>
+  </div>
+  <button
+    type="submit"
+  >
+    Submit
+  </button>
+</form>
+`;
