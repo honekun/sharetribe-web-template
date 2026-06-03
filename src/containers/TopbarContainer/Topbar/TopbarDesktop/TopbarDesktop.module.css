@@ -56,6 +56,12 @@
   min-height: var(--topbarHeightDesktop);
   padding: 0 12px 0 0;
   border-top: 1px solid var(--colorGrey100);
+  /* Match the divider above the row with one below it, separating the nav from
+   * the page content. */
+  border-bottom: 1px solid var(--colorGrey100);
+
+  /* AV: yellow second row with blue contents */
+  background-color: var(--avYellowLight);
 
   @media (--viewportMedium) {
     padding: 0 24px 0 0;
@@ -64,6 +70,17 @@
   @media (--viewportLarge) {
     padding: 0 60px;
   }
+}
+
+/* AV: color every link/button/label in the second row blue (overrides the
+   per-link greys defined in CustomLinksMenu.module.css via descendant
+   specificity). Element selectors cross the CSS-module boundary because
+   only .bottomRow is hashed. */
+.bottomRow :is(a, button, span) {
+  color: var(--avBlue);
+}
+.bottomRow :is(a, button):hover {
+  color: var(--avBlue);
 }
 
 /* logo */
@@ -82,6 +99,11 @@
   max-width: none;
   height: 100%;
   margin: 0 24px;
+
+  /* Center the pill-shaped search bar within the available space. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .spacer {
@@ -114,14 +136,18 @@
   min-width: 280px;
 }
 
+/* Pill-shaped search bar: rounded outline, search icon on the left, borderless
+ * input. Centered within .searchLink. */
 .topbarSearchWithLeftPadding {
-  padding-left: 24px;
-  padding-right: 6;
-  height: var(--topbarHeightDesktop);
-
-  @media (--viewportLarge) {
-    padding-left: 34px;
-  }
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 520px;
+  height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--colorGrey300);
+  border-radius: 999px;
+  background-color: var(--colorWhite);
 }
 
 /* These is used with Inbox, Sign up, and Log in */
@@ -226,13 +252,9 @@
   padding: 0 12px 0 12px;
 
   &:hover {
-    border-bottom: 4px solid var(--marketplaceColor);
+    /* No bottom-border underline on the profile menu (avoids layout shift). */
     border-radius: 0;
     text-decoration: none;
-  }
-
-  &:active {
-    border-bottom: 0;
   }
 
   @media (--viewportLargeWithPaddings) {
