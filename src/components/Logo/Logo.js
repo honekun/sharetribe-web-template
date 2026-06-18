@@ -7,6 +7,7 @@ import { ResponsiveImage } from '../../components/';
 import logoImageWhite from '../../assets/logo_av_white.png';
 
 import css from './Logo.module.css';
+import avCss from './LogoAV.module.css';
 
 const HEIGHT_24 = 24;
 const HEIGHT_36 = 36;
@@ -54,7 +55,7 @@ export const LogoComponent = props => {
   const logoImageClasses = classNames(
     logoImageClassName || css.logo,
     getHeightClassName(logoSettings?.height),
-    version === 'white' ? css.logoWhite : ''
+    version === 'white' ? avCss.logoWhite : ''
   );
 
   // Logo from hosted asset
@@ -109,6 +110,9 @@ export const LogoComponent = props => {
       </div>
     );
   } else if (version === 'white') {
+    // AV: white logo variant for dark backgrounds (e.g. footer). Renders a static
+    // asset and bypasses the hosted-logo branches above; reached via
+    // LinkedLogo's version="white". Intentional fork of this upstream component.
     return (
       <div>
         <img className={logoImageClasses} src={logoImageWhite} alt={marketplaceName} {...rest} />
