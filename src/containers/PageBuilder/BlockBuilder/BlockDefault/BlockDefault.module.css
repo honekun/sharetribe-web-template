@@ -42,6 +42,16 @@
   color: var(--avBlue);
 }
 
+/* "fullLinks ::": keep links inside the block's body P elements whole — never
+   break a word/URL mid-character; wrap only at spaces (a too-long link overflows
+   at full size rather than being split). Matches the AV heading keep-whole rules.
+   word-break: keep-all is supported across all modern desktop + mobile browsers. */
+.fullLinks p a {
+  word-break: keep-all;
+  overflow-wrap: normal;
+  hyphens: none;
+}
+
 /* Block-level mirror of the section-name token "- SmallerTitles":
    shift all headings down one size level. */
 .smallerTitles {

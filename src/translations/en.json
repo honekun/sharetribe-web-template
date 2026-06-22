@@ -319,6 +319,10 @@
   "EditListingPricingAndStockPanel.createListingTitle": "Pricing & stock",
   "EditListingPricingAndStockPanel.listingPriceCurrencyInvalid": "The listing currency is different from the marketplace currency ({marketplaceCurrency}). You cannot edit the price.",
   "EditListingPricingAndStockPanel.title": "Pricing & stock of {listingTitle}",
+  "EditListingPricingForm.packageSize.L": "L — 50×40×15 cm · ≤1.5 kg · large box",
+  "EditListingPricingForm.packageSize.M": "M — 35×30×10 cm · ≤1.0 kg · medium box (default)",
+  "EditListingPricingForm.packageSize.S": "S — 25×20×8 cm · ≤0.5 kg · padded envelope",
+  "EditListingPricingForm.packageSizeLabel": "Package size",
   "EditListingPricingForm.priceInputPlaceholder": "Add a price…",
   "EditListingPricingForm.pricePerProduct": "Price {unitType, select, day {per day} night {per night} hour {per hour} other {}}",
   "EditListingPricingForm.priceRequired": "You need to add a valid price.",
@@ -1438,6 +1442,12 @@
   "AVListingDetails.categoryLabel": "Category",
   "AVListingDetails.showMore": "Show more",
   "AVListingDetails.showLess": "Show less",
+
+  "AVShippingTypeSelector.legend": "Choose a delivery option",
+  "AVShippingTypeSelector.noOptions": "Shipping is not available for this item — contact AV.",
+  "AVShippingTypeSelector.type.cdmxLocal": "CDMX Local",
+  "AVShippingTypeSelector.type.nacionalExpress": "Nacional Express",
+  "AVShippingTypeSelector.type.nacionalEstandar": "Nacional Estándar",
 
   "AVWelcomePopup.vendedor.imageUrl": "",
   "AVWelcomePopup.vendedor.eyebrow": "",

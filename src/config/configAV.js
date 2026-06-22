@@ -67,3 +67,18 @@ export const getStoreTypeTags = (author, config = {}) => {
     return { key: value, label: match?.label || value };
   });
 };
+
+// AV shipping config lives in a CommonJS sibling (configAVShipping.js) so the
+// server can require the same source. Re-export for ergonomic client imports.
+const avShipping = require('./configAVShipping');
+export const {
+  packageSizes: shippingPackageSizes,
+  deliveryTypes: shippingDeliveryTypes,
+  priceGrid: shippingPriceGrid,
+  defaultPackageSize,
+  getPackageSizeForCategory,
+  resolvePackageSize,
+  isEspecialSize,
+  getShippingPrice,
+  getAvailableDeliveryTypes,
+} = avShipping;

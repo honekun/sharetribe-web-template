@@ -26,6 +26,7 @@ import css from './EditListingPricingPanel.module.css';
 
 // AV: gate the "original price" (strike-through) field by seller user type
 import { canShowOriginalPrice } from '../../../../config/configAV';
+// AV: package-size default-from-category + "especial" size detection (Spec A shipping)
 
 const { Money } = sdkTypes;
 

@@ -46,6 +46,9 @@ import css from './CheckoutPage.module.css';
 
 // AV: keep marketplace defaults out of upstream literals
 import { defaultCountry } from '../../config/configAV';
+// AV shipping: buyer-facing delivery-type selector + grid-driven availability
+import AVShippingTypeSelector from '../../components/AVShippingTypeSelector';
+import { getAvailableDeliveryTypes, resolvePackageSize } from '../../config/configAVShipping';
 
 // Stripe PaymentIntent statuses, where user actions are already completed
 // https://stripe.com/docs/payments/payment-intents/status
@@ -107,7 +110,7 @@ const prefixPriceVariantProperties = priceVariant => {
  * @param {Object} config app-wide configs. This contains hosted configs too.
  * @returns orderParams.
  */
-const getOrderParams = (
+export const getOrderParams = (
   pageData,
   shippingDetails,
   optionalPaymentParams,
@@ -121,6 +124,10 @@ const getOrderParams = (
   const seatsMaybe = seats ? { seats } : {};
   const deliveryMethod = pageData.orderData?.deliveryMethod;
   const deliveryMethodMaybe = deliveryMethod ? { deliveryMethod } : {};
+  // AV shipping: the selected delivery type drives the server-side shipping fee
+  // (Task 2) and is persisted into protectedData for later label generation (Spec B).
+  const avShippingType = pageData.orderData?.avShippingType;
+  const avShippingTypeMaybe = avShippingType ? { avShippingType } : {};
   const { listingType, unitType, priceVariants } = pageData?.listing?.attributes?.publicData || {};
 
   // price variant data for fixed duration bookings
@@ -135,6 +142,7 @@ const getOrderParams = (
     protectedData: {
       ...getTransactionTypeData(listingType, unitType, config),
       ...deliveryMethodMaybe,
+      ...avShippingTypeMaybe,
       ...shippingDetails,
       ...priceVariantMaybe,
       ...transactionFieldProtectedData,
@@ -154,6 +162,7 @@ const getOrderParams = (
   const orderParams = {
     listingId: pageData?.listing?.id,
     ...deliveryMethodMaybe,
+    ...avShippingTypeMaybe,
     ...quantityMaybe,
     ...seatsMaybe,
     ...bookingDatesMaybe(pageData.orderData?.bookingDates),
@@ -423,6 +432,7 @@ export const CheckoutPageWithPayment = props => {
   const {
     scrollingDisabled,
     speculateTransactionError,
+    speculateTransactionInProgress,
     speculatedTransaction: speculatedTransactionMaybe,
     isClockInSync,
     initiateOrderError,
@@ -441,7 +451,16 @@ export const CheckoutPageWithPayment = props => {
     transactionFieldConfigs = [],
     showTransactionFields,
     config,
+    setPageData,
+    fetchSpeculatedTransaction,
   } = props;
+
+  // AV shipping: the buyer must choose a delivery type before paying. The choice
+  // is persisted into pageData.orderData.avShippingType (flows through getOrderParams
+  // → speculate/initiate) so the server recomputes the shipping fee from the grid.
+  const [selectedShippingType, setSelectedShippingType] = useState(
+    props.pageData?.orderData?.avShippingType || null
+  );
 
   // Since the listing data is already given from the ListingPage
   // and stored to handle refreshes, it might not have the possible
@@ -553,6 +572,54 @@ export const CheckoutPageWithPayment = props => {
   const showPickUpLocation = isPurchase && orderData?.deliveryMethod === 'pickup';
   const showLocation = (isBooking || isNegotiation) && listingLocation?.address;
 
+  // AV shipping: only purchases shipped (not picked up) require a delivery-type choice.
+  // Resolve from publicData with the category fallback (default M) so listings
+  // created before the size field existed still get priced shipping options.
+  const avPackageSize = resolvePackageSize(listing?.attributes?.publicData);
+  const isAvShipping =
+    isPurchase &&
+    orderData?.deliveryMethod === 'shipping' &&
+    !hasTransactionPassedPendingPayment(existingTransaction, process);
+  // Destination drives CDMX-local availability. The shipping address is collected
+  // inside StripePaymentForm's own Final Form, so it is not observable here; fall back
+  // to any destination persisted in orderData. Non-CDMX types are unaffected.
+  // NOTE: this currently always resolves empty (orderData never carries
+  // shippingDetails/recipientState/recipientPostal here), so `cdmxLocal` gating
+  // is effectively inert today. Making it live is a follow-up that requires
+  // lifting the shipping address state out of StripePaymentForm.
+  const avDestination = {
+    state: orderData?.shippingDetails?.state || orderData?.recipientState,
+    postalCode: orderData?.shippingDetails?.postalCode || orderData?.recipientPostal,
+  };
+  const avAvailableTypes = isAvShipping
+    ? getAvailableDeliveryTypes(avPackageSize, avDestination)
+    : [];
+  // Only surface the selector / gate payment when there is at least one delivery
+  // type to choose from. If the grid is unpriced (or size is `especial`), fall back
+  // to the normal flow so the buyer is never blocked from paying.
+  const hasAvShippingChoice = isAvShipping && avAvailableTypes.length > 0;
+
+  // Persist the chosen type into pageData.orderData and re-speculate so the
+  // "Shipping fee" row updates before the buyer pays.
+  const handleSelectShippingType = type => {
+    setSelectedShippingType(type);
+    const nextPageData = {
+      ...pageData,
+      orderData: { ...pageData.orderData, avShippingType: type },
+    };
+    if (setPageData) {
+      setPageData(nextPageData);
+    }
+    if (fetchSpeculatedTransaction) {
+      const orderParams = getOrderParams(nextPageData, {}, {}, config);
+      fetchSpeculatedTransactionIfNeeded(orderParams, nextPageData, fetchSpeculatedTransaction);
+    }
+  };
+
+  // Gate the payment form for shipping purchases until a delivery type is chosen
+  // (only when there is actually a choice to make).
+  const isShippingTypeReady = !hasAvShippingChoice || !!selectedShippingType;
+
   const providerDisplayName = isNegotiation
     ? existingTransaction?.provider?.attributes?.profile?.displayName
     : listing?.author?.attributes?.profile?.displayName;
@@ -610,6 +677,7 @@ export const CheckoutPageWithPayment = props => {
             speculateTransactionErrorMessage={errorMessages.speculateTransactionErrorMessage}
             breakdown={breakdown}
             priceVariantName={priceVariantName}
+            speculateInProgress={speculateTransactionInProgress}
           />
           <section className={css.paymentContainer}>
             {errorMessages.initiateOrderErrorMessage}
@@ -618,7 +686,17 @@ export const CheckoutPageWithPayment = props => {
             {errorMessages.retrievePaymentIntentErrorMessage}
             {errorMessages.paymentExpiredMessage}
 
-            {showPaymentForm ? (
+            {hasAvShippingChoice ? (
+              <AVShippingTypeSelector
+                size={avPackageSize}
+                availableTypes={avAvailableTypes}
+                selectedType={selectedShippingType}
+                currency={listing?.attributes?.price?.currency}
+                onSelect={handleSelectShippingType}
+              />
+            ) : null}
+
+            {showPaymentForm && isShippingTypeReady ? (
               <StripePaymentForm
                 className={css.paymentForm}
                 onSubmit={values =>
@@ -672,6 +750,7 @@ export const CheckoutPageWithPayment = props => {
           isInquiryProcess={false}
           processName={processName}
           breakdown={breakdown}
+          speculateInProgress={speculateTransactionInProgress}
           showListingImage={showListingImage}
           intl={intl}
         />

@@ -711,9 +711,13 @@ dash, a space, then the token (`- Token`). Combine as many as you like.
 
 #### Spacing
 
-| Token          | Effect                                                                |
-| -------------- | --------------------------------------------------------------------- |
-| `- NoPaddings` | Removes all padding (top, bottom, left and right) around the content. |
+| Token             | Effect                                                                                                                                     |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `- NoPaddings`    | Removes all padding (top, bottom, left and right) around the content.                                                                     |
+| `- SmallGapCols`  | **Column / grid sections only**: tightens the horizontal gap between columns to 8 px (default 32 px).                                     |
+| `- SmallGapRows`  | **Column / grid sections only**: tightens the vertical gap between rows to 8 px (default 32 px). Combine with `- SmallGapCols` for both.  |
+| `- NoGapCols`     | **Column / grid sections only**: removes the horizontal gap between columns entirely (0 px).                                              |
+| `- NoGapRows`     | **Column / grid sections only**: removes the vertical gap between rows entirely (0 px). Combine with `- NoGapCols` for a flush grid.      |
 
 #### Call-to-action button colour
 
@@ -773,6 +777,7 @@ any order.
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `smallerTitles ::` | Shifts every heading in the block down one size level (H1 → 30 px, H2 → 20 px, H3 → 18 px, H4 → 16 px, H5 → 14 px). Block-level mirror of section `- SmallerTitles`. |
 | `blueTitle ::`     | Colours only the block's own title in AV brand blue. Does **not** affect headings inside the body text. Block-level mirror of section `- BlueTitle`.            |
+| `fullLinks ::`     | Keeps links inside the block's body paragraphs whole — a word or URL is never broken mid-character (`word-break: keep-all`); a too-long link overflows at full size instead of being split. |
 
 #### Block CTA button colour
 

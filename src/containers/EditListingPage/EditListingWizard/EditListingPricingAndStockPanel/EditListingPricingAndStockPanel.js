@@ -16,6 +16,8 @@ import css from './EditListingPricingAndStockPanel.module.css';
 
 // AV: gate the "original price" (strike-through) field by seller user type
 import { canShowOriginalPrice } from '../../../../config/configAV';
+// AV: package size — default from category, persisted to publicData.avPackageSize
+import { getPackageSizeForCategory, isEspecialSize } from '../../../../config/configAVShipping';
 
 const { Money } = sdkTypes;
 const BILLIARD = 1000000000000000;
@@ -54,7 +56,15 @@ const getInitialValues = props => {
     ? new Money(originalPriceRaw.amount, originalPriceRaw.currency)
     : null;
 
-  return { price, stock, stockTypeInfinity, originalPrice };
+  const avPackageSize =
+    publicData?.avPackageSize ||
+    getPackageSizeForCategory(
+      publicData?.categoryLevel1,
+      publicData?.categoryLevel2,
+      publicData?.categoryLevel3
+    );
+
+  return { price, stock, stockTypeInfinity, originalPrice, avPackageSize };
 };
 
 /**
@@ -107,6 +117,17 @@ const EditListingPricingAndStockPanel = props => {
 
   // Form needs to know data from listingType
   const publicData = listing?.attributes?.publicData;
+
+  // AV: package size — default from category, hidden for "especial", locked post-sale.
+  const avPackageSize =
+    publicData?.avPackageSize ||
+    getPackageSizeForCategory(
+      publicData?.categoryLevel1,
+      publicData?.categoryLevel2,
+      publicData?.categoryLevel3
+    );
+  const showPackageSize = !isEspecialSize(avPackageSize);
+  const packageSizeLocked = !!publicData?.avPackageSizeLocked;
   const unitType = publicData.unitType;
   const listingTypeConfig = getListingTypeConfig(publicData, listingTypes);
   const transactionProcessAlias = listingTypeConfig.transactionType.alias;
@@ -192,10 +213,24 @@ const EditListingPricingAndStockPanel = props => {
                 : null,
             };
 
+            // AV: persist the chosen package size (skip when hidden/locked).
+            const avPackageSizeMaybe =
+              showPackageSize && !packageSizeLocked
+                ? { avPackageSize: values.avPackageSize || avPackageSize }
+                : {};
+
             // New values for listing attributes
             const updateValues = {
               price,
-              publicData: originalPriceMaybe,
+              publicData: {
+                ...originalPriceMaybe,
+                ...avPackageSizeMaybe,
+                // AV: every product ships. The native Delivery wizard step is
+                // removed, so auto-enable shipping here — this is what makes
+                // OrderPanel offer shipping (deliveryMethod='shipping') and the
+                // checkout delivery-type selector + grid pricing engage.
+                shippingEnabled: true,
+              },
               ...stockUpdateMaybe,
             };
             // Save the initialValues to state
@@ -206,6 +241,7 @@ const EditListingPricingAndStockPanel = props => {
                 stock: stockUpdateMaybe?.stockUpdate?.newTotal || stock,
                 stockTypeInfinity,
                 originalPrice,
+                avPackageSize: avPackageSizeMaybe.avPackageSize || avPackageSize,
               },
             });
             onSubmit(updateValues);
@@ -221,6 +257,8 @@ const EditListingPricingAndStockPanel = props => {
           updateInProgress={updateInProgress}
           fetchErrors={errors}
           showOriginalPrice={showOriginalPrice}
+          showPackageSize={showPackageSize}
+          packageSizeLocked={packageSizeLocked}
         />
       ) : (
         <div className={css.priceCurrencyInvalid}>
