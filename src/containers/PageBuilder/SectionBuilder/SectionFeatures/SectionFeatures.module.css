@@ -96,7 +96,7 @@
      on side-by-side it fills the block height. */
   > :first-child {
     border-radius: 0;
-    height: 68vw;
+    aspect-ratio: 400 / 420;
     overflow: hidden;
 
     & img,

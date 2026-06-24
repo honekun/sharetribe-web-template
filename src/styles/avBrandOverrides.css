@@ -170,6 +170,13 @@ h4 {
   hyphens: none;
 }
 
+/* NamedLink / Link: keep whole words intact, never hyphenate or break mid-word. */
+:root [class*='Link_link__'] {
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphens: none;
+}
+
 /* ================ Heading sizes (AV override) ================
    Single source of truth for heading font sizes. Overrides the upstream
    element rules + global `.h1`–`.h6` (marketplaceDefaults.css) and the
