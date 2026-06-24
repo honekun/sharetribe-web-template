@@ -9,7 +9,7 @@
   position: relative;
   overflow: hidden;
   /* aspect ratio on mobile for the video pane */
-  min-height: 68vw;
+  aspect-ratio: 400 / 420;
 }
 
 .video {
