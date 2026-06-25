@@ -579,8 +579,9 @@ export const CheckoutPageWithPayment = props => {
   const initialValuesForStripePayment = {
     name: userName,
     recipientName: userName,
+    // `country` is the billing-address field (StripePaymentAddress). The MX shipping
+    // form has no country field — `getShippingDetailsMaybe` hardcodes 'MX'.
     country: defaultCountry,
-    recipientCountry: defaultCountry,
   };
   // AV: every product ships and the Console shipping setting is always off, so
   // OrderPanel emits deliveryMethod 'none' (or nothing). For purchases, treat

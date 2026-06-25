@@ -367,11 +367,13 @@ class StripePaymentForm extends Component {
     formApi.batch(() => {
       formApi.change('name', shouldFill ? values.recipientName : '');
       formApi.change('addressLine1', shouldFill ? values.recipientAddressLine1 : '');
-      formApi.change('addressLine2', shouldFill ? values.recipientAddressLine2 : '');
+      // AV: the MX shipping form has no addressLine2/country fields — colonia maps
+      // to billing line2 and the country is always Mexico.
+      formApi.change('addressLine2', shouldFill ? values.recipientColonia : '');
       formApi.change('postal', shouldFill ? values.recipientPostal : '');
       formApi.change('city', shouldFill ? values.recipientCity : '');
       formApi.change('state', shouldFill ? values.recipientState : '');
-      formApi.change('country', shouldFill ? values.recipientCountry : '');
+      formApi.change('country', shouldFill ? 'MX' : '');
     });
   }
 

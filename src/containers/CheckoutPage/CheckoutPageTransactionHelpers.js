@@ -84,9 +84,16 @@ export const getFormattedTotalPrice = (transaction, intl) => {
 /**
  * Construct shipping details (JSON-like object)
  *
+ * AV: Mexico-only shipping form. The MX-specific fields (Número Exterior/Interior,
+ * Colonia) are composed into the standard `line1`/`line2` so the seller's transaction
+ * panel (DeliveryInfoMaybe) renders a complete address with no changes, and are also
+ * stored as structured keys (exteriorNumber/interiorNumber/colonia) so the data stays
+ * lossless for shipping labels / bulk export. Country is hardcoded to 'MX'.
+ *
  * @param {Object} formValues object containing saveAfterOnetimePayment, recipientName,
- * recipientPhoneNumber, recipientAddressLine1, recipientAddressLine2, recipientPostal,
- * recipientCity, recipientState, and recipientCountry.
+ * recipientPhoneNumber, recipientAddressLine1 (Calle), recipientExteriorNumber,
+ * recipientInteriorNumber, recipientColonia, recipientPostal, recipientCity, and
+ * recipientState.
  * @returns shippingDetails object containing name, phoneNumber and address
  */
 export const getShippingDetailsMaybe = formValues => {
@@ -95,12 +102,17 @@ export const getShippingDetailsMaybe = formValues => {
     recipientName,
     recipientPhoneNumber,
     recipientAddressLine1,
-    recipientAddressLine2,
+    recipientExteriorNumber,
+    recipientInteriorNumber,
+    recipientColonia,
     recipientPostal,
     recipientCity,
     recipientState,
-    recipientCountry,
   } = formValues;
+
+  // Compose the human-readable street line: "Calle Ext [Int. X]".
+  const street = [recipientAddressLine1, recipientExteriorNumber].filter(Boolean).join(' ');
+  const line1 = recipientInteriorNumber ? `${street} Int. ${recipientInteriorNumber}` : street;
 
   return recipientName && recipientAddressLine1 && recipientPostal
     ? {
@@ -109,11 +121,15 @@ export const getShippingDetailsMaybe = formValues => {
           phoneNumber: recipientPhoneNumber,
           address: {
             city: recipientCity,
-            country: recipientCountry,
-            line1: recipientAddressLine1,
-            line2: recipientAddressLine2,
+            country: 'MX',
+            line1,
+            line2: recipientColonia,
             postalCode: recipientPostal,
             state: recipientState,
+            // Structured MX fields (lossless; not displayed by DeliveryInfoMaybe).
+            exteriorNumber: recipientExteriorNumber,
+            interiorNumber: recipientInteriorNumber,
+            colonia: recipientColonia,
           },
         },
       }
