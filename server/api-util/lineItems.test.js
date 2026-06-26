@@ -364,6 +364,20 @@ describe('transactionLineItems', () => {
       });
     });
 
+    it('does not attempt to quote on the initial speculate (no delivery type chosen yet)', async () => {
+      // On checkout load the tx is speculated with deliveryMethod 'shipping' but no
+      // avShippingType / token / destination. We must NOT call the quote service then
+      // (it would hit eShip with no address and fail the whole speculation).
+      const orderData = {
+        stockReservationQuantity: 1,
+        deliveryMethod: 'shipping',
+        currency: 'EUR',
+      };
+      const result = await transactionLineItems(itemListing, orderData, null, null);
+      expect(quoteSvc.resolveBucketPrice).not.toHaveBeenCalled();
+      expect(result.find(li => li.code === 'line-item/shipping-fee')).toBeUndefined();
+    });
+
     it('omits the shipping-fee line item when no price resolves (especial/unquotable)', async () => {
       quoteSvc.resolveBucketPrice.mockResolvedValue(null);
       const orderData = {

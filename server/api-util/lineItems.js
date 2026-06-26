@@ -23,15 +23,19 @@ const getItemQuantityAndLineItems = async (orderData, publicData, currency, list
 
   // AV: live eShip quote (token cache hit -> pinned; miss -> re-quote). The
   // client-sent price is never trusted; this is the server-authoritative amount.
-  const resolved = isShipping
-    ? await resolveBucketPrice({
-        quoteToken: orderData?.avQuoteToken,
-        avShippingType: orderData?.avShippingType,
-        listing,
-        destination: orderData?.avDestination,
-        buyerEmail: orderData?.buyerEmail,
-      })
-    : null;
+  // Only resolve once the buyer has actually chosen a delivery type — the initial
+  // speculate (on checkout load) has no type/token/destination yet, and quoting
+  // then would hit eShip with no address and fail the whole speculation.
+  const resolved =
+    isShipping && orderData?.avShippingType
+      ? await resolveBucketPrice({
+          quoteToken: orderData?.avQuoteToken,
+          avShippingType: orderData?.avShippingType,
+          listing,
+          destination: orderData?.avDestination,
+          buyerEmail: orderData?.buyerEmail,
+        })
+      : null;
 
   const shippingFee = !isShipping
     ? null

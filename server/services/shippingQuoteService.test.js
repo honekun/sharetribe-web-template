@@ -154,6 +154,30 @@ describe('resolveBucketPrice', () => {
     expect(fee.amountSubunits).toBeGreaterThan(0);
     expect(fee.rate.quot_id).toBe('q2');
   });
+  it('returns null without quoting when no delivery type is chosen', async () => {
+    const fee = await svc.resolveBucketPrice({
+      quoteToken: undefined,
+      avShippingType: undefined,
+      listing: listing({ avPackageSize: 'M' }),
+      destination: undefined,
+      buyerEmail: undefined,
+    });
+    expect(fee).toBe(null);
+    expect(eship.quote).not.toHaveBeenCalled();
+  });
+
+  it('returns null without quoting on a cache miss when there is no destination', async () => {
+    const fee = await svc.resolveBucketPrice({
+      quoteToken: 'unknown',
+      avShippingType: 'nacionalExpress',
+      listing: listing({ avPackageSize: 'M' }),
+      destination: undefined,
+      buyerEmail: undefined,
+    });
+    expect(fee).toBe(null);
+    expect(eship.quote).not.toHaveBeenCalled();
+  });
+
   it('returns null for an especial listing', async () => {
     const fee = await svc.resolveBucketPrice({
       quoteToken: 'x',

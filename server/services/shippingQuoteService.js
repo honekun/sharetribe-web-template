@@ -137,12 +137,16 @@ async function resolveBucketPrice({
   destination,
   buyerEmail,
 }) {
+  // No chosen delivery type -> no fee to resolve (e.g. the initial speculate).
+  if (!avShippingType) return null;
   if (isEspecialSize(resolvePackageSize(listing?.attributes?.publicData || {}))) return null;
   const { data: cached } = (quoteToken && quoteCache[quoteToken]) || {};
   let bucket = cached ? cached[avShippingType] : null;
   let quot_id = cached ? cached.quot_id : null;
   if (!bucket) {
-    // Cache miss (expired / different dyno / unknown token) -> re-quote.
+    // Cache miss (expired / different dyno / unknown token) -> re-quote. We can
+    // only re-quote with a destination; without one, there's nothing to resolve.
+    if (!destination) return null;
     const requoted = await runQuote({ listing, destination, buyerEmail });
     bucket = requoted.buckets[avShippingType] || null;
     quot_id = requoted.quot_id;
