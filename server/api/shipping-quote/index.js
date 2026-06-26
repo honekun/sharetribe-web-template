@@ -16,7 +16,10 @@ router.post('/quote', express.json(), async (req, res) => {
   }
   try {
     const sdk = getSdk(req, res);
-    const showRes = await sdk.listings.show({ id: listingId });
+    // include:['author'] is required — without it the Marketplace API omits the
+    // `relationships` object entirely, so the seller's author id (needed to resolve
+    // their shipping origin) is unavailable and every quote falsely returns NO_ORIGIN.
+    const showRes = await sdk.listings.show({ id: listingId, include: ['author'] });
     const listing = showRes?.data?.data;
     const buyerEmail = req.body.buyerEmail || destination.email;
     const quote = await svc.quoteForCheckout({ listing, destination, buyerEmail });

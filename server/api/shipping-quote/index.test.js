@@ -45,9 +45,24 @@ const body = {
   destination: { zip: '64000', state: 'NL', country: 'MX', name: 'B', phone: '81' },
 };
 
+let showMock;
 beforeEach(() => {
   jest.clearAllMocks();
-  getSdk.mockReturnValue({ listings: { show: async () => listingShow() } });
+  showMock = jest.fn(async () => listingShow());
+  getSdk.mockReturnValue({ listings: { show: showMock } });
+});
+
+it('fetches the listing with the author included (relationships need include)', async () => {
+  // sdk.listings.show without include:['author'] returns no `relationships`, so
+  // the seller author id is unresolvable -> false NO_ORIGIN. The author must be included.
+  svc.quoteForCheckout.mockResolvedValue({
+    quoteToken: 't',
+    express: null,
+    estandar: null,
+    rawRates: [],
+  });
+  await getQuoteHandler()(createReq(body), createRes());
+  expect(showMock).toHaveBeenCalledWith(expect.objectContaining({ include: ['author'] }));
 });
 
 it('returns 200 with the quote payload', async () => {
