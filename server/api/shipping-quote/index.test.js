@@ -116,11 +116,13 @@ describe('ESHIP_API_DEBUG response detail', () => {
     else process.env.ESHIP_API_DEBUG = ORIGINAL;
   });
 
+  // Mirrors a real EshipApiError (carries .detail used by describeEshipError).
   const eshipError = () =>
-    Object.assign(new Error('eShip API error 400'), {
+    Object.assign(new Error('eShip API error 400: No couriers found for this account.'), {
       name: 'EshipApiError',
       status: 400,
       body: { status: 'ERROR', message: 'No couriers found for this account.' },
+      detail: 'No couriers found for this account.',
     });
 
   it('omits eShip detail by default (live behavior)', async () => {
@@ -140,14 +142,19 @@ describe('ESHIP_API_DEBUG response detail', () => {
     expect(res.body.detail).toBeUndefined();
   });
 
-  it('includes the eShip error text when ESHIP_API_DEBUG is "true"', async () => {
+  it('includes the explicit eShip error + status + body when ESHIP_API_DEBUG is "true"', async () => {
     process.env.ESHIP_API_DEBUG = 'true';
     svc.quoteForCheckout.mockRejectedValue(eshipError());
     const res = createRes();
     await getQuoteHandler()(createReq(body), res);
     expect(res.statusCode).toBe(502);
     expect(res.body.code).toBe('ESHIP_ERROR');
-    expect(res.body.detail).toBe('No couriers found for this account.');
+    expect(res.body.detail).toMatch(/No couriers found for this account\./);
+    expect(res.body.eshipStatus).toBe(400);
+    expect(res.body.eshipBody).toEqual({
+      status: 'ERROR',
+      message: 'No couriers found for this account.',
+    });
   });
 
   it('falls back to the error message when there is no eShip body', async () => {
@@ -155,6 +162,6 @@ describe('ESHIP_API_DEBUG response detail', () => {
     svc.quoteForCheckout.mockRejectedValue(new Error('connect ETIMEDOUT'));
     const res = createRes();
     await getQuoteHandler()(createReq(body), res);
-    expect(res.body.detail).toBe('connect ETIMEDOUT');
+    expect(res.body.detail).toMatch(/connect ETIMEDOUT/);
   });
 });

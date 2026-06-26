@@ -5,13 +5,39 @@ const { eshipBaseUrl } = require('../../src/config/configAVShipping');
 
 const DEFAULT_TIMEOUT_MS = 8000;
 
+// Pull the most human-readable text out of an eShip error body (shapes vary:
+// { message }, { error }, { errors: [...] }) or fall back to the raw text.
+function extractEshipMessage(body, text) {
+  if (body && typeof body === 'object') {
+    if (body.message) return String(body.message);
+    if (body.error) return typeof body.error === 'string' ? body.error : JSON.stringify(body.error);
+    if (Array.isArray(body.errors) && body.errors.length) {
+      return body.errors.map(er => er.message || er.detail || JSON.stringify(er)).join('; ');
+    }
+    return JSON.stringify(body);
+  }
+  return (text || '').trim();
+}
+
 class EshipApiError extends Error {
-  constructor(status, body) {
-    super(`eShip API error ${status}`);
+  constructor(status, body, text) {
+    const detail = extractEshipMessage(body, text);
+    super(`eShip API error ${status}${detail ? `: ${detail}` : ''}`);
     this.name = 'EshipApiError';
     this.status = status;
     this.body = body;
+    this.text = text;
+    this.detail = detail;
   }
+}
+
+// Build the most explicit one-line description we can for any error raised while
+// quoting (carrier business errors, timeouts, network failures).
+function describeEshipError(e) {
+  if (!e) return 'unknown error';
+  const base = e.detail || e.message || String(e);
+  const status = e.status != null ? ` [${e.status}]` : '';
+  return `${e.name || 'Error'}${status}: ${base}`;
 }
 
 class EshipTimeoutError extends Error {
@@ -39,8 +65,15 @@ async function quote({ addressFrom, addressTo, parcels }) {
       signal: controller.signal,
     });
     if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      throw new EshipApiError(response.status, body);
+      // Read as text first so non-JSON carrier/gateway errors aren't swallowed.
+      const text = await response.text().catch(() => '');
+      let body = null;
+      try {
+        body = text ? JSON.parse(text) : null;
+      } catch (_) {
+        body = null;
+      }
+      throw new EshipApiError(response.status, body, text);
     }
     return response.json();
   } catch (e) {
@@ -51,4 +84,4 @@ async function quote({ addressFrom, addressTo, parcels }) {
   }
 }
 
-module.exports = { quote, EshipApiError, EshipTimeoutError };
+module.exports = { quote, EshipApiError, EshipTimeoutError, describeEshipError };

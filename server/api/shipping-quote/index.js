@@ -3,6 +3,7 @@
 const express = require('express');
 const { getSdk } = require('../../api-util/sdk');
 const svc = require('../../services/shippingQuoteService');
+const { describeEshipError } = require('../../api-util/eshipClient');
 
 const router = express.Router();
 
@@ -27,20 +28,22 @@ router.post('/quote', express.json(), async (req, res) => {
   } catch (e) {
     if (e instanceof svc.NoOriginError) return res.status(409).json({ code: 'NO_ORIGIN' });
     if (e instanceof svc.EspecialError) return res.status(422).json({ code: 'ESPECIAL' });
-    // Surface the carrier's actual response (status + body) — without it, account/
-    // config errors like "No couriers found for this account" are invisible.
+    // Surface the carrier's actual response — without it, account/config errors
+    // like "No couriers found for this account" are invisible.
     console.error(
-      '[shipping/quote] error',
-      e && e.name,
-      e && e.status,
-      e && e.message,
+      '[shipping/quote]',
+      describeEshipError(e),
       e && e.body ? JSON.stringify(e.body) : ''
     );
-    // ESHIP_API_DEBUG=true echoes the carrier's error text in the response (for
+    // ESHIP_API_DEBUG=true echoes the carrier's error in the response (for
     // staging/debugging). Default (unset/false) keeps the opaque live response.
     const debug = String(process.env.ESHIP_API_DEBUG).toLowerCase() === 'true';
     const detailMaybe = debug
-      ? { detail: (e && e.body && e.body.message) || (e && e.message) || 'unknown' }
+      ? {
+          detail: describeEshipError(e),
+          eshipStatus: e && e.status,
+          eshipBody: (e && (e.body || e.text)) || undefined,
+        }
       : {};
     return res.status(502).json({ code: 'ESHIP_ERROR', ...detailMaybe });
   }
