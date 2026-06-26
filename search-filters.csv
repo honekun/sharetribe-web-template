@@ -1,0 +1,869 @@
+field_name,label,value,parent
+keywords,Búsqueda por palabra clave,<texto>,
+price,"Precio (rango min,max)","min,max",
+pub_all_sizes,0XL,curvy_0x,Tallas Curvy
+pub_all_sizes,1XL,curvy_1x,Tallas Curvy
+pub_all_sizes,2XL,curvy_2x,Tallas Curvy
+pub_all_sizes,3XL,curvy_3x,Tallas Curvy
+pub_all_sizes,4 / 14.8mm,rings_4,Anillos
+pub_all_sizes,4XL,curvy_4x,Tallas Curvy
+pub_all_sizes,5 / 15.7mm,rings_5,Anillos
+pub_all_sizes,5XL,curvy_5x,Tallas Curvy
+pub_all_sizes,6 / 16.5mm,rings_6,Anillos
+pub_all_sizes,7 / 17.3mm,rings_7,Anillos
+pub_all_sizes,8 / 18.1mm,rings_8,Anillos
+pub_all_sizes,9 / 18.9mm,rings_9,Anillos
+pub_all_sizes,10 / 19.8mm,rings_10,Anillos
+pub_all_sizes,11 / 20.6mm,rings_11,Anillos
+pub_all_sizes,12 / 21.4mm,rings_12,Anillos
+pub_all_sizes,L,l,Ropa (Estándar)
+pub_all_sizes,M,m,Ropa (Estándar)
+pub_all_sizes,MX 22,mx_shoes_22x,Calzado (MX)
+pub_all_sizes,MX 22.5,mx_shoes_22.5x,Calzado (MX)
+pub_all_sizes,MX 23,mx_shoes_23x,Calzado (MX)
+pub_all_sizes,MX 23.5,mx_shoes_23.5x,Calzado (MX)
+pub_all_sizes,MX 24,mx_24,Ropa (MX)
+pub_all_sizes,MX 24,mx_shoes_24x,Calzado (MX)
+pub_all_sizes,MX 24.5,mx_shoes_24.5x,Calzado (MX)
+pub_all_sizes,MX 25,mx_25,Ropa (MX)
+pub_all_sizes,MX 25,mx_shoes_25x,Calzado (MX)
+pub_all_sizes,MX 25.5,mx_shoes_25.5x,Calzado (MX)
+pub_all_sizes,MX 26,mx_26,Ropa (MX)
+pub_all_sizes,MX 26,mx_shoes_26x,Calzado (MX)
+pub_all_sizes,MX 26.5,mx_shoes_26.5x,Calzado (MX)
+pub_all_sizes,MX 27,mx_27,Ropa (MX)
+pub_all_sizes,MX 27,mx_shoes_27x,Calzado (MX)
+pub_all_sizes,MX 27.5,mx_shoes_27.5x,Calzado (MX)
+pub_all_sizes,MX 28,mx_28,Ropa (MX)
+pub_all_sizes,MX 28,mx_shoes_28x,Calzado (MX)
+pub_all_sizes,MX 28.5,mx_shoes_28.5x,Calzado (MX)
+pub_all_sizes,MX 29,mx_29,Ropa (MX)
+pub_all_sizes,MX 29,mx_shoes_29x,Calzado (MX)
+pub_all_sizes,MX 30,mx_30,Ropa (MX)
+pub_all_sizes,MX 31,mx_31,Ropa (MX)
+pub_all_sizes,MX 32,mx_32,Ropa (MX)
+pub_all_sizes,MX 33,mx_33,Ropa (MX)
+pub_all_sizes,MX 34,mx_34,Ropa (MX)
+pub_all_sizes,S,s,Ropa (Estándar)
+pub_all_sizes,Unitalla,unitalla,Ropa (Estándar)
+pub_all_sizes,US 00,us_00,Ropa (US)
+pub_all_sizes,US 0,us_0,Ropa (US)
+pub_all_sizes,US 2,us_2,Ropa (US)
+pub_all_sizes,US 4,us_4,Ropa (US)
+pub_all_sizes,US 6,us_6,Ropa (US)
+pub_all_sizes,US 8,us_8,Ropa (US)
+pub_all_sizes,US 10,us_10,Ropa (US)
+pub_all_sizes,US 12,us_12,Ropa (US)
+pub_all_sizes,XL,xl,Ropa (Estándar)
+pub_all_sizes,XS,xs,Ropa (Estándar)
+pub_all_sizes,XXS,xxs,Ropa (Estándar)
+pub_brand,& Other Stories,other-stories,
+pub_brand,1.STATE,1-state,
+pub_brand,1/8 Takamura,1-8-takamura,
+pub_brand,7 For All Mankind,7-for-all-mankind,
+pub_brand,525,525,
+pub_brand,A Bathing Ape (BAPE),a-bathing-ape-bape,
+pub_brand,A. Roege Hove,a-roege-hove,
+pub_brand,A.L.C.,a-l-c,
+pub_brand,A.P.C.,a-p-c,
+pub_brand,Abercrombie & Fitch,abercrombie-fitch,
+pub_brand,Acacia,acacia,
+pub_brand,Acne Studios,acne-studios,
+pub_brand,Adidas,adidas,
+pub_brand,adidas by Stella McCartney,adidas-by-stella-mccartney,
+pub_brand,Aeropostale,aeropostale,
+pub_brand,AG Adriano Goldschmied,ag-adriano-goldschmied,
+pub_brand,AGOLDE,agolde,
+pub_brand,Agua Bendita,agua-bendita,
+pub_brand,Aje,aje,
+pub_brand,Alaïa,ala-a,
+pub_brand,Alexander McQueen,alexander-mcqueen,
+pub_brand,Alexander Wang,alexander-wang,
+pub_brand,Alexandre Herchcovitch,alexandre-herchcovitch,
+pub_brand,Alexandre Vauthier,alexandre-vauthier,
+pub_brand,Alexia Ulibarri,alexia-ulibarri,
+pub_brand,Alexis,alexis,
+pub_brand,Alice + Olivia,alice-olivia,
+pub_brand,All for Ramon,all-for-ramon,
+pub_brand,AllSaints,allsaints,
+pub_brand,Alo Yoga,alo-yoga,
+pub_brand,Amanda Uprichard,amanda-uprichard,
+pub_brand,Amaro,amaro,
+pub_brand,AMBUSH,ambush,
+pub_brand,American Eagle,american-eagle,
+pub_brand,AMO,amo,
+pub_brand,Amour Vert,amour-vert,
+pub_brand,Andrea Landa,andrea-landa,
+pub_brand,Angel Grave,angel-grave,
+pub_brand,Angel Sanchez,angel-sanchez,
+pub_brand,Animale,animale,
+pub_brand,Animazul,animazul,
+pub_brand,ANINE BING,anine-bing,
+pub_brand,Ann Taylor,ann-taylor,
+pub_brand,Anna October,anna-october,
+pub_brand,Anntarah,anntarah,
+pub_brand,Apiece Apart,apiece-apart,
+pub_brand,AQUA BLU Australia,aqua-blu-australia,
+pub_brand,AREA,area,
+pub_brand,Arianne Elmy,arianne-elmy,
+pub_brand,Aritzia,aritzia,
+pub_brand,Arroz con leche,arroz-con-leche,
+pub_brand,AS by DF,as-by-df,
+pub_brand,ASH,ash,
+pub_brand,Asics,asics,
+pub_brand,ASTR the Label,astr-the-label,
+pub_brand,Atoir,atoir,
+pub_brand,Autumn Adeigbo,autumn-adeigbo,
+pub_brand,Ay Not Dead,ay-not-dead,
+pub_brand,Aya Muse,aya-muse,
+pub_brand,Ayni,ayni,
+pub_brand,B-Low the Belt,b-low-the-belt,
+pub_brand,Balenciaga,balenciaga,
+pub_brand,Banana Republic,banana-republic,
+pub_brand,Baobab,baobab,
+pub_brand,Basicos de México,basicos-de-m-xico,
+pub_brand,Baum,baum,
+pub_brand,Beach Bunny,beach-bunny,
+pub_brand,BEIS,beis,
+pub_brand,Bella Dahl,bella-dahl,
+pub_brand,Benedetta Bruzziches,benedetta-bruzziches,
+pub_brand,Benito Santos,benito-santos,
+pub_brand,Benjamin Benmoyal,benjamin-benmoyal,
+pub_brand,Bershka,bershka,
+pub_brand,Beyond Yoga,beyond-yoga,
+pub_brand,Bishop + Young,bishop-young,
+pub_brand,Black by Maria Silver,black-by-maria-silver,
+pub_brand,BLANKNYC,blanknyc,
+pub_brand,Blue Man,blue-man,
+pub_brand,Bolazo,bolazo,
+pub_brand,Boohoo,boohoo,
+pub_brand,Borgo De Nor,borgo-de-nor,
+pub_brand,Bottega Veneta,bottega-veneta,
+pub_brand,Boys Lie,boys-lie,
+pub_brand,Brandon Maxwell,brandon-maxwell,
+pub_brand,Brandy Melville,brandy-melville,
+pub_brand,Brixton,brixton,
+pub_brand,Brochu Walker,brochu-walker,
+pub_brand,Bronx and Banco,bronx-and-banco,
+pub_brand,Burberry,burberry,
+pub_brand,By Far,by-far,
+pub_brand,By Malene Birger,by-malene-birger,
+pub_brand,C/MEO,c-meo,
+pub_brand,Cala de la Cruz,cala-de-la-cruz,
+pub_brand,Callahan,callahan,
+pub_brand,Calvin Klein,calvin-klein,
+pub_brand,Camila Coelho,camila-coelho,
+pub_brand,Camilla,camilla,
+pub_brand,CAMILLA AND MARC,camilla-and-marc,
+pub_brand,Cara Cara,cara-cara,
+pub_brand,Carla Fernández,carla-fern-ndez,
+pub_brand,Carmen Llaguno,carmen-llaguno,
+pub_brand,Carolina Herrera,carolina-herrera,
+pub_brand,Casa Chiqui,casa-chiqui,
+pub_brand,Cecilie Bahnsen,cecilie-bahnsen,
+pub_brand,Celine,celine,
+pub_brand,Champion,champion,
+pub_brand,Chanel,chanel,
+pub_brand,Chico's,chico-s,
+pub_brand,Christy Dawn,christy-dawn,
+pub_brand,Cider,cider,
+pub_brand,Cihuah,cihuah,
+pub_brand,Cinq à Sept,cinq-sept,
+pub_brand,Citizens of Humanity,citizens-of-humanity,
+pub_brand,Cleobella,cleobella,
+pub_brand,Clio Peppiatt,clio-peppiatt,
+pub_brand,Club L London,club-l-london,
+pub_brand,Coach,coach,
+pub_brand,Collectiva Concepción,collectiva-concepci-n,
+pub_brand,Columbia,columbia,
+pub_brand,Commando,commando,
+pub_brand,Comme des Garçons,comme-des-gar-ons,
+pub_brand,Converse,converse,
+pub_brand,Cora Groppo,cora-groppo,
+pub_brand,COS,cos,
+pub_brand,Costaiia,costaiia,
+pub_brand,COTTON CITIZEN,cotton-citizen,
+pub_brand,Cotton On,cotton-on,
+pub_brand,Cotton Project,cotton-project,
+pub_brand,Cult Gaia,cult-gaia,
+pub_brand,Current/Elliott,current-elliott,
+pub_brand,Cushnie,cushnie,
+pub_brand,Daisy Street,daisy-street,
+pub_brand,David Koma,david-koma,
+pub_brand,DAYDREAMER,daydreamer,
+pub_brand,De Loreta,de-loreta,
+pub_brand,Deiji Studios,deiji-studios,
+pub_brand,DELFI Collective,delfi-collective,
+pub_brand,Dennis Basso,dennis-basso,
+pub_brand,Derek Lam 10 Crosby,derek-lam-10-crosby,
+pub_brand,Diane von Fürstenberg,diane-von-f-rstenberg,
+pub_brand,Diaz Garza,diaz-garza,
+pub_brand,Dion Lee,dion-lee,
+pub_brand,Dior,dior,
+pub_brand,DKNY,dkny,
+pub_brand,DL1961,dl1961,
+pub_brand,Donni,donni,
+pub_brand,Dr. Barbara Sturm,dr-barbara-sturm,
+pub_brand,DRA,dra,
+pub_brand,DROMe,drome,
+pub_brand,Dsquared2,dsquared2,
+pub_brand,Dundas,dundas,
+pub_brand,Dune London,dune-london,
+pub_brand,DUVETICA,duvetica,
+pub_brand,Eberjey,eberjey,
+pub_brand,Effie Kats,effie-kats,
+pub_brand,EIKO AI,eiko-ai,
+pub_brand,Eileen Fisher,eileen-fisher,
+pub_brand,Eleven Six,eleven-six,
+pub_brand,Elie Saab,elie-saab,
+pub_brand,ELLIATT,elliatt,
+pub_brand,Ellie Mae,ellie-mae,
+pub_brand,ELSE,else,
+pub_brand,Emilio Pucci,emilio-pucci,
+pub_brand,Emma Mulholland on Holiday,emma-mulholland-on-holiday,
+pub_brand,ENZA COSTA,enza-costa,
+pub_brand,Eres,eres,
+pub_brand,Erin Snow,erin-snow,
+pub_brand,ESANT,esant,
+pub_brand,Escada,escada,
+pub_brand,Escudo,escudo,
+pub_brand,ESCVDO,escvdo,
+pub_brand,Esprit,esprit,
+pub_brand,Eterne,eterne,
+pub_brand,ETHNO,ethno,
+pub_brand,Etro,etro,
+pub_brand,Eva Franco,eva-franco,
+pub_brand,Everlane,everlane,
+pub_brand,Express,express,
+pub_brand,EXTRA AF,extra-af,
+pub_brand,F.WORDS,f-words,
+pub_brand,Faherty,faherty,
+pub_brand,Faithfull the Brand,faithfull-the-brand,
+pub_brand,Farai London,farai-london,
+pub_brand,FARM Rio,farm-rio,
+pub_brand,Fashion Nova,fashion-nova,
+pub_brand,FAVORITE DAUGHTER,favorite-daughter,
+pub_brand,Fe Noel,fe-noel,
+pub_brand,Fendi,fendi,
+pub_brand,Feng Chen Wang,feng-chen-wang,
+pub_brand,FERRAGAMO,ferragamo,
+pub_brand,Fila,fila,
+pub_brand,Find Me Now,find-me-now,
+pub_brand,Forever 21,forever-21,
+pub_brand,FRAME,frame,
+pub_brand,Francesca Miranda,francesca-miranda,
+pub_brand,Frankies Bikinis,frankies-bikinis,
+pub_brand,Free & Easy,free-easy,
+pub_brand,Free People,free-people,
+pub_brand,FREYA,freya,
+pub_brand,Furla,furla,
+pub_brand,Gabriela Hearst,gabriela-hearst,
+pub_brand,Ganni,ganni,
+pub_brand,Gap,gap,
+pub_brand,Garage,garage,
+pub_brand,Gaudy Mercy,gaudy-mercy,
+pub_brand,GAUGE81,gauge81,
+pub_brand,Generation Love,generation-love,
+pub_brand,Gentle Monster,gentle-monster,
+pub_brand,GIA BORGHINI,gia-borghini,
+pub_brand,Girlfriend Collective,girlfriend-collective,
+pub_brand,Givenchy,givenchy,
+pub_brand,Good American,good-american,
+pub_brand,Grisino,grisino,
+pub_brand,GRLFRND,grlfrnd,
+pub_brand,Gucci,gucci,
+pub_brand,Guess,guess,
+pub_brand,Gwyneth Shoes,gwyneth-shoes,
+pub_brand,GYPZ,gypz,
+pub_brand,H&M,h-m,
+pub_brand,Haight,haight,
+pub_brand,Halston,halston,
+pub_brand,Hanky Panky,hanky-panky,
+pub_brand,Hanro,hanro,
+pub_brand,Hello Molly,hello-molly,
+pub_brand,Helmut Lang,helmut-lang,
+pub_brand,Helsa,helsa,
+pub_brand,Hermès,herm-s,
+pub_brand,Hernán Herdez,hern-n-herdez,
+pub_brand,Herve Leger,herve-leger,
+pub_brand,Hollister,hollister,
+pub_brand,House of CB,house-of-cb,
+pub_brand,House of Harlow 1960,house-of-harlow-1960,
+pub_brand,House of Sunny,house-of-sunny,
+pub_brand,Hunter,hunter,
+pub_brand,HUNZA G,hunza-g,
+pub_brand,I.AM.GIA,i-am-gia,
+pub_brand,Iceberg,iceberg,
+pub_brand,Intimately Free People,intimately-free-people,
+pub_brand,IRO,iro,
+pub_brand,Isa Boulder,isa-boulder,
+pub_brand,Isa Tapia,isa-tapia,
+pub_brand,Isabel Marant,isabel-marant,
+pub_brand,Issey Miyake,issey-miyake,
+pub_brand,J.Crew,j-crew,
+pub_brand,Jacquemus,jacquemus,
+pub_brand,Jade Swim,jade-swim,
+pub_brand,JAGGAR,jaggar,
+pub_brand,James Perse,james-perse,
+pub_brand,Janessa Leone,janessa-leone,
+pub_brand,Jazmín Chebar,jazm-n-chebar,
+pub_brand,Jean Paul Gaultier,jean-paul-gaultier,
+pub_brand,Jeffrey Campbell,jeffrey-campbell,
+pub_brand,JILL Jill Stuart,jill-jill-stuart,
+pub_brand,Joah Brown,joah-brown,
+pub_brand,Joao Maraschin,joao-maraschin,
+pub_brand,Johanna Ortiz,johanna-ortiz,
+pub_brand,Jonathan Simkhai,jonathan-simkhai,
+pub_brand,Jones New York,jones-new-york,
+pub_brand,JoosTricot,joostricot,
+pub_brand,Jordan,jordan,
+pub_brand,Juicy Couture,juicy-couture,
+pub_brand,Julia y Renata,julia-y-renata,
+pub_brand,JULIETTA,julietta,
+pub_brand,Just Bee Queen,just-bee-queen,
+pub_brand,JW Anderson,jw-anderson,
+pub_brand,JW PEI,jw-pei,
+pub_brand,KAANAS,kaanas,
+pub_brand,Kappa,kappa,
+pub_brand,KAREN MILLEN,karen-millen,
+pub_brand,KARLA + CO,karla-co,
+pub_brand,KAT THE LABEL,kat-the-label,
+pub_brand,Kate Spade,kate-spade,
+pub_brand,Kenzo,kenzo,
+pub_brand,Kero Design,kero-design,
+pub_brand,KHAITE,khaite,
+pub_brand,Killa,killa,
+pub_brand,Kim Shui,kim-shui,
+pub_brand,KIMHEKIM,kimhekim,
+pub_brand,KINDOM,kindom,
+pub_brand,KIVARI,kivari,
+pub_brand,KORAL,koral,
+pub_brand,Kosiuko,kosiuko,
+pub_brand,Kris Goyri,kris-goyri,
+pub_brand,L'Academie,l-academie,
+pub_brand,L*Space,l-space,
+pub_brand,La Detresse,la-detresse,
+pub_brand,La Joya Design,la-joya-design,
+pub_brand,Lack of Color,lack-of-color,
+pub_brand,LANIUS,lanius,
+pub_brand,Lapointe,lapointe,
+pub_brand,LaQuan Smith,laquan-smith,
+pub_brand,Las Pepas,las-pepas,
+pub_brand,Laura Lombardi,laura-lombardi,
+pub_brand,LE SET,le-set,
+pub_brand,Le Specs,le-specs,
+pub_brand,Lee,lee,
+pub_brand,Lee Mathews,lee-mathews,
+pub_brand,Lenny Niemeyer,lenny-niemeyer,
+pub_brand,LEVI'S,levi-s,
+pub_brand,Libertine,libertine,
+pub_brand,LIKELY,likely,
+pub_brand,Lina Osorio,lina-osorio,
+pub_brand,Lisa Marie Fernandez,lisa-marie-fernandez,
+pub_brand,Liz Claiborne,liz-claiborne,
+pub_brand,Loewe,loewe,
+pub_brand,Lollipop,lollipop,
+pub_brand,Loraine Holmes,loraine-holmes,
+pub_brand,Louis Vuitton,louis-vuitton,
+pub_brand,Lovers and Friends,lovers-and-friends,
+pub_brand,LoveShackFancy,loveshackfancy,
+pub_brand,LPA,lpa,
+pub_brand,LSPACE,lspace,
+pub_brand,Luciana Balderrama,luciana-balderrama,
+pub_brand,Lululemon,lululemon,
+pub_brand,Luv AJ,luv-aj,
+pub_brand,Luz Briceño,luz-brice-o,
+pub_brand,Maison Irem,maison-irem,
+pub_brand,Maison Kitsuné,maison-kitsun,
+pub_brand,Maje,maje,
+pub_brand,MAJORELLE,majorelle,
+pub_brand,Makeno,makeno,
+pub_brand,Malmo,malmo,
+pub_brand,Malvestida Studio,malvestida-studio,
+pub_brand,Mancandy,mancandy,
+pub_brand,Mango,mango,
+pub_brand,Mara Hoffman,mara-hoffman,
+pub_brand,Marc Jacobs,marc-jacobs,
+pub_brand,Marchesa Notte,marchesa-notte,
+pub_brand,Marcia,marcia,
+pub_brand,Mariana Dappiano,mariana-dappiano,
+pub_brand,Marika Vera,marika-vera,
+pub_brand,Marine Serre,marine-serre,
+pub_brand,Marni,marni,
+pub_brand,Marysia,marysia,
+pub_brand,Massimo Dutti,massimo-dutti,
+pub_brand,Material Tbilisi,material-tbilisi,
+pub_brand,MATIN,matin,
+pub_brand,Mavi,mavi,
+pub_brand,Maygel Coronel,maygel-coronel,
+pub_brand,Melissa Odabash,melissa-odabash,
+pub_brand,Mercedes Salazar,mercedes-salazar,
+pub_brand,Michael Costello,michael-costello,
+pub_brand,Michael Kors,michael-kors,
+pub_brand,Michael Stars,michael-stars,
+pub_brand,Michelle Mason,michelle-mason,
+pub_brand,Mikoh,mikoh,
+pub_brand,Milly,milly,
+pub_brand,Min Agostini,min-agostini,
+pub_brand,Minena,minena,
+pub_brand,MISA Los Angeles,misa-los-angeles,
+pub_brand,Missguided,missguided,
+pub_brand,Missoni,missoni,
+pub_brand,Mitsa,mitsa,
+pub_brand,Miu Miu,miu-miu,
+pub_brand,MLM LABEL,mlm-label,
+pub_brand,Mola Sasa,mola-sasa,
+pub_brand,Moncler,moncler,
+pub_brand,Monrow,monrow,
+pub_brand,Monse,monse,
+pub_brand,Montce,montce,
+pub_brand,Montserat Messeguer,montserat-messeguer,
+pub_brand,Moque,moque,
+pub_brand,Mutma,mutma,
+pub_brand,Nabel Martins,nabel-martins,
+pub_brand,Nadia Dafri,nadia-dafri,
+pub_brand,Nanushka,nanushka,
+pub_brand,Nasty Gal,nasty-gal,
+pub_brand,Naya,naya,
+pub_brand,NBD,nbd,
+pub_brand,Needle & Thread,needle-thread,
+pub_brand,Nefelibata,nefelibata,
+pub_brand,Neochilango,neochilango,
+pub_brand,Neuw Denim,neuw-denim,
+pub_brand,New Balance,new-balance,
+pub_brand,Nicholas,nicholas,
+pub_brand,Nido,nido,
+pub_brand,Nike,nike,
+pub_brand,NILI LOTAN,nili-lotan,
+pub_brand,Nina Ricci,nina-ricci,
+pub_brand,Ninety Percent,ninety-percent,
+pub_brand,Nookie,nookie,
+pub_brand,Nora Parada,nora-parada,
+pub_brand,Norma Kamali,norma-kamali,
+pub_brand,Nous Etudions,nous-etudions,
+pub_brand,Oak + Fort,oak-fort,
+pub_brand,Off-White,off-white,
+pub_brand,Oh Polly,oh-polly,
+pub_brand,ON,on,
+pub_brand,Onia,onia,
+pub_brand,Onitsuka Tiger,onitsuka-tiger,
+pub_brand,Opening Ceremony,opening-ceremony,
+pub_brand,Organic Basics,organic-basics,
+pub_brand,Orseund Iris,orseund-iris,
+pub_brand,Oscar de la Renta,oscar-de-la-renta,
+pub_brand,Oséree,os-ree,
+pub_brand,Osklen,osklen,
+pub_brand,Otra...,other,
+pub_brand,Otros,otros,
+pub_brand,Outerknown,outerknown,
+pub_brand,Oysho,oysho,
+pub_brand,P.E Nation,p-e-nation,
+pub_brand,PacSun,pacsun,
+pub_brand,Pact,pact,
+pub_brand,Paige,paige,
+pub_brand,PAKA,paka,
+pub_brand,Palm Angels,palm-angels,
+pub_brand,Palm by Palmacea,palm-by-palmacea,
+pub_brand,Palmacea,palmacea,
+pub_brand,Paloma Wool,paloma-wool,
+pub_brand,Parade,parade,
+pub_brand,Patagonia,patagonia,
+pub_brand,PatBO,patbo,
+pub_brand,Patricio Campillo,patricio-campillo,
+pub_brand,Patta,patta,
+pub_brand,Pay's,pay-s,
+pub_brand,Pendleton,pendleton,
+pub_brand,Peony,peony,
+pub_brand,People Tree,people-tree,
+pub_brand,Peter Do,peter-do,
+pub_brand,Pfeiffer,pfeiffer,
+pub_brand,PH5,ph5,
+pub_brand,Philosophy di Lorenzo Serafini,philosophy-di-lorenzo-serafini,
+pub_brand,PIA,pia,
+pub_brand,Piel Canela,piel-canela,
+pub_brand,Pineda Covalin,pineda-covalin,
+pub_brand,PINK MAGNOLIA,pink-magnolia,
+pub_brand,PINKO,pinko,
+pub_brand,Pistola Denim,pistola-denim,
+pub_brand,Politécnico,polit-cnico,
+pub_brand,Polo Ralph Lauren,polo-ralph-lauren,
+pub_brand,Port de Bras,port-de-bras,
+pub_brand,Prada,prada,
+pub_brand,PrettyLittleThing,prettylittlething,
+pub_brand,Princess Polly,princess-polly,
+pub_brand,Privacy Please,privacy-please,
+pub_brand,Proenza Schouler,proenza-schouler,
+pub_brand,PUCCI,pucci,
+pub_brand,Pull & Bear,pull-bear,
+pub_brand,Puma,puma,
+pub_brand,Puna,puna,
+pub_brand,Pura,pura,
+pub_brand,Qaytu,qaytu,
+pub_brand,Quay,quay,
+pub_brand,Rachel Comey,rachel-comey,
+pub_brand,Rag & Bone,rag-bone,
+pub_brand,Rails,rails,
+pub_brand,RAISA VANESSA,raisa-vanessa,
+pub_brand,Ralph Lauren,ralph-lauren,
+pub_brand,RAMY BROOK,ramy-brook,
+pub_brand,Rapsodia,rapsodia,
+pub_brand,Rat & Boa,rat-boa,
+pub_brand,Re/Done,re-done,
+pub_brand,Rebecca Minkoff,rebecca-minkoff,
+pub_brand,Reebok,reebok,
+pub_brand,Reformation,reformation,
+pub_brand,REI,rei,
+pub_brand,Reserva,reserva,
+pub_brand,Retrofête,retrof-te,
+pub_brand,Revolve,revolve,
+pub_brand,Rhea the label,rhea-the-label,
+pub_brand,RHODE,rhode,
+pub_brand,RIANNE-NL,rianne-nl,
+pub_brand,Rick Owens,rick-owens,
+pub_brand,Rixo,rixo,
+pub_brand,ROCOCO SAND,rococo-sand,
+pub_brand,Ropa Doce,ropa-doce,
+pub_brand,RTA,rta,
+pub_brand,Rue SOPHIE,rue-sophie,
+pub_brand,Rue Stiic,rue-stiic,
+pub_brand,Rumer,rumer,
+pub_brand,Sabina Musayev,sabina-musayev,
+pub_brand,Sablyn,sablyn,
+pub_brand,Sabrina ol,sabrina-ol,
+pub_brand,SACAI,sacai,
+pub_brand,Saint Laurent,saint-laurent,
+pub_brand,Saloni,saloni,
+pub_brand,Salvatore Ferragamo,salvatore-ferragamo,
+pub_brand,Sam Edelman,sam-edelman,
+pub_brand,Samsøe Samsøe,sams-e-sams-e,
+pub_brand,Sandra Weil,sandra-weil,
+pub_brand,Sandro,sandro,
+pub_brand,Santa Brands,santa-brands,
+pub_brand,Santos,santos,
+pub_brand,Sau Lee,sau-lee,
+pub_brand,Sayonara,sayonara,
+pub_brand,Sea,sea,
+pub_brand,Seafolly,seafolly,
+pub_brand,See by Chloé,see-by-chlo,
+pub_brand,Self-Portrait,self-portrait,
+pub_brand,SELKIE,selkie,
+pub_brand,SER.O.YA,ser-o-ya,
+pub_brand,Sergé,serg,
+pub_brand,Shona Joy,shona-joy,
+pub_brand,Show Me Your Mumu,show-me-your-mumu,
+pub_brand,Siento,siento,
+pub_brand,Significant Other,significant-other,
+pub_brand,Silvia Tcherassi,silvia-tcherassi,
+pub_brand,Simon Miller,simon-miller,
+pub_brand,Sir,sir,
+pub_brand,SIR the label,sir-the-label,
+pub_brand,SISA,sisa,
+pub_brand,Sisa Slow,sisa-slow,
+pub_brand,SISAY,sisay,
+pub_brand,Skims,skims,
+pub_brand,Solid & Striped,solid-striped,
+pub_brand,Something Co,something-co,
+pub_brand,Song of Style,song-of-style,
+pub_brand,Sonia Rykiel,sonia-rykiel,
+pub_brand,Spanx,spanx,
+pub_brand,Spell,spell,
+pub_brand,Splendid,splendid,
+pub_brand,Sporty & Rich,sporty-rich,
+pub_brand,Srita Galindo,srita-galindo,
+pub_brand,St. Dom,st-dom,
+pub_brand,Staud,staud,
+pub_brand,Steel,steel,
+pub_brand,Stella McCartney,stella-mccartney,
+pub_brand,Stella Solar,stella-solar,
+pub_brand,Stone Cold Fox,stone-cold-fox,
+pub_brand,Stone Island,stone-island,
+pub_brand,Stradivarius,stradivarius,
+pub_brand,Stratto,stratto,
+pub_brand,Stuart Weitzman,stuart-weitzman,
+pub_brand,Studio Conchita,studio-conchita,
+pub_brand,Stüssy,st-ssy,
+pub_brand,STYLEST,stylest,
+pub_brand,Suboo,suboo,
+pub_brand,Suki Waterhouse x REVOLVE,suki-waterhouse-x-revolve,
+pub_brand,Sumy Kujon,sumy-kujon,
+pub_brand,Sundress,sundress,
+pub_brand,Sundry,sundry,
+pub_brand,Superdown,superdown,
+pub_brand,Superga,superga,
+pub_brand,Supreme,supreme,
+pub_brand,Susana Monaco,susana-monaco,
+pub_brand,Tach Clothing,tach-clothing,
+pub_brand,Talbots,talbots,
+pub_brand,Tanya Taylor,tanya-taylor,
+pub_brand,Tavik,tavik,
+pub_brand,Tbags Los Angeles,tbags-los-angeles,
+pub_brand,Temperley London,temperley-london,
+pub_brand,The Bar,the-bar,
+pub_brand,The basic line,the-basic-line,
+pub_brand,The Frankie Shop,the-frankie-shop,
+pub_brand,The Kooples,the-kooples,
+pub_brand,The Line by K,the-line-by-k,
+pub_brand,The North Face,the-north-face,
+pub_brand,The Range,the-range,
+pub_brand,The Sei,the-sei,
+pub_brand,Theory,theory,
+pub_brand,Thought Clothing,thought-clothing,
+pub_brand,Three Graces London,three-graces-london,
+pub_brand,Tiare Hawaii,tiare-hawaii,
+pub_brand,Tiranesh,tiranesh,
+pub_brand,TLC Sport,tlc-sport,
+pub_brand,Toccin,toccin,
+pub_brand,Toit Volant,toit-volant,
+pub_brand,Tom Ford,tom-ford,
+pub_brand,Tommy Hilfiger,tommy-hilfiger,
+pub_brand,Toms,toms,
+pub_brand,Topshop,topshop,
+pub_brand,Toribio,toribio,
+pub_brand,Tory Burch,tory-burch,
+pub_brand,TOVE,tove,
+pub_brand,Trista,trista,
+pub_brand,Tropicca,tropicca,
+pub_brand,Tularosa,tularosa,
+pub_brand,TWENTY Montreal,twenty-montreal,
+pub_brand,Ulla Johnson,ulla-johnson,
+pub_brand,Uma,uma,
+pub_brand,Under Armour,under-armour,
+pub_brand,Understated Leather,understated-leather,
+pub_brand,Uniqlo,uniqlo,
+pub_brand,UNTTLD,unttld,
+pub_brand,Urban Outfitters,urban-outfitters,
+pub_brand,URO,uro,
+pub_brand,UTZON,utzon,
+pub_brand,Utzon CPH,utzon-cph,
+pub_brand,Valentino,valentino,
+pub_brand,Valeria Anastasia,valeria-anastasia,
+pub_brand,Valeria Larr,valeria-larr,
+pub_brand,Vanessa Bruno,vanessa-bruno,
+pub_brand,VANESSA MOONEY,vanessa-mooney,
+pub_brand,Vans,vans,
+pub_brand,Varley,varley,
+pub_brand,Veja,veja,
+pub_brand,Venus de Tierra,venus-de-tierra,
+pub_brand,Verdi,verdi,
+pub_brand,Veronica Beard,veronica-beard,
+pub_brand,Versace,versace,
+pub_brand,Victoria Beckham,victoria-beckham,
+pub_brand,Vince,vince,
+pub_brand,Vincetta,vincetta,
+pub_brand,Vintage,vintage,
+pub_brand,Vita Kin,vita-kin,
+pub_brand,Vitamina Swim,vitamina-swim,
+pub_brand,Vivetta,vivetta,
+pub_brand,Vix Swimwear,vix-swimwear,
+pub_brand,Volcom,volcom,
+pub_brand,Von Dutch,von-dutch,
+pub_brand,VOZ,voz,
+pub_brand,Waimari,waimari,
+pub_brand,Wes Gordon,wes-gordon,
+pub_brand,Westward Leaning,westward-leaning,
+pub_brand,WeWoreWhat,weworewhat,
+pub_brand,White Fox Boutique,white-fox-boutique,
+pub_brand,Whitney Port x Coze,whitney-port-x-coze,
+pub_brand,Wildheart,wildheart,
+pub_brand,With Jéan,with-j-an,
+pub_brand,Wolford,wolford,
+pub_brand,Won Hundred,won-hundred,
+pub_brand,WONE,wone,
+pub_brand,Working Title,working-title,
+pub_brand,Wrangler,wrangler,
+pub_brand,Xírena,x-rena,
+pub_brand,Y-3,y-3,
+pub_brand,Yakampot,yakampot,
+pub_brand,Yeezy,yeezy,
+pub_brand,YFB CLOTHING,yfb-clothing,
+pub_brand,Yumi Kim,yumi-kim,
+pub_brand,Zadig & Voltaire,zadig-voltaire,
+pub_brand,Zara,zara,
+pub_brand,Zeynep Arcay,zeynep-arcay,
+pub_brand,Zhivago,zhivago,
+pub_brand,Zimmermann,zimmermann,
+pub_categoryLevel1,Accesorios,accesorios,
+pub_categoryLevel1,Bolsas,bolsas,
+pub_categoryLevel1,Home Antiques,home-antiques,
+pub_categoryLevel1,Ropa,ropa,
+pub_categoryLevel1,Zapatos,zapatos,
+pub_categoryLevel2,Antigueadades,home-antiques-antiguedades,home-antiques
+pub_categoryLevel2,Botas,zapatos-botas,zapatos
+pub_categoryLevel2,Botas con tacón,zapatos-botas_tacon,zapatos
+pub_categoryLevel2,Botas de montaña,zapatos-botas_montana,zapatos
+pub_categoryLevel2,Botas vaqueras,zapatos-botas_vaqueras,zapatos
+pub_categoryLevel2,Botín,zapatos-botin,zapatos
+pub_categoryLevel2,Botín con tacón,zapatos-botin_tacon,zapatos
+pub_categoryLevel2,Bufandas / Pañuelos,accesorios-bufandas_panuelos,accesorios
+pub_categoryLevel2,Camisas,ropa-camisas,ropa
+pub_categoryLevel2,Camisetas,ropa-camisetas,ropa
+pub_categoryLevel2,Carteras,bolsas-carteras,bolsas
+pub_categoryLevel2,Chamarras / Abrigos / Sacos,ropa-sacos-chamarras,ropa
+pub_categoryLevel2,Cinturones,accesorios-cinturones,accesorios
+pub_categoryLevel2,Clutch,bolsas-clutch,bolsas
+pub_categoryLevel2,Cruzadas,bolsas-cruzadas,bolsas
+pub_categoryLevel2,De baño,ropa-de-bano,ropa
+pub_categoryLevel2,De mano,bolsas-mano,bolsas
+pub_categoryLevel2,Faldas,ropa-faldas,ropa
+pub_categoryLevel2,Formales,bolsas-formales,bolsas
+pub_categoryLevel2,Gorras / Gorros,accesorios-gorras_gorros,accesorios
+pub_categoryLevel2,Guantes,accesorios-guantes,accesorios
+pub_categoryLevel2,Jeans,ropa-jeans,ropa
+pub_categoryLevel2,Joyerías,accesorios-joyerias,accesorios
+pub_categoryLevel2,Jumpsuits,ropa-jumpsuits,ropa
+pub_categoryLevel2,Lencería / pijama,ropa-lenceria,ropa
+pub_categoryLevel2,Lentes,accesorios-lentes,accesorios
+pub_categoryLevel2,Maternidad,ropa-maternidad,ropa
+pub_categoryLevel2,Mocasines,zapatos-mocasines,zapatos
+pub_categoryLevel2,Mochilas casuales,bolsas-mochilas_casuales,bolsas
+pub_categoryLevel2,Mochilas de deporte,bolsas-mochilas_deporte,bolsas
+pub_categoryLevel2,Monederos,bolsas-monederos,bolsas
+pub_categoryLevel2,Otros,accesorios-otros,accesorios
+pub_categoryLevel2,Pantalones,ropa-pantalones,ropa
+pub_categoryLevel2,Plataformas,zapatos-plataformas,zapatos
+pub_categoryLevel2,Riñoneras,bolsas-rinoneras,bolsas
+pub_categoryLevel2,Ropa deportiva,ropa-deportiva,ropa
+pub_categoryLevel2,Sandalias,zapatos-sandalias,zapatos
+pub_categoryLevel2,Sandalias con tacón,zapatos-sandalias_tacon,zapatos
+pub_categoryLevel2,Shorts,ropa-shorts,ropa
+pub_categoryLevel2,Sombreros,accesorios-sombreros,accesorios
+pub_categoryLevel2,Sudaderas,ropa-sudaderas,ropa
+pub_categoryLevel2,Tacones,zapatos-tacones,zapatos
+pub_categoryLevel2,Tenis casuales,zapatos-tenis_casuales,zapatos
+pub_categoryLevel2,Tenis deportivos,zapatos-tenis_deportivos,zapatos
+pub_categoryLevel2,Tops,ropa-tops,ropa
+pub_categoryLevel2,Totes,bolsas-totes,bolsas
+pub_categoryLevel2,Trajes / Sets,ropa-trajes,ropa
+pub_categoryLevel2,Vestidos,ropa-vestidos,ropa
+pub_categoryLevel2,Zapatillas y Flats,zapatos-zapatillas_flats,zapatos
+pub_categoryLevel3,Abrigos formales,ropa-sacos-chamarras-abrigos-formales,ropa-sacos-chamarras
+pub_categoryLevel3,Acampanados / Flare,ropa-jeans-acampanados,ropa-jeans
+pub_categoryLevel3,Anillos,accesorios-joyerias-anillos,accesorios-joyerias
+pub_categoryLevel3,Aretes,accesorios-joyerias-aretes,accesorios-joyerias
+pub_categoryLevel3,Baggy / Oversized,ropa-jeans-baggy,ropa-jeans
+pub_categoryLevel3,Baggy/Oversized,ropa-shorts-baggy-oversized,ropa-shorts
+pub_categoryLevel3,Básicas,ropa-camisetas-basicas,ropa-camisetas
+pub_categoryLevel3,Bermudas,ropa-shorts-bermudas,ropa-shorts
+pub_categoryLevel3,Bikers,ropa-deportiva-bikers,ropa-deportiva
+pub_categoryLevel3,Bikinis,ropa-de-bano-bikinis,ropa-de-bano
+pub_categoryLevel3,Blusas,ropa-tops-blusas,ropa-tops
+pub_categoryLevel3,Bodys,ropa-tops-bodys,ropa-tops
+pub_categoryLevel3,Bomber/Biker jackets,ropa-sacos-chamarras-bomber-biker-jackets,ropa-sacos-chamarras
+pub_categoryLevel3,Boyfriend jeans,ropa-jeans-boyfriend,ropa-jeans
+pub_categoryLevel3,Capa,ropa-sacos-chamarras-capa,ropa-sacos-chamarras
+pub_categoryLevel3,Cargo,ropa-pantalones-cargo,ropa-pantalones
+pub_categoryLevel3,Carpenter / Cargo,ropa-jeans-cargo,ropa-jeans
+pub_categoryLevel3,Casuales,ropa-camisas-casuales,ropa-camisas
+pub_categoryLevel3,Casuales,ropa-pantalones-casuales,ropa-pantalones
+pub_categoryLevel3,Chalecos,ropa-sacos-chamarras-chalecos,ropa-sacos-chamarras
+pub_categoryLevel3,Chalecos denim,ropa-sacos-chamarras-chalecos-denim,ropa-sacos-chamarras
+pub_categoryLevel3,Chamarras de piel,ropa-sacos-chamarras-chamarras-de-piel,ropa-sacos-chamarras
+pub_categoryLevel3,Chamarras de plumas,ropa-sacos-chamarras-chamarras-de-plumas,ropa-sacos-chamarras
+pub_categoryLevel3,Collares,accesorios-joyerias-collares,accesorios-joyerias
+pub_categoryLevel3,Crop-tops,ropa-tops-croptops,ropa-tops
+pub_categoryLevel3,De montaña,ropa-deportiva-de-montana,ropa-deportiva
+pub_categoryLevel3,Denim,ropa-faldas-denim,ropa-faldas
+pub_categoryLevel3,Denim jackets,ropa-sacos-chamarras-denim-jackets,ropa-sacos-chamarras
+pub_categoryLevel3,Falda/Top,ropa-trajes-falda-top,ropa-trajes
+pub_categoryLevel3,Formales,ropa-camisas-formales,ropa-camisas
+pub_categoryLevel3,Formales,ropa-pantalones-formales,ropa-pantalones
+pub_categoryLevel3,Gráficas / Estampadas,ropa-camisetas-graficas,ropa-camisetas
+pub_categoryLevel3,Hoodies con cierre,ropa-sudaderas-hoodies-con-cierre,ropa-sudaderas
+pub_categoryLevel3,Hoodies sin cierre,ropa-sudaderas-hoodies-sin-cierre,ropa-sudaderas
+pub_categoryLevel3,Impermeable,ropa-sacos-chamarras-impermeable,ropa-sacos-chamarras
+pub_categoryLevel3,Larga,ropa-faldas-larga,ropa-faldas
+pub_categoryLevel3,Largo,ropa-jumpsuits-largo,ropa-jumpsuits
+pub_categoryLevel3,Largos,ropa-vestidos-largos,ropa-vestidos
+pub_categoryLevel3,Leather,ropa-faldas-leather,ropa-faldas
+pub_categoryLevel3,Leather,ropa-pantalones-leather,ropa-pantalones
+pub_categoryLevel3,Leggings,ropa-deportiva-leggings,ropa-deportiva
+pub_categoryLevel3,Leggings,ropa-pantalones-leggings,ropa-pantalones
+pub_categoryLevel3,Manga corta,ropa-camisas-mangacorta,ropa-camisas
+pub_categoryLevel3,Manga corta,ropa-camisetas-mangacorta,ropa-camisetas
+pub_categoryLevel3,Manga corta,ropa-tops-mangacorta,ropa-tops
+pub_categoryLevel3,Manga corta,ropa-vestidos-mangacorta,ropa-vestidos
+pub_categoryLevel3,Manga larga,ropa-camisas-mangalarga,ropa-camisas
+pub_categoryLevel3,Manga larga,ropa-camisetas-mangalarga,ropa-camisetas
+pub_categoryLevel3,Manga larga,ropa-tops-mangalarga,ropa-tops
+pub_categoryLevel3,Manga larga,ropa-vestidos-mangalarga,ropa-vestidos
+pub_categoryLevel3,Midi,ropa-faldas-midi,ropa-faldas
+pub_categoryLevel3,Midi,ropa-vestidos-midi,ropa-vestidos
+pub_categoryLevel3,Mini,ropa-faldas-mini,ropa-faldas
+pub_categoryLevel3,Mini,ropa-jumpsuits-mini,ropa-jumpsuits
+pub_categoryLevel3,Mini,ropa-shorts-mini,ropa-shorts
+pub_categoryLevel3,Mini,ropa-vestidos-mini,ropa-vestidos
+pub_categoryLevel3,Mini jackets,ropa-sacos-chamarras-mini-jackets,ropa-sacos-chamarras
+pub_categoryLevel3,Mom fit,ropa-jeans-momfit,ropa-jeans
+pub_categoryLevel3,Novia / Bridal,ropa-vestidos-novia,ropa-vestidos
+pub_categoryLevel3,Oversized,ropa-camisetas-oversized,ropa-camisetas
+pub_categoryLevel3,Pantalón/Top,ropa-trajes-pantalon-top,ropa-trajes
+pub_categoryLevel3,Pijamas,ropa-lenceria-pijamas,ropa-lenceria
+pub_categoryLevel3,Pulseras,accesorios-joyerias-pulseras,accesorios-joyerias
+pub_categoryLevel3,Rectos,ropa-jeans-rectos,ropa-jeans
+pub_categoryLevel3,Relojes,accesorios-joyerias-relojes,accesorios-joyerias
+pub_categoryLevel3,Rompevientos,ropa-sacos-chamarras-rompevientos,ropa-sacos-chamarras
+pub_categoryLevel3,Sacos,ropa-sacos-chamarras-sacos,ropa-sacos-chamarras
+pub_categoryLevel3,Salidas,ropa-de-bano-salidas,ropa-de-bano
+pub_categoryLevel3,Seda,ropa-camisas-seda,ropa-camisas
+pub_categoryLevel3,Seda,ropa-faldas-seda,ropa-faldas
+pub_categoryLevel3,Sets,ropa-lenceria-sets,ropa-lenceria
+pub_categoryLevel3,Short/Top,ropa-trajes-short-top,ropa-trajes
+pub_categoryLevel3,Shorts,ropa-deportiva-shorts,ropa-deportiva
+pub_categoryLevel3,Sin manga,ropa-vestidos-sinmanga,ropa-vestidos
+pub_categoryLevel3,Sin mangas,ropa-camisetas-sinmangas,ropa-camisetas
+pub_categoryLevel3,Ski,ropa-deportiva-ski,ropa-deportiva
+pub_categoryLevel3,Skinny jeans,ropa-jeans-skinny,ropa-jeans
+pub_categoryLevel3,Slim fit,ropa-jeans-slimfit,ropa-jeans
+pub_categoryLevel3,Sportbra,ropa-deportiva-sportbra,ropa-deportiva
+pub_categoryLevel3,Strapless,ropa-tops-strapless,ropa-tops
+pub_categoryLevel3,Sudaderas casuales,ropa-sudaderas-sudaderas-casuales,ropa-sudaderas
+pub_categoryLevel3,Sudaderas de montaña,ropa-sudaderas-sudaderas-de-montana,ropa-sudaderas
+pub_categoryLevel3,Sudaderas deportivas,ropa-sudaderas-sudaderas-deportivas,ropa-sudaderas
+pub_categoryLevel3,Sweatpants,ropa-pantalones-sweatpants,ropa-pantalones
+pub_categoryLevel3,T-shirts,ropa-tops-tshirts,ropa-tops
+pub_categoryLevel3,Top/Bra,ropa-lenceria-top-bra,ropa-lenceria
+pub_categoryLevel3,Tops,ropa-deportiva-tops,ropa-deportiva
+pub_categoryLevel3,Traje,ropa-trajes-traje,ropa-trajes
+pub_categoryLevel3,Traje completo,ropa-de-bano-traje-completo,ropa-de-bano
+pub_categoryLevel3,Trench coats,ropa-sacos-chamarras-trench-coats,ropa-sacos-chamarras
+pub_categoryLevel3,Vaqueras,ropa-camisas-vaqueras,ropa-camisas
+pub_categoryLevel3,Varsity jackets,ropa-sacos-chamarras-varsity-jackets,ropa-sacos-chamarras
+pub_categoryLevel3,Vestidos casuales,ropa-vestidos-casuales,ropa-vestidos
+pub_categoryLevel3,Vestidos formales,ropa-vestidos-formales,ropa-vestidos
+pub_categoryLevel3,Vintage,ropa-pantalones-vintage,ropa-pantalones
+pub_categoryLevel3,Wide leg,ropa-jeans-wideleg,ropa-jeans
+pub_color,Amarillo,amarillo,
+pub_color,Animal Print,animal-print,
+pub_color,Azul,azul,
+pub_color,Blanco,blanco,
+pub_color,Café,cafe,
+pub_color,Crema,crema,
+pub_color,Dorado,dorado,
+pub_color,Floral,floral-print,
+pub_color,Gris,gris,
+pub_color,Morado,morado,
+pub_color,Multicolor,multicolor,
+pub_color,Naranja,naranja,
+pub_color,Negro,negro,
+pub_color,Plateado,plateado,
+pub_color,Rojo,rojo,
+pub_color,Rosa,rosa,
+pub_color,Verde,verde,
+pub_estado,Nuevo con etiqueta,nuevo-con-etiqueta,
+pub_estado,Nuevo sin etiqueta,nuevo-sin-etiqueta,
+pub_estado,Usado con varios signos visibles,usado,
+pub_estado,Usado en buen estado,buen-estado,
+pub_estado,Usado en perfecto estado,como-nuevo,
+pub_estilo,Boho,boho,
+pub_estilo,Casual,casual,
+pub_estilo,Fiesta / Noche,fiesta_noche,
+pub_estilo,Formal,formal,
+pub_estilo,Oficina,oficina,
+pub_estilo,Retro,retro,
+pub_estilo,Seda,seda,
+pub_estilo,Urbano / Streetwear,urbano_streetwear,
+pub_estilo,Vacaciones,vacaciones,
+pub_estilo,Vintage,vintage,
+pub_genero,Hombre,hombre,
+pub_genero,Mujer,mujer,
+pub_genero,Unisex,unisex,

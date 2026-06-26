@@ -18,10 +18,11 @@ function reArmCleanup(id, createdAt) {
   }, remaining).unref();
 }
 
-function createJob(total) {
+function createJob(total, ownerId = null) {
   const id = crypto.randomUUID();
   const job = {
     id,
+    ownerId,
     status: 'processing',
     total,
     processed: 0,
@@ -48,11 +49,29 @@ function getJob(id) {
   return jobs.get(id) || null;
 }
 
-function hasActiveJob() {
+// True when the given user already has an import in progress.
+function hasActiveJobForUser(ownerId) {
   for (const job of jobs.values()) {
-    if (job.status === 'processing') return true;
+    if (job.ownerId === ownerId && job.status === 'processing') return true;
   }
   return false;
 }
 
-module.exports = { createJob, updateJob, getJob, hasActiveJob };
+// Number of imports currently processing across all users (global concurrency).
+function countActiveJobs() {
+  let count = 0;
+  for (const job of jobs.values()) {
+    if (job.status === 'processing') count += 1;
+  }
+  return count;
+}
+
+module.exports = {
+  createJob,
+  updateJob,
+  getJob,
+  hasActiveJobForUser,
+  countActiveJobs,
+};
+// Test-only: clear the in-memory store so suites don't leak active jobs.
+module.exports._test = { reset: () => jobs.clear() };

@@ -2,9 +2,15 @@
 
 const { parse } = require('csv-parse/sync');
 
-// Spanish column names exported by the Archivo Vintach Google Sheets template.
-// Keys are trimmed header strings from the sheet; values are canonical English column names.
+// Spanish column names accepted from the Archivo Vintach templates. Keys are
+// trimmed header strings; values are canonical English column names. Two header
+// dialects are supported:
+//  1. The Google Sheets export ("Título", "Imagen 1: Frontal*", …).
+//  2. The operator-facing CSV template PLANTILLA_CARGA_MASIVA.csv
+//     ("Nombre de Producto*", "Nombre imagen 1*", …) — note the "*" required-field
+//     markers are part of the literal header and must be matched verbatim.
 const COLUMN_ALIASES = {
+  // --- Google Sheets export dialect ---
   Título: 'title',
   Descripción: 'description',
   'Precio Venta (mxn)': 'price',
@@ -23,7 +29,23 @@ const COLUMN_ALIASES = {
   Genero: 'pd_genero',
   Estado: 'pd_estado',
   Estilo: 'pd_estilo',
+  // Author override column. `user_id` is the canonical admin-facing name; the
+  // older `author_id` / "ID Vendedor" headers remain accepted as aliases.
+  user_id: 'author_id',
   'ID Vendedor': 'author_id',
+
+  // --- Operator CSV template (PLANTILLA_CARGA_MASIVA.csv) dialect ---
+  'Nombre de Producto*': 'title',
+  'Descripción*': 'description',
+  'Precio Venta (MXN)*': 'price',
+  'Marca*': 'pd_brand',
+  'Género*': 'pd_genero',
+  Subcategoría: 'pd_categoryLevel2',
+  Temporada: 'pd_temporada',
+  'Nombre imagen 1*': 'image_front',
+  'Nombre imagen 2': 'image_back',
+  'Nombre imagen 3': 'image_horizontal',
+  'Nombre imagen 4': 'image_details',
 };
 
 const REQUIRED_COLUMNS = ['title', 'price', 'description'];
@@ -54,6 +76,20 @@ function normalizeColumns(rows) {
 }
 
 /**
+ * Parse a human-entered price into a number. Strips any currency token (e.g.
+ * "$", "MXN") and thousands separators (commas), then treats the remainder as a
+ * decimal number. Examples: "$4,500.00" -> 4500, "$1,000" -> 1000, "$99.50" ->
+ * 99.5. Returns NaN when no numeric value remains.
+ */
+function parsePrice(raw) {
+  if (raw == null) return NaN;
+  // Keep only digits, dot and minus — removes "$", currency words, commas, spaces.
+  const cleaned = String(raw).replace(/[^0-9.-]/g, '');
+  if (!/\d/.test(cleaned)) return NaN;
+  return parseFloat(cleaned);
+}
+
+/**
  * Parse a CSV buffer and return structured rows.
  * Throws on parse errors.
  */
@@ -69,9 +105,16 @@ function parseCsv(buffer) {
 
 /**
  * Validate parsed CSV rows against required columns and image references.
+ *
+ * authorOptions resolves each row's listing author:
+ *  - currentUserId: the signed-in user; listings default to this author.
+ *  - allowAuthorOverride: when true (admin uploads), a row's `user_id`/`author_id`
+ *    column overrides the author. When false, any override value is rejected.
+ *
  * Returns { valid: boolean, rows: Array, errors: Array<string> }
  */
-function validateRows(rows, imageMap) {
+function validateRows(rows, imageMap, authorOptions = {}) {
+  const { currentUserId = null, allowAuthorOverride = false } = authorOptions;
   const errors = [];
 
   if (rows.length === 0) {
@@ -109,7 +152,7 @@ function validateRows(rows, imageMap) {
     }
 
     // Price validation
-    const price = parseFloat(row.price);
+    const price = parsePrice(row.price);
     if (isNaN(price) || price <= 0) {
       rowErrors.push(`Row ${rowNum}: "price" must be a positive number, got "${row.price}".`);
     }
@@ -182,6 +225,17 @@ function validateRows(rows, imageMap) {
       }
     }
 
+    // Author resolution: default to the signed-in user. A `user_id`/`author_id`
+    // override is honoured only for admin uploads; otherwise it is rejected so a
+    // regular user can never create listings under someone else's account.
+    const rawAuthorId = (row.author_id || '').trim();
+    if (rawAuthorId && !allowAuthorOverride && rawAuthorId !== currentUserId) {
+      rowErrors.push(
+        `Row ${rowNum}: "user_id" override is not permitted for your account. Remove the column.`
+      );
+    }
+    const authorId = allowAuthorOverride && rawAuthorId ? rawAuthorId : currentUserId || '';
+
     errors.push(...rowErrors);
 
     return {
@@ -190,7 +244,7 @@ function validateRows(rows, imageMap) {
       description: (row.description || '').trim(),
       price: isNaN(price) ? 0 : price,
       currency: (row.currency || 'MXN').trim().toUpperCase(),
-      authorId: (row.author_id || '').trim(),
+      authorId,
       publish: (row.publish || 'yes').trim().toLowerCase() !== 'no',
       stock,
       shippingEnabled: (row.shipping_enabled || 'true').trim().toLowerCase() !== 'false',

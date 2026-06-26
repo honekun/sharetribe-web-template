@@ -6,6 +6,19 @@
 
 const defaultPackageSize = 'M';
 
+// Buyer-price math. markupPct = buffer over carrier cost (doc §5: ~15-20%).
+// roundUpToSubunits = round the marked-up price UP to the nearest peso so we
+// never under-recover and prices look clean. Both env-overridable (server-side
+// only — these are not REACT_APP_ vars, so on the client they fall back to the
+// defaults, which is fine: the client never computes prices, it displays the
+// server-computed ones).
+const markupPct = Number(process.env.ESHIP_MARKUP_PCT ?? 0.18);
+const roundUpToSubunits = 100;
+// Dormant: docs don't state whether eShip `amount` includes IVA. We fold IVA
+// into the buffer for now; flip this once real responses are reconciled.
+const eshipAmountIncludesIva = false;
+const eshipBaseUrl = process.env.ESHIP_BASE_URL || 'https://api.myeship.co/rest';
+
 const packageSizes = {
   S: { dimsCm: [25, 20, 8], weightMaxKg: 0.5, packaging: 'polymailer' },
   M: { dimsCm: [35, 30, 10], weightMaxKg: 1.0, packaging: 'box-medium' },
@@ -103,6 +116,24 @@ function isEspecialSize(size) {
   return size === 'especial';
 }
 
+// roundUp(amount*(1+markup)) to the nearest `roundUpToSubunits`.
+function applyBuyerMarkup(amountSubunits) {
+  const marked = amountSubunits * (1 + markupPct);
+  return Math.ceil(marked / roundUpToSubunits) * roundUpToSubunits;
+}
+
+// Map an eShip rate to a checkout bucket id. v1 uses eShip's tags; a
+// servicelevel.token map replaces this once real tokens are gathered.
+function bucketForRate(rate) {
+  const tags = (rate && rate.tags) || [];
+  if (tags.includes('FASTEST')) return 'nacionalExpress';
+  if (tags.includes('CHEAPEST')) return 'nacionalEstandar';
+  return null;
+}
+
+// @deprecated Replaced by live eShip quoting (see shippingQuoteService). Retained
+// as a reference/backstop and for existing tests; NOT used in the checkout or
+// line-items path.
 function getShippingPrice(size, deliveryType) {
   if (isEspecialSize(size)) return null;
   const row = priceGrid[size];
@@ -111,6 +142,7 @@ function getShippingPrice(size, deliveryType) {
   return typeof price === 'number' ? price : null;
 }
 
+// @deprecated See getShippingPrice. NOT used in the checkout or line-items path.
 function getAvailableDeliveryTypes(size) {
   if (isEspecialSize(size)) return [];
   return deliveryTypes.filter(type => getShippingPrice(size, type) !== null);

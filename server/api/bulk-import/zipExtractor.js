@@ -2,6 +2,7 @@
 
 const path = require('path');
 const AdmZip = require('adm-zip');
+const { matchesExtension } = require('./imageValidator');
 
 const MAX_ENTRIES = 401; // 1 CSV + 400 images
 const MAX_CSV_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -11,29 +12,12 @@ const ALLOWED_IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
 
 const getEntrySize = entry => entry?.header?.size || 0;
 
+// Magic-byte check that the buffer matches its declared extension. Delegates to
+// the shared imageValidator (see imageValidator.js); the length guard preserves
+// the original fail-fast behaviour for truncated buffers.
 const isAllowedImageBuffer = (buf, ext) => {
   if (!buf || buf.length < 4) return false;
-
-  const isJpeg = buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
-  const isPng =
-    buf.length >= 8 &&
-    buf[0] === 0x89 &&
-    buf[1] === 0x50 &&
-    buf[2] === 0x4e &&
-    buf[3] === 0x47 &&
-    buf[4] === 0x0d &&
-    buf[5] === 0x0a &&
-    buf[6] === 0x1a &&
-    buf[7] === 0x0a;
-  const isWebp =
-    buf.length >= 12 &&
-    buf.slice(0, 4).toString('ascii') === 'RIFF' &&
-    buf.slice(8, 12).toString('ascii') === 'WEBP';
-
-  if (ext === '.jpg' || ext === '.jpeg') return isJpeg;
-  if (ext === '.png') return isPng;
-  if (ext === '.webp') return isWebp;
-  return false;
+  return matchesExtension(buf, ext);
 };
 
 const formatBytes = bytes => `${Math.round((bytes / 1024 / 1024) * 10) / 10} MB`;

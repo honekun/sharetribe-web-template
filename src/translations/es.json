@@ -354,6 +354,7 @@
   "EditListingStyleForm.updateFailed": "Error al actualizar el anuncio. Por favor, inténtalo de nuevo.",
   "EditListingStylePanel.createListingTitle": "Diseño",
   "EditListingStylePanel.title": "Editar el diseño de {listingTitle}",
+  "EditListingWizard.bulkImportLink": "Importación masiva",
   "EditListingWizard.default-booking.new.saveAvailability": "Siguiente",
   "EditListingWizard.default-booking.new.saveDetails": "Siguiente",
   "EditListingWizard.default-booking.new.saveLocation": "Siguiente",
