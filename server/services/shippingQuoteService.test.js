@@ -62,6 +62,28 @@ beforeEach(() => {
   getIntegrationSdk.mockReset();
 });
 
+describe('resolveOrigin', () => {
+  // The real sdk.listings.show response (no include) carries the author only as a
+  // relationship reference, not a denormalized `author` object.
+  const relListing = authorId => ({
+    id: { uuid: 'l1' },
+    attributes: { publicData: { avPackageSize: 'M' } },
+    relationships: { author: { data: { id: { uuid: authorId } } } },
+  });
+
+  it('resolves the author id from relationships when author is not denormalized', async () => {
+    mockOrigin(origin);
+    const result = await svc.resolveOrigin(relListing('author-9'));
+    expect(getIntegrationSdk().users.show).toBeDefined();
+    expect(result).toEqual(origin);
+  });
+
+  it('returns null when neither author nor relationships carry an id', async () => {
+    const result = await svc.resolveOrigin({ id: { uuid: 'l1' }, attributes: {} });
+    expect(result).toBe(null);
+  });
+});
+
 describe('resolveParcel', () => {
   it('returns dims+weight for a sized listing', () => {
     expect(svc.resolveParcel(listing({ avPackageSize: 'M' }))).toMatchObject({

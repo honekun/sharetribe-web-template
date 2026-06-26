@@ -46,7 +46,11 @@ function resolveParcel(listing) {
 }
 
 async function resolveOrigin(listing) {
-  const authorId = listing?.author?.id?.uuid;
+  // `sdk.listings.show` (no include) carries the author only as a relationship
+  // reference; a denormalized `author` is present only when explicitly included.
+  // Accept either so the quote works regardless of how the listing was fetched.
+  const authorId =
+    listing?.author?.id?.uuid || listing?.relationships?.author?.data?.id?.uuid || null;
   if (!authorId) return null;
   const integrationSdk = getIntegrationSdk();
   const res = await integrationSdk.users.show({ id: authorId });
