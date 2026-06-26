@@ -1,0 +1,37 @@
+.root {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  border: 1px solid var(--colorAttention, #ffaa00);
+  border-radius: 8px;
+  background-color: var(--avColorYellowLight, #fff8e1);
+}
+
+.message {
+  composes: marketplaceBodyFontStyles from global;
+  flex: 1;
+  color: var(--colorGrey700);
+}
+
+.cta {
+  composes: marketplaceButtonFontStyles from global;
+  white-space: nowrap;
+  color: var(--marketplaceColor);
+  text-decoration: underline;
+}
+
+.dismiss {
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--colorGrey400);
+  padding: 0 4px;
+}
+
+.dismiss:hover {
+  color: var(--colorGrey700);
+}
