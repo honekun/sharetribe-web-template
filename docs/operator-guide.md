@@ -884,7 +884,7 @@ The Hot List is a curated carousel of featured listings. Any published listing t
 3. In the Extended Data / Public Data section, find the `tags` field and add `hot-list`.
 4. Save.
 
-**Via the bulk import tool:** Add `hot-list` to the `pd_tags` column for any listing row in your
+**Via the bulk import tool:** Add `hot-list` to the `pub_tags` column for any listing row in your
 CSV.
 
 ### Removing a listing from the Hot List
@@ -996,14 +996,12 @@ my-listings.zip
 
 ### 8.4 CSV Column Reference
 
-> **Spanish headers in the downloaded template.** The column reference below uses the internal
-> (English) column names. The template you download from the page uses the Spanish operator headers
-> instead — `Nombre de Producto*` → `title`, `Descripción*` → `description`, `Precio Venta (MXN)*` →
-> `price`, `Marca*` → `pd_brand`, `Categoría` → `pd_categoryLevel1`, `Subcategoría` →
-> `pd_categoryLevel2`, `Color` → `pd_color`, `Talla` → `pd_all_sizes`, `Género*` → `pd_genero`,
-> `Estado` → `pd_estado`, `Estilo` → `pd_estilo`, `Temporada` → `pd_temporada`, and
-> `Nombre imagen 1*`–`4` → the four image columns. The importer maps these automatically — keep the
-> headers from the template as-is and you don't need to rename anything.
+> **Template headers.** The downloadable template (`PLANTILLA_CARGA_MASIVA.csv`) uses the field
+> names directly: the listing-attribute columns carry a **`pub_`** prefix (e.g. `pub_brand`,
+> `pub_color`) and the image columns are **`imagen_1`–`imagen_4`**. Keep the headers from the template
+> as-is. The importer is also backward-compatible — it still accepts the older `pd_` prefix, the
+> `image_front`/`image_back`/`image_horizontal`/`image_details` names, and the Spanish Google Sheets
+> headers — so old spreadsheets keep working without changes.
 
 #### Required columns
 
@@ -1033,40 +1031,43 @@ my-listings.zip
 
 #### Image columns
 
-Each listing has four labeled image slots. Front, back, and horizontal are required. Details is
+Each listing has four labeled image slots in order: `imagen_1` = front, `imagen_2` = back,
+`imagen_3` = horizontal (wide-angle), `imagen_4` = details. The first three are required, details is
 optional.
 
-| Column             | Required | Description                                                    |
-| ------------------ | -------- | -------------------------------------------------------------- |
-| `image_front`      | Yes      | Filename of the front-facing image (e.g. `vestido-frente.jpg`) |
-| `image_back`       | Yes      | Filename of the back-facing image                              |
-| `image_horizontal` | Yes      | Filename of the horizontal / wide-angle image                  |
-| `image_details`    | No       | Filename of the close-up details image                         |
+| Column     | Slot       | Required | Description                                         |
+| ---------- | ---------- | -------- | --------------------------------------------------- |
+| `imagen_1` | Front      | Yes      | Filename of the front-facing image                  |
+| `imagen_2` | Back       | Yes      | Filename of the back-facing image                   |
+| `imagen_3` | Horizontal | Yes      | Filename of the horizontal / wide-angle image       |
+| `imagen_4` | Details    | No       | Filename of the close-up details image              |
 
 Filenames are **case-sensitive** and must match exactly the filename inside the ZIP (the folder path
-is ignored — only the filename matters).
+is ignored — only the filename matters). The legacy `image_front`/`image_back`/`image_horizontal`/
+`image_details` headers are also accepted.
 
-#### Extended data columns (`pd_*` prefix)
+#### Extended data columns (`pub_*` prefix)
 
-These columns set the listing's searchable attributes. All column names start with `pd_`. The prefix
-is stripped when saving — so `pd_brand` becomes the `brand` attribute on the listing.
+These columns set the listing's searchable attributes. Each column name is the field name with a
+`pub_` prefix; the prefix is stripped when saving — so `pub_brand` becomes the `brand` attribute on
+the listing. (The legacy `pd_` prefix is still accepted.)
 
-| CSV Column          | Required | Valid values                                                                                                 |
-| ------------------- | -------- | ------------------------------------------------------------------------------------------------------------ |
-| `pd_categoryLevel1` | Yes      | See [Category IDs](#category-ids) below                                                                      |
-| `pd_categoryLevel2` | Yes      | See [Category IDs](#category-ids) below                                                                      |
-| `pd_categoryLevel3` | No       | See [Category IDs](#category-ids) below                                                                      |
-| `pd_color`          | Yes      | One or more color option keys, pipe-separated (e.g. `azul` or `azul\|negro`)                                 |
-| `pd_all_sizes`      | Yes      | One or more size option keys, pipe-separated (e.g. `s\|m\|l`)                                                |
-| `pd_brand`          | Yes      | One brand option key (e.g. `zara`, `gucci`)                                                                  |
-| `pd_genero`         | Yes      | One gender option key                                                                                        |
-| `pd_estado`         | Yes      | One condition option key                                                                                     |
-| `pd_estilo`         | Yes      | One or more style option keys, pipe-separated                                                                |
-| `pd_temporada`      | No       | One season: `Primavera`, `Verano`, `Otoño`, or `Invierno`                                                    |
-| `pd_originalPrice`  | Yes      | The original retail price in pesos (e.g. `650.00`). Must be higher than `price` to show as a strike-through. |
-| `pd_tags`           | No       | Pipe-separated tags (e.g. `hot-list` or `hot-list\|nueva-llegada`)                                           |
+| CSV Column           | Required | Valid values                                                                                                 |
+| -------------------- | -------- | ------------------------------------------------------------------------------------------------------------ |
+| `pub_categoryLevel1` | Yes      | See [Category IDs](#category-ids) below                                                                      |
+| `pub_categoryLevel2` | Yes      | See [Category IDs](#category-ids) below                                                                      |
+| `pub_categoryLevel3` | No       | See [Category IDs](#category-ids) below                                                                      |
+| `pub_color`          | Yes      | One or more color option keys, pipe-separated (e.g. `azul` or `azul\|negro`)                                 |
+| `pub_all_sizes`      | Yes      | One or more size option keys, pipe-separated (e.g. `s\|m\|l`)                                                |
+| `pub_brand`          | Yes      | One brand option key (e.g. `zara`, `gucci`)                                                                  |
+| `pub_genero`         | Yes      | One gender option key                                                                                        |
+| `pub_estado`         | Yes      | One condition option key                                                                                     |
+| `pub_estilo`         | Yes      | One or more style option keys, pipe-separated                                                                |
+| `pub_temporada`      | No       | Season slug (e.g. `primavera`, `verano`, `otono`, `invierno`). Saved as data but not currently a searchable filter. |
+| `pub_originalPrice`  | No       | The original retail price in pesos (e.g. `650.00`). Must be higher than `price` to show as a strike-through. |
+| `pub_tags`           | No       | Pipe-separated tags (e.g. `hot-list` or `hot-list\|nueva-llegada`)                                           |
 
-> **Multi-value fields** (`pd_color`, `pd_all_sizes`, `pd_estilo`, `pd_tags`): separate multiple
+> **Multi-value fields** (`pub_color`, `pub_all_sizes`, `pub_estilo`, `pub_tags`): separate multiple
 > values with a pipe character `|`. A single value is also valid. Example: `azul|negro|crema`
 
 ---
@@ -1077,7 +1078,7 @@ Use these exact option keys (the second column) in your CSV — not the display 
 
 #### Category IDs
 
-Use these IDs in `pd_categoryLevel1`, `pd_categoryLevel2`, and `pd_categoryLevel3`.
+Use these IDs in `pub_categoryLevel1`, `pub_categoryLevel2`, and `pub_categoryLevel3`.
 
 | Category                    | ID to use                      |
 | --------------------------- | ------------------------------ |
@@ -1367,7 +1368,7 @@ see `docs/data/brand.csv`.
 | "Duplicate image filename"               | Two images share the same filename in different folders | Rename images so all filenames are unique across the entire ZIP      |
 | "does not match its file extension"      | A file isn't a real image (e.g. renamed to `.jpg`)      | Re-export it as a genuine `.jpg`, `.png`, or `.webp`                 |
 | Image "not found in uploaded files"      | Filename in the CSV doesn't match the image file        | Check spelling, case, and file extension — they must match exactly   |
-| Row fails with "missing required column" | A required `pd_*` field is empty                        | Fill in all required fields for that row                             |
+| Row fails with "missing required column" | A required `pub_*` field is empty                       | Fill in all required fields for that row                             |
 | Row fails with "invalid price"           | Price is zero, negative, or not a number                | Enter a positive number like `450.00`                                |
 | All rows fail with API error             | Integration API credentials are wrong                   | Contact your administrator to check the server configuration         |
 | Job not found (after waiting)            | Job data expired, or the server restarted mid-import    | Jobs expire after 1 hour and don't survive a server restart. Re-run the import. |
