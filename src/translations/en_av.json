@@ -40,6 +40,7 @@
   "ShippingOriginPage.submit": "Save address",
   "ShippingOriginPage.saveSuccess": "Shipping origin saved.",
   "ShippingOriginPage.saveError": "Could not save your shipping origin. Please try again.",
+  "ManageListingsPage.bulkImport": "Carga Masiva",
   "ShippingOriginBanner.message": "Add your shipping origin address so your sales can quote shipping.",
   "ShippingOriginBanner.cta": "Complete address",
   "AVShippingSelector.express": "Express",

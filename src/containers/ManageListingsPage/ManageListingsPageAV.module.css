@@ -20,6 +20,13 @@
   }
 }
 
+/* Right-aligned group holding the "bulk import" + "create listing" buttons. */
+.buttonGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 /* "Create listing" pill button. */
 .newListingButton {
   display: inline-flex;

@@ -52,9 +52,14 @@ const Heading = props => {
           values={{ count: pagination.totalItems }}
         />
       </H3>
-      <NamedLink className={avCss.newListingButton} name="NewListingPage">
-        <FormattedMessage id="ManageListingsPage.createListing" />
-      </NamedLink>
+      <div className={avCss.buttonGroup}>
+        <NamedLink className={avCss.newListingButton} name="BulkImportPage">
+          <FormattedMessage id="ManageListingsPage.bulkImport" />
+        </NamedLink>
+        <NamedLink className={avCss.newListingButton} name="NewListingPage">
+          <FormattedMessage id="ManageListingsPage.createListing" />
+        </NamedLink>
+      </div>
     </div>
   ) : hasNoResults ? (
     <div className={css.noResultsContainer}>

@@ -40,6 +40,7 @@
   "ShippingOriginPage.submit": "Guardar dirección",
   "ShippingOriginPage.saveSuccess": "Dirección de origen guardada.",
   "ShippingOriginPage.saveError": "No pudimos guardar tu dirección de origen. Inténtalo de nuevo.",
+  "ManageListingsPage.bulkImport": "Carga Masiva",
   "ShippingOriginBanner.message": "Agrega tu dirección de origen para que tus ventas puedan cotizar envío.",
   "ShippingOriginBanner.cta": "Completar dirección",
   "AVShippingSelector.express": "Express",
