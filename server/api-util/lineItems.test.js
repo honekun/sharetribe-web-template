@@ -343,7 +343,7 @@ describe('transactionLineItems', () => {
         deliveryMethod: 'shipping',
         avShippingType: 'nacionalExpress',
         avQuoteToken: 't',
-        shippingDetails: { zip: '64000' },
+        avDestination: { zip: '64000' },
         currency: 'EUR',
       };
 

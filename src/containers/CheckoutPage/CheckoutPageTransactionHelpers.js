@@ -137,6 +137,50 @@ export const getShippingDetailsMaybe = formValues => {
 };
 
 /**
+ * Build the eShip destination address from the MX shipping form values. Mirrors
+ * the composition in `getShippingDetailsMaybe` (street1 = Calle + Ext [Int.], line2
+ * = Colonia) so the live quote and the persisted order agree. Returns `null` until
+ * the minimum quotable fields (street1 + postal + state + city) are present.
+ *
+ * @param {Object} formValues - the StripePaymentForm values (recipient* fields)
+ * @returns {Object|null} { name, street1, street2, city, state, zip, country, phone }
+ */
+export const getEshipDestinationFromValues = formValues => {
+  const {
+    recipientName,
+    recipientPhoneNumber,
+    recipientAddressLine1,
+    recipientExteriorNumber,
+    recipientInteriorNumber,
+    recipientColonia,
+    recipientPostal,
+    recipientCity,
+    recipientState,
+  } = formValues || {};
+
+  const streetBase = [recipientAddressLine1, recipientExteriorNumber].filter(Boolean).join(' ');
+  const street1 = recipientInteriorNumber
+    ? `${streetBase} Int. ${recipientInteriorNumber}`
+    : streetBase;
+
+  const complete =
+    recipientAddressLine1 && recipientPostal && recipientState && recipientCity && recipientName;
+
+  return complete
+    ? {
+        name: recipientName,
+        street1,
+        street2: recipientColonia || '',
+        city: recipientCity,
+        state: recipientState,
+        zip: recipientPostal,
+        country: 'MX',
+        phone: recipientPhoneNumber || '',
+      }
+    : null;
+};
+
+/**
  * Check if the default payment method exists for the currentUser
  * @param {Boolean} stripeCustomerFetched
  * @param {Object} currentUser

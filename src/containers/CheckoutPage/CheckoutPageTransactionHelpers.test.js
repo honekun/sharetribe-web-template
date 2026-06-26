@@ -1,4 +1,40 @@
-import { getShippingDetailsMaybe } from './CheckoutPageTransactionHelpers';
+import {
+  getShippingDetailsMaybe,
+  getEshipDestinationFromValues,
+} from './CheckoutPageTransactionHelpers';
+
+describe('getEshipDestinationFromValues', () => {
+  const complete = {
+    recipientName: 'Juan Pérez',
+    recipientPhoneNumber: '+52 55 1234 5678',
+    recipientAddressLine1: 'Av. Reforma',
+    recipientExteriorNumber: '123',
+    recipientInteriorNumber: '4B',
+    recipientColonia: 'Condesa',
+    recipientPostal: '06100',
+    recipientCity: 'Ciudad de México',
+    recipientState: 'Ciudad de México',
+  };
+
+  it('composes a quotable eShip destination from complete values', () => {
+    expect(getEshipDestinationFromValues(complete)).toEqual({
+      name: 'Juan Pérez',
+      street1: 'Av. Reforma 123 Int. 4B',
+      street2: 'Condesa',
+      city: 'Ciudad de México',
+      state: 'Ciudad de México',
+      zip: '06100',
+      country: 'MX',
+      phone: '+52 55 1234 5678',
+    });
+  });
+
+  it('returns null until the minimum quotable fields are present', () => {
+    expect(getEshipDestinationFromValues({})).toBe(null);
+    expect(getEshipDestinationFromValues({ ...complete, recipientPostal: undefined })).toBe(null);
+    expect(getEshipDestinationFromValues({ ...complete, recipientState: undefined })).toBe(null);
+  });
+});
 
 describe('getShippingDetailsMaybe', () => {
   const base = {

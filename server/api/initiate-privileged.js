@@ -82,7 +82,7 @@ module.exports = (req, res) => {
           quoteToken: fullOrderData.avQuoteToken,
           avShippingType: fullOrderData.avShippingType,
           listing,
-          destination: fullOrderData.shippingDetails,
+          destination: fullOrderData.avDestination,
           buyerEmail: fullOrderData.buyerEmail,
         });
         avShippingProtectedData = buildAvShippingProtectedData(fullOrderData, resolvedRate);

@@ -28,7 +28,7 @@ const getItemQuantityAndLineItems = async (orderData, publicData, currency, list
         quoteToken: orderData?.avQuoteToken,
         avShippingType: orderData?.avShippingType,
         listing,
-        destination: orderData?.shippingDetails,
+        destination: orderData?.avDestination,
         buyerEmail: orderData?.buyerEmail,
       })
     : null;

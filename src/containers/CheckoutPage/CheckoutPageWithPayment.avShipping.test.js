@@ -22,16 +22,41 @@ import { getOrderParams } from './CheckoutPageWithPayment';
 // ---------------------------------------------------------------------------
 // Unit tests for the exported getOrderParams helper (deterministic part).
 // ---------------------------------------------------------------------------
-describe('getOrderParams avShippingType', () => {
+describe('getOrderParams avShipping fields', () => {
+  const cfg = { listing: { listingTypes: [] } };
   const base = {
     listing: { id: { uuid: 'l1' }, attributes: { publicData: {} } },
     orderData: { deliveryMethod: 'shipping', avShippingType: 'nacionalEstandar', quantity: 1 },
   };
 
   test('puts avShippingType in both top-level and protectedData', () => {
-    const params = getOrderParams(base, {}, {}, { listing: { listingTypes: [] } });
+    const params = getOrderParams(base, {}, {}, cfg);
     expect(params.avShippingType).toBe('nacionalEstandar');
     expect(params.protectedData.avShippingType).toBe('nacionalEstandar');
+  });
+
+  test('threads avQuoteToken, avDestination and buyerEmail to the top level when present', () => {
+    const withQuote = {
+      listing: { id: { uuid: 'l1' }, attributes: { publicData: {} } },
+      orderData: {
+        deliveryMethod: 'shipping',
+        avShippingType: 'nacionalExpress',
+        avQuoteToken: 'tok-123',
+        avDestination: { zip: '64000', state: 'Nuevo León' },
+        buyerEmail: 'b@x.com',
+        quantity: 1,
+      },
+    };
+    const params = getOrderParams(withQuote, {}, {}, cfg);
+    expect(params.avQuoteToken).toBe('tok-123');
+    expect(params.avDestination).toEqual({ zip: '64000', state: 'Nuevo León' });
+    expect(params.buyerEmail).toBe('b@x.com');
+  });
+
+  test('omits the quote fields when not present (e.g. before a quote)', () => {
+    const params = getOrderParams(base, {}, {}, cfg);
+    expect(params.avQuoteToken).toBeUndefined();
+    expect(params.avDestination).toBeUndefined();
   });
 
   test('omits avShippingType when not selected (pickup orders unaffected)', () => {
@@ -39,7 +64,7 @@ describe('getOrderParams avShippingType', () => {
       listing: { id: { uuid: 'l1' }, attributes: { publicData: {} } },
       orderData: { deliveryMethod: 'pickup', quantity: 1 },
     };
-    const params = getOrderParams(pickup, {}, {}, { listing: { listingTypes: [] } });
+    const params = getOrderParams(pickup, {}, {}, cfg);
     expect(params.avShippingType).toBeUndefined();
     expect(params.protectedData.avShippingType).toBeUndefined();
   });
@@ -52,21 +77,9 @@ describe('getOrderParams avShippingType', () => {
       },
       orderData: { quantity: 1 },
     };
-    const params = getOrderParams(noDelivery, {}, {}, { listing: { listingTypes: [] } });
+    const params = getOrderParams(noDelivery, {}, {}, cfg);
     expect(params.deliveryMethod).toBe('shipping');
     expect(params.protectedData.deliveryMethod).toBe('shipping');
-  });
-
-  test("maps the 'none' deliveryMethod sentinel to 'shipping' for a purchase listing", () => {
-    const noneDelivery = {
-      listing: {
-        id: { uuid: 'l1' },
-        attributes: { publicData: { transactionProcessAlias: 'default-purchase/release-1' } },
-      },
-      orderData: { deliveryMethod: 'none', quantity: 1 },
-    };
-    const params = getOrderParams(noneDelivery, {}, {}, { listing: { listingTypes: [] } });
-    expect(params.deliveryMethod).toBe('shipping');
   });
 
   test('keeps an explicit pickup deliveryMethod for a purchase listing', () => {
@@ -77,35 +90,27 @@ describe('getOrderParams avShippingType', () => {
       },
       orderData: { deliveryMethod: 'pickup', quantity: 1 },
     };
-    const params = getOrderParams(pickup, {}, {}, { listing: { listingTypes: [] } });
+    const params = getOrderParams(pickup, {}, {}, cfg);
     expect(params.deliveryMethod).toBe('pickup');
   });
 });
 
 // ---------------------------------------------------------------------------
-// Behavioral tests for the selector + payment gate. The price grid ships
-// unpriced, so we mock configAVShipping to surface a priced delivery type.
+// Behavioral tests for the live-quote checkout structure. The address is now
+// collected in the payment form (always rendered for shipping), the quote-driven
+// AVShippingSelector renders inside it, and the Pay button is gated until a type
+// is chosen. The selector's quoted/error states are unit-tested separately
+// (AVShippingSelector.test.js); the quote starts 'idle' here, so no buckets show.
 // ---------------------------------------------------------------------------
-// configAVShipping is CommonJS; automock yields jest.fn() exports whose
-// implementation we set per-test (named-import interop returns undefined
-// otherwise). The price grid ships unpriced, so this is how we surface a type.
-jest.mock('../../config/configAVShipping');
-// eslint-disable-next-line import/first
-import * as configAVShipping from '../../config/configAVShipping';
 // eslint-disable-next-line import/first
 import CheckoutPageWithPayment from './CheckoutPageWithPayment';
 
 const { Money } = sdkTypes;
-const { screen, fireEvent } = testingLibrary;
+const { screen } = testingLibrary;
 const noop = () => null;
 
-describe('CheckoutPageWithPayment AV shipping selector', () => {
+describe('CheckoutPageWithPayment live-quote shipping', () => {
   beforeEach(() => {
-    configAVShipping.getAvailableDeliveryTypes.mockReturnValue([
-      'nacionalExpress',
-      'nacionalEstandar',
-    ]);
-    configAVShipping.getShippingPrice.mockReturnValue(9900);
     window.matchMedia = jest.fn(() => ({
       matches: true,
       addEventListener: noop,
@@ -174,12 +179,9 @@ describe('CheckoutPageWithPayment AV shipping selector', () => {
     }),
   };
 
-  const shippingPageData = {
-    orderData: { quantity: 1, deliveryMethod: 'shipping' },
-    listing,
-  };
+  const shippingPageData = { orderData: { quantity: 1, deliveryMethod: 'shipping' }, listing };
 
-  it('renders the delivery-type selector for a shipping purchase', () => {
+  it('renders the payment form and shipping address fields for a shipping purchase', () => {
     render(
       <CheckoutPageWithPayment
         {...baseProps}
@@ -188,88 +190,27 @@ describe('CheckoutPageWithPayment AV shipping selector', () => {
         fetchSpeculatedTransaction={noop}
       />
     );
-    expect(screen.getByText('AVShippingTypeSelector.legend')).toBeInTheDocument();
-  });
-
-  it('renders the selector for a purchase even when deliveryMethod is unset', () => {
-    render(
-      <CheckoutPageWithPayment
-        {...baseProps}
-        pageData={{ orderData: { quantity: 1 }, listing }}
-        setPageData={noop}
-        fetchSpeculatedTransaction={noop}
-      />
-    );
-    expect(screen.getByText('AVShippingTypeSelector.legend')).toBeInTheDocument();
-  });
-
-  it("renders the selector for a purchase when deliveryMethod is the 'none' sentinel", () => {
-    render(
-      <CheckoutPageWithPayment
-        {...baseProps}
-        pageData={{ orderData: { quantity: 1, deliveryMethod: 'none' }, listing }}
-        setPageData={noop}
-        fetchSpeculatedTransaction={noop}
-      />
-    );
-    expect(screen.getByText('AVShippingTypeSelector.legend')).toBeInTheDocument();
-  });
-
-  it('hides the payment form until a delivery type is selected', () => {
-    render(
-      <CheckoutPageWithPayment
-        {...baseProps}
-        pageData={shippingPageData}
-        setPageData={noop}
-        fetchSpeculatedTransaction={noop}
-      />
-    );
-    // Payment heading lives inside StripePaymentForm, which is gated.
-    expect(
-      screen.queryByRole('heading', { name: 'StripePaymentForm.paymentHeading' })
-    ).not.toBeInTheDocument();
-  });
-
-  it('shows the payment form once a type is pre-selected', () => {
-    render(
-      <CheckoutPageWithPayment
-        {...baseProps}
-        pageData={{
-          ...shippingPageData,
-          orderData: { ...shippingPageData.orderData, avShippingType: 'nacionalEstandar' },
-        }}
-        setPageData={noop}
-        fetchSpeculatedTransaction={noop}
-      />
-    );
+    // Address is collected inside the payment form (no longer gated by type choice).
+    expect(screen.getByText('ShippingDetails.mxNameLabel')).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: 'StripePaymentForm.paymentHeading' })
     ).toBeInTheDocument();
   });
 
-  it('persists the choice and re-speculates when a type is selected', () => {
-    const setPageData = jest.fn();
-    const fetchSpeculatedTransaction = jest.fn();
+  it('disables the Pay button before a delivery type is chosen (shipping purchase)', () => {
     render(
       <CheckoutPageWithPayment
         {...baseProps}
         pageData={shippingPageData}
-        setPageData={setPageData}
-        fetchSpeculatedTransaction={fetchSpeculatedTransaction}
+        setPageData={noop}
+        fetchSpeculatedTransaction={noop}
       />
     );
-    const radios = screen.getAllByRole('radio');
-    fireEvent.click(radios[0]);
-
-    expect(setPageData).toHaveBeenCalledTimes(1);
-    const nextPageData = setPageData.mock.calls[0][0];
-    expect(nextPageData.orderData.avShippingType).toBe('nacionalExpress');
-    // Re-speculation fires with the new type in the orderParams.
-    expect(fetchSpeculatedTransaction).toHaveBeenCalledTimes(1);
-    expect(fetchSpeculatedTransaction.mock.calls[0][0].avShippingType).toBe('nacionalExpress');
+    const payButton = screen.getByRole('button', { name: /StripePaymentForm.submitPaymentInfo/ });
+    expect(payButton).toBeDisabled();
   });
 
-  it('does not render the selector or gate payment for pickup orders', () => {
+  it('does not render shipping address fields for pickup orders', () => {
     render(
       <CheckoutPageWithPayment
         {...baseProps}
@@ -278,7 +219,7 @@ describe('CheckoutPageWithPayment AV shipping selector', () => {
         fetchSpeculatedTransaction={noop}
       />
     );
-    expect(screen.queryByText('AVShippingTypeSelector.legend')).not.toBeInTheDocument();
+    expect(screen.queryByText('ShippingDetails.mxNameLabel')).not.toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: 'StripePaymentForm.paymentHeading' })
     ).toBeInTheDocument();
