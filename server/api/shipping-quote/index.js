@@ -36,7 +36,13 @@ router.post('/quote', express.json(), async (req, res) => {
       e && e.message,
       e && e.body ? JSON.stringify(e.body) : ''
     );
-    return res.status(502).json({ code: 'ESHIP_ERROR' });
+    // ESHIP_API_DEBUG=true echoes the carrier's error text in the response (for
+    // staging/debugging). Default (unset/false) keeps the opaque live response.
+    const debug = String(process.env.ESHIP_API_DEBUG).toLowerCase() === 'true';
+    const detailMaybe = debug
+      ? { detail: (e && e.body && e.body.message) || (e && e.message) || 'unknown' }
+      : {};
+    return res.status(502).json({ code: 'ESHIP_ERROR', ...detailMaybe });
   }
 });
 

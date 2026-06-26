@@ -108,3 +108,53 @@ it('maps any other error to 502 ESHIP_ERROR', async () => {
   expect(res.statusCode).toBe(502);
   expect(res.body.code).toBe('ESHIP_ERROR');
 });
+
+describe('ESHIP_API_DEBUG response detail', () => {
+  const ORIGINAL = process.env.ESHIP_API_DEBUG;
+  afterEach(() => {
+    if (ORIGINAL === undefined) delete process.env.ESHIP_API_DEBUG;
+    else process.env.ESHIP_API_DEBUG = ORIGINAL;
+  });
+
+  const eshipError = () =>
+    Object.assign(new Error('eShip API error 400'), {
+      name: 'EshipApiError',
+      status: 400,
+      body: { status: 'ERROR', message: 'No couriers found for this account.' },
+    });
+
+  it('omits eShip detail by default (live behavior)', async () => {
+    delete process.env.ESHIP_API_DEBUG;
+    svc.quoteForCheckout.mockRejectedValue(eshipError());
+    const res = createRes();
+    await getQuoteHandler()(createReq(body), res);
+    expect(res.statusCode).toBe(502);
+    expect(res.body).toEqual({ code: 'ESHIP_ERROR' });
+  });
+
+  it('omits eShip detail when ESHIP_API_DEBUG is "false"', async () => {
+    process.env.ESHIP_API_DEBUG = 'false';
+    svc.quoteForCheckout.mockRejectedValue(eshipError());
+    const res = createRes();
+    await getQuoteHandler()(createReq(body), res);
+    expect(res.body.detail).toBeUndefined();
+  });
+
+  it('includes the eShip error text when ESHIP_API_DEBUG is "true"', async () => {
+    process.env.ESHIP_API_DEBUG = 'true';
+    svc.quoteForCheckout.mockRejectedValue(eshipError());
+    const res = createRes();
+    await getQuoteHandler()(createReq(body), res);
+    expect(res.statusCode).toBe(502);
+    expect(res.body.code).toBe('ESHIP_ERROR');
+    expect(res.body.detail).toBe('No couriers found for this account.');
+  });
+
+  it('falls back to the error message when there is no eShip body', async () => {
+    process.env.ESHIP_API_DEBUG = 'true';
+    svc.quoteForCheckout.mockRejectedValue(new Error('connect ETIMEDOUT'));
+    const res = createRes();
+    await getQuoteHandler()(createReq(body), res);
+    expect(res.body.detail).toBe('connect ETIMEDOUT');
+  });
+});
