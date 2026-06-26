@@ -14,6 +14,7 @@ jest.mock('../../api-util/sdk', () => ({
 
 const { processImportJob } = require('./importWorker');
 const { extractZip } = require('./zipExtractor');
+const { parseCsv, validateRows } = require('./csvParser');
 const { createJob, getJob, _test: jobStoreTest } = require('./jobStore');
 const { getSdk } = require('../../api-util/sdk');
 const router = require('./index');
@@ -465,8 +466,7 @@ describe('bulk import router', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.headers['Content-Type']).toContain('text/csv');
-    expect(res.body).toContain('image_front,image_back,image_horizontal,image_details');
-    expect(res.body).toContain('vestido01_horizontal.jpg');
+    expect(res.body).toContain('imagen_1,imagen_2,imagen_3,imagen_4');
   });
 
   describe('csv template fields', () => {
@@ -479,24 +479,31 @@ describe('bulk import router', () => {
       templateBody = res.body;
     });
 
-    it('template includes pd_originalPrice header', () => {
-      expect(templateBody).toContain('pd_originalPrice');
+    it('uses the pub_ prefix for public-data columns', () => {
+      expect(templateBody).toContain('pub_genero');
+      expect(templateBody).toContain('pub_estado');
+      expect(templateBody).toContain('pub_estilo');
+      expect(templateBody).toContain('pub_categoryLevel3');
     });
 
-    it('template includes pd_genero header', () => {
-      expect(templateBody).toContain('pd_genero');
+    it('uses imagen_N image columns', () => {
+      expect(templateBody).toContain('imagen_1');
+      expect(templateBody).toContain('imagen_4');
     });
 
-    it('template includes pd_estado header', () => {
-      expect(templateBody).toContain('pd_estado');
-    });
-
-    it('template includes pd_estilo header', () => {
-      expect(templateBody).toContain('pd_estilo');
-    });
-
-    it('template includes pd_categoryLevel3 header', () => {
-      expect(templateBody).toContain('pd_categoryLevel3');
+    it('parses cleanly back through the importer with valid values', () => {
+      // Round-trip: the served template must validate against its own example row.
+      const rows = parseCsv(Buffer.from(templateBody));
+      const imageMap = new Map();
+      for (const r of rows) {
+        for (const k of ['image_front', 'image_back', 'image_horizontal', 'image_details']) {
+          if (r[k] && r[k].trim()) imageMap.set(r[k].trim(), Buffer.from('x'));
+        }
+      }
+      const result = validateRows(rows, imageMap, { currentUserId: 'me' });
+      expect(result.valid).toBe(true);
+      expect(result.rows[0].price).toBe(450);
+      expect(result.rows[0].publicData.brand).toBe('zara');
     });
   });
 

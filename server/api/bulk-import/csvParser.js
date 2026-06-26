@@ -46,6 +46,14 @@ const COLUMN_ALIASES = {
   'Nombre imagen 2': 'image_back',
   'Nombre imagen 3': 'image_horizontal',
   'Nombre imagen 4': 'image_details',
+
+  // --- Current seller template (PLANTILLA_CARGA_MASIVA.csv) dialect ---
+  // Headers are the public-data field names with a `pub_` prefix (handled by the
+  // prefix logic below, no alias needed) plus numbered image columns.
+  imagen_1: 'image_front',
+  imagen_2: 'image_back',
+  imagen_3: 'image_horizontal',
+  imagen_4: 'image_details',
 };
 
 const REQUIRED_COLUMNS = ['title', 'price', 'description'];
@@ -53,6 +61,10 @@ const IMAGE_COLUMNS = ['image_front', 'image_back', 'image_horizontal', 'image_d
 const REQUIRED_IMAGE_COLUMNS = ['image_front', 'image_back', 'image_horizontal'];
 const MAX_ROWS = 100;
 const RESERVED_PD_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+// Public-data columns are recognised by either prefix: `pub_` (the search-param
+// convention used by the current seller template) or the legacy `pd_`. The prefix
+// is stripped to get the publicData key (e.g. pub_color / pd_color -> color).
+const PUBLIC_DATA_PREFIXES = ['pub_', 'pd_'];
 // Fields defined as multi-enum in the Console — single values are wrapped in arrays
 // so the Sharetribe API always receives an array for these fields.
 const MULTI_ENUM_PD_FIELDS = new Set(['color', 'all_sizes', 'estilo']);
@@ -179,12 +191,13 @@ function validateRows(rows, imageMap, authorOptions = {}) {
       }
     }
 
-    // Extract publicData from pd_* columns. Use a null-prototype object and
+    // Extract publicData from pub_*/pd_* columns. Use a null-prototype object and
     // reject reserved keys to prevent prototype pollution from CSV headers.
     const publicData = Object.create(null);
     for (const [key, value] of Object.entries(row)) {
-      if (key.startsWith('pd_') && value && value.trim() !== '') {
-        const pdKey = key.slice(3); // pd_color -> color
+      const prefix = PUBLIC_DATA_PREFIXES.find(p => key.startsWith(p));
+      if (prefix && value && value.trim() !== '') {
+        const pdKey = key.slice(prefix.length); // pub_color / pd_color -> color
         if (RESERVED_PD_KEYS.has(pdKey)) {
           rowErrors.push(
             `Row ${rowNum}: publicData column "${key}" uses a reserved key and was skipped.`

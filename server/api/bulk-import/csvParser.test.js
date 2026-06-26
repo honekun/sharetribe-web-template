@@ -519,6 +519,116 @@ describe('validateRows', () => {
     expect(result.rows[0].publicData).toEqual({});
   });
 
+  // --- Current seller template: pub_* prefix + imagen_N image columns ---
+
+  it('extracts pub_* columns as publicData (current template prefix)', () => {
+    const result = validateRows(
+      [
+        validRow({
+          pub_brand: 'adidas',
+          pub_genero: 'unisex',
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].publicData).toEqual({ brand: 'adidas', genero: 'unisex' });
+  });
+
+  it('wraps multi-enum pub_* fields in arrays just like pd_*', () => {
+    const result = validateRows(
+      [
+        validRow({
+          pub_color: 'azul',
+          pub_all_sizes: 'm',
+          pub_estilo: 'vintage|retro',
+          image_front: 'front.jpg',
+          image_back: 'back.jpg',
+          image_horizontal: 'front.jpg',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.rows[0].publicData.color).toEqual(['azul']);
+    expect(result.rows[0].publicData.all_sizes).toEqual(['m']);
+    expect(result.rows[0].publicData.estilo).toEqual(['vintage', 'retro']);
+  });
+
+  it('maps imagen_1..4 headers to the four image slots', () => {
+    const rows = parseCsv(
+      buildCsv(
+        ['title', 'description', 'price', 'imagen_1', 'imagen_2', 'imagen_3', 'imagen_4'],
+        ['Item', 'Desc', '100', 'front.jpg', 'back.jpg', 'front.jpg', 'back.jpg']
+      )
+    );
+    const result = validateRows(rows, imageMap);
+    expect(result.valid).toBe(true);
+    expect(result.rows[0].imageSlots).toEqual({
+      front: 'front.jpg',
+      back: 'back.jpg',
+      horizontal: 'front.jpg',
+      details: 'back.jpg',
+    });
+  });
+
+  it('processes a full current-template row (pub_* + imagen_N) end-to-end', () => {
+    const rows = parseCsv(
+      buildCsv(
+        [
+          'title',
+          'description',
+          'price',
+          'pub_brand',
+          'pub_categoryLevel1',
+          'pub_color',
+          'pub_all_sizes',
+          'pub_genero',
+          'pub_estado',
+          'pub_estilo',
+          'imagen_1',
+          'imagen_2',
+          'imagen_3',
+        ],
+        [
+          'Chamarra',
+          'Desc',
+          '"$1,800.00"',
+          'adidas',
+          'ropa',
+          'azul',
+          'm',
+          'unisex',
+          'buen-estado',
+          'vintage',
+          'front.jpg',
+          'back.jpg',
+          'front.jpg',
+        ]
+      )
+    );
+    const result = validateRows(rows, imageMap, { currentUserId: 'me' });
+    expect(result.valid).toBe(true);
+    const row = result.rows[0];
+    expect(row.price).toBe(1800);
+    expect(row.authorId).toBe('me');
+    expect(row.publicData).toEqual({
+      brand: 'adidas',
+      categoryLevel1: 'ropa',
+      color: ['azul'],
+      all_sizes: ['m'],
+      genero: 'unisex',
+      estado: 'buen-estado',
+      estilo: ['vintage'],
+    });
+    expect(row.imageSlots).toEqual({
+      front: 'front.jpg',
+      back: 'back.jpg',
+      horizontal: 'front.jpg',
+    });
+  });
+
   // --- Geolocation ---
 
   it('parses lat/lng as floats', () => {
