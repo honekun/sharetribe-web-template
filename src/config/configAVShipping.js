@@ -159,4 +159,10 @@ module.exports = {
   isEspecialSize,
   getShippingPrice,
   getAvailableDeliveryTypes,
+  markupPct,
+  roundUpToSubunits,
+  eshipAmountIncludesIva,
+  eshipBaseUrl,
+  applyBuyerMarkup,
+  bucketForRate,
 };

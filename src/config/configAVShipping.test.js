@@ -106,6 +106,42 @@ describe('getPackageSizeForCategory mapping (real Console category ids)', () => 
   });
 });
 
+describe('applyBuyerMarkup', () => {
+  const { applyBuyerMarkup, markupPct, roundUpToSubunits } = require('./configAVShipping');
+
+  test('applies the markup and rounds up to the nearest peso', () => {
+    // 10000 centavos * 1.18 = 11800 -> already a whole peso
+    expect(applyBuyerMarkup(10000)).toBe(11800);
+  });
+
+  test('rounds a fractional-peso result UP to the next peso', () => {
+    // 9999 * 1.18 = 11798.82 -> ceil to nearest 100 -> 11800
+    expect(applyBuyerMarkup(9999)).toBe(11800);
+  });
+
+  test('uses the configured markup and rounding constants', () => {
+    expect(markupPct).toBeCloseTo(0.18, 5);
+    expect(roundUpToSubunits).toBe(100);
+  });
+});
+
+describe('bucketForRate', () => {
+  const { bucketForRate } = require('./configAVShipping');
+
+  test('maps a FASTEST-tagged rate to nacionalExpress', () => {
+    expect(bucketForRate({ tags: ['FASTEST'] })).toBe('nacionalExpress');
+  });
+
+  test('maps a CHEAPEST-tagged rate to nacionalEstandar', () => {
+    expect(bucketForRate({ tags: ['CHEAPEST'] })).toBe('nacionalEstandar');
+  });
+
+  test('returns null for an untagged rate', () => {
+    expect(bucketForRate({ tags: ['BESTVALUE'] })).toBe(null);
+    expect(bucketForRate({})).toBe(null);
+  });
+});
+
 describe('resolvePackageSize(publicData)', () => {
   const { resolvePackageSize } = require('./configAVShipping');
 
