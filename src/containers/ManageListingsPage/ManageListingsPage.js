@@ -66,11 +66,14 @@ const Heading = props => {
       <H3 as="h1" className={css.headingNoListings}>
         <FormattedMessage id="ManageListingsPage.noResults" />
       </H3>
-      <p className={css.createListingParagraph}>
-        <NamedLink className={css.createListingLink} name="NewListingPage">
+      <div className={`${avCss.buttonGroup} ${avCss.noListingsButtonGroup}`}>
+        <NamedLink className={avCss.newListingButton} name="BulkImportPage">
+          <FormattedMessage id="ManageListingsPage.bulkImport" />
+        </NamedLink>
+        <NamedLink className={avCss.newListingButton} name="NewListingPage">
           <FormattedMessage id="ManageListingsPage.createListing" />
         </NamedLink>
-      </p>
+      </div>
     </div>
   ) : null;
 };

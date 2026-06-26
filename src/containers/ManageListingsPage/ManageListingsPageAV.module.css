@@ -23,14 +23,24 @@
   }
 }
 
-/* Group holding the "bulk import" + "create listing" buttons. `margin-left: auto`
-   keeps it right-aligned both inline with the title and when it wraps below. */
+/* Group holding the "bulk import" + "create listing" buttons. Reused on both the
+   "has listings" header (right-aligned) and the "no listings" screen (inline). */
 .buttonGroup {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
+}
+
+/* In the header, keep the group right-aligned both inline with the title and
+   when it wraps below it. */
+.headingRow .buttonGroup {
   margin-left: auto;
+}
+
+/* Spacing for the group on the empty (no listings) screen. */
+.noListingsButtonGroup {
+  margin-top: 8px;
 }
 
 /* "Create listing" pill button. */
