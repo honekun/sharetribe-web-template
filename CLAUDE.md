@@ -85,7 +85,7 @@ yarn run translate                         # Translation management
 
 `src/containers/ListingPage/AVListingDetails/` — curated attribute summary (brand/sizes/condition/colors/category/género) as `/s?pub_*` links + description excerpt with show more/less; rendered via OrderPanel `detailsSlot`.
 
-**Custom pages:** `MakeOfferPage`, `RequestQuotePage`, `ManageAccountPage` (negotiation); `MyPurchasesPage`, `MySalesPage`, `MyBalancePage`; `BulkImportPage` (`/admin/bulk-import`, admin CSV+image import — see `docs/bulk-import.md`).
+**Custom pages:** `MakeOfferPage`, `RequestQuotePage`, `ManageAccountPage` (negotiation); `MyPurchasesPage`, `MySalesPage`, `MyBalancePage`; `BulkImportPage` (`/admin/bulk-import`, CSV+image import open to any signed-in user — listings author to the current user; `BULK_IMPORT_OPERATOR_EMAILS` flags "admin" users who may add a `user_id` column to author for others. Tiered limits + per-user hourly rate limit + magic-byte image sniffing; blue CTA on `/l/new`. See `docs/bulk-import.md`).
 
 ### Custom PageBuilder sections (`SectionBuilder/`)
 
@@ -102,7 +102,7 @@ yarn run translate                         # Translation management
 | `SectionSelectedUser` | `avSelectedUsers` / `av-selected-users-*` | block names = user UUIDs |
 | `SectionInstaGrid` | `avInstaGrid` / `av-insta-grid-*` | 2–6 col image grid |
 
-**Custom blocks** (`BlockBuilder/`): `BlockPriceSelector`, `BlockDefault`. `BlockDefault` blockName tokens (parsed in `extensions/pageBuilder/av/blocks.js` `createBlockCustomProps`): `smallerTitles ::` (mirrors `- SmallerTitles`), `mediaTitle ::` (renders media between the title and the rest of the content: title → media → text/CTA), `blueTitle ::` (mirrors `- BlueTitle` but colors only that block's own title, not body-markdown headings); `fullLinks ::` (applies `word-break: keep-all` to links in the block's body `<p>` elements so a word/URL is never broken mid-character — a too-long link overflows at full size instead of splitting).
+**Custom blocks** (`BlockBuilder/`): `BlockPriceSelector`, `BlockDefault`. `BlockDefault` blockName tokens (parsed in `extensions/pageBuilder/av/blocks.js` `createBlockCustomProps`): `smallerTitles ::` (mirrors `- SmallerTitles`), `mediaTitle ::` (renders media between the title and the rest of the content: title → media → text/CTA), `blueTitle ::` (mirrors `- BlueTitle` but colors only that block's own title, not body-markdown headings); `fullLinks ::` (applies `word-break: keep-all` to links in the block's body `<p>` elements so a word/URL is never broken mid-character — a too-long link overflows at full size instead of splitting); `imgTop ::` (applies `object-position: top` to the block media img/video so cropped media anchors to the top instead of center).
 
 ### ListingPage carousel layout (AVListingPageCarousel)
 
@@ -130,6 +130,16 @@ Events: `user/created` → welcome email + admin & user WhatsApp; `transaction/t
 Env vars: `SHARETRIBE_INTEGRATION_CLIENT_ID`, `SHARETRIBE_INTEGRATION_CLIENT_SECRET`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ADMIN_PHONE` (E.164), `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`.
 
 WhatsApp templates (need Meta approval): `av_welcome_user`, `av_admin_new_user`, `av_purchase_confirmed`, `av_sale_received`, `av_delivered`, `av_cancelled`, `av_booking_accepted`, `av_booking_declined`, `av_new_message`.
+
+## Live Shipping Quotes (eShip / myeship.co)
+
+Buyer shipping price is **quoted live at checkout** from the eShip carrier API (account "Segmail") — the old static `priceGrid` in `configAVShipping.js` is **deprecated** (kept, not used at checkout). Flow: buyer enters MX destination in the payment form → client `POST /api/shipping/quote` → server resolves the seller's stored origin (`integrationSdk.users.show` → `profile.protectedData.shippingOrigin`) + the parcel (`packageSizes[resolvePackageSize(listing)]`) → eShip `POST /rest/quotation` (one call → `rates[]`) → bucket **FASTEST→Express (`nacionalExpress`)** / **CHEAPEST→Estándar (`nacionalEstandar`)**, apply `applyBuyerMarkup` (markup + round up) → cache under a `quoteToken` (15-min TTL) → return buckets + raw rates. Buyer picks a bucket → `avShippingType`/`avQuoteToken`/`avDestination`/`buyerEmail` flow through `getOrderParams` into `orderData`.
+
+Authoritative price is server-derived in **`transactionLineItems` (now `async`)** via `shippingQuoteService.resolveBucketPrice` (cache hit → pinned; **miss → re-quote**); the client price is never trusted. The 3 callers (`transaction-line-items.js`, `initiate-privileged.js`, `transition-privileged.js`) now `await` it. Chosen rate persisted to transaction `protectedData.avShipping` (for Spec B labels + payout). No static-grid fallback: no origin / `especial` / carrier error → buyer sees **Contactar AV** (retry on transient).
+
+Modules: `server/api-util/eshipClient.js` (HTTP), `server/services/shippingQuoteService.js` (orchestration + cache), `server/api/shipping-quote/` (`/api/shipping/quote`, AV-owned in `customApiRoutes.js`), `server/api-util/avShipping.js` (persist helper). Client: `CheckoutPage/shippingQuote.duck.js` (global reducer), `CheckoutPage/AVShippingSelector/` (buckets + raw list + retry/Contactar AV), `ShippingOriginPage` (`/account/shipping-origin`, seller origin in `protectedData.shippingOrigin`), `ManageListingsPage/ShippingOriginBanner/` (missing-origin nudge), `util/shippingOrigin.js` (`hasCompleteShippingOrigin`). **Watchlist:** `StripePaymentForm.js` now hosts the selector slot + surfaces address values via `FormSpy` + gates the Pay button (`submitDisabledExtra`); `transactionLineItems` is async.
+
+Env vars: `ESHIP_API_KEY` (server secret, required to quote), `ESHIP_BASE_URL` (optional, default `https://api.myeship.co/rest`; QA `https://apiqa.myeship.co/rest`), `ESHIP_MARKUP_PCT` (optional, default `0.18`). Quoting also needs the AV-noti Integration creds (`SHARETRIBE_INTEGRATION_CLIENT_ID/SECRET`) to read seller origin.
 
 ## Listing Form Customizations (Edit Listing Wizard)
 
@@ -214,7 +224,7 @@ To add a token: add `hasToken(sectionName, 'MyToken')` in `parseSectionCustomOpt
 | `translations/en.json` | AV keys mixed with upstream |
 | `TopbarContainer/Topbar/TopbarDesktop/CustomLinksMenu/*` | AV user/category dropdowns (~480 LOC) |
 | `CheckoutPage/CheckoutPageWithPayment.js` | Default Stripe country (`configAV.defaultCountry`) |
-| `EditListingWizard/EditListingWizard.js` | Default Stripe Connect payout country |
+| `EditListingWizard/EditListingWizard.js` | Default Stripe Connect payout country; blue "Bulk import" CTA (`NamedLink`) on new-listing flow |
 | `EditListingWizard/EditListingWizardTab.js` | `currentUser` prop drilling for pricing |
 | `EditListingWizard/EditListingDetailsPanel/EditListingDetailsForm.js` | Two-column grid + `PhotoGallerySection` |
 | `EditListingWizard/EditListingPricingPanel/EditListingPricing{Panel,Form}.js` | `originalPrice` field (gated by `configAV`) |
@@ -229,7 +239,7 @@ To add a token: add `hasToken(sectionName, 'MyToken')` in `parseSectionCustomOpt
 | `components/CustomExtendedDataSection/CustomExtendedDataSection.js` | Custom `color`/`all_sizes` display dispatch (key→component map) |
 | `components/LayoutComposer/LayoutSideNavigation/LayoutWrapperAccountSettingsSideNav.js` | Account tabs from `getAccountSettingsTabs()` extension |
 
-Also high-conflict on sync: `SearchResultsPanel.js` (AVListingCard swap), `CMSPage.js` (section injection), `TopbarDesktop.js`/`TopbarMobileMenu.js`/`UserNav.js` (nav links), `EditListingPhotosPanel/`, `EditListing{Delivery,Location}Form.js` (grid wrappers), `EditListingPricingAndStockPanel.js` (EarningsEstimator + originalPrice), `SectionGallery.js`/`ListingImageGallery.js` (imageSlots captions), `OrderBreakdown.js` (`LineItemProviderCommissionFixedMaybe`), `OrderPanel.js` (originalPrice), `configDefault.js` (earningsEstimate). Small CSS-module forks (restyles kept inline due to scoped-class/var coupling — see the `AV:` comments in each): `SectionContainer.module.css`, `SectionListings.module.css`, `FilterPlain.module.css`.
+Also high-conflict on sync: `SearchResultsPanel.js` (AVListingCard swap), `CMSPage.js` (section injection), `TopbarDesktop.js`/`TopbarMobileMenu.js`/`UserNav.js` (nav links), `EditListingPhotosPanel/`, `EditListing{Delivery,Location}Form.js` (grid wrappers), `EditListingPricingAndStockPanel.js` (EarningsEstimator + originalPrice), `SectionGallery.js`/`ListingImageGallery.js` (imageSlots captions), `OrderBreakdown.js` (`LineItemProviderCommissionFixedMaybe`), `OrderPanel.js` (originalPrice), `configDefault.js` (earningsEstimate), `CheckoutPage/ShippingDetails/ShippingDetails.js` (MX-only address layout: Calle/Número Exterior+Interior/Colonia/C.P.+Ciudad/Estado-select/Teléfono; AV `ShippingDetails.mx*` keys; states from `config/configMxStates.js`), `CheckoutPage/CheckoutPageTransactionHelpers.js` (`getShippingDetailsMaybe` composes MX fields into `line1`/`line2` + structured keys, hardcodes country 'MX'), `CheckoutPage/StripePaymentForm/StripePaymentForm.js` (shipping→billing copy maps colonia→line2, country→'MX'). Small CSS-module forks (restyles kept inline due to scoped-class/var coupling — see the `AV:` comments in each): `SectionContainer.module.css`, `SectionListings.module.css`, `FilterPlain.module.css`.
 
 Brand colors and the `TabNavHorizontal` `darkSkin` reskin were consolidated into `avBrandOverrides.css` (commit `c3bfa1b06`), so `marketplaceDefaults.css` and `TabNavHorizontal.module.css` are now upstream-clean — do not re-add AV CSS to them.
 
@@ -242,7 +252,7 @@ Brand colors and the `TabNavHorizontal` `darkSkin` reskin were consolidated into
 | `containers/reducers.js` | Custom page reducers |
 | `ducks/index.js` | `avExtension` duck |
 | `server/index.js` | AV-noti poller + `mountCustomApiRoutes(app)` (before `app.use('/api', apiRouter)`) |
-| `server/customApiRoutes.js` | AV-owned: `/api/brevo`, `/api/instagram`, `/api/my-balance`, `/api/bulk-import` |
+| `server/customApiRoutes.js` | AV-owned: `/api/brevo`, `/api/instagram`, `/api/my-balance`, `/api/bulk-import`, `/api/shipping` |
 
 ## Deployment
 
@@ -260,6 +270,6 @@ Resolve conflicts reviewing customized areas first: `src/config`, `src/component
 
 ## Documentation
 
-`docs/` (read before changing the related subsystem): `bulk-import.md`, `listing-custom-fields-setup.md`, `console-customization-guide.md`, `test-account-setup.md`, `bidding-research.md`, `ai_notes.md`.
+`docs/` (read before changing the related subsystem): `bulk-import.md`, `listing-custom-fields-setup.md`, `console-customization-guide.md`, `test-account-setup.md`, `bidding-research.md`, `ai_notes.md`, `HEROKU-CHECKS.md` (in-memory state & multi-dyno safety — read before scaling `web` past 1).
 
-Implementation plans (written 2026-06-12, **not yet implemented** — execute task-by-task per plan headers): `plan-bulk-import-all-users.md`, `plan-favorites-page.md`, `plan-shopping-bag.md`.
+Implementation plans (written 2026-06-12, **not yet implemented** — execute task-by-task per plan headers): `plan-favorites-page.md`, `plan-shopping-bag.md`. (`plan-bulk-import-all-users.md` has been implemented as a narrower variant — see `docs/bulk-import.md`.)

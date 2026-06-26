@@ -285,10 +285,8 @@ the fields there so they appear in the listing form.
 | Schema type | `multi_enum` (sellers can pick multiple sizes) |
 | Scope       | `public`                                       |
 
-The grouping (Estándar, MX, US, Curvy) is handled by the app automatically. The list below documents
-the canonical options defined in code.
-
-**Options to add:**
+The grouping (Estándar, MX, US, Curvy, Calzado/Shoes, Anillos/Rings) is handled by the app
+automatically. The list below documents the canonical options defined in code.
 
 **Estándar group**
 
@@ -301,25 +299,22 @@ the canonical options defined in code.
 | M            | `m`        |
 | L            | `l`        |
 | XL           | `xl`       |
-| XXL          | `xxl`      |
-| XXXL         | `xxxl`     |
 
 **MX group**
 
 | Display Name | Option Key |
 | ------------ | ---------- |
-| MX 22        | `mx_22`    |
 | MX 24        | `mx_24`    |
+| MX 25        | `mx_25`    |
 | MX 26        | `mx_26`    |
+| MX 27        | `mx_27`    |
 | MX 28        | `mx_28`    |
+| MX 29        | `mx_29`    |
 | MX 30        | `mx_30`    |
+| MX 31        | `mx_31`    |
 | MX 32        | `mx_32`    |
+| MX 33        | `mx_33`    |
 | MX 34        | `mx_34`    |
-| MX 36        | `mx_36`    |
-| MX 38        | `mx_38`    |
-| MX 40        | `mx_40`    |
-| MX 42        | `mx_42`    |
-| MX 44        | `mx_44`    |
 
 **US group**
 
@@ -333,19 +328,51 @@ the canonical options defined in code.
 | US 8         | `us_8`     |
 | US 10        | `us_10`    |
 | US 12        | `us_12`    |
-| US 14        | `us_14`    |
-| US 16        | `us_16`    |
 
 **Curvy group**
 
 | Display Name | Option Key |
 | ------------ | ---------- |
-| 1X           | `curvy_1x` |
-| 2X           | `curvy_2x` |
-| 3X           | `curvy_3x` |
-| 4X           | `curvy_4x` |
-| 5X           | `curvy_5x` |
-| 6X           | `curvy_6x` |
+| 0XL          | `curvy_0x` |
+| 1XL          | `curvy_1x` |
+| 2XL          | `curvy_2x` |
+| 3XL          | `curvy_3x` |
+| 4XL          | `curvy_4x` |
+| 5XL          | `curvy_5x` |
+
+**Calzado / Shoes group (MX, half sizes)**
+
+| Display Name | Option Key       |
+| ------------ | ---------------- |
+| MX 22        | `mx_shoes_22x`   |
+| MX 22.5      | `mx_shoes_22.5x` |
+| MX 23        | `mx_shoes_23x`   |
+| MX 23.5      | `mx_shoes_23.5x` |
+| MX 24        | `mx_shoes_24x`   |
+| MX 24.5      | `mx_shoes_24.5x` |
+| MX 25        | `mx_shoes_25x`   |
+| MX 25.5      | `mx_shoes_25.5x` |
+| MX 26        | `mx_shoes_26x`   |
+| MX 26.5      | `mx_shoes_26.5x` |
+| MX 27        | `mx_shoes_27x`   |
+| MX 27.5      | `mx_shoes_27.5x` |
+| MX 28        | `mx_shoes_28x`   |
+| MX 28.5      | `mx_shoes_28.5x` |
+| MX 29        | `mx_shoes_29x`   |
+
+**Anillos / Rings group**
+
+| Display Name | Option Key |
+| ------------ | ---------- |
+| 4 / 14.8mm   | `rings_4`  |
+| 5 / 15.7mm   | `rings_5`  |
+| 6 / 16.5mm   | `rings_6`  |
+| 7 / 17.3mm   | `rings_7`  |
+| 8 / 18.1mm   | `rings_8`  |
+| 9 / 18.9mm   | `rings_9`  |
+| 10 / 19.8mm  | `rings_10` |
+| 11 / 20.6mm  | `rings_11` |
+| 12 / 21.4mm  | `rings_12` |
 
 ---
 
@@ -380,8 +407,8 @@ Every section has:
 - **Section Name** — optional display name; also used to apply visual style tokens (see
   [Section 5 — Display Options](#5-display-options))
 - **Blocks** — individual items inside the section (listings, categories, images, etc.)
-- **Block Name** — used by custom sections to pass data; also carries display tokens for
-  block-level styling (see [Block Name Tokens](#52-block-name-tokens))
+- **Block Name** — used by custom sections to pass data; also carries display tokens for block-level
+  styling (see [Block Name Tokens](#52-block-name-tokens))
 
 ---
 
@@ -509,7 +536,8 @@ galleries or mood boards. No listing data is loaded.
 
 A flexible hero banner: a background image with a title, description, and up to two CTA buttons. It
 supports an optional mobile-only background, an optional whole-section link, and per-instance button
-styling. You can place several independent `avHero2` instances on the same page — each is keyed by its Section ID.
+styling. You can place several independent `avHero2` instances on the same page — each is keyed by
+its Section ID.
 
 **How it renders:**
 
@@ -528,25 +556,25 @@ styling. You can place several independent `avHero2` instances on the same page 
 
 **Buttons (CTAs):** Each button appears only when its **text** key is set.
 
-- A button uses `AVHero2.<name>.cta1Text` / `cta2Text` for its label and
-  `AVHero2.<name>.cta1Link` / `cta2Link` for its destination (default `/s`).
+- A button uses `AVHero2.<name>.cta1Text` / `cta2Text` for its label and `AVHero2.<name>.cta1Link` /
+  `cta2Link` for its destination (default `/s`).
 - On **CMS pages** (`/p/...`) you may instead fill the section's built-in **Call to Action** fields;
-  the translation keys, when set, take precedence. On the **Landing page**, buttons come **only** from
-  the translation keys.
+  the translation keys, when set, take precedence. On the **Landing page**, buttons come **only**
+  from the translation keys.
 
 **Translation strings** (Console → Content → Translations; replace `<name>` with the Section ID
 suffix):
 
-| Key                                     | Default | Effect                                                                                  |
-| --------------------------------------- | ------- | --------------------------------------------------------------------------------------- |
-| `AVHero2.<name>.cta1Text`               | empty   | First button label. The button only shows when this is set.                             |
-| `AVHero2.<name>.cta1Link`               | `/s`    | First button destination (used when `cta1Text` is set).                                 |
-| `AVHero2.<name>.cta1Style`              | empty   | First button style tokens (see below). Empty → Section Name CTA tokens, then `primary`.  |
-| `AVHero2.<name>.cta2Text`               | empty   | Second button label. The button only shows when this is set.                            |
-| `AVHero2.<name>.cta2Link`               | `/s`    | Second button destination.                                                              |
-| `AVHero2.<name>.cta2Style`              | empty   | Second button style tokens. Empty → Section Name CTA tokens, then `secondary`.           |
-| `AVHero2.<name>.mobileBackgroundUrl`    | empty   | Background image shown only on mobile (≤767 px), layered above the desktop background.   |
-| `AVHero2.<name>.bgLink`                 | empty   | Makes the whole section a link to this URL. Leave unset or set to `#` for no link.       |
+| Key                                  | Default | Effect                                                                                  |
+| ------------------------------------ | ------- | --------------------------------------------------------------------------------------- |
+| `AVHero2.<name>.cta1Text`            | empty   | First button label. The button only shows when this is set.                             |
+| `AVHero2.<name>.cta1Link`            | `/s`    | First button destination (used when `cta1Text` is set).                                 |
+| `AVHero2.<name>.cta1Style`           | empty   | First button style tokens (see below). Empty → Section Name CTA tokens, then `primary`. |
+| `AVHero2.<name>.cta2Text`            | empty   | Second button label. The button only shows when this is set.                            |
+| `AVHero2.<name>.cta2Link`            | `/s`    | Second button destination.                                                              |
+| `AVHero2.<name>.cta2Style`           | empty   | Second button style tokens. Empty → Section Name CTA tokens, then `secondary`.          |
+| `AVHero2.<name>.mobileBackgroundUrl` | empty   | Background image shown only on mobile (≤767 px), layered above the desktop background.  |
+| `AVHero2.<name>.bgLink`              | empty   | Makes the whole section a link to this URL. Leave unset or set to `#` for no link.      |
 
 **Button styling — two ways:**
 
@@ -555,10 +583,11 @@ suffix):
    - Colour: `primary`, `secondary`, `blue`, `lightBlue`, `purple`, `pink`, `yellow`
    - Shape / border: `roundedFull`, `rounded`, `square`, `dashed`, `solid`, `noOutline`
    - Font: `headingFont`, `bodyFont`, `accentFont`
-2. **Both buttons (Section Name):** If you leave `cta1Style` / `cta2Style` empty, any CTA tokens on the
-   **Section Name** style **both** buttons — e.g. Section Name `Summer Hero - SectionCtaBtnBlue -
-   Rounded`. See [Section display options](#51-section-display-options) for the full token list.
-   When neither is set, buttons fall back to the default `primary` / `secondary` styles.
+2. **Both buttons (Section Name):** If you leave `cta1Style` / `cta2Style` empty, any CTA tokens on
+   the **Section Name** style **both** buttons — e.g. Section Name
+   `Summer Hero - SectionCtaBtnBlue - Rounded`. See
+   [Section display options](#51-section-display-options) for the full token list. When neither is
+   set, buttons fall back to the default `primary` / `secondary` styles.
 
 **Section Name display tokens:** Beyond the CTA tokens above, this section honours the standard
 Section Name tokens (title colour/alignment, paddings, etc. — see
@@ -614,15 +643,17 @@ strings. If you set none, buttons use the default `primary` style.
   `- SectionCtaBtnBlue - Rounded`). See [Section display options](#51-section-display-options) for
   the full token list.
 - **A single panel** — add tokens to that block's **Block Name** using the `token ::` syntax (each
-  token ends with a space + `::`). This overrides the section-level style for just that panel.
-  See [Block Name Tokens](#52-block-name-tokens) for the full list.
+  token ends with a space + `::`). This overrides the section-level style for just that panel. See
+  [Block Name Tokens](#52-block-name-tokens) for the full list.
   - Colour (pick one): `blockCtaBtnBlue`, `blockCtaBtnLightBlue`, `blockCtaBtnPurple`,
     `blockCtaBtnPink`, `blockCtaBtnYellow`
-  - Shape / style: `roundedFull`, `rounded`, `square`, `dashed`, `solid`, `noOutline`, `ctaBtnCenter`
+  - Shape / style: `roundedFull`, `rounded`, `square`, `dashed`, `solid`, `noOutline`,
+    `ctaBtnCenter`
   - Example Block Name: `blockCtaBtnBlue :: rounded ::`
 
 **Translation strings:** None are used by this section. The background image, the panel link, the
-button text and link, and the button styling all come from the block (and Section/Block Name tokens).
+button text and link, and the button styling all come from the block (and Section/Block Name
+tokens).
 
 ---
 
@@ -667,7 +698,8 @@ appearance without any code changes. These tokens are set directly in the **Sect
 **Block Name** fields in the Sharetribe Console — no developer involvement needed.
 
 - **Section Name tokens** (prefix `- Token`) — apply to the whole section: layout width, title
-  colour, padding, button colour, and more. See [Section Display Options](#51-section-display-options).
+  colour, padding, button colour, and more. See
+  [Section Display Options](#51-section-display-options).
 - **Block Name tokens** (suffix `token ::`) — apply to a single block: title style, button colour,
   embedded components, and more. See [Block Name Tokens](#52-block-name-tokens).
 
@@ -688,40 +720,41 @@ dash, a space, then the token (`- Token`). Combine as many as you like.
 
 #### Layout and width
 
-| Token              | Effect                                                                                                                                                       |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `- Large`          | Widens the content area (up to 1370 px) so the section spans most of the page instead of the default reading width.                                          |
-| `- FullW`          | Full browser width, edge to edge — removes horizontal padding and the rounded corners on images. Best for full-bleed banners and image strips.               |
-| `- FullWHeader`    | Lets the header (title + description) stretch the full content width instead of being capped at the default reading width. Pairs well with centered text.     |
-| `- ShortHero`      | **Hero banners only** (`avHero2`): cuts the hero height to roughly half the screen.                                                                           |
-| `- 2/3 cols`       | **Two-column sections only**: splits the two columns into a one-third / two-thirds ratio instead of an even 50 / 50 split.                                    |
-| `- AvFeature`      | Feature layout — image and text sit side by side, full-bleed with no padding. This already includes full-width behaviour, so you do **not** add `- FullW`.    |
-| `- ReverseFeature` | The same feature layout as `- AvFeature`, but with the image on the opposite side.                                                                            |
+| Token              | Effect                                                                                                                                                     |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `- Large`          | Widens the content area (up to 1370 px) so the section spans most of the page instead of the default reading width.                                        |
+| `- FullW`          | Full browser width, edge to edge — removes horizontal padding and the rounded corners on images. Best for full-bleed banners and image strips.             |
+| `- FullWHeader`    | Lets the header (title + description) stretch the full content width instead of being capped at the default reading width. Pairs well with centered text.  |
+| `- ShortHero`      | **Hero banners only** (`avHero2`): cuts the hero height to roughly half the screen.                                                                        |
+| `- 2/3 cols`       | **Two-column sections only**: splits the two columns into a one-third / two-thirds ratio instead of an even 50 / 50 split.                                 |
+| `- AvFeature`      | Feature layout — image and text sit side by side, full-bleed with no padding. This already includes full-width behaviour, so you do **not** add `- FullW`. |
+| `- ReverseFeature` | The same feature layout as `- AvFeature`, but with the image on the opposite side.                                                                         |
 
 #### Title and text
 
-| Token               | Effect                                                                                                                                                       |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `- BlueTitle`       | Colours the section title (heading levels 1–3) in AV brand blue and adds a little space below the header.                                                    |
-| `- WhiteTitle`      | Colours the section title (heading levels 1–3) white — use on dark backgrounds.                                                                              |
-| `- CenterTitleText` | Centres the section title horizontally.                                                                                                                      |
-| `- CenterDescText`  | Centres the section's description paragraph.                                                                                                                  |
-| `- LargeDesc`       | Widens the description (up to 968 px on larger screens) so a long intro wraps onto fewer lines.                                                               |
-| `- SmallerTitles`   | Shifts every heading down one size level: H1 → 30 px, H2 → 20 px, H3 → 18 px, H4 → 16 px, H5 → 14 px. Use when a section's default headings feel too large.   |
+| Token               | Effect                                                                                                                                                      |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `- BlueTitle`       | Colours the section title (heading levels 1–3) in AV brand blue and adds a little space below the header.                                                   |
+| `- WhiteTitle`      | Colours the section title (heading levels 1–3) white — use on dark backgrounds.                                                                             |
+| `- CenterTitleText` | Centres the section title horizontally.                                                                                                                     |
+| `- CenterDescText`  | Centres the section's description paragraph.                                                                                                                |
+| `- LargeDesc`       | Widens the description (up to 968 px on larger screens) so a long intro wraps onto fewer lines.                                                             |
+| `- SmallerTitles`   | Shifts every heading down one size level: H1 → 30 px, H2 → 20 px, H3 → 18 px, H4 → 16 px, H5 → 14 px. Use when a section's default headings feel too large. |
 
 #### Spacing
 
-| Token             | Effect                                                                                                                                     |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `- NoPaddings`    | Removes all padding (top, bottom, left and right) around the content.                                                                     |
-| `- SmallGapCols`  | **Column / grid sections only**: tightens the horizontal gap between columns to 8 px (default 32 px).                                     |
-| `- SmallGapRows`  | **Column / grid sections only**: tightens the vertical gap between rows to 8 px (default 32 px). Combine with `- SmallGapCols` for both.  |
-| `- NoGapCols`     | **Column / grid sections only**: removes the horizontal gap between columns entirely (0 px).                                              |
-| `- NoGapRows`     | **Column / grid sections only**: removes the vertical gap between rows entirely (0 px). Combine with `- NoGapCols` for a flush grid.      |
+| Token            | Effect                                                                                                                                   |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `- NoPaddings`   | Removes all padding (top, bottom, left and right) around the content.                                                                    |
+| `- SmallGapCols` | **Column / grid sections only**: tightens the horizontal gap between columns to 8 px (default 32 px).                                    |
+| `- SmallGapRows` | **Column / grid sections only**: tightens the vertical gap between rows to 8 px (default 32 px). Combine with `- SmallGapCols` for both. |
+| `- NoGapCols`    | **Column / grid sections only**: removes the horizontal gap between columns entirely (0 px).                                             |
+| `- NoGapRows`    | **Column / grid sections only**: removes the vertical gap between rows entirely (0 px). Combine with `- NoGapCols` for a flush grid.     |
 
 #### Call-to-action button colour
 
-Restyles the CTA buttons inside the section (hero buttons, feature buttons, etc.). Pick **one** colour.
+Restyles the CTA buttons inside the section (hero buttons, feature buttons, etc.). Pick **one**
+colour.
 
 | Token                      | Effect            |
 | -------------------------- | ----------------- |
@@ -754,35 +787,35 @@ restyle the section's default button.
 
 ### 5.2 Block Name Tokens
 
-Block-level styling is controlled by tokens placed inside a block's **Block Name** field in
-Console. Each token ends with ` ::` (a space, then a double colon). Combine as many as you like, in
-any order.
+Block-level styling is controlled by tokens placed inside a block's **Block Name** field in Console.
+Each token ends with `::` (a space, then a double colon). Combine as many as you like, in any order.
 
 **Example:** `2Buttons :: smallerTitles ::`
 
 #### Layout and structure
 
-| Token                | Effect                                                                                                                                       |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `2Buttons ::`        | Adds a row of two buttons below the block content. Button text, links and styles come from the intl keys `TwoButtons.<blockId>.*` (see §10).  |
-| `photoSlider ::`     | Adds a 4-image photo carousel that auto-advances. Image URLs come from `PhotoSlider.<blockId>.image_1` … `.image_4` (see §10).                |
-| `mediaTitle ::`      | Moves the block's image to sit **between** the title and the rest of the content (title → image → text/button) instead of above the title.    |
-| `icon img ::`        | Renders the block's image as a small centred icon (48 px) and tightens the surrounding text — for icon-and-label feature blocks.              |
-| `social links ::`    | Shows social-media icon links (rendered by the footer block).                                                                                |
-| `newsletter form ::` | Embeds the Brevo email signup form. Disclaimer / success / error text come from the `NewsletterForm.*` keys (see §10).                        |
+| Token                | Effect                                                                                                                                            |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `2Buttons ::`        | Adds a row of two buttons below the block content. Button text, links and styles come from the intl keys `TwoButtons.<blockId>.*` (see §10).      |
+| `photoSlider ::`     | Adds a 4-image photo carousel that auto-advances. Image URLs come from `PhotoSlider.<blockId>.image_1` … `.image_4` (see §10).                    |
+| `mediaTitle ::`      | Moves the block's image to sit **between** the title and the rest of the content (title → image → text/button) instead of above the title.        |
+| `imgTop ::`          | When the block media is cropped (e.g. inside an AvFeature row), anchors it to the **top** instead of the default centre (`object-position: top`). |
+| `icon img ::`        | Renders the block's image as a small centred icon (48 px) and tightens the surrounding text — for icon-and-label feature blocks.                  |
+| `social links ::`    | Shows social-media icon links (rendered by the footer block).                                                                                     |
+| `newsletter form ::` | Embeds the Brevo email signup form. Disclaimer / success / error text come from the `NewsletterForm.*` keys (see §10).                            |
 
 #### Title style
 
-| Token              | Effect                                                                                                                                                          |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `smallerTitles ::` | Shifts every heading in the block down one size level (H1 → 30 px, H2 → 20 px, H3 → 18 px, H4 → 16 px, H5 → 14 px). Block-level mirror of section `- SmallerTitles`. |
-| `blueTitle ::`     | Colours only the block's own title in AV brand blue. Does **not** affect headings inside the body text. Block-level mirror of section `- BlueTitle`.            |
+| Token              | Effect                                                                                                                                                                                      |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `smallerTitles ::` | Shifts every heading in the block down one size level (H1 → 30 px, H2 → 20 px, H3 → 18 px, H4 → 16 px, H5 → 14 px). Block-level mirror of section `- SmallerTitles`.                        |
+| `blueTitle ::`     | Colours only the block's own title in AV brand blue. Does **not** affect headings inside the body text. Block-level mirror of section `- BlueTitle`.                                        |
 | `fullLinks ::`     | Keeps links inside the block's body paragraphs whole — a word or URL is never broken mid-character (`word-break: keep-all`); a too-long link overflows at full size instead of being split. |
 
 #### Block CTA button colour
 
-These set the colour of a single block's call-to-action button. They are mainly used to override
-the section-level button colour on one `avHero3` panel (see §4.9). Pick **one** colour.
+These set the colour of a single block's call-to-action button. They are mainly used to override the
+section-level button colour on one `avHero3` panel (see §4.9). Pick **one** colour.
 
 | Token                     | Effect            |
 | ------------------------- | ----------------- |
@@ -792,10 +825,10 @@ the section-level button colour on one `avHero3` panel (see §4.9). Pick **one**
 | `blockCtaBtnPink ::`      | Pink button       |
 | `blockCtaBtnYellow ::`    | Yellow button     |
 
-The same shape and font modifiers available for section buttons also work here with the `::`
-syntax, layered on top of the colour: `roundedFull ::`, `rounded ::`, `square ::`, `dashed ::`,
-`solid ::`, `noOutline ::`, `headingFont ::`, `bodyFont ::`, `accentFont ::`, `ctaBtnCenter ::`. A
-modifier on its own (e.g. `ctaBtnCenter ::`) keeps whatever colour the section already set.
+The same shape and font modifiers available for section buttons also work here with the `::` syntax,
+layered on top of the colour: `roundedFull ::`, `rounded ::`, `square ::`, `dashed ::`, `solid ::`,
+`noOutline ::`, `headingFont ::`, `bodyFont ::`, `accentFont ::`, `ctaBtnCenter ::`. A modifier on
+its own (e.g. `ctaBtnCenter ::`) keeps whatever colour the section already set.
 
 **Example Block Name:** `blockCtaBtnBlue :: rounded ::`
 
@@ -878,33 +911,58 @@ The bulk import tool lets you create many listings at once by uploading a single
 contains a CSV spreadsheet and all the listing images. It is available at `/admin/bulk-import` on
 the marketplace.
 
+**Who can use it.** Any signed-in user who can create listings can use the tool to bulk-create
+listings **for their own account** — every listing is created under the person who uploads. There is
+no separate operator password or allowlist to join. The new-listing screen (`/l/new`) also shows a
+blue **"Bulk import"** button (on desktop) that links straight to the tool.
+
+**Admins** (the small set of emails configured in `BULK_IMPORT_OPERATOR_EMAILS` — see
+[Bulk import settings](#bulk-import)) get one extra power: they can add a `user_id` column to the CSV
+to create listings **on behalf of other sellers**. For everyone else that column is ignored and
+rejected.
+
 **Key facts:**
 
-- Up to 100 listings per import
-- Up to 400 images per ZIP file
-- Maximum ZIP file size: 50 MB
-- Each row in the CSV creates one listing
-- Rows are processed one by one — if one row fails, the others continue
-- You must be signed in with an operator account allowlisted by the development team
+- Each row in the CSV creates one listing; rows are processed one by one, so if one row fails the
+  others still continue.
+- Listings are created under the uploader's account by default (admins can override per row).
+- The tool is **tiered** — admins can import bigger batches than regular sellers:
+
+  | Limit                | Regular seller | Admin  |
+  | -------------------- | -------------- | ------ |
+  | Listings per import  | 25             | 100    |
+  | Images per ZIP       | 100            | 400    |
+  | ZIP file size        | 20 MB          | 50 MB  |
+  | Imports per hour     | 3              | 20     |
+
+- You can only run **one import at a time** per account, and the server runs at most **3 imports at
+  once** across all users — if it's busy you'll be asked to try again shortly.
 
 ---
 
 ### 8.2 How to Use It
 
-1. **Open the tool** — go to `[your marketplace URL]/admin/bulk-import`.
-2. **Confirm you are signed in as an allowlisted operator** — there is no import key to enter or
-   store in the browser.
-3. **Download the CSV template** — click "Download CSV Template" to get a blank spreadsheet with all
-   the correct column headers.
-4. **Fill in the CSV** — one row per listing. See the
-   [CSV Column Reference](#84-csv-column-reference) below.
-5. **Prepare your images** — name each image file clearly. Image filenames in the CSV must exactly
-   match the filename (including extension) of the image files in your ZIP.
-6. **Create the ZIP** — pack your completed CSV and all image files into a single `.zip` archive.
+1. **Open the tool** — go to `[your marketplace URL]/admin/bulk-import`, or click the blue
+   **"Bulk import"** button on the new-listing screen. Just be signed in — there is no import key or
+   password to enter.
+2. **Download the CSV template** — click "Download CSV Template" to get a spreadsheet pre-filled
+   with the correct column headers (in Spanish, e.g. `Nombre de Producto*`, `Precio Venta (MXN)*`)
+   plus one example row. The "Ver ejemplo de ZIP" link in the help bar downloads a complete,
+   ready-to-upload example ZIP (a CSV plus matching images) you can open to see exactly how a finished
+   import looks.
+3. **Fill in the CSV** — one row per listing, replacing the example row. See the
+   [CSV Column Reference](#84-csv-column-reference) below. Leave the `user_id` column empty unless you
+   are an admin importing for another seller.
+4. **Prepare your images** — name each image file clearly. Image filenames in the CSV must exactly
+   match the filename (including extension) of the image files in your ZIP. Images must be real
+   `.jpg`, `.png`, or `.webp` files (the tool checks the actual file contents, not just the
+   extension).
+5. **Create the ZIP** — pack your completed CSV and all image files into a single `.zip` archive.
    Images can be in subfolders.
-7. **Upload and start** — click "Select ZIP file", choose your archive, then click "Start Import".
-8. **Monitor progress** — the page shows a live progress bar and reports which listings were created
-   successfully and which rows had errors.
+6. **Upload and start** — click "Select ZIP file", choose your archive, then click "Start Import".
+7. **Monitor progress** — the page shows a live progress bar and reports which listings were created
+   successfully and which rows had errors. Keep the page open; progress is tied to your account, so
+   you can't check it from a different account.
 
 ---
 
@@ -930,33 +988,48 @@ my-listings.zip
 - Exactly one CSV file (any filename, any folder level)
 - All images referenced in the CSV must be present
 - Two images cannot share the same filename, even in different folders
-- Maximum 401 entries (1 CSV + up to 400 images)
-- Maximum 50 MB compressed upload size
+- Images must be genuine `.jpg`, `.png`, or `.webp` files
+- Size and count limits depend on your tier (see the table in [8.1](#81-overview)): regular sellers
+  up to 25 listings / 100 images / 20 MB; admins up to 100 listings / 400 images / 50 MB
 
 ---
 
 ### 8.4 CSV Column Reference
 
+> **Spanish headers in the downloaded template.** The column reference below uses the internal
+> (English) column names. The template you download from the page uses the Spanish operator headers
+> instead — `Nombre de Producto*` → `title`, `Descripción*` → `description`, `Precio Venta (MXN)*` →
+> `price`, `Marca*` → `pd_brand`, `Categoría` → `pd_categoryLevel1`, `Subcategoría` →
+> `pd_categoryLevel2`, `Color` → `pd_color`, `Talla` → `pd_all_sizes`, `Género*` → `pd_genero`,
+> `Estado` → `pd_estado`, `Estilo` → `pd_estilo`, `Temporada` → `pd_temporada`, and
+> `Nombre imagen 1*`–`4` → the four image columns. The importer maps these automatically — keep the
+> headers from the template as-is and you don't need to rename anything.
+
 #### Required columns
 
-| Column        | What to enter                                              |
-| ------------- | ---------------------------------------------------------- |
-| `title`       | Listing title. Cannot be empty.                            |
-| `description` | Listing description. Cannot be empty.                      |
-| `price`       | Price in pesos (e.g. `450.00`). Must be a positive number. |
+| Column        | What to enter                                                                                                                                                                                                                                               |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`       | Listing title. Cannot be empty.                                                                                                                                                                                                                             |
+| `description` | Listing description. Cannot be empty.                                                                                                                                                                                                                       |
+| `price`       | Price in pesos (e.g. `450.00`). Must be a positive number. A `$` sign and thousands separators are fine — `$4,500.00` is read as `4500` and `$99.50` as `99.5`. (If a value contains a comma, your spreadsheet wraps it in quotes automatically on export.) |
 
 #### Optional core columns
 
-| Column             | Default         | What to enter                                                                                   |
-| ------------------ | --------------- | ----------------------------------------------------------------------------------------------- |
-| `author_id`        | Set by operator | The Sharetribe UUID of the seller this listing belongs to. Find it in Console → Manage → Users. |
-| `currency`         | `MXN`           | Currency code. Leave blank for MXN.                                                             |
-| `publish`          | `yes`           | `yes` to publish immediately, `no` to save as draft.                                            |
-| `shipping_enabled` | `true`          | `true` or `false`                                                                               |
-| `pickup_enabled`   | `false`         | `true` or `false`                                                                               |
-| `location_address` | _(empty)_       | Human-readable address (optional).                                                              |
-| `location_lat`     | _(empty)_       | Latitude number (optional, used for location search).                                           |
-| `location_lng`     | _(empty)_       | Longitude number (optional).                                                                    |
+| Column             | Default          | What to enter                                                                                                                                                  |
+| ------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `user_id`          | The current user | **Admins only.** The Sharetribe UUID of the seller the listing should belong to. Leave empty for normal use — a non-admin who fills it in gets a clear error. |
+| `currency`         | `MXN`            | Currency code. Leave blank for MXN.                                                                                                                            |
+| `publish`          | `yes`            | `yes` to publish immediately, `no` to save as draft.                                                                                                          |
+| `shipping_enabled` | `true`           | `true` or `false`                                                                                                                                             |
+| `pickup_enabled`   | `false`          | `true` or `false`                                                                                                                                             |
+| `location_address` | _(empty)_        | Human-readable address (optional).                                                                                                                            |
+| `location_lat`     | _(empty)_        | Latitude number (optional, used for location search).                                                                                                        |
+| `location_lng`     | _(empty)_        | Longitude number (optional).                                                                                                                                  |
+
+> **About `user_id`.** Regular sellers should leave this column empty (or remove it) — every listing
+> is automatically created under your own account. Admins find a seller's UUID in
+> Console → Manage → Users. The older column name `author_id` and the Spanish header `ID Vendedor`
+> still work as the same thing.
 
 #### Image columns
 
@@ -989,6 +1062,7 @@ is stripped when saving — so `pd_brand` becomes the `brand` attribute on the l
 | `pd_genero`         | Yes      | One gender option key                                                                                        |
 | `pd_estado`         | Yes      | One condition option key                                                                                     |
 | `pd_estilo`         | Yes      | One or more style option keys, pipe-separated                                                                |
+| `pd_temporada`      | No       | One season: `Primavera`, `Verano`, `Otoño`, or `Invierno`                                                    |
 | `pd_originalPrice`  | Yes      | The original retail price in pesos (e.g. `650.00`). Must be higher than `price` to show as a strike-through. |
 | `pd_tags`           | No       | Pipe-separated tags (e.g. `hot-list` or `hot-list\|nueva-llegada`)                                           |
 
@@ -1182,47 +1256,77 @@ Use these IDs in `pd_categoryLevel1`, `pd_categoryLevel2`, and `pd_categoryLevel
 | Vacaciones          | `vacaciones`        |
 | Seda                | `seda`              |
 
+#### Temporada option keys
+
+The `Temporada` column is optional. Use one of these values exactly (with the accent on `Otoño`):
+
+| Display name | Value to use |
+| ------------ | ------------ |
+| Primavera    | `Primavera`  |
+| Verano       | `Verano`     |
+| Otoño        | `Otoño`      |
+| Invierno     | `Invierno`   |
+
 #### Talla option keys
 
-| Display name | Use this key | Group    |
-| ------------ | ------------ | -------- |
-| Unitalla     | `unitalla`   | Estándar |
-| XXS          | `xxs`        | Estándar |
-| XS           | `xs`         | Estándar |
-| S            | `s`          | Estándar |
-| M            | `m`          | Estándar |
-| L            | `l`          | Estándar |
-| XL           | `xl`         | Estándar |
-| XXL          | `xxl`        | Estándar |
-| XXXL         | `xxxl`       | Estándar |
-| MX 22        | `mx_22`      | MX       |
-| MX 24        | `mx_24`      | MX       |
-| MX 26        | `mx_26`      | MX       |
-| MX 28        | `mx_28`      | MX       |
-| MX 30        | `mx_30`      | MX       |
-| MX 32        | `mx_32`      | MX       |
-| MX 34        | `mx_34`      | MX       |
-| MX 36        | `mx_36`      | MX       |
-| MX 38        | `mx_38`      | MX       |
-| MX 40        | `mx_40`      | MX       |
-| MX 42        | `mx_42`      | MX       |
-| MX 44        | `mx_44`      | MX       |
-| US 00        | `us_00`      | US       |
-| US 0         | `us_0`       | US       |
-| US 2         | `us_2`       | US       |
-| US 4         | `us_4`       | US       |
-| US 6         | `us_6`       | US       |
-| US 8         | `us_8`       | US       |
-| US 10        | `us_10`      | US       |
-| US 12        | `us_12`      | US       |
-| US 14        | `us_14`      | US       |
-| US 16        | `us_16`      | US       |
-| 1X           | `curvy_1x`   | Curvy    |
-| 2X           | `curvy_2x`   | Curvy    |
-| 3X           | `curvy_3x`   | Curvy    |
-| 4X           | `curvy_4x`   | Curvy    |
-| 5X           | `curvy_5x`   | Curvy    |
-| 6X           | `curvy_6x`   | Curvy    |
+| Display name | Use this key     | Group    |
+| ------------ | ---------------- | -------- |
+| Unitalla     | `unitalla`       | Estándar |
+| XXS          | `xxs`            | Estándar |
+| XS           | `xs`             | Estándar |
+| S            | `s`              | Estándar |
+| M            | `m`              | Estándar |
+| L            | `l`              | Estándar |
+| XL           | `xl`             | Estándar |
+| MX 24        | `mx_24`          | MX       |
+| MX 25        | `mx_25`          | MX       |
+| MX 26        | `mx_26`          | MX       |
+| MX 27        | `mx_27`          | MX       |
+| MX 28        | `mx_28`          | MX       |
+| MX 29        | `mx_29`          | MX       |
+| MX 30        | `mx_30`          | MX       |
+| MX 31        | `mx_31`          | MX       |
+| MX 32        | `mx_32`          | MX       |
+| MX 33        | `mx_33`          | MX       |
+| MX 34        | `mx_34`          | MX       |
+| US 00        | `us_00`          | US       |
+| US 0         | `us_0`           | US       |
+| US 2         | `us_2`           | US       |
+| US 4         | `us_4`           | US       |
+| US 6         | `us_6`           | US       |
+| US 8         | `us_8`           | US       |
+| US 10        | `us_10`          | US       |
+| US 12        | `us_12`          | US       |
+| 0XL          | `curvy_0x`       | Curvy    |
+| 1XL          | `curvy_1x`       | Curvy    |
+| 2XL          | `curvy_2x`       | Curvy    |
+| 3XL          | `curvy_3x`       | Curvy    |
+| 4XL          | `curvy_4x`       | Curvy    |
+| 5XL          | `curvy_5x`       | Curvy    |
+| MX 22        | `mx_shoes_22x`   | Calzado  |
+| MX 22.5      | `mx_shoes_22.5x` | Calzado  |
+| MX 23        | `mx_shoes_23x`   | Calzado  |
+| MX 23.5      | `mx_shoes_23.5x` | Calzado  |
+| MX 24        | `mx_shoes_24x`   | Calzado  |
+| MX 24.5      | `mx_shoes_24.5x` | Calzado  |
+| MX 25        | `mx_shoes_25x`   | Calzado  |
+| MX 25.5      | `mx_shoes_25.5x` | Calzado  |
+| MX 26        | `mx_shoes_26x`   | Calzado  |
+| MX 26.5      | `mx_shoes_26.5x` | Calzado  |
+| MX 27        | `mx_shoes_27x`   | Calzado  |
+| MX 27.5      | `mx_shoes_27.5x` | Calzado  |
+| MX 28        | `mx_shoes_28x`   | Calzado  |
+| MX 28.5      | `mx_shoes_28.5x` | Calzado  |
+| MX 29        | `mx_shoes_29x`   | Calzado  |
+| 4 / 14.8mm   | `rings_4`        | Anillos  |
+| 5 / 15.7mm   | `rings_5`        | Anillos  |
+| 6 / 16.5mm   | `rings_6`        | Anillos  |
+| 7 / 17.3mm   | `rings_7`        | Anillos  |
+| 8 / 18.1mm   | `rings_8`        | Anillos  |
+| 9 / 18.9mm   | `rings_9`        | Anillos  |
+| 10 / 19.8mm  | `rings_10`       | Anillos  |
+| 11 / 20.6mm  | `rings_11`       | Anillos  |
+| 12 / 21.4mm  | `rings_12`       | Anillos  |
 
 #### Brand option keys
 
@@ -1249,19 +1353,24 @@ see `docs/data/brand.csv`.
 
 ### 8.6 Troubleshooting
 
-| Problem                                  | Likely cause                                            | What to do                                                         |
-| ---------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------ |
-| "signed-in operator session" error       | You are not signed in                                   | Sign in with the allowlisted operator account                      |
-| "not allowed" error                      | Your account is not in the server allowlist             | Ask the administrator to add your email or user ID                 |
-| "expired action token" error             | The short-lived upload token expired                    | Reload the page and start the upload again                         |
-| "ZIP contains no .csv file"              | CSV is missing from the archive                         | Make sure you included exactly one CSV file inside the ZIP         |
-| "ZIP contains N .csv files"              | Multiple CSVs in the archive                            | Remove extra CSV files — only one is allowed                       |
-| "Duplicate image filename"               | Two images share the same filename in different folders | Rename images so all filenames are unique across the entire ZIP    |
-| Image "not found in uploaded files"      | Filename in the CSV doesn't match the image file        | Check spelling, case, and file extension — they must match exactly |
-| Row fails with "missing required column" | A required `pd_*` field is empty                        | Fill in all required fields for that row                           |
-| Row fails with "invalid price"           | Price is zero, negative, or not a number                | Enter a positive number like `450.00`                              |
-| All rows fail with API error             | Integration API credentials are wrong                   | Contact your administrator to check the server configuration       |
-| Job not found (after waiting)            | Job data expired                                        | Jobs expire after 1 hour. Re-run the import.                       |
+| Problem                                  | Likely cause                                            | What to do                                                            |
+| ---------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------- |
+| "requires a signed-in session" error     | You are signed out                                      | Sign in to the marketplace and try again                             |
+| "expired action token" error             | The short-lived upload token expired                    | Reload the page and start the upload again                           |
+| `"user_id" override is not permitted`    | A non-admin filled in the `user_id` column              | Remove the `user_id` column (your listings are created under you)    |
+| "ZIP exceeds your … limit" / "Too many images" / "Your limit is … rows" | The import is over your tier's limit | Split it into smaller batches, or ask an admin to run the larger import |
+| "Too many imports" (try again later)     | You hit your hourly import limit                        | Wait up to an hour and try again (3/hr seller, 20/hr admin)          |
+| "already have an import in progress"     | A previous import of yours is still running             | Wait for it to finish before starting another                        |
+| "capacity is full" (try again shortly)   | Three imports are already running across all users      | Wait a few minutes and retry                                         |
+| "ZIP contains no .csv file"              | CSV is missing from the archive                         | Make sure you included exactly one CSV file inside the ZIP           |
+| "ZIP contains N .csv files"              | Multiple CSVs in the archive                            | Remove extra CSV files — only one is allowed                         |
+| "Duplicate image filename"               | Two images share the same filename in different folders | Rename images so all filenames are unique across the entire ZIP      |
+| "does not match its file extension"      | A file isn't a real image (e.g. renamed to `.jpg`)      | Re-export it as a genuine `.jpg`, `.png`, or `.webp`                 |
+| Image "not found in uploaded files"      | Filename in the CSV doesn't match the image file        | Check spelling, case, and file extension — they must match exactly   |
+| Row fails with "missing required column" | A required `pd_*` field is empty                        | Fill in all required fields for that row                             |
+| Row fails with "invalid price"           | Price is zero, negative, or not a number                | Enter a positive number like `450.00`                                |
+| All rows fail with API error             | Integration API credentials are wrong                   | Contact your administrator to check the server configuration         |
+| Job not found (after waiting)            | Job data expired, or the server restarted mid-import    | Jobs expire after 1 hour and don't survive a server restart. Re-run the import. |
 
 ---
 
@@ -1294,11 +1403,16 @@ plain language.
 
 ### Bulk import
 
-| Setting                 | What it controls                                                                                                                       |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **Bulk Import API Key** | The password operators enter to access the import tool. Set any strong random value. Share only with authorized operators.             |
-| **Default Author ID**   | The Sharetribe UUID of the user assigned as seller when a CSV row doesn't specify one. Find a user's UUID in Console → Manage → Users. |
-| **Listing Type**        | The listing type all imported listings are created as. Default: `av-listing`.                                                          |
+The bulk import tool no longer uses an access password or a default-author setting — any signed-in
+user imports for their own account. The only access-related setting is the admin list.
+
+| Setting                          | What it controls                                                                                                                                                                    |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Admin emails** (`BULK_IMPORT_OPERATOR_EMAILS`) | A comma-separated list of emails treated as bulk-import **admins**. Admins may add a `user_id` column to import on behalf of other sellers, and get the larger size/rate limits. Optional — leave empty if no one needs admin powers. |
+| **Listing Type**                 | The listing type all imported listings are created as. Default: `av-listing`.                                                                                                       |
+
+> Removed settings: the old **Bulk Import API Key**, **Default Author ID**, and operator user-ID
+> allowlist are no longer used and have been deleted from the server configuration.
 
 ### Email notifications
 
@@ -1369,6 +1483,8 @@ to be silently hidden — the app never shows a raw key string to users.
 | Size selector  | `ListingField.allSizes.group.mx`       | `Clothing (MX)`       | `Ropa (MX)`           | Group heading for Mexican numeric sizes.             |
 | Size selector  | `ListingField.allSizes.group.us`       | `Clothing (US)`       | `Ropa (US)`           | Group heading for US numeric sizes.                  |
 | Size selector  | `ListingField.allSizes.group.curvy`    | `Curvy Sizes`         | `Tallas Curvy`        | Group heading for curvy sizes.                       |
+| Size selector  | `ListingField.allSizes.group.shoes`    | `Shoes (MX)`          | `Calzado (MX)`        | Group heading for Mexican shoe sizes (half sizes).   |
+| Size selector  | `ListingField.allSizes.group.rings`    | `Rings`               | `Anillos`             | Group heading for ring sizes.                        |
 | Size selector  | `FieldGroupedMultiSelect.placeholder`  | `Select sizes…`       | `Selecciona tallas…`  | Empty field placeholder.                             |
 | Size selector  | `FieldGroupedMultiSelect.clearAll`     | `Clear all`           | `Borrar todo`         | Clear all selected sizes button.                     |
 | Size selector  | `FieldGroupedMultiSelect.expand`       | `Expand`              | `Expandir`            | Collapsed dropdown toggle label.                     |
@@ -1441,21 +1557,22 @@ to be silently hidden — the app never shows a raw key string to users.
 The popup is shown once to new sellers after they register. All fields are optional — leaving a key
 blank hides that element. Fill them in via **Console → Content → Translations**.
 
-**When it appears:** It is shown to sellers (account types `vendedor` and `vendedor-tienda`) who have
-not yet completed onboarding. It is intentionally **not** shown on the signup page (`/signup`) so it
-does not cover the "check your email" confirmation message displayed right after registration — it
-appears on the first regular page the seller lands on instead.
+**When it appears:** It is shown to sellers (account types `vendedor` and `vendedor-tienda`) who
+have not yet completed onboarding. It is intentionally **not** shown on the signup page (`/signup`)
+so it does not cover the "check your email" confirmation message displayed right after registration
+— it appears on the first regular page the seller lands on instead.
 
 **Buttons:** A button only appears when **both** its label and its URL are filled in (e.g.
-`primaryButtonLabel` *and* `primaryButtonUrl`). Leave both blank to hide a button entirely. Clicking
-either button — or closing the popup — marks onboarding as complete, so the popup will not appear again.
+`primaryButtonLabel` _and_ `primaryButtonUrl`). Leave both blank to hide a button entirely. Clicking
+either button — or closing the popup — marks onboarding as complete, so the popup will not appear
+again.
 
 **Vendedor popup** (shown to users who registered with the `vendedor` account type):
 
 | Key                                            | What it controls                                                                                  |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `AVWelcomePopup.vendedor.imageUrl`             | URL of the image displayed at the top of the popup. Use a direct image link (e.g. from your CDN). |
-| `AVWelcomePopup.vendedor.eyebrow`              | Small uppercase label shown above the title (e.g. "Ya eres parte de Archivo").                     |
+| `AVWelcomePopup.vendedor.eyebrow`              | Small uppercase label shown above the title (e.g. "Ya eres parte de Archivo").                    |
 | `AVWelcomePopup.vendedor.title`                | Popup heading text.                                                                               |
 | `AVWelcomePopup.vendedor.text`                 | Body paragraph below the title.                                                                   |
 | `AVWelcomePopup.vendedor.primaryButtonLabel`   | Label for the first (primary) button.                                                             |
@@ -1512,16 +1629,16 @@ either button — or closing the popup — marks onboarding as complete, so the 
 
 ### PageBuilder block key patterns
 
-| Area                    | Key / pattern                               | English default | Spanish default | Operator note                                                             |
-| ----------------------- | ------------------------------------------- | --------------- | --------------- | ------------------------------------------------------------------------- |
-| Two-buttons block       | `TwoButtons.<blockId>.titleEyebrow`         | Empty           | Empty           | Optional eyebrow above the block title.                                   |
-| Two-buttons block       | `TwoButtons.<blockId>.cta1Text`             | —               | —               | First CTA text.                                                           |
-| Two-buttons block       | `TwoButtons.<blockId>.cta1Link`             | —               | —               | First CTA link.                                                           |
-| Two-buttons block       | `TwoButtons.<blockId>.cta1Style`            | Empty           | Empty           | Optional style tokens.                                                    |
-| Two-buttons block       | `TwoButtons.<blockId>.cta2Text`             | —               | —               | Second CTA text.                                                          |
-| Two-buttons block       | `TwoButtons.<blockId>.cta2Link`             | —               | —               | Second CTA link.                                                          |
-| Two-buttons block       | `TwoButtons.<blockId>.cta2Style`            | Empty           | Empty           | Optional style tokens.                                                    |
-| Photo slider block      | `PhotoSlider.<blockId>.image_1` … `image_4` | Empty           | Empty           | Image URLs for `photoSlider ::` blocks.                                   |
+| Area               | Key / pattern                               | English default | Spanish default | Operator note                           |
+| ------------------ | ------------------------------------------- | --------------- | --------------- | --------------------------------------- |
+| Two-buttons block  | `TwoButtons.<blockId>.titleEyebrow`         | Empty           | Empty           | Optional eyebrow above the block title. |
+| Two-buttons block  | `TwoButtons.<blockId>.cta1Text`             | —               | —               | First CTA text.                         |
+| Two-buttons block  | `TwoButtons.<blockId>.cta1Link`             | —               | —               | First CTA link.                         |
+| Two-buttons block  | `TwoButtons.<blockId>.cta1Style`            | Empty           | Empty           | Optional style tokens.                  |
+| Two-buttons block  | `TwoButtons.<blockId>.cta2Text`             | —               | —               | Second CTA text.                        |
+| Two-buttons block  | `TwoButtons.<blockId>.cta2Link`             | —               | —               | Second CTA link.                        |
+| Two-buttons block  | `TwoButtons.<blockId>.cta2Style`            | Empty           | Empty           | Optional style tokens.                  |
+| Photo slider block | `PhotoSlider.<blockId>.image_1` … `image_4` | Empty           | Empty           | Image URLs for `photoSlider ::` blocks. |
 
 ### Newsletter form
 
@@ -1596,3 +1713,83 @@ either button — or closing the popup — marks onboarding as complete, so the 
 | `BulkImportPage.tableError`       | `Error`                                                        | `Error`                                                                | Error table column header.                         |
 | `BulkImportPage.newImport`        | `New Import`                                                   | `Nueva Importación`                                                    | Button to start another import after one finishes. |
 | `BulkImportPage.errorNoZip`       | `Please select a ZIP file.`                                    | `Selecciona un archivo ZIP.`                                           | Validation message.                                |
+
+### Checkout — delivery options and shipping address
+
+The checkout (step shown after the buyer clicks **Comprar ahora**) has these AV-specific parts:
+
+1. **Shipping address form** — a Mexico-only address layout: Nombre, Calle, Número Exterior / Número
+   Interior, Colonia, C.P. / Ciudad, Estado (a dropdown of the 32 Mexican states) and Teléfono. The
+   country is always Mexico, so there is no country field. The list of states is fixed in code.
+2. **Delivery options (live quote)** — once the address is complete, the platform requests a **live
+   shipping quote** from the carrier (eShip) using the listing's package size (S/M/L) and the buyer's
+   address. The buyer then picks **Express** (the fastest rate) or **Estándar** (the cheapest rate);
+   below them, every rate the carrier returned is listed for transparency. Buyer prices include a
+   margin buffer over the raw carrier cost. Prices are **not** set in the Console — they come from the
+   carrier in real time. The **Pay** button stays disabled until a delivery option is chosen.
+3. **No automatic quote → Contactar AV** — if the seller hasn't set a shipping-origin address, the
+   item is package size **especial**, or the carrier can't be reached, the buyer sees a retry and/or a
+   **Contactar a AV** button instead of priced options (they cannot complete an automatic purchase).
+
+> **Seller requirement:** each seller must set their **shipping-origin address** under **Account →
+> Dirección de origen** (`/account/shipping-origin`). Without it, their listings can't be quoted and
+> buyers see *Contactar a AV*. Sellers missing it get a reminder banner on **Manage listings**.
+
+The current keys are `AVShippingSelector.*` (see below). The older `AVShippingTypeSelector.*` keys
+listed further down are from the previous static-price selector and are no longer used at checkout.
+
+| Area             | Key                                  | English meaning                                  | Spanish (shipped)                                  | Operator note                                |
+| ---------------- | ------------------------------------ | ------------------------------------------------ | -------------------------------------------------- | -------------------------------------------- |
+| Delivery options | `AVShippingSelector.express`         | `Express`                                        | `Express`                                          | Fastest-rate bucket label.                   |
+| Delivery options | `AVShippingSelector.estandar`        | `Standard`                                       | `Estándar`                                         | Cheapest-rate bucket label.                  |
+| Delivery options | `AVShippingSelector.days`            | `{days} days`                                    | `{days} días`                                      | Transit-time note on each option.            |
+| Delivery options | `AVShippingSelector.loading`         | `Calculating shipping…`                          | `Calculando envío…`                                | Shown while the quote loads.                 |
+| Delivery options | `AVShippingSelector.errorTransient`  | `We couldn't calculate shipping right now.`      | `No pudimos calcular el envío en este momento.`    | Transient carrier error (shows **Retry**).   |
+| Delivery options | `AVShippingSelector.errorPermanent`  | `Automatic shipping isn't available…`            | `El envío automático no está disponible…`          | No origin / especial (shows **Contactar**).  |
+| Delivery options | `AVShippingSelector.retry`           | `Try again`                                      | `Reintentar`                                       | Retry button on a transient error.           |
+| Delivery options | `AVShippingSelector.contactSeller`   | `Contact AV`                                     | `Contactar a AV`                                   | Fallback button when no quote is possible.   |
+| Delivery options | `AVShippingSelector.rawListTitle`    | `All available rates`                            | `Todas las tarifas disponibles`                    | Heading above the raw rate list.             |
+| Seller origin    | `ShippingOriginPage.heading`         | `Shipping origin address`                        | `Dirección de origen de envíos`                    | Account settings page heading.               |
+| Seller origin    | `ShippingOriginBanner.message`       | `Add your shipping origin address…`              | `Agrega tu dirección de origen…`                   | Manage-listings reminder banner.             |
+
+All text below is operator-editable. These are AV-owned keys, so they will **not** appear in Console
+until you add them (use **Add translation** — see
+[How to update a string](#how-to-update-a-string-in-the-console)). Número Interior is the only
+optional field; everything else is required.
+
+| Area                 | Key                                            | English meaning                                         | Spanish (shipped)                                                 | Operator note                           |
+| -------------------- | ---------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------- |
+| Delivery options     | `AVShippingTypeSelector.legend`                | `Choose a delivery option`                              | `Elige una opción de envío`                                       | Heading above the delivery cards.       |
+| Delivery options     | `AVShippingTypeSelector.type.nacionalExpress`  | `Nacional Express`                                      | `Nacional Express`                                                | Label for the express option.           |
+| Delivery options     | `AVShippingTypeSelector.type.nacionalEstandar` | `Nacional Estándar`                                     | `Nacional Estándar`                                               | Label for the standard option.          |
+| Delivery options     | `AVShippingTypeSelector.noOptions`             | `Shipping is not available for this item — contact AV.` | `El envío no está disponible para este artículo — contacta a AV.` | Shown when no priced option exists.     |
+| Contact-seller alert | `AVShippingTypeSelector.confirmAlertTitle`     | `Remember to confirm the sale`                          | `Recuerda confirmar la venta`                                     | Bold title of the yellow alert.         |
+| Contact-seller alert | `AVShippingTypeSelector.confirmAlertText`      | `Contact the seller to confirm the shipping date.`      | `Contacta al vendedor para confirmar la fecha de envio.`          | Body text of the yellow alert.          |
+| Contact-seller alert | `AVShippingTypeSelector.contactSellerCta`      | `Contact the seller`                                    | `Contactar al vendedor`                                           | Chat button label in the alert.         |
+| Address form         | `ShippingDetails.mxTitle`                      | `Shipping Address`                                      | `Dirección de Envío`                                              | Form heading.                           |
+| Address form         | `ShippingDetails.mxNameLabel`                  | `Name`                                                  | `Nombre`                                                          | Recipient name label.                   |
+| Address form         | `ShippingDetails.mxNamePlaceholder`            | `Name of the recipient`                                 | `Nombre de quien recibe`                                          | Recipient name placeholder.             |
+| Address form         | `ShippingDetails.mxNameRequired`               | `Name is required.`                                     | `El nombre es obligatorio.`                                       | Validation message.                     |
+| Address form         | `ShippingDetails.mxStreetLabel`                | `Street`                                                | `Calle`                                                           | Street label.                           |
+| Address form         | `ShippingDetails.mxStreetPlaceholder`          | `Street`                                                | `Calle`                                                           | Street placeholder.                     |
+| Address form         | `ShippingDetails.mxStreetRequired`             | `Street is required.`                                   | `La calle es obligatoria.`                                        | Validation message.                     |
+| Address form         | `ShippingDetails.mxExteriorLabel`              | `Exterior Number`                                       | `Número Exterior`                                                 | Exterior number label.                  |
+| Address form         | `ShippingDetails.mxExteriorPlaceholder`        | `Exterior Number`                                       | `Número Exterior`                                                 | Exterior number placeholder.            |
+| Address form         | `ShippingDetails.mxExteriorRequired`           | `Exterior number is required.`                          | `El número exterior es obligatorio.`                              | Validation message.                     |
+| Address form         | `ShippingDetails.mxInteriorLabel`              | `Interior Number`                                       | `Número Interior`                                                 | Interior number label (optional field). |
+| Address form         | `ShippingDetails.mxInteriorPlaceholder`        | `Interior Number`                                       | `Número Interior`                                                 | Interior number placeholder.            |
+| Address form         | `ShippingDetails.mxColoniaLabel`               | `Neighborhood`                                          | `Colonia`                                                         | Colonia label.                          |
+| Address form         | `ShippingDetails.mxColoniaPlaceholder`         | `Neighborhood`                                          | `Colonia`                                                         | Colonia placeholder.                    |
+| Address form         | `ShippingDetails.mxColoniaRequired`            | `Neighborhood is required.`                             | `La colonia es obligatoria.`                                      | Validation message.                     |
+| Address form         | `ShippingDetails.mxPostalLabel`                | `Postal Code`                                           | `C.P.`                                                            | Postal code label.                      |
+| Address form         | `ShippingDetails.mxPostalPlaceholder`          | `Postal Code`                                           | `C.P.`                                                            | Postal code placeholder.                |
+| Address form         | `ShippingDetails.mxPostalRequired`             | `Postal code is required.`                              | `El código postal es obligatorio.`                                | Validation message.                     |
+| Address form         | `ShippingDetails.mxCityLabel`                  | `City`                                                  | `Ciudad`                                                          | City label.                             |
+| Address form         | `ShippingDetails.mxCityPlaceholder`            | `City`                                                  | `Ciudad`                                                          | City placeholder.                       |
+| Address form         | `ShippingDetails.mxCityRequired`               | `City is required.`                                     | `La ciudad es obligatoria.`                                       | Validation message.                     |
+| Address form         | `ShippingDetails.mxStateLabel`                 | `State`                                                 | `Estado`                                                          | Estado dropdown label.                  |
+| Address form         | `ShippingDetails.mxStatePlaceholder`           | `Select...`                                             | `Select...`                                                       | Empty dropdown option.                  |
+| Address form         | `ShippingDetails.mxStateRequired`              | `State is required.`                                    | `El estado es obligatorio.`                                       | Validation message.                     |
+| Address form         | `ShippingDetails.mxPhoneLabel`                 | `Phone`                                                 | `Teléfono`                                                        | Phone label.                            |
+| Address form         | `ShippingDetails.mxPhonePlaceholder`           | `+52 55 1234 5678`                                      | `+52 55 1234 5678`                                                | Phone placeholder.                      |
+| Address form         | `ShippingDetails.mxPhoneRequired`              | `Phone is required.`                                    | `El teléfono es obligatorio.`                                     | Validation message.                     |
