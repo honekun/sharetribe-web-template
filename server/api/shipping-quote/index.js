@@ -27,7 +27,15 @@ router.post('/quote', express.json(), async (req, res) => {
   } catch (e) {
     if (e instanceof svc.NoOriginError) return res.status(409).json({ code: 'NO_ORIGIN' });
     if (e instanceof svc.EspecialError) return res.status(422).json({ code: 'ESPECIAL' });
-    console.error('[shipping/quote] error', e && e.message);
+    // Surface the carrier's actual response (status + body) — without it, account/
+    // config errors like "No couriers found for this account" are invisible.
+    console.error(
+      '[shipping/quote] error',
+      e && e.name,
+      e && e.status,
+      e && e.message,
+      e && e.body ? JSON.stringify(e.body) : ''
+    );
     return res.status(502).json({ code: 'ESHIP_ERROR' });
   }
 });
