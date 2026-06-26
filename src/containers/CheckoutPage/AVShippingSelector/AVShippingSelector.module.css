@@ -1,0 +1,99 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.buckets {
+  display: flex;
+  gap: 12px;
+}
+
+.bucket,
+.bucketSelected {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--colorGrey200);
+  border-radius: 8px;
+  background: var(--colorWhite);
+  cursor: pointer;
+  text-align: left;
+}
+
+.bucketSelected {
+  border-color: var(--marketplaceColor);
+  box-shadow: 0 0 0 1px var(--marketplaceColor);
+}
+
+.bucketName {
+  composes: marketplaceButtonFontStyles from global;
+}
+
+.price {
+  composes: marketplaceBodyFontStyles from global;
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.days {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey400);
+}
+
+.loading,
+.error {
+  composes: marketplaceBodyFontStyles from global;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--colorGrey700);
+}
+
+.retry,
+.contact {
+  composes: marketplaceButtonFontStyles from global;
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: var(--marketplaceColor);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.rawSection {
+  border-top: 1px solid var(--colorGrey100);
+  padding-top: 12px;
+}
+
+.rawTitle {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey400);
+  margin: 0 0 8px 0;
+}
+
+.rawList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rawRow {
+  composes: marketplaceTinyFontStyles from global;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rawProvider {
+  flex: 1;
+}
+
+.rawDays {
+  color: var(--colorGrey400);
+}
