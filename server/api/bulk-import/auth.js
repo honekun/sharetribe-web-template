@@ -13,12 +13,11 @@ const parseList = value =>
     .map(item => item.trim())
     .filter(Boolean);
 
-const getAllowedOperators = () => ({
-  emails: new Set(
-    parseList(process.env.BULK_IMPORT_OPERATOR_EMAILS).map(email => email.toLowerCase())
-  ),
-  ids: new Set(parseList(process.env.BULK_IMPORT_OPERATOR_IDS)),
-});
+// Emails in BULK_IMPORT_OPERATOR_EMAILS identify "admin" users. Admins may set a
+// `user_id` column in the CSV to create listings on behalf of other users. This
+// is no longer an access gate — any signed-in user can bulk-import for themselves.
+const getAdminEmails = () =>
+  new Set(parseList(process.env.BULK_IMPORT_OPERATOR_EMAILS).map(email => email.toLowerCase()));
 
 const getCurrentUser = async (req, res) => {
   const sdk = getSdk(req, res);
@@ -36,18 +35,13 @@ const getCurrentUser = async (req, res) => {
   return { userId, email };
 };
 
-const isAllowedOperator = ({ userId, email }) => {
-  const { emails, ids } = getAllowedOperators();
-
-  if (emails.size === 0 && ids.size === 0) {
-    return { allowed: false, configured: false };
+const isAdminUser = ({ email }) => {
+  const admins = getAdminEmails();
+  if (admins.size === 0) {
+    return false;
   }
-
   const normalizedEmail = typeof email === 'string' ? email.toLowerCase() : null;
-  return {
-    allowed: ids.has(userId) || (normalizedEmail && emails.has(normalizedEmail)),
-    configured: true,
-  };
+  return !!(normalizedEmail && admins.has(normalizedEmail));
 };
 
 const cleanupExpiredTokens = now => {
@@ -88,26 +82,18 @@ const validateActionToken = (token, userId) => {
   return record.userId === userId;
 };
 
-const requireOperatorSession = async (req, res, next) => {
+// Any signed-in Sharetribe user may run bulk imports for themselves. Admins
+// (emails in BULK_IMPORT_OPERATOR_EMAILS) may additionally set a CSV `user_id`
+// column to author listings on behalf of other users.
+const requireUserSession = async (req, res, next) => {
   let currentUser;
   try {
     currentUser = await getCurrentUser(req, res);
   } catch (err) {
-    return res.status(401).json({ error: 'Bulk import requires a signed-in operator session.' });
+    return res.status(401).json({ error: 'Bulk import requires a signed-in session.' });
   }
 
-  const operator = isAllowedOperator(currentUser);
-  if (!operator.configured) {
-    return res.status(503).json({
-      error:
-        'Bulk import is not configured (missing BULK_IMPORT_OPERATOR_EMAILS or BULK_IMPORT_OPERATOR_IDS).',
-    });
-  }
-  if (!operator.allowed) {
-    return res.status(403).json({ error: 'Current user is not allowed to use bulk import.' });
-  }
-
-  req.bulkImportUser = currentUser;
+  req.bulkImportUser = { ...currentUser, isAdmin: isAdminUser(currentUser) };
   return next();
 };
 
@@ -124,13 +110,13 @@ const requireActionToken = (req, res, next) => {
 
 const authorizeAction = (req, res) => {
   const { token, expiresAt } = issueActionToken(req.bulkImportUser.userId);
-  return res.json({ ok: true, token, expiresAt });
+  return res.json({ ok: true, token, expiresAt, isAdmin: req.bulkImportUser.isAdmin });
 };
 
 module.exports = {
   authorizeAction,
   requireActionToken,
-  requireOperatorSession,
+  requireUserSession,
   _test: {
     TOKEN_TTL_MS,
     issueActionToken,

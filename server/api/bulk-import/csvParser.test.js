@@ -671,12 +671,106 @@ describe('validateRows', () => {
         'pd_genero',
         'pd_estado',
         'pd_estilo',
+        'pd_temporada',
         'author_id',
       ];
       const aliasValues = Object.values(COLUMN_ALIASES);
       for (const target of expectedTargets) {
         expect(aliasValues).toContain(target);
       }
+    });
+  });
+
+  // --- Operator CSV template (PLANTILLA_CARGA_MASIVA.csv) column names ---
+
+  describe('operator template column aliases', () => {
+    const tmplImageMap = new Map([
+      ['img1.jpg', Buffer.from('img')],
+      ['img2.jpg', Buffer.from('img')],
+      ['img3.jpg', Buffer.from('img')],
+      ['img4.jpg', Buffer.from('img')],
+    ]);
+
+    function buildTemplateCsv(priceValue = '3500') {
+      // A spreadsheet quotes any field containing a comma on export, so a price
+      // like "$4,500.00" arrives wrapped in quotes — mirror that here.
+      const price = priceValue.includes(',') ? `"${priceValue}"` : priceValue;
+      return Buffer.from(
+        [
+          'Marca*,Nombre de Producto*,Descripción*,Precio Venta (MXN)*,Categoría,Subcategoría,Color,Talla,Género*,Estado,Estilo,Temporada,Nombre imagen 1*,Nombre imagen 2,Nombre imagen 3,Nombre imagen 4',
+          `Prada,Chamarra vintage,chamarra azul,${price},Ropa,Ropa / Chamarras,Azul,M,Mujer,Usado,Vintage,Invierno,img1.jpg,img2.jpg,img3.jpg,img4.jpg`,
+        ].join('\n')
+      );
+    }
+
+    it('maps the operator template headers to canonical keys', () => {
+      const rows = parseCsv(buildTemplateCsv());
+      expect(rows[0].pd_brand).toBe('Prada');
+      expect(rows[0].title).toBe('Chamarra vintage');
+      expect(rows[0].description).toBe('chamarra azul');
+      expect(rows[0].price).toBe('3500');
+      expect(rows[0].pd_categoryLevel1).toBe('Ropa');
+      expect(rows[0].pd_categoryLevel2).toBe('Ropa / Chamarras');
+      expect(rows[0].pd_color).toBe('Azul');
+      expect(rows[0].pd_all_sizes).toBe('M');
+      expect(rows[0].pd_genero).toBe('Mujer');
+      expect(rows[0].pd_estado).toBe('Usado');
+      expect(rows[0].pd_estilo).toBe('Vintage');
+      expect(rows[0].pd_temporada).toBe('Invierno');
+      expect(rows[0].image_front).toBe('img1.jpg');
+      expect(rows[0].image_back).toBe('img2.jpg');
+      expect(rows[0].image_horizontal).toBe('img3.jpg');
+      expect(rows[0].image_details).toBe('img4.jpg');
+    });
+
+    it('validates a full operator-template row (with a "$4,500.00" price)', () => {
+      const rows = parseCsv(buildTemplateCsv('$4,500.00'));
+      const result = validateRows(rows, tmplImageMap);
+      expect(result.valid).toBe(true);
+      expect(result.rows[0].price).toBe(4500);
+      expect(result.rows[0].publicData.temporada).toBe('Invierno');
+    });
+  });
+
+  // --- Price normalization (currency tokens + thousands separators) ---
+
+  describe('price normalization', () => {
+    function priceRow(price) {
+      return validateRows(
+        [
+          validRow({
+            price,
+            image_front: 'front.jpg',
+            image_back: 'back.jpg',
+            image_horizontal: 'front.jpg',
+          }),
+        ],
+        imageMap
+      );
+    }
+
+    it('strips $ and thousands commas: "$4,500.00" -> 4500', () => {
+      expect(priceRow('$4,500.00').rows[0].price).toBe(4500);
+    });
+
+    it('strips thousands commas without decimals: "$1,000" -> 1000', () => {
+      expect(priceRow('$1,000').rows[0].price).toBe(1000);
+    });
+
+    it('strips a currency word token: "MXN 250" -> 250', () => {
+      const r = priceRow('MXN 250');
+      expect(r.valid).toBe(true);
+      expect(r.rows[0].price).toBe(250);
+    });
+
+    it('treats the remaining "." as a decimal point: "$99.50" -> 99.5', () => {
+      expect(priceRow('$99.50').rows[0].price).toBe(99.5);
+    });
+
+    it('still rejects a value with no digits', () => {
+      const r = priceRow('$');
+      expect(r.valid).toBe(false);
+      expect(r.errors[0]).toMatch(/"price" must be a positive number/);
     });
   });
 
@@ -707,5 +801,77 @@ describe('validateRows', () => {
         expect.stringContaining('"image_horizontal" is required.'),
       ])
     );
+  });
+
+  // --- Author resolution (current user vs admin user_id override) ---
+
+  describe('author resolution', () => {
+    function authorRow(overrides = {}) {
+      return validRow({
+        image_front: 'front.jpg',
+        image_back: 'back.jpg',
+        image_horizontal: 'front.jpg',
+        ...overrides,
+      });
+    }
+
+    it('defaults authorId to the current user when no override column', () => {
+      const result = validateRows([authorRow()], imageMap, { currentUserId: 'me-uuid' });
+      expect(result.valid).toBe(true);
+      expect(result.rows[0].authorId).toBe('me-uuid');
+    });
+
+    it('rejects an author override for non-admin uploads', () => {
+      const result = validateRows([authorRow({ author_id: 'other-uuid' })], imageMap, {
+        currentUserId: 'me-uuid',
+        allowAuthorOverride: false,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors.join(' ')).toMatch(/"user_id" override is not permitted/);
+    });
+
+    it('accepts an author override for admin uploads', () => {
+      const result = validateRows([authorRow({ author_id: 'other-uuid' })], imageMap, {
+        currentUserId: 'me-uuid',
+        allowAuthorOverride: true,
+      });
+      expect(result.valid).toBe(true);
+      expect(result.rows[0].authorId).toBe('other-uuid');
+    });
+
+    it('falls back to current user when an admin leaves the override empty', () => {
+      const result = validateRows([authorRow({ author_id: '' })], imageMap, {
+        currentUserId: 'me-uuid',
+        allowAuthorOverride: true,
+      });
+      expect(result.valid).toBe(true);
+      expect(result.rows[0].authorId).toBe('me-uuid');
+    });
+
+    it('normalizes the user_id header to an author override end-to-end', () => {
+      const rows = parseCsv(
+        buildCsv(
+          [
+            'title',
+            'description',
+            'price',
+            'user_id',
+            'image_front',
+            'image_back',
+            'image_horizontal',
+          ],
+          ['Item', 'Desc', '100', 'other-uuid', 'front.jpg', 'back.jpg', 'front.jpg']
+        )
+      );
+      // user_id is aliased to author_id during parsing.
+      expect(rows[0].author_id).toBe('other-uuid');
+
+      const result = validateRows(rows, imageMap, {
+        currentUserId: 'me-uuid',
+        allowAuthorOverride: true,
+      });
+      expect(result.valid).toBe(true);
+      expect(result.rows[0].authorId).toBe('other-uuid');
+    });
   });
 });

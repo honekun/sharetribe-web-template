@@ -4,6 +4,7 @@
  * https://github.com/erikras/ducks-modular-redux
  */
 import CheckoutPage from './CheckoutPage/CheckoutPage.duck';
+import shippingQuote from './CheckoutPage/shippingQuote.duck';
 import CMSPage from './CMSPage/CMSPage.duck';
 import ContactDetailsPage from './ContactDetailsPage/ContactDetailsPage.duck';
 import EditListingPage from './EditListingPage/EditListingPage.duck';
@@ -23,11 +24,13 @@ import ProfilePage from './ProfilePage/ProfilePage.duck';
 import ProfileSettingsPage from './ProfileSettingsPage/ProfileSettingsPage.duck';
 import RequestQuotePage from './RequestQuotePage/RequestQuotePage.duck';
 import SearchPage from './SearchPage/SearchPage.duck';
+import ShippingOriginPage from './ShippingOriginPage/ShippingOriginPage.duck';
 import StripePayoutPage from './StripePayoutPage/StripePayoutPage.duck';
 import TransactionPage from './TransactionPage/TransactionPage.duck';
 
 export {
   CheckoutPage,
+  shippingQuote,
   CMSPage,
   ContactDetailsPage,
   EditListingPage,
@@ -47,6 +50,7 @@ export {
   ProfileSettingsPage,
   RequestQuotePage,
   SearchPage,
+  ShippingOriginPage,
   StripePayoutPage,
   TransactionPage,
 };

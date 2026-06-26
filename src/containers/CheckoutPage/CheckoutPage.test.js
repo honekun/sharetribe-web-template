@@ -153,15 +153,20 @@ describe('CheckoutPage', () => {
 
     const getTextbox = name => screen.getByRole('textbox', { name });
 
-    const shippingHeading = 'ShippingDetails.title';
+    const shippingHeading = 'ShippingDetails.mxTitle';
     expect(screen.getByRole('heading', { name: shippingHeading })).toBeInTheDocument();
-    expect(getTextbox('ShippingDetails.recipientNameLabel')).toBeInTheDocument();
-    expect(getTextbox('ShippingDetails.recipientPhoneNumberLabel')).toBeInTheDocument();
-    expect(getTextbox('ShippingDetails.addressLine1Label')).toBeInTheDocument();
-    expect(getTextbox('ShippingDetails.addressLine2Label')).toBeInTheDocument();
-    expect(getTextbox('ShippingDetails.postalCodeLabel')).toBeInTheDocument();
-    expect(getTextbox('ShippingDetails.cityLabel')).toBeInTheDocument();
-    expect(getTextbox('ShippingDetails.stateLabel')).toBeInTheDocument();
+    expect(getTextbox('ShippingDetails.mxNameLabel')).toBeInTheDocument();
+    expect(getTextbox('ShippingDetails.mxStreetLabel')).toBeInTheDocument();
+    expect(getTextbox('ShippingDetails.mxExteriorLabel')).toBeInTheDocument();
+    expect(getTextbox('ShippingDetails.mxInteriorLabel')).toBeInTheDocument();
+    expect(getTextbox('ShippingDetails.mxColoniaLabel')).toBeInTheDocument();
+    expect(getTextbox('ShippingDetails.mxPostalLabel')).toBeInTheDocument();
+    expect(getTextbox('ShippingDetails.mxCityLabel')).toBeInTheDocument();
+    expect(getTextbox('ShippingDetails.mxPhoneLabel')).toBeInTheDocument();
+    // Estado is now a Mexican-states dropdown (select), not a free-text field.
+    expect(
+      screen.getByRole('combobox', { name: 'ShippingDetails.mxStateLabel' })
+    ).toBeInTheDocument();
 
     const paymentHeading = 'StripePaymentForm.paymentHeading';
     expect(screen.getByRole('heading', { name: paymentHeading })).toBeInTheDocument();

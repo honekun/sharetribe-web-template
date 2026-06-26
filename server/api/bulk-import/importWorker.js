@@ -123,10 +123,11 @@ async function processRow(sdk, row, imageMap, config) {
     publicData.location = { address: row.locationAddress };
   }
 
-  // Build listing params
-  const authorId = row.authorId || config.defaultAuthorId;
+  // Build listing params. authorId is resolved upstream in validateRows (the
+  // signed-in user by default, or an admin `user_id` override).
+  const authorId = row.authorId;
   if (!authorId) {
-    throw new Error('No author_id in CSV row and BULK_IMPORT_DEFAULT_AUTHOR_ID not set.');
+    throw new Error('No author resolved for CSV row.');
   }
 
   const priceAmount = Math.round(row.price * 100);
@@ -180,7 +181,6 @@ async function processImportJob(jobId, rows, imageMap) {
   const sdk = getIntegrationSdk();
 
   const config = {
-    defaultAuthorId: process.env.BULK_IMPORT_DEFAULT_AUTHOR_ID,
     listingType: process.env.BULK_IMPORT_LISTING_TYPE || 'product-selling',
     transactionAlias: process.env.BULK_IMPORT_TRANSACTION_ALIAS || 'default-purchase/release-1',
     unitType: process.env.BULK_IMPORT_UNIT_TYPE || 'item',

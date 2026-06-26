@@ -14,10 +14,11 @@ jest.mock('../../api-util/sdk', () => ({
 
 const { processImportJob } = require('./importWorker');
 const { extractZip } = require('./zipExtractor');
-const { createJob } = require('./jobStore');
+const { createJob, getJob, _test: jobStoreTest } = require('./jobStore');
 const { getSdk } = require('../../api-util/sdk');
 const router = require('./index');
 const { _test: authTest } = require('./auth');
+const { _test: rateLimiterTest } = require('./rateLimiter');
 const { isZipUpload, MAX_ZIP_UPLOAD_BYTES } = router._test;
 
 const ORIGINAL_ENV = process.env;
@@ -75,10 +76,11 @@ describe('bulk import router', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     authTest.tokenStore.clear();
+    jobStoreTest.reset();
+    rateLimiterTest.store.clear();
     process.env = {
       ...ORIGINAL_ENV,
       BULK_IMPORT_OPERATOR_EMAILS: 'operator@example.com',
-      BULK_IMPORT_DEFAULT_AUTHOR_ID: 'default-author-id',
     };
     getSdk.mockReturnValue({
       currentUser: {
@@ -103,7 +105,10 @@ describe('bulk import router', () => {
   });
 
   it('starts a valid import job', () => {
-    const req = { file: { buffer: Buffer.from('fake-zip') } };
+    const req = {
+      file: { buffer: Buffer.from('fake-zip') },
+      bulkImportUser: { userId: 'operator-user-id', isAdmin: true },
+    };
     const res = createMockRes();
 
     startHandler(req, res);
@@ -114,7 +119,7 @@ describe('bulk import router', () => {
     expect(processImportJob).toHaveBeenCalledTimes(1);
   });
 
-  it('issues an action token for an allowed operator session', async () => {
+  it('issues an action token and flags admins for a session in the operator emails', async () => {
     const req = {};
     const res = createMockRes();
     const next = jest.fn();
@@ -126,11 +131,42 @@ describe('bulk import router', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.ok).toBe(true);
+    expect(res.body.isAdmin).toBe(true);
     expect(res.body.token).toEqual(expect.any(String));
     expect(authTest.validateActionToken(res.body.token, 'operator-user-id')).toBe(true);
   });
 
-  it('returns 401 when operator session is missing', async () => {
+  it('authorizes any signed-in user as a non-admin when not in the operator emails', async () => {
+    getSdk.mockReturnValue({
+      currentUser: {
+        show: jest.fn(() =>
+          Promise.resolve({
+            data: {
+              data: {
+                id: { uuid: 'regular-user-id' },
+                attributes: { email: 'seller@example.com' },
+              },
+            },
+          })
+        ),
+      },
+    });
+
+    const req = {};
+    const res = createMockRes();
+    const next = jest.fn();
+
+    await authorizeSessionMiddleware(req, res, next);
+    expect(next).toHaveBeenCalledTimes(1);
+
+    authorizeHandler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.isAdmin).toBe(false);
+  });
+
+  it('returns 401 when the session is missing', async () => {
     getSdk.mockReturnValue({
       currentUser: {
         show: jest.fn(() => Promise.reject(new Error('no session'))),
@@ -144,34 +180,7 @@ describe('bulk import router', () => {
     await authorizeSessionMiddleware(req, res, next);
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.error).toMatch(/signed-in operator session/);
-    expect(next).not.toHaveBeenCalled();
-  });
-
-  it('returns 403 when signed-in user is not in the operator allowlist', async () => {
-    getSdk.mockReturnValue({
-      currentUser: {
-        show: jest.fn(() =>
-          Promise.resolve({
-            data: {
-              data: {
-                id: { uuid: 'other-user-id' },
-                attributes: { email: 'other@example.com' },
-              },
-            },
-          })
-        ),
-      },
-    });
-
-    const req = {};
-    const res = createMockRes();
-    const next = jest.fn();
-
-    await authorizeSessionMiddleware(req, res, next);
-
-    expect(res.statusCode).toBe(403);
-    expect(res.body.error).toMatch(/not allowed/);
+    expect(res.body.error).toMatch(/signed-in session/);
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -222,7 +231,10 @@ describe('bulk import router', () => {
       throw new Error('ZIP contains no .csv file.');
     });
 
-    const req = { file: { buffer: Buffer.from('bad-zip') } };
+    const req = {
+      file: { buffer: Buffer.from('bad-zip') },
+      bulkImportUser: { userId: 'operator-user-id', isAdmin: true },
+    };
     const res = createMockRes();
 
     startHandler(req, res);
@@ -239,7 +251,10 @@ describe('bulk import router', () => {
       partialMap.delete(slotFile);
       extractZip.mockReturnValue({ csvBuffer: validCsvBuffer, imageMap: partialMap });
 
-      const req = { file: { buffer: Buffer.from('zip') } };
+      const req = {
+        file: { buffer: Buffer.from('zip') },
+        bulkImportUser: { userId: 'operator-user-id', isAdmin: true },
+      };
       const res = createMockRes();
 
       startHandler(req, res);
@@ -253,18 +268,159 @@ describe('bulk import router', () => {
     }
   );
 
-  it('returns 503 when default author is required but missing from config', () => {
-    delete process.env.BULK_IMPORT_DEFAULT_AUTHOR_ID;
-    // CSV has no author_id column, so it will try to use the default
+  it('authors listings to the signed-in user when no user_id column is present', () => {
     extractZip.mockReturnValue({ csvBuffer: validCsvBuffer, imageMap: defaultImageMap });
 
-    const req = { file: { buffer: Buffer.from('zip') } };
+    const req = {
+      file: { buffer: Buffer.from('zip') },
+      bulkImportUser: { userId: 'operator-user-id', isAdmin: false },
+    };
+    const res = createMockRes();
+
+    startHandler(req, res);
+
+    expect(res.statusCode).toBe(202);
+    const rows = processImportJob.mock.calls[0][1];
+    expect(rows[0].authorId).toBe('operator-user-id');
+  });
+
+  describe('tiered limits', () => {
+    it('rejects a ZIP larger than the standard-tier byte cap', () => {
+      const req = {
+        file: { buffer: Buffer.from('zip'), size: 30 * 1024 * 1024 }, // 30 MB > standard 20 MB
+        bulkImportUser: { userId: 'seller-id', isAdmin: false },
+      };
+      const res = createMockRes();
+
+      startHandler(req, res);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error).toMatch(/ZIP exceeds your 20 MB limit/);
+    });
+
+    it('allows admins a ZIP above the standard cap (up to the admin cap)', () => {
+      extractZip.mockReturnValue({ csvBuffer: validCsvBuffer, imageMap: defaultImageMap });
+      const req = {
+        file: { buffer: Buffer.from('zip'), size: 30 * 1024 * 1024 }, // under admin 50 MB
+        bulkImportUser: { userId: 'admin-id', isAdmin: true },
+      };
+      const res = createMockRes();
+
+      startHandler(req, res);
+
+      expect(res.statusCode).toBe(202);
+    });
+
+    it('rejects more images than the standard-tier cap', () => {
+      const bigMap = new Map(defaultImageMap);
+      for (let i = 0; i < 100; i++) bigMap.set(`extra-${i}.jpg`, Buffer.from('x'));
+      extractZip.mockReturnValue({ csvBuffer: validCsvBuffer, imageMap: bigMap });
+
+      const req = {
+        file: { buffer: Buffer.from('zip') },
+        bulkImportUser: { userId: 'seller-id', isAdmin: false },
+      };
+      const res = createMockRes();
+
+      startHandler(req, res);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error).toMatch(/Too many images/);
+    });
+
+    it('rejects more rows than the standard-tier cap', () => {
+      const header =
+        'title,description,price,currency,image_front,image_back,image_horizontal,image_details';
+      const row =
+        '"Dress","desc","100","MXN","front.jpg","back.jpg","horizontal.jpg","details.jpg"';
+      const manyRows = Buffer.from([header, ...Array.from({ length: 26 }, () => row)].join('\n'));
+      extractZip.mockReturnValue({ csvBuffer: manyRows, imageMap: defaultImageMap });
+
+      const req = {
+        file: { buffer: Buffer.from('zip') },
+        bulkImportUser: { userId: 'seller-id', isAdmin: false },
+      };
+      const res = createMockRes();
+
+      startHandler(req, res);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error).toMatch(/Your limit is 25/);
+    });
+  });
+
+  it('returns 429 when the user is over their hourly import cap', () => {
+    extractZip.mockReturnValue({ csvBuffer: validCsvBuffer, imageMap: defaultImageMap });
+    // Pre-seed the standard tier's 3 allowed imports within the hour.
+    const now = Date.now();
+    rateLimiterTest.store.set('seller-id', [now, now, now]);
+
+    const req = {
+      file: { buffer: Buffer.from('zip') },
+      bulkImportUser: { userId: 'seller-id', isAdmin: false },
+    };
+    const res = createMockRes();
+
+    startHandler(req, res);
+
+    expect(res.statusCode).toBe(429);
+    expect(res.body.error).toMatch(/Too many imports/);
+    expect(processImportJob).not.toHaveBeenCalled();
+  });
+
+  it('returns 409 when the same user already has an active job', () => {
+    extractZip.mockReturnValue({ csvBuffer: validCsvBuffer, imageMap: defaultImageMap });
+    createJob(1, 'seller-id'); // pre-existing in-progress job for this user
+
+    const req = {
+      file: { buffer: Buffer.from('zip') },
+      bulkImportUser: { userId: 'seller-id', isAdmin: false },
+    };
+    const res = createMockRes();
+
+    startHandler(req, res);
+
+    expect(res.statusCode).toBe(409);
+    expect(res.body.error).toMatch(/already have an import in progress/);
+    expect(processImportJob).not.toHaveBeenCalled();
+  });
+
+  it('lets a different user start while another user has an active job', () => {
+    extractZip.mockReturnValue({ csvBuffer: validCsvBuffer, imageMap: defaultImageMap });
+    createJob(1, 'other-user'); // someone else is importing
+
+    const req = {
+      file: { buffer: Buffer.from('zip') },
+      bulkImportUser: { userId: 'seller-id', isAdmin: false },
+    };
+    const res = createMockRes();
+
+    startHandler(req, res);
+
+    expect(res.statusCode).toBe(202);
+    // The new job is owned by the user who started it.
+    const newJobId = processImportJob.mock.calls[0][0];
+    expect(getJob(newJobId).ownerId).toBe('seller-id');
+  });
+
+  it('returns 503 when global concurrency is full', () => {
+    extractZip.mockReturnValue({ csvBuffer: validCsvBuffer, imageMap: defaultImageMap });
+    // Fill the 3 global slots with other users' jobs.
+    createJob(1, 'u1');
+    createJob(1, 'u2');
+    createJob(1, 'u3');
+
+    const req = {
+      file: { buffer: Buffer.from('zip') },
+      bulkImportUser: { userId: 'seller-id', isAdmin: false },
+    };
     const res = createMockRes();
 
     startHandler(req, res);
 
     expect(res.statusCode).toBe(503);
-    expect(res.body.error).toMatch(/BULK_IMPORT_DEFAULT_AUTHOR_ID/);
+    expect(res.body.error).toMatch(/capacity is full/);
+    expect(processImportJob).not.toHaveBeenCalled();
   });
 
   it('returns 404 for unknown job status', () => {
@@ -277,9 +433,9 @@ describe('bulk import router', () => {
     expect(res.body.error).toMatch(/Job not found/);
   });
 
-  it('returns job status for an existing job', () => {
-    const job = createJob(2);
-    const req = { params: { jobId: job.id } };
+  it('returns job status to the job owner', () => {
+    const job = createJob(2, 'owner-id');
+    const req = { params: { jobId: job.id }, bulkImportUser: { userId: 'owner-id' } };
     const res = createMockRes();
 
     statusHandler(req, res);
@@ -288,6 +444,17 @@ describe('bulk import router', () => {
     expect(res.body.id).toBe(job.id);
     expect(res.body.total).toBe(2);
     expect(res.body.status).toBe('processing');
+  });
+
+  it("returns 404 when polling another user's job (owner-scoped)", () => {
+    const job = createJob(2, 'owner-id');
+    const req = { params: { jobId: job.id }, bulkImportUser: { userId: 'someone-else' } };
+    const res = createMockRes();
+
+    statusHandler(req, res);
+
+    expect(res.statusCode).toBe(404);
+    expect(res.body.error).toMatch(/Job not found/);
   });
 
   it('downloads the csv template without authentication', () => {

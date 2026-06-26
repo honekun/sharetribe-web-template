@@ -37,6 +37,7 @@ import {
 import css from './ManageListingsPage.module.css';
 import avCss from './ManageListingsPageAV.module.css';
 import DiscardDraftModal from './DiscardDraftModal/DiscardDraftModal';
+import ShippingOriginBanner from './ShippingOriginBanner/ShippingOriginBanner';
 
 const Heading = props => {
   const { listingsAreLoaded, pagination } = props;
@@ -228,6 +229,7 @@ export const ManageListingsPageComponent = props => {
         {queryListingsError ? queryError : null}
 
         <div className={css.listingPanel}>
+          <ShippingOriginBanner currentUser={currentUser} />
           <Heading listingsAreLoaded={listingsAreLoaded} pagination={pagination} />
 
           <ul className={css.listingCards}>

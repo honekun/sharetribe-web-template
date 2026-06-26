@@ -1,8 +1,19 @@
 'use strict';
 
-const { createJob, updateJob, getJob } = require('./jobStore');
+const {
+  createJob,
+  updateJob,
+  getJob,
+  hasActiveJobForUser,
+  countActiveJobs,
+  _test,
+} = require('./jobStore');
 
 describe('jobStore', () => {
+  beforeEach(() => {
+    _test.reset();
+  });
+
   describe('createJob', () => {
     it('creates a job with correct initial state', () => {
       const job = createJob(10);
@@ -22,6 +33,39 @@ describe('jobStore', () => {
       const job1 = createJob(1);
       const job2 = createJob(1);
       expect(job1.id).not.toBe(job2.id);
+    });
+
+    it('records the owner when provided', () => {
+      const job = createJob(1, 'user-a');
+      expect(job.ownerId).toBe('user-a');
+    });
+
+    it('defaults ownerId to null when omitted', () => {
+      expect(createJob(1).ownerId).toBeNull();
+    });
+  });
+
+  describe('ownership and concurrency', () => {
+    it('scopes the active-job check per user', () => {
+      createJob(3, 'user-a');
+      expect(hasActiveJobForUser('user-a')).toBe(true);
+      expect(hasActiveJobForUser('user-b')).toBe(false);
+    });
+
+    it('stops counting a user job once it completes', () => {
+      const job = createJob(1, 'user-a');
+      expect(hasActiveJobForUser('user-a')).toBe(true);
+      updateJob(job.id, { status: 'completed' });
+      expect(hasActiveJobForUser('user-a')).toBe(false);
+    });
+
+    it('counts active jobs globally across users', () => {
+      createJob(1, 'u1');
+      createJob(1, 'u2');
+      const j3 = createJob(1, 'u3');
+      expect(countActiveJobs()).toBe(3);
+      updateJob(j3.id, { status: 'completed' });
+      expect(countActiveJobs()).toBe(2);
     });
   });
 

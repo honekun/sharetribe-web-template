@@ -1,5 +1,7 @@
 const sharetribeSdk = require('sharetribe-flex-sdk');
 const { transactionLineItems } = require('../api-util/lineItems');
+const { resolveBucketPrice } = require('../services/shippingQuoteService');
+const { buildAvShippingProtectedData } = require('../api-util/avShipping');
 const {
   addOfferToMetadata,
   getAmountFromPreviousOffer,
@@ -120,9 +122,11 @@ module.exports = (req, res) => {
   const transitionName = bodyParams.transition;
   let lineItems = null;
   let metadataMaybe = {};
+  // AV: persist the chosen eShip rate so the label step + payout logic can read it.
+  let avShippingProtectedData = {};
 
   Promise.all([transactionPromise(sdk, bodyParams?.id), fetchCommission(sdk)])
-    .then(responses => {
+    .then(async responses => {
       const [showTransactionResponse, fetchAssetsResponse] = responses;
       const transaction = showTransactionResponse.data.data;
       const listing = getListingRelationShip(showTransactionResponse.data);
@@ -142,14 +146,26 @@ module.exports = (req, res) => {
       const { providerCommission, customerCommission } =
         commissionAsset?.type === 'jsonAsset' ? commissionAsset.attributes.data : {};
 
-      lineItems = transactionLineItems(
+      const fullOrderData = getFullOrderData(orderData, bodyParams, currency, existingOffers);
+      lineItems = await transactionLineItems(
         listing,
-        getFullOrderData(orderData, bodyParams, currency, existingOffers),
+        fullOrderData,
         providerCommission,
         customerCommission
       );
 
       metadataMaybe = getUpdatedMetadata(orderData, transitionName, existingMetadata);
+
+      if (fullOrderData.deliveryMethod === 'shipping') {
+        const resolvedRate = await resolveBucketPrice({
+          quoteToken: fullOrderData.avQuoteToken,
+          avShippingType: fullOrderData.avShippingType,
+          listing,
+          destination: fullOrderData.avDestination,
+          buyerEmail: fullOrderData.buyerEmail,
+        });
+        avShippingProtectedData = buildAvShippingProtectedData(fullOrderData, resolvedRate);
+      }
 
       return getTrustedSdk(req);
     })
@@ -165,12 +181,16 @@ module.exports = (req, res) => {
       const { listingId, ...restParams } = roleBasedBodyParams?.params || {};
 
       // Add lineItems to the body params
+      const avShippingMaybe = Object.keys(avShippingProtectedData).length
+        ? { protectedData: { ...restParams.protectedData, ...avShippingProtectedData } }
+        : {};
       const body = {
         ...bodyParams,
         params: {
           ...restParams,
           lineItems,
           ...metadataMaybe,
+          ...avShippingMaybe,
         },
       };
 

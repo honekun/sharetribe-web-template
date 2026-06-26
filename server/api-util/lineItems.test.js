@@ -1,5 +1,10 @@
 const { types } = require('sharetribe-flex-sdk');
 const { Money } = types;
+
+// Shipping fees now come from the live eShip quote service. Mock it so these
+// unit tests stay offline and deterministic.
+jest.mock('../services/shippingQuoteService');
+const quoteSvc = require('../services/shippingQuoteService');
 const { transactionLineItems } = require('./lineItems');
 
 describe('transactionLineItems', () => {
@@ -24,25 +29,17 @@ describe('transactionLineItems', () => {
     minimum_amount: 200, // €2.00
   };
 
-  const mockOrderData = {
-    bookingStart: '2024-01-01T00:00:00.000Z',
-    bookingEnd: '2024-01-03T00:00:00.000Z',
-    seats: 2,
-    stockReservationQuantity: 3,
-    deliveryMethod: 'shipping',
-    currency: 'EUR',
-  };
+  beforeEach(() => {
+    quoteSvc.resolveBucketPrice.mockReset();
+  });
 
   describe('Default Booking Process - Day Unit Type', () => {
-    it('should create line items for day-based booking without seats', () => {
+    it('should create line items for day-based booking without seats', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'day',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'day' },
         },
       };
 
@@ -51,7 +48,7 @@ describe('transactionLineItems', () => {
         bookingEnd: '2024-01-03T00:00:00.000Z',
       };
 
-      const result = transactionLineItems(
+      const result = await transactionLineItems(
         listing,
         orderData,
         mockProviderCommission,
@@ -60,7 +57,6 @@ describe('transactionLineItems', () => {
 
       expect(result).toHaveLength(3); // order + provider commission + customer commission
 
-      // Check main order line item
       expect(result[0]).toEqual({
         code: 'line-item/day',
         unitPrice: new Money(10000, 'EUR'),
@@ -68,24 +64,19 @@ describe('transactionLineItems', () => {
         includeFor: ['customer', 'provider'],
       });
 
-      // Check provider commission
       expect(result[1].code).toBe('line-item/provider-commission');
       expect(result[1].includeFor).toEqual(['provider']);
 
-      // Check customer commission
       expect(result[2].code).toBe('line-item/customer-commission');
       expect(result[2].includeFor).toEqual(['customer']);
     });
 
-    it('should create line items for day-based booking with seats', () => {
+    it('should create line items for day-based booking with seats', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'day',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'day' },
         },
       };
 
@@ -95,7 +86,7 @@ describe('transactionLineItems', () => {
         seats: 3,
       };
 
-      const result = transactionLineItems(
+      const result = await transactionLineItems(
         listing,
         orderData,
         mockProviderCommission,
@@ -104,7 +95,6 @@ describe('transactionLineItems', () => {
 
       expect(result).toHaveLength(3);
 
-      // Check main order line item with seats
       expect(result[0]).toEqual({
         code: 'line-item/day',
         unitPrice: new Money(10000, 'EUR'),
@@ -116,15 +106,12 @@ describe('transactionLineItems', () => {
   });
 
   describe('Default Booking Process - Night Unit Type', () => {
-    it('should create line items for night-based booking without seats', () => {
+    it('should create line items for night-based booking without seats', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'night',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'night' },
         },
       };
 
@@ -133,7 +120,7 @@ describe('transactionLineItems', () => {
         bookingEnd: '2024-01-03T00:00:00.000Z',
       };
 
-      const result = transactionLineItems(
+      const result = await transactionLineItems(
         listing,
         orderData,
         mockProviderCommission,
@@ -142,7 +129,6 @@ describe('transactionLineItems', () => {
 
       expect(result).toHaveLength(3);
 
-      // Check main order line item
       expect(result[0]).toEqual({
         code: 'line-item/night',
         unitPrice: new Money(10000, 'EUR'),
@@ -151,15 +137,12 @@ describe('transactionLineItems', () => {
       });
     });
 
-    it('should create line items for night-based booking with seats', () => {
+    it('should create line items for night-based booking with seats', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'night',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'night' },
         },
       };
 
@@ -169,7 +152,7 @@ describe('transactionLineItems', () => {
         seats: 4,
       };
 
-      const result = transactionLineItems(
+      const result = await transactionLineItems(
         listing,
         orderData,
         mockProviderCommission,
@@ -178,7 +161,6 @@ describe('transactionLineItems', () => {
 
       expect(result).toHaveLength(3);
 
-      // Check main order line item with seats
       expect(result[0]).toEqual({
         code: 'line-item/night',
         unitPrice: new Money(10000, 'EUR'),
@@ -190,15 +172,12 @@ describe('transactionLineItems', () => {
   });
 
   describe('Default Booking Process - Hour Unit Type', () => {
-    it('should create line items for hour-based booking without seats', () => {
+    it('should create line items for hour-based booking without seats', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'hour',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'hour' },
         },
       };
 
@@ -207,7 +186,7 @@ describe('transactionLineItems', () => {
         bookingEnd: '2024-01-01T03:00:00.000Z', // 3 hours
       };
 
-      const result = transactionLineItems(
+      const result = await transactionLineItems(
         listing,
         orderData,
         mockProviderCommission,
@@ -216,7 +195,6 @@ describe('transactionLineItems', () => {
 
       expect(result).toHaveLength(3);
 
-      // Check main order line item
       expect(result[0]).toEqual({
         code: 'line-item/hour',
         unitPrice: new Money(10000, 'EUR'),
@@ -225,15 +203,12 @@ describe('transactionLineItems', () => {
       });
     });
 
-    it('should create line items for hour-based booking with seats', () => {
+    it('should create line items for hour-based booking with seats', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'hour',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'hour' },
         },
       };
 
@@ -243,7 +218,7 @@ describe('transactionLineItems', () => {
         seats: 2,
       };
 
-      const result = transactionLineItems(
+      const result = await transactionLineItems(
         listing,
         orderData,
         mockProviderCommission,
@@ -252,7 +227,6 @@ describe('transactionLineItems', () => {
 
       expect(result).toHaveLength(3);
 
-      // Check main order line item with seats
       expect(result[0]).toEqual({
         code: 'line-item/hour',
         unitPrice: new Money(10000, 'EUR'),
@@ -264,15 +238,12 @@ describe('transactionLineItems', () => {
   });
 
   describe('Default Booking Process - Fixed Unit Type', () => {
-    it('should create line items for fixed-duration booking without seats', () => {
+    it('should create line items for fixed-duration booking without seats', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'fixed',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'fixed' },
         },
       };
 
@@ -281,7 +252,7 @@ describe('transactionLineItems', () => {
         bookingEnd: '2024-01-01T02:00:00.000Z',
       };
 
-      const result = transactionLineItems(
+      const result = await transactionLineItems(
         listing,
         orderData,
         mockProviderCommission,
@@ -290,7 +261,6 @@ describe('transactionLineItems', () => {
 
       expect(result).toHaveLength(3);
 
-      // Check main order line item
       expect(result[0]).toEqual({
         code: 'line-item/fixed',
         unitPrice: new Money(10000, 'EUR'),
@@ -299,15 +269,12 @@ describe('transactionLineItems', () => {
       });
     });
 
-    it('should create line items for fixed-duration booking with seats', () => {
+    it('should create line items for fixed-duration booking with seats', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'fixed',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'fixed' },
         },
       };
 
@@ -317,7 +284,7 @@ describe('transactionLineItems', () => {
         seats: 5,
       };
 
-      const result = transactionLineItems(
+      const result = await transactionLineItems(
         listing,
         orderData,
         mockProviderCommission,
@@ -326,7 +293,6 @@ describe('transactionLineItems', () => {
 
       expect(result).toHaveLength(3);
 
-      // Check main order line item with seats
       expect(result[0]).toEqual({
         code: 'line-item/fixed',
         unitPrice: new Money(10000, 'EUR'),
@@ -338,139 +304,102 @@ describe('transactionLineItems', () => {
   });
 
   describe('Default Purchase Process - Item Unit Type', () => {
-    it('should create line items for item purchase with pickup delivery', () => {
-      const listing = {
-        ...mockListing,
-        attributes: {
-          ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'item',
-            shippingPriceInSubunitsOneItem: 500, // €5.00
-            shippingPriceInSubunitsAdditionalItems: 200, // €2.00
-          },
-        },
-      };
+    const itemListing = {
+      ...mockListing,
+      attributes: {
+        ...mockListing.attributes,
+        publicData: { ...mockListing.attributes.publicData, unitType: 'item' },
+      },
+    };
 
+    it('should create line items for item purchase with pickup delivery', async () => {
       const orderData = {
         stockReservationQuantity: 2,
         deliveryMethod: 'pickup',
         currency: 'EUR',
       };
 
-      const result = transactionLineItems(
-        listing,
+      const result = await transactionLineItems(
+        itemListing,
         orderData,
         mockProviderCommission,
         mockCustomerCommission
       );
 
-      expect(result).toHaveLength(3); // order + provider commission + customer commission (no shipping for pickup)
-
-      // Check main order line item
+      expect(result).toHaveLength(3); // order + provider + customer (no shipping for pickup)
       expect(result[0]).toEqual({
         code: 'line-item/item',
         unitPrice: new Money(10000, 'EUR'),
         quantity: 2,
         includeFor: ['customer', 'provider'],
       });
+      expect(quoteSvc.resolveBucketPrice).not.toHaveBeenCalled();
     });
 
-    it('should create line items for item purchase with shipping delivery', () => {
-      const listing = {
-        ...mockListing,
-        attributes: {
-          ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'item',
-            shippingPriceInSubunitsOneItem: 500, // €5.00
-            shippingPriceInSubunitsAdditionalItems: 200, // €2.00
-          },
-        },
-      };
-
+    it('adds a shipping-fee line item from the resolved quote', async () => {
+      quoteSvc.resolveBucketPrice.mockResolvedValue({ amountSubunits: 11800, currency: 'EUR' });
       const orderData = {
         stockReservationQuantity: 3,
         deliveryMethod: 'shipping',
+        avShippingType: 'nacionalExpress',
+        avQuoteToken: 't',
+        avDestination: { zip: '64000' },
         currency: 'EUR',
       };
 
-      const result = transactionLineItems(
-        listing,
+      const result = await transactionLineItems(
+        itemListing,
         orderData,
         mockProviderCommission,
         mockCustomerCommission
       );
 
-      expect(result).toHaveLength(4); // order + shipping + provider commission + customer commission
-
-      // Check main order line item
-      expect(result[0]).toEqual({
-        code: 'line-item/item',
-        unitPrice: new Money(10000, 'EUR'),
-        quantity: 3,
-        includeFor: ['customer', 'provider'],
-      });
-
-      // Check shipping line item
+      expect(result).toHaveLength(4); // order + shipping + provider + customer
+      expect(result[0].code).toBe('line-item/item');
       expect(result[1]).toEqual({
         code: 'line-item/shipping-fee',
-        unitPrice: new Money(900, 'EUR'), // €5.00 + (2 * €2.00) = €9.00
+        unitPrice: new Money(11800, 'EUR'),
         quantity: 1,
         includeFor: ['customer', 'provider'],
       });
     });
 
-    it('should create line items for single item purchase with shipping', () => {
-      const listing = {
-        ...mockListing,
-        attributes: {
-          ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'item',
-            shippingPriceInSubunitsOneItem: 500, // €5.00
-            shippingPriceInSubunitsAdditionalItems: 200, // €2.00
-          },
-        },
-      };
-
+    it('does not attempt to quote on the initial speculate (no delivery type chosen yet)', async () => {
+      // On checkout load the tx is speculated with deliveryMethod 'shipping' but no
+      // avShippingType / token / destination. We must NOT call the quote service then
+      // (it would hit eShip with no address and fail the whole speculation).
       const orderData = {
         stockReservationQuantity: 1,
         deliveryMethod: 'shipping',
         currency: 'EUR',
       };
+      const result = await transactionLineItems(itemListing, orderData, null, null);
+      expect(quoteSvc.resolveBucketPrice).not.toHaveBeenCalled();
+      expect(result.find(li => li.code === 'line-item/shipping-fee')).toBeUndefined();
+    });
 
-      const result = transactionLineItems(
-        listing,
-        orderData,
-        mockProviderCommission,
-        mockCustomerCommission
-      );
+    it('omits the shipping-fee line item when no price resolves (especial/unquotable)', async () => {
+      quoteSvc.resolveBucketPrice.mockResolvedValue(null);
+      const orderData = {
+        stockReservationQuantity: 1,
+        deliveryMethod: 'shipping',
+        avShippingType: 'nacionalExpress',
+        currency: 'EUR',
+      };
 
-      expect(result).toHaveLength(4); // order + shipping + provider commission + customer commission
+      const result = await transactionLineItems(itemListing, orderData, null, null);
 
-      // Check shipping line item for single item
-      expect(result[1]).toEqual({
-        code: 'line-item/shipping-fee',
-        unitPrice: new Money(500, 'EUR'), // €5.00 for first item only
-        quantity: 1,
-        includeFor: ['customer', 'provider'],
-      });
+      expect(result.find(li => li.code === 'line-item/shipping-fee')).toBeUndefined();
     });
   });
 
   describe('Default Negotiation Process - Request Unit Type (Reverse Flow)', () => {
-    it('should create line items for negotiation request with offer', () => {
+    it('should create line items for negotiation request with offer', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'request',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'request' },
         },
       };
 
@@ -479,16 +408,15 @@ describe('transactionLineItems', () => {
         currency: 'EUR',
       };
 
-      const result = transactionLineItems(
+      const result = await transactionLineItems(
         listing,
         orderData,
         mockProviderCommission,
         mockCustomerCommission
       );
 
-      expect(result).toHaveLength(3); // order + provider commission + customer commission
+      expect(result).toHaveLength(3); // order + provider + customer
 
-      // Check main order line item
       expect(result[0]).toEqual({
         code: 'line-item/request',
         unitPrice: new Money(15000, 'EUR'), // Uses the offer amount
@@ -497,23 +425,18 @@ describe('transactionLineItems', () => {
       });
     });
 
-    it('should create line items for negotiation request without offer (uses listing price)', () => {
+    it('should create line items for negotiation request without offer (uses listing price)', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'request',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'request' },
         },
       };
 
-      const orderData = {
-        currency: 'EUR',
-      };
+      const orderData = { currency: 'EUR' };
 
-      const result = transactionLineItems(
+      const result = await transactionLineItems(
         listing,
         orderData,
         mockProviderCommission,
@@ -522,7 +445,6 @@ describe('transactionLineItems', () => {
 
       expect(result).toHaveLength(3);
 
-      // Check main order line item uses listing price when no offer
       expect(result[0]).toEqual({
         code: 'line-item/request',
         unitPrice: new Money(10000, 'EUR'), // Uses listing price
@@ -533,7 +455,7 @@ describe('transactionLineItems', () => {
   });
 
   describe('Price Variants', () => {
-    it('should use price variant when priceVariationsEnabled is true', () => {
+    it('should use price variant when priceVariationsEnabled is true', async () => {
       const listing = {
         ...mockListing,
         attributes: {
@@ -542,12 +464,7 @@ describe('transactionLineItems', () => {
             ...mockListing.attributes.publicData,
             unitType: 'day',
             priceVariationsEnabled: true,
-            priceVariants: [
-              {
-                name: 'weekend',
-                priceInSubunits: 15000, // €150.00
-              },
-            ],
+            priceVariants: [{ name: 'weekend', priceInSubunits: 15000 }],
           },
         },
       };
@@ -558,7 +475,7 @@ describe('transactionLineItems', () => {
         priceVariantName: 'weekend',
       };
 
-      const result = transactionLineItems(
+      const result = await transactionLineItems(
         listing,
         orderData,
         mockProviderCommission,
@@ -570,15 +487,12 @@ describe('transactionLineItems', () => {
   });
 
   describe('Commission Handling', () => {
-    it('should not add commission line items when commissions are not provided', () => {
+    it('should not add commission line items when commissions are not provided', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'day',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'day' },
         },
       };
 
@@ -587,21 +501,18 @@ describe('transactionLineItems', () => {
         bookingEnd: '2024-01-03T00:00:00.000Z',
       };
 
-      const result = transactionLineItems(listing, orderData, null, null);
+      const result = await transactionLineItems(listing, orderData, null, null);
 
       expect(result).toHaveLength(1); // Only order line item
       expect(result[0].code).toBe('line-item/day');
     });
 
-    it('should use minimum commission when it is greater than percentage-based commission', () => {
+    it('should use minimum commission when it is greater than percentage-based commission', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'day',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'day' },
         },
       };
 
@@ -610,12 +521,9 @@ describe('transactionLineItems', () => {
         bookingEnd: '2024-01-03T00:00:00.000Z',
       };
 
-      const providerCommission = {
-        percentage: 5,
-        minimum_amount: 3000, // €30.00 minimum (greater than 5% of €200 = €10)
-      };
+      const providerCommission = { percentage: 5, minimum_amount: 3000 };
 
-      const result = transactionLineItems(listing, orderData, providerCommission, null);
+      const result = await transactionLineItems(listing, orderData, providerCommission, null);
 
       expect(result).toHaveLength(2); // order + provider commission
       expect(result[1].code).toBe('line-item/provider-commission');
@@ -623,15 +531,12 @@ describe('transactionLineItems', () => {
       expect(result[1].quantity).toBe(-1); // Negative for provider commission
     });
 
-    it('should use percentage-based commission when it is greater than minimum', () => {
+    it('should use percentage-based commission when it is greater than minimum', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'day',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'day' },
         },
       };
 
@@ -640,12 +545,9 @@ describe('transactionLineItems', () => {
         bookingEnd: '2024-01-03T00:00:00.000Z',
       };
 
-      const providerCommission = {
-        percentage: 15,
-        minimum_amount: 100, // €1.00 minimum (less than 15% of €200 = €30)
-      };
+      const providerCommission = { percentage: 15, minimum_amount: 100 };
 
-      const result = transactionLineItems(listing, orderData, providerCommission, null);
+      const result = await transactionLineItems(listing, orderData, providerCommission, null);
 
       expect(result).toHaveLength(2); // order + provider commission
       expect(result[1].code).toBe('line-item/provider-commission');
@@ -654,62 +556,48 @@ describe('transactionLineItems', () => {
   });
 
   describe('Error Handling', () => {
-    it('should throw error when orderData is missing required quantity information', () => {
+    it('should throw error when orderData is missing required quantity information', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'day',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'day' },
         },
       };
 
-      const orderData = {
-        // Missing bookingStart and bookingEnd
-      };
+      const orderData = {}; // Missing bookingStart and bookingEnd
 
-      expect(() => {
-        transactionLineItems(listing, orderData, mockProviderCommission, mockCustomerCommission);
-      }).toThrow(
+      await expect(
+        transactionLineItems(listing, orderData, mockProviderCommission, mockCustomerCommission)
+      ).rejects.toThrow(
         'Error: orderData is missing the following information: quantity, units, seats. Quantity or either units & seats is required.'
       );
     });
 
-    it('should throw error when orderData is missing units and seats for seat-based booking', () => {
+    it('should throw error when orderData is missing units and seats for seat-based booking', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'day',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'day' },
         },
       };
 
-      const orderData = {
-        // Missing bookingStart and bookingEnd - this will cause calculateQuantityFromDates to return null
-        seats: 2,
-      };
+      const orderData = { seats: 2 };
 
-      expect(() => {
-        transactionLineItems(listing, orderData, mockProviderCommission, mockCustomerCommission);
-      }).toThrow(
+      await expect(
+        transactionLineItems(listing, orderData, mockProviderCommission, mockCustomerCommission)
+      ).rejects.toThrow(
         'Error: orderData is missing the following information: quantity, units. Quantity or either units & seats is required.'
       );
     });
 
-    it('should throw error when minimum commission is greater than transaction amount', () => {
+    it('should throw error when minimum commission is greater than transaction amount', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           ...mockListing.attributes,
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'day',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'day' },
         },
       };
 
@@ -718,27 +606,21 @@ describe('transactionLineItems', () => {
         bookingEnd: '2024-01-03T00:00:00.000Z',
       };
 
-      const providerCommission = {
-        percentage: 5,
-        minimum_amount: 50000, // €500.00 minimum (greater than transaction amount)
-      };
+      const providerCommission = { percentage: 5, minimum_amount: 50000 };
 
-      expect(() => {
-        transactionLineItems(listing, orderData, providerCommission, null);
-      }).toThrow('Minimum commission amount is greater than the amount of money paid in');
+      await expect(
+        transactionLineItems(listing, orderData, providerCommission, null)
+      ).rejects.toThrow('Minimum commission amount is greater than the amount of money paid in');
     });
   });
 
   describe('Currency Handling', () => {
-    it('should use currency from orderData when listing price has no currency', () => {
+    it('should use currency from orderData when listing price has no currency', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           price: null, // No price attribute
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'day',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'day' },
         },
       };
 
@@ -748,20 +630,17 @@ describe('transactionLineItems', () => {
         currency: 'USD',
       };
 
-      const result = transactionLineItems(listing, orderData, null, null);
+      const result = await transactionLineItems(listing, orderData, null, null);
 
       expect(result[0].unitPrice).toBeNull(); // No unit price when no listing price
     });
 
-    it('should use currency from listing price when available', () => {
+    it('should use currency from listing price when available', async () => {
       const listing = {
         ...mockListing,
         attributes: {
           price: new Money(10000, 'USD'), // USD currency
-          publicData: {
-            ...mockListing.attributes.publicData,
-            unitType: 'day',
-          },
+          publicData: { ...mockListing.attributes.publicData, unitType: 'day' },
         },
       };
 
@@ -771,52 +650,9 @@ describe('transactionLineItems', () => {
         currency: 'EUR', // Different currency in orderData
       };
 
-      const result = transactionLineItems(listing, orderData, null, null);
+      const result = await transactionLineItems(listing, orderData, null, null);
 
       expect(result[0].unitPrice.currency).toBe('USD'); // Uses listing currency
-    });
-  });
-
-  describe('AV grid shipping fee', () => {
-    const cfg = require('../../src/config/configAVShipping');
-
-    beforeAll(() => {
-      cfg.priceGrid.M.nacionalEstandar = 12900; // MX$129.00
-    });
-
-    afterAll(() => {
-      cfg.priceGrid.M.nacionalEstandar = null; // restore shipped all-null state
-    });
-
-    const listing = {
-      attributes: {
-        price: new Money(50000, 'MXN'),
-        publicData: {
-          unitType: 'item',
-          avPackageSize: 'M',
-          shippingEnabled: true,
-          shippingPriceInSubunitsOneItem: 5000, // flat fallback, should be ignored
-        },
-      },
-    };
-
-    test('uses grid price for shipping fee when avShippingType present', () => {
-      const orderData = {
-        stockReservationQuantity: 1,
-        deliveryMethod: 'shipping',
-        avShippingType: 'nacionalEstandar',
-      };
-      const items = transactionLineItems(listing, orderData, null, null);
-      const shipping = items.find(li => li.code === 'line-item/shipping-fee');
-      expect(shipping.unitPrice.amount).toBe(12900);
-      expect(shipping.unitPrice.currency).toBe('MXN');
-    });
-
-    test('falls back to flat price when no avShippingType', () => {
-      const orderData = { stockReservationQuantity: 1, deliveryMethod: 'shipping' };
-      const items = transactionLineItems(listing, orderData, null, null);
-      const shipping = items.find(li => li.code === 'line-item/shipping-fee');
-      expect(shipping.unitPrice.amount).toBe(5000);
     });
   });
 });

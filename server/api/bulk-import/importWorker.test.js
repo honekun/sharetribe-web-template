@@ -45,7 +45,7 @@ function makeRow(overrides = {}) {
     description: 'A nice dress',
     price: 250,
     currency: 'MXN',
-    authorId: '',
+    authorId: 'author-uuid-789',
     publish: true,
     stock: 1,
     shippingEnabled: true,
@@ -61,14 +61,12 @@ function makeRow(overrides = {}) {
 
 describe('processImportJob', () => {
   beforeEach(() => {
-    process.env.BULK_IMPORT_DEFAULT_AUTHOR_ID = 'author-uuid-789';
     process.env.BULK_IMPORT_LISTING_TYPE = 'product-selling';
     process.env.BULK_IMPORT_TRANSACTION_ALIAS = 'default-purchase/release-1';
     process.env.BULK_IMPORT_UNIT_TYPE = 'item';
   });
 
   afterEach(() => {
-    delete process.env.BULK_IMPORT_DEFAULT_AUTHOR_ID;
     delete process.env.BULK_IMPORT_LISTING_TYPE;
     delete process.env.BULK_IMPORT_TRANSACTION_ALIAS;
     delete process.env.BULK_IMPORT_UNIT_TYPE;
@@ -207,7 +205,7 @@ describe('processImportJob', () => {
     expect(params.geolocation).toBeUndefined();
   });
 
-  it('uses row authorId over default when provided', async () => {
+  it('uses the row authorId resolved upstream', async () => {
     const mockSdk = createMockSdk();
     getIntegrationSdk.mockReturnValue(mockSdk);
 
@@ -248,17 +246,16 @@ describe('processImportJob', () => {
     expect(finalJob.results[0].row).toBe(3);
   });
 
-  it('fails row when no author_id and no default', async () => {
-    delete process.env.BULK_IMPORT_DEFAULT_AUTHOR_ID;
+  it('fails row when no author is resolved', async () => {
     const mockSdk = createMockSdk();
     getIntegrationSdk.mockReturnValue(mockSdk);
 
     const job = createJob(1);
-    await processImportJob(job.id, [makeRow()], new Map());
+    await processImportJob(job.id, [makeRow({ authorId: '' })], new Map());
 
     const finalJob = getJob(job.id);
     expect(finalJob.failed).toBe(1);
-    expect(finalJob.errors[0].error).toMatch(/BULK_IMPORT_DEFAULT_AUTHOR_ID/);
+    expect(finalJob.errors[0].error).toMatch(/No author resolved/);
   });
 
   it('includes location in publicData when address provided', async () => {

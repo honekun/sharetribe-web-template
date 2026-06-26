@@ -1,13 +1,12 @@
 const {
   calculateQuantityFromDates,
   calculateQuantityFromHours,
-  calculateShippingFee,
   getProviderCommissionMaybe,
   getCustomerCommissionMaybe,
 } = require('./lineItemHelpers');
 const { types } = require('sharetribe-flex-sdk');
 const { Money } = types;
-const { getShippingPrice, resolvePackageSize } = require('../../src/config/configAVShipping');
+const { resolveBucketPrice } = require('../services/shippingQuoteService');
 
 /**
  * Get quantity and add extra line-items that are related to delivery method
@@ -16,32 +15,33 @@ const { getShippingPrice, resolvePackageSize } = require('../../src/config/confi
  * @param {*} publicData should contain shipping prices
  * @param {*} currency should point to the currency of listing's price.
  */
-const getItemQuantityAndLineItems = (orderData, publicData, currency) => {
+const getItemQuantityAndLineItems = async (orderData, publicData, currency, listing) => {
   // Check delivery method and shipping prices
   const quantity = orderData ? orderData.stockReservationQuantity : null;
   const deliveryMethod = orderData && orderData.deliveryMethod;
   const isShipping = deliveryMethod === 'shipping';
-  const isPickup = deliveryMethod === 'pickup';
-  const { shippingPriceInSubunitsOneItem, shippingPriceInSubunitsAdditionalItems } =
-    publicData || {};
 
-  // AV: prefer the static size×type grid price; fall back to the seller's flat price.
-  // Resolve size from publicData with the category fallback so listings without an
-  // explicit avPackageSize are still priced (matches the checkout-side resolution).
-  const gridPrice = isShipping
-    ? getShippingPrice(resolvePackageSize(publicData), orderData?.avShippingType)
-    : null;
+  // AV: live eShip quote (token cache hit -> pinned; miss -> re-quote). The
+  // client-sent price is never trusted; this is the server-authoritative amount.
+  // Only resolve once the buyer has actually chosen a delivery type — the initial
+  // speculate (on checkout load) has no type/token/destination yet, and quoting
+  // then would hit eShip with no address and fail the whole speculation.
+  const resolved =
+    isShipping && orderData?.avShippingType
+      ? await resolveBucketPrice({
+          quoteToken: orderData?.avQuoteToken,
+          avShippingType: orderData?.avShippingType,
+          listing,
+          destination: orderData?.avDestination,
+          buyerEmail: orderData?.buyerEmail,
+        })
+      : null;
 
   const shippingFee = !isShipping
     ? null
-    : gridPrice != null
-    ? new Money(gridPrice, currency)
-    : calculateShippingFee(
-        shippingPriceInSubunitsOneItem,
-        shippingPriceInSubunitsAdditionalItems,
-        currency,
-        quantity
-      );
+    : resolved
+    ? new Money(resolved.amountSubunits, resolved.currency || currency)
+    : null;
 
   // Add line-item for given delivery method.
   // Note: by default, pickup considered as free and, therefore, we don't add pickup fee line-item
@@ -144,7 +144,12 @@ const getDateRangeQuantityAndLineItems = (orderData, code) => {
  * @param {Object} customerCommission
  * @returns {Array} lineItems
  */
-exports.transactionLineItems = (listing, orderData, providerCommission, customerCommission) => {
+exports.transactionLineItems = async (
+  listing,
+  orderData,
+  providerCommission,
+  customerCommission
+) => {
   const publicData = listing.attributes.publicData;
   // Note: the unitType needs to be one of the following:
   // day, night, hour, fixed, or item (these are related to payment processes)
@@ -186,7 +191,7 @@ exports.transactionLineItems = (listing, orderData, providerCommission, customer
   // E.g. by default, "shipping-fee" is tied to 'item' aka buying products.
   const quantityAndExtraLineItems =
     unitType === 'item'
-      ? getItemQuantityAndLineItems(orderData, publicData, currency)
+      ? await getItemQuantityAndLineItems(orderData, publicData, currency, listing)
       : unitType === 'fixed'
       ? getFixedQuantityAndLineItems(orderData)
       : unitType === 'hour'

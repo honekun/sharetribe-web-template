@@ -4,7 +4,7 @@
  * It's also handled separately in handleSubmit function.
  */
 import React, { Component } from 'react';
-import { Form as FinalForm } from 'react-final-form';
+import { Form as FinalForm, FormSpy } from 'react-final-form';
 import arrayMutators from 'final-form-arrays';
 import classNames from 'classnames';
 
@@ -367,11 +367,13 @@ class StripePaymentForm extends Component {
     formApi.batch(() => {
       formApi.change('name', shouldFill ? values.recipientName : '');
       formApi.change('addressLine1', shouldFill ? values.recipientAddressLine1 : '');
-      formApi.change('addressLine2', shouldFill ? values.recipientAddressLine2 : '');
+      // AV: the MX shipping form has no addressLine2/country fields — colonia maps
+      // to billing line2 and the country is always Mexico.
+      formApi.change('addressLine2', shouldFill ? values.recipientColonia : '');
       formApi.change('postal', shouldFill ? values.recipientPostal : '');
       formApi.change('city', shouldFill ? values.recipientCity : '');
       formApi.change('state', shouldFill ? values.recipientState : '');
-      formApi.change('country', shouldFill ? values.recipientCountry : '');
+      formApi.change('country', shouldFill ? 'MX' : '');
     });
   }
 
@@ -482,6 +484,13 @@ class StripePaymentForm extends Component {
       transactionFieldConfigs = [],
       showTransactionFields,
       values,
+      // AV: live-shipping additions. `shippingSelectorSlot` renders the eShip
+      // delivery-type selector right after the shipping address; `onShippingValuesChange`
+      // surfaces address values so the parent can quote; `submitDisabledExtra` keeps
+      // the Pay button disabled until a delivery type is chosen.
+      shippingSelectorSlot,
+      onShippingValuesChange,
+      submitDisabledExtra,
     } = formRenderProps;
 
     this.finalFormAPI = formApi;
@@ -587,6 +596,14 @@ class StripePaymentForm extends Component {
           locale={locale}
           intl={intl}
         />
+
+        {askShippingDetails && onShippingValuesChange ? (
+          <FormSpy
+            subscription={{ values: true }}
+            onChange={({ values: formValues }) => onShippingValuesChange(formValues)}
+          />
+        ) : null}
+        {askShippingDetails ? shippingSelectorSlot : null}
 
         {billingDetailsNeeded && !loadingData ? (
           <React.Fragment>
@@ -697,7 +714,7 @@ class StripePaymentForm extends Component {
             className={css.submitButton}
             type="submit"
             inProgress={submitInProgress}
-            disabled={submitDisabled}
+            disabled={submitDisabled || submitDisabledExtra}
           >
             {billingDetailsNeeded ? (
               <FormattedMessage

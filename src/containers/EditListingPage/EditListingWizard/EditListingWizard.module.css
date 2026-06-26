@@ -7,8 +7,41 @@
   display: flex;
   flex-direction: column;
 
+  /* AV: anchor for the absolutely-positioned bulk-import CTA */
+  position: relative;
+
   /* Content of EditListingWizard should have smaller z-index than Topbar */
   z-index: 0;
+}
+
+/* AV: blue CTA linking to the bulk importer on the new-listing flow. */
+.bulkImportLink {
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  z-index: 1;
+
+  display: inline-block;
+  padding: 8px 18px;
+  border-radius: 6px;
+  background-color: var(--avBlue);
+  color: var(--avYellowLight);
+  font-weight: var(--fontWeightSemiBold);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.bulkImportLink:hover {
+  background-color: var(--avBlueDark);
+  color: var(--avYellowLight);
+  text-decoration: none;
+}
+
+@media (max-width: 767px) {
+  /* Bulk import is a desktop workflow; hide the CTA on small screens. */
+  .bulkImportLink {
+    display: none;
+  }
 }
 
 .tabsContainer {

@@ -32,14 +32,12 @@ app.use(
 app.use(cookieParser());
 app.use('/.well-known', wellKnownRouter);
 
-const brevoRouter = require('./api/brevo');
-app.use('/api/brevo', brevoRouter);
-
-const instagramRouter = require('./api/instagram');
-app.use('/api/instagram', instagramRouter);
-
-const bulkImportRouter = require('./api/bulk-import');
-app.use('/api/bulk-import', bulkImportRouter);
+// AV-owned custom routes (/api/brevo, /api/instagram, /api/my-balance,
+// /api/bulk-import, /api/shipping). Use the shared mounter so this dev server
+// stays in sync with production (server/index.js) — adding a route in
+// customApiRoutes.js then automatically works in `yarn dev` too.
+const { mountCustomApiRoutes } = require('./customApiRoutes');
+mountCustomApiRoutes(app);
 
 app.use('/api', apiRouter);
 
