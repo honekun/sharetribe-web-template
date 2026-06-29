@@ -255,7 +255,7 @@ describe('processImportJob', () => {
 
     const finalJob = getJob(job.id);
     expect(finalJob.failed).toBe(1);
-    expect(finalJob.errors[0].error).toMatch(/No author resolved/);
+    expect(finalJob.errors[0].error).toMatch(/No se resolvió ningún autor/);
   });
 
   it('includes location in publicData when address provided', async () => {

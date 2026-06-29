@@ -35,7 +35,9 @@ function extractZip(buffer) {
   try {
     zip = new AdmZip(buffer);
   } catch (err) {
-    throw new Error('Invalid ZIP file: could not parse archive. Ensure the file is a valid .zip.');
+    throw new Error(
+      'Archivo ZIP inválido: no se pudo leer el archivo. Asegúrate de que sea un .zip válido.'
+    );
   }
 
   const entries = zip.getEntries();
@@ -43,7 +45,7 @@ function extractZip(buffer) {
   // Rule 5: Entry count limit (checked before iteration to fail fast)
   if (entries.length > MAX_ENTRIES) {
     throw new Error(
-      `ZIP contains ${entries.length} entries. Maximum allowed is ${MAX_ENTRIES} (1 CSV + 400 images).`
+      `El ZIP contiene ${entries.length} entradas. El máximo permitido es ${MAX_ENTRIES} (1 CSV + 400 imágenes).`
     );
   }
 
@@ -58,13 +60,17 @@ function extractZip(buffer) {
     if (entry.isDirectory) continue;
 
     // Skip macOS metadata entries created by Finder's "Compress" feature
-    if (name.startsWith('__MACOSX/') || path.basename(name).startsWith('._')) continue;
+    // (__MACOSX/* and ._* resource forks) and the .DS_Store files Finder drops
+    // into any folder.
+    const baseName = path.basename(name);
+    if (name.startsWith('__MACOSX/') || baseName.startsWith('._') || baseName === '.DS_Store')
+      continue;
 
     // Rule 2: Path traversal — per-segment check (allows "v1..2.jpg", blocks "../etc/passwd")
     const normalized = name.replace(/\\/g, '/');
     if (normalized.split('/').some(seg => seg === '..')) {
       throw new Error(
-        `ZIP entry "${name}" contains a path traversal sequence (..). Repackage the ZIP without such entries.`
+        `La entrada del ZIP "${name}" contiene una secuencia de salto de ruta (..). Vuelve a empaquetar el ZIP sin esas entradas.`
       );
     }
 
@@ -75,32 +81,32 @@ function extractZip(buffer) {
     totalUncompressedBytes += entrySize;
     if (totalUncompressedBytes > MAX_UNCOMPRESSED_BYTES) {
       throw new Error(
-        `ZIP uncompressed size exceeds ${formatBytes(MAX_UNCOMPRESSED_BYTES)}. ` +
-          `Reduce the number or size of files and upload again.`
+        `El tamaño descomprimido del ZIP supera ${formatBytes(MAX_UNCOMPRESSED_BYTES)}. ` +
+          `Reduce la cantidad o el tamaño de los archivos y vuelve a subirlo.`
       );
     }
 
     if (ext === '.csv') {
       if (entrySize > MAX_CSV_BYTES) {
         throw new Error(
-          `CSV file "${base}" is ${formatBytes(
+          `El archivo CSV "${base}" pesa ${formatBytes(
             entrySize
-          )}. Maximum allowed CSV size is ${formatBytes(MAX_CSV_BYTES)}.`
+          )}. El tamaño máximo permitido para el CSV es ${formatBytes(MAX_CSV_BYTES)}.`
         );
       }
       csvEntries.push({ entry, base });
     } else {
       if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
         throw new Error(
-          `ZIP entry "${name}" has unsupported file type "${ext || 'none'}". ` +
-            `Images must be .jpg, .jpeg, .png, or .webp.`
+          `La entrada del ZIP "${name}" tiene un tipo de archivo no admitido "${ext ||
+            'ninguno'}". ` + `Las imágenes deben ser .jpg, .jpeg, .png o .webp.`
         );
       }
       if (entrySize > MAX_IMAGE_BYTES) {
         throw new Error(
-          `Image "${base}" is ${formatBytes(
+          `La imagen "${base}" pesa ${formatBytes(
             entrySize
-          )}. Maximum allowed image size is ${formatBytes(MAX_IMAGE_BYTES)}.`
+          )}. El tamaño máximo permitido por imagen es ${formatBytes(MAX_IMAGE_BYTES)}.`
         );
       }
       imageEntries.push({ entry, base, ext });
@@ -110,13 +116,13 @@ function extractZip(buffer) {
   // Rule 3: Exactly one CSV file
   if (csvEntries.length === 0) {
     throw new Error(
-      'ZIP contains no .csv file. Include exactly one CSV file (e.g. listings.csv) at any level inside the archive.'
+      'El ZIP no contiene ningún archivo .csv. Incluye exactamente un archivo CSV (por ejemplo, listings.csv) en cualquier nivel del archivo.'
     );
   }
   if (csvEntries.length > 1) {
     const names = csvEntries.map(e => e.entry.entryName).join(', ');
     throw new Error(
-      `ZIP contains ${csvEntries.length} .csv files (${names}). Include exactly one CSV file.`
+      `El ZIP contiene ${csvEntries.length} archivos .csv (${names}). Incluye exactamente un archivo CSV.`
     );
   }
 
@@ -125,10 +131,10 @@ function extractZip(buffer) {
   for (const { entry, base } of imageEntries) {
     if (seenBasenames.has(base)) {
       throw new Error(
-        `ZIP contains duplicate image filename "${base}" (found at "${seenBasenames.get(
+        `El ZIP contiene un nombre de imagen duplicado "${base}" (encontrado en "${seenBasenames.get(
           base
-        )}" and "${entry.entryName}"). ` +
-          `All image filenames must be unique regardless of directory.`
+        )}" y "${entry.entryName}"). ` +
+          `Todos los nombres de imagen deben ser únicos sin importar la carpeta.`
       );
     }
     seenBasenames.set(base, entry.entryName);
@@ -139,16 +145,16 @@ function extractZip(buffer) {
   try {
     csvBuffer = csvEntries[0].entry.getData();
   } catch (err) {
-    throw new Error(`Failed to read CSV file from ZIP: ${err.message}`);
+    throw new Error(`No se pudo leer el archivo CSV del ZIP: ${err.message}`);
   }
   if (!csvBuffer || csvBuffer.length === 0) {
-    throw new Error('The CSV file inside the ZIP is empty.');
+    throw new Error('El archivo CSV dentro del ZIP está vacío.');
   }
   if (csvBuffer.length > MAX_CSV_BYTES) {
     throw new Error(
-      `CSV file "${csvEntries[0].base}" expands to ${formatBytes(
+      `El archivo CSV "${csvEntries[0].base}" se expande a ${formatBytes(
         csvBuffer.length
-      )}. Maximum allowed CSV size is ${formatBytes(MAX_CSV_BYTES)}.`
+      )}. El tamaño máximo permitido para el CSV es ${formatBytes(MAX_CSV_BYTES)}.`
     );
   }
 
@@ -161,19 +167,19 @@ function extractZip(buffer) {
     try {
       buf = entry.getData();
     } catch (err) {
-      throw new Error(`Failed to read image "${base}" from ZIP: ${err.message}`);
+      throw new Error(`No se pudo leer la imagen "${base}" del ZIP: ${err.message}`);
     }
     if (buf.length > MAX_IMAGE_BYTES) {
       throw new Error(
-        `Image "${base}" expands to ${formatBytes(
+        `La imagen "${base}" se expande a ${formatBytes(
           buf.length
-        )}. Maximum allowed image size is ${formatBytes(MAX_IMAGE_BYTES)}.`
+        )}. El tamaño máximo permitido por imagen es ${formatBytes(MAX_IMAGE_BYTES)}.`
       );
     }
     if (!isAllowedImageBuffer(buf, ext)) {
       throw new Error(
-        `Image "${base}" does not match its file extension or is not a supported image type. ` +
-          `Use .jpg, .jpeg, .png, or .webp files.`
+        `La imagen "${base}" no coincide con su extensión de archivo o no es un tipo de imagen admitido. ` +
+          `Usa archivos .jpg, .jpeg, .png o .webp.`
       );
     }
     imageMap.set(base, buf);

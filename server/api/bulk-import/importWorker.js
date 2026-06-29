@@ -22,7 +22,7 @@ const MAX_SDK_ERRORS_KEPT = 5;
  * Sharetribe SDK validation detail (`err.data.errors`) when present.
  */
 function serializeSdkError(err) {
-  if (!err) return { message: 'Unknown error' };
+  if (!err) return { message: 'Error desconocido' };
   const out = {
     message: err.message || 'Unknown error',
   };
@@ -127,7 +127,7 @@ async function processRow(sdk, row, imageMap, config) {
   // signed-in user by default, or an admin `user_id` override).
   const authorId = row.authorId;
   if (!authorId) {
-    throw new Error('No author resolved for CSV row.');
+    throw new Error('No se resolvió ningún autor para la fila del CSV.');
   }
 
   const priceAmount = Math.round(row.price * 100);

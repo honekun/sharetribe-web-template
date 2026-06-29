@@ -181,7 +181,7 @@ describe('bulk import router', () => {
     await authorizeSessionMiddleware(req, res, next);
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.error).toMatch(/signed-in session/);
+    expect(res.body.error).toMatch(/sesión iniciada/);
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -196,7 +196,7 @@ describe('bulk import router', () => {
     statusTokenMiddleware(req, res, next);
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.error).toMatch(/action token/);
+    expect(res.body.error).toMatch(/Token de acción/);
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -224,12 +224,12 @@ describe('bulk import router', () => {
     startHandler(req, res);
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.error).toMatch(/No ZIP file uploaded/);
+    expect(res.body.error).toMatch(/No se subió ningún archivo ZIP/);
   });
 
   it('returns 400 when zipExtractor throws (e.g. corrupt archive or no CSV)', () => {
     extractZip.mockImplementation(() => {
-      throw new Error('ZIP contains no .csv file.');
+      throw new Error('El ZIP no contiene ningún archivo .csv.');
     });
 
     const req = {
@@ -241,7 +241,7 @@ describe('bulk import router', () => {
     startHandler(req, res);
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.error).toMatch(/ZIP contains no .csv file/);
+    expect(res.body.error).toMatch(/no contiene ningún archivo .csv/);
   });
 
   it.each(['image_front', 'image_back', 'image_horizontal'])(
@@ -263,7 +263,7 @@ describe('bulk import router', () => {
       expect(res.statusCode).toBe(400);
       expect(res.body.details).toEqual(
         expect.arrayContaining([
-          expect.stringContaining(`(${missingSlot}) not found in uploaded files`),
+          expect.stringContaining(`(${missingSlot}) no se encontró en los archivos subidos`),
         ])
       );
     }
@@ -296,7 +296,7 @@ describe('bulk import router', () => {
       startHandler(req, res);
 
       expect(res.statusCode).toBe(400);
-      expect(res.body.error).toMatch(/ZIP exceeds your 20 MB limit/);
+      expect(res.body.error).toMatch(/El ZIP supera tu límite de 20 MB/);
     });
 
     it('allows admins a ZIP above the standard cap (up to the admin cap)', () => {
@@ -326,7 +326,7 @@ describe('bulk import router', () => {
       startHandler(req, res);
 
       expect(res.statusCode).toBe(400);
-      expect(res.body.error).toMatch(/Too many images/);
+      expect(res.body.error).toMatch(/Demasiadas imágenes/);
     });
 
     it('rejects more rows than the standard-tier cap', () => {
@@ -346,7 +346,7 @@ describe('bulk import router', () => {
       startHandler(req, res);
 
       expect(res.statusCode).toBe(400);
-      expect(res.body.error).toMatch(/Your limit is 25/);
+      expect(res.body.error).toMatch(/Tu límite es 25/);
     });
   });
 
@@ -365,7 +365,7 @@ describe('bulk import router', () => {
     startHandler(req, res);
 
     expect(res.statusCode).toBe(429);
-    expect(res.body.error).toMatch(/Too many imports/);
+    expect(res.body.error).toMatch(/Demasiadas importaciones/);
     expect(processImportJob).not.toHaveBeenCalled();
   });
 
@@ -382,7 +382,7 @@ describe('bulk import router', () => {
     startHandler(req, res);
 
     expect(res.statusCode).toBe(409);
-    expect(res.body.error).toMatch(/already have an import in progress/);
+    expect(res.body.error).toMatch(/una importación en curso/);
     expect(processImportJob).not.toHaveBeenCalled();
   });
 
@@ -420,7 +420,7 @@ describe('bulk import router', () => {
     startHandler(req, res);
 
     expect(res.statusCode).toBe(503);
-    expect(res.body.error).toMatch(/capacity is full/);
+    expect(res.body.error).toMatch(/capacidad de importación está llena/);
     expect(processImportJob).not.toHaveBeenCalled();
   });
 
@@ -431,7 +431,7 @@ describe('bulk import router', () => {
     statusHandler(req, res);
 
     expect(res.statusCode).toBe(404);
-    expect(res.body.error).toMatch(/Job not found/);
+    expect(res.body.error).toMatch(/Trabajo no encontrado/);
   });
 
   it('returns job status to the job owner', () => {
@@ -455,7 +455,7 @@ describe('bulk import router', () => {
     statusHandler(req, res);
 
     expect(res.statusCode).toBe(404);
-    expect(res.body.error).toMatch(/Job not found/);
+    expect(res.body.error).toMatch(/Trabajo no encontrado/);
   });
 
   it('downloads the csv template without authentication', () => {
