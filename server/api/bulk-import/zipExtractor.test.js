@@ -124,15 +124,29 @@ describe('extractZip — valid ZIPs (happy path)', () => {
     expect(imageMap.has('front.jpg')).toBe(true);
     expect(imageMap.has('._front.jpg')).toBe(false);
   });
+
+  it('skips .DS_Store files dropped by Finder in any folder', () => {
+    const zipBuf = buildZip({
+      'listings.csv': VALID_CSV,
+      'front.jpg': JPG,
+      '.DS_Store': Buffer.from('finder metadata'),
+      'NEOCHILANGO/.DS_Store': Buffer.from('finder metadata'),
+    });
+
+    const { imageMap } = extractZip(zipBuf);
+
+    expect(imageMap.has('front.jpg')).toBe(true);
+    expect(imageMap.size).toBe(1);
+  });
 });
 
 describe('extractZip — Rule 1: invalid ZIP format', () => {
   it('throws on a corrupt/non-ZIP buffer', () => {
-    expect(() => extractZip(Buffer.from('this is not a zip file'))).toThrow(/Invalid ZIP file/);
+    expect(() => extractZip(Buffer.from('this is not a zip file'))).toThrow(/Archivo ZIP inválido/);
   });
 
   it('throws on an empty buffer', () => {
-    expect(() => extractZip(Buffer.alloc(0))).toThrow(/Invalid ZIP file/);
+    expect(() => extractZip(Buffer.alloc(0))).toThrow(/Archivo ZIP inválido/);
   });
 });
 
@@ -163,7 +177,7 @@ describe('extractZip — Rule 2: path traversal', () => {
       'listings.csv': VALID_CSV,
     });
 
-    expect(() => extractZip(zipBuf)).toThrow(/path traversal/);
+    expect(() => extractZip(zipBuf)).toThrow(/salto de ruta/);
   });
 
   it('throws when .. appears as a mid-path segment', () => {
@@ -171,7 +185,7 @@ describe('extractZip — Rule 2: path traversal', () => {
       'listings.csv': VALID_CSV,
     });
 
-    expect(() => extractZip(zipBuf)).toThrow(/path traversal/);
+    expect(() => extractZip(zipBuf)).toThrow(/salto de ruta/);
   });
 
   it('does NOT throw for filenames that contain two consecutive dots but are not a traversal segment (e.g. "v1..2.jpg")', () => {
@@ -188,7 +202,7 @@ describe('extractZip — Rule 3: CSV count', () => {
   it('throws when ZIP contains no .csv file', () => {
     const zipBuf = buildZip({ 'front.jpg': JPG });
 
-    expect(() => extractZip(zipBuf)).toThrow(/no .csv file/);
+    expect(() => extractZip(zipBuf)).toThrow(/no contiene ningún archivo .csv/);
   });
 
   it('throws when ZIP contains two .csv files', () => {
@@ -198,7 +212,7 @@ describe('extractZip — Rule 3: CSV count', () => {
       'front.jpg': JPG,
     });
 
-    expect(() => extractZip(zipBuf)).toThrow(/2 .csv files/);
+    expect(() => extractZip(zipBuf)).toThrow(/2 archivos .csv/);
   });
 
   it('accepts a CSV with uppercase .CSV extension', () => {
@@ -219,7 +233,7 @@ describe('extractZip — Rule 4: duplicate image basenames', () => {
       'other/front.jpg': JPG,
     });
 
-    expect(() => extractZip(zipBuf)).toThrow(/duplicate image filename "front.jpg"/);
+    expect(() => extractZip(zipBuf)).toThrow(/nombre de imagen duplicado "front.jpg"/);
   });
 
   it('does not throw when all image basenames are unique', () => {
@@ -241,7 +255,7 @@ describe('extractZip — Rule 5: entry count limit', () => {
     }
     const zipBuf = buildZip(files); // 1 CSV + 401 images = 402
 
-    expect(() => extractZip(zipBuf)).toThrow(/402 entries. Maximum allowed is 401/);
+    expect(() => extractZip(zipBuf)).toThrow(/402 entradas. El máximo permitido es 401/);
   });
 
   it('accepts exactly 401 entries (boundary)', () => {
@@ -263,7 +277,7 @@ describe('extractZip — file type and decompression limits', () => {
       'front.exe': Buffer.from('not an image'),
     });
 
-    expect(() => extractZip(zipBuf)).toThrow(/unsupported file type ".exe"/);
+    expect(() => extractZip(zipBuf)).toThrow(/tipo de archivo no admitido ".exe"/);
   });
 
   it('throws when an image extension does not match supported image bytes', () => {
@@ -272,7 +286,7 @@ describe('extractZip — file type and decompression limits', () => {
       'front.jpg': Buffer.from('not really a jpeg'),
     });
 
-    expect(() => extractZip(zipBuf)).toThrow(/does not match its file extension/);
+    expect(() => extractZip(zipBuf)).toThrow(/no coincide con su extensión de archivo/);
   });
 
   it('accepts supported PNG image bytes', () => {
@@ -290,7 +304,7 @@ describe('extractZip — file type and decompression limits', () => {
       'listings.csv': Buffer.alloc(MAX_CSV_BYTES + 1, 'a'),
     });
 
-    expect(() => extractZip(zipBuf)).toThrow(/Maximum allowed CSV size/);
+    expect(() => extractZip(zipBuf)).toThrow(/tamaño máximo permitido para el CSV/);
   });
 
   it('throws when an image uncompressed size exceeds the per-image limit', () => {
@@ -299,7 +313,7 @@ describe('extractZip — file type and decompression limits', () => {
       'front.jpg': buildJpeg(MAX_IMAGE_BYTES + 1),
     });
 
-    expect(() => extractZip(zipBuf)).toThrow(/Maximum allowed image size/);
+    expect(() => extractZip(zipBuf)).toThrow(/tamaño máximo permitido por imagen/);
   });
 
   it('throws when total uncompressed size exceeds the archive limit', () => {
@@ -310,7 +324,7 @@ describe('extractZip — file type and decompression limits', () => {
     const zipBuf = buildZip(files);
 
     expect(() => extractZip(zipBuf)).toThrow(
-      new RegExp(`exceeds ${Math.round((MAX_UNCOMPRESSED_BYTES / 1024 / 1024) * 10) / 10} MB`)
+      new RegExp(`supera ${Math.round((MAX_UNCOMPRESSED_BYTES / 1024 / 1024) * 10) / 10} MB`)
     );
   });
 });
@@ -322,6 +336,6 @@ describe('extractZip — edge cases', () => {
       'front.jpg': JPG,
     });
 
-    expect(() => extractZip(zipBuf)).toThrow(/CSV file inside the ZIP is empty/);
+    expect(() => extractZip(zipBuf)).toThrow(/archivo CSV dentro del ZIP está vacío/);
   });
 });

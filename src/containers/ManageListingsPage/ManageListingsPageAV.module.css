@@ -4,11 +4,14 @@
    ManageListingsPage.module.css so that file stays pristine. Imported by
    ManageListingsPage.js as `avCss`. */
 
-/* Header row: page title on the left, "create listing" button on the right. */
+/* Header row: page title on the left, buttons on the right. Wraps when there
+   isn't enough horizontal room — the button group drops below the title. */
 .headingRow {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   margin: 0 24px 24px 24px;
 
   @media (--viewportMedium) {
@@ -18,6 +21,26 @@
   @media (--viewportLarge) {
     margin: 0 36px 32px 36px;
   }
+}
+
+/* Group holding the "bulk import" + "create listing" buttons. Reused on both the
+   "has listings" header (right-aligned) and the "no listings" screen (inline). */
+.buttonGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+/* In the header, keep the group right-aligned both inline with the title and
+   when it wraps below it. */
+.headingRow .buttonGroup {
+  margin-left: auto;
+}
+
+/* Spacing for the group on the empty (no listings) screen. */
+.noListingsButtonGroup {
+  margin-top: 8px;
 }
 
 /* "Create listing" pill button. */

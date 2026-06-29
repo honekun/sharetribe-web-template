@@ -54,14 +54,14 @@ describe('validateRows', () => {
   it('rejects empty row array', () => {
     const result = validateRows([], imageMap);
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain('CSV file is empty.');
+    expect(result.errors).toContain('El archivo CSV está vacío.');
   });
 
   it('rejects CSV exceeding 100 rows', () => {
     const rows = Array.from({ length: 101 }, () => validRow());
     const result = validateRows(rows, imageMap);
     expect(result.valid).toBe(false);
-    expect(result.errors[0]).toMatch(/Maximum is 100/);
+    expect(result.errors[0]).toMatch(/El máximo es 100/);
   });
 
   it('rejects rows missing required columns', () => {
@@ -69,7 +69,9 @@ describe('validateRows', () => {
     const result = validateRows(rows, imageMap);
     expect(result.valid).toBe(false);
     expect(result.errors).toEqual(
-      expect.arrayContaining([expect.stringContaining('Missing required column: "description"')])
+      expect.arrayContaining([
+        expect.stringContaining('Falta la columna obligatoria: "description"'),
+      ])
     );
   });
 
@@ -78,25 +80,25 @@ describe('validateRows', () => {
   it('rejects empty title', () => {
     const result = validateRows([validRow({ title: '' })], imageMap);
     expect(result.valid).toBe(false);
-    expect(result.errors[0]).toMatch(/"title" is empty/);
+    expect(result.errors[0]).toMatch(/"title" está vacío/);
   });
 
   it('rejects empty description', () => {
     const result = validateRows([validRow({ description: '' })], imageMap);
     expect(result.valid).toBe(false);
-    expect(result.errors[0]).toMatch(/"description" is empty/);
+    expect(result.errors[0]).toMatch(/"description" está vacío/);
   });
 
   it('rejects non-numeric price', () => {
     const result = validateRows([validRow({ price: 'abc' })], imageMap);
     expect(result.valid).toBe(false);
-    expect(result.errors[0]).toMatch(/"price" must be a positive number/);
+    expect(result.errors[0]).toMatch(/"price" debe ser un número positivo/);
   });
 
   it('rejects zero price', () => {
     const result = validateRows([validRow({ price: '0' })], imageMap);
     expect(result.valid).toBe(false);
-    expect(result.errors[0]).toMatch(/"price" must be a positive number/);
+    expect(result.errors[0]).toMatch(/"price" debe ser un número positivo/);
   });
 
   it('rejects negative price', () => {
@@ -116,7 +118,7 @@ describe('validateRows', () => {
       imageMap
     );
     expect(result.valid).toBe(false);
-    expect(result.errors[0]).toMatch(/not found in uploaded files/);
+    expect(result.errors[0]).toMatch(/no se encontró en los archivos subidos/);
   });
 
   it.each(['image_front', 'image_back', 'image_horizontal'])(
@@ -135,7 +137,7 @@ describe('validateRows', () => {
       );
       expect(result.valid).toBe(false);
       expect(result.errors).toEqual(
-        expect.arrayContaining([expect.stringContaining(`"${key}" is required.`)])
+        expect.arrayContaining([expect.stringContaining(`"${key}" es obligatorio.`)])
       );
     }
   );
@@ -154,7 +156,7 @@ describe('validateRows', () => {
       imageMap
     );
     expect(result.valid).toBe(false);
-    expect(result.errors[0]).toMatch(/Invalid geolocation/);
+    expect(result.errors[0]).toMatch(/Valores de geolocalización inválidos/);
   });
 
   // --- Successful validation ---
@@ -478,7 +480,7 @@ describe('validateRows', () => {
       expect(result.valid).toBe(false);
       expect(result.errors).toEqual(
         expect.arrayContaining([
-          expect.stringContaining(`publicData column "${column}" uses a reserved key`),
+          expect.stringContaining(`La columna publicData "${column}" usa una clave reservada`),
         ])
       );
       const reservedKey = column.slice(3);
@@ -880,7 +882,7 @@ describe('validateRows', () => {
     it('still rejects a value with no digits', () => {
       const r = priceRow('$');
       expect(r.valid).toBe(false);
-      expect(r.errors[0]).toMatch(/"price" must be a positive number/);
+      expect(r.errors[0]).toMatch(/"price" debe ser un número positivo/);
     });
   });
 
@@ -906,9 +908,9 @@ describe('validateRows', () => {
     expect(result.valid).toBe(false);
     expect(result.errors).toEqual(
       expect.arrayContaining([
-        expect.stringContaining('"image_front" is required.'),
-        expect.stringContaining('"image_back" is required.'),
-        expect.stringContaining('"image_horizontal" is required.'),
+        expect.stringContaining('"image_front" es obligatorio.'),
+        expect.stringContaining('"image_back" es obligatorio.'),
+        expect.stringContaining('"image_horizontal" es obligatorio.'),
       ])
     );
   });
@@ -937,7 +939,7 @@ describe('validateRows', () => {
         allowAuthorOverride: false,
       });
       expect(result.valid).toBe(false);
-      expect(result.errors.join(' ')).toMatch(/"user_id" override is not permitted/);
+      expect(result.errors.join(' ')).toMatch(/La sustitución de "user_id" no está permitida/);
     });
 
     it('accepts an author override for admin uploads', () => {

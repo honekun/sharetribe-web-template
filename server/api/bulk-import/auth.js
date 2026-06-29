@@ -90,7 +90,7 @@ const requireUserSession = async (req, res, next) => {
   try {
     currentUser = await getCurrentUser(req, res);
   } catch (err) {
-    return res.status(401).json({ error: 'Bulk import requires a signed-in session.' });
+    return res.status(401).json({ error: 'La importación masiva requiere una sesión iniciada.' });
   }
 
   req.bulkImportUser = { ...currentUser, isAdmin: isAdminUser(currentUser) };
@@ -102,7 +102,9 @@ const requireActionToken = (req, res, next) => {
   const userId = req.bulkImportUser?.userId;
 
   if (!validateActionToken(token, userId)) {
-    return res.status(401).json({ error: 'Invalid or expired bulk import action token.' });
+    return res
+      .status(401)
+      .json({ error: 'Token de acción de importación masiva inválido o expirado.' });
   }
 
   return next();

@@ -2,7 +2,7 @@
 
 jest.mock('node-fetch');
 const fetch = require('node-fetch');
-const { quote, EshipApiError, EshipTimeoutError } = require('./eshipClient');
+const { quote, EshipApiError, EshipTimeoutError, describeEshipError } = require('./eshipClient');
 
 const okResponse = body => ({ ok: true, status: 200, json: async () => body });
 
@@ -31,13 +31,59 @@ describe('eshipClient.quote', () => {
     expect(JSON.parse(opts.body).parcels).toHaveLength(1);
   });
 
-  it('throws EshipApiError on a non-2xx response', async () => {
-    fetch.mockResolvedValue({ ok: false, status: 422, json: async () => ({ error: 'bad' }) });
-    await expect(quote(args)).rejects.toBeInstanceOf(EshipApiError);
+  it('throws EshipApiError on a non-2xx response and captures status + body + detail', async () => {
+    fetch.mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () =>
+        JSON.stringify({ status: 'ERROR', message: 'No couriers found for this account.' }),
+    });
+    await expect(quote(args)).rejects.toMatchObject({
+      name: 'EshipApiError',
+      status: 400,
+      body: { status: 'ERROR', message: 'No couriers found for this account.' },
+      detail: 'No couriers found for this account.',
+    });
+  });
+
+  it('captures the raw text when the eShip error body is not JSON', async () => {
+    fetch.mockResolvedValue({
+      ok: false,
+      status: 502,
+      text: async () => '<html>Bad Gateway</html>',
+    });
+    try {
+      await quote(args);
+      throw new Error('should have thrown');
+    } catch (e) {
+      expect(e).toBeInstanceOf(EshipApiError);
+      expect(e.text).toBe('<html>Bad Gateway</html>');
+      expect(e.detail).toBe('<html>Bad Gateway</html>');
+    }
   });
 
   it('throws EshipTimeoutError when the request aborts', async () => {
     fetch.mockRejectedValue(Object.assign(new Error('aborted'), { name: 'AbortError' }));
     await expect(quote(args)).rejects.toBeInstanceOf(EshipTimeoutError);
+  });
+});
+
+describe('describeEshipError', () => {
+  it('describes an EshipApiError with name, status and detail', () => {
+    const e = new EshipApiError(400, { message: 'No couriers found for this account.' }, '');
+    expect(describeEshipError(e)).toBe('EshipApiError [400]: No couriers found for this account.');
+  });
+
+  it('joins an errors array', () => {
+    const e = new EshipApiError(
+      422,
+      { errors: [{ message: 'zip required' }, { message: 'bad state' }] },
+      ''
+    );
+    expect(describeEshipError(e)).toBe('EshipApiError [422]: zip required; bad state');
+  });
+
+  it('falls back to the message for non-eShip errors', () => {
+    expect(describeEshipError(new Error('connect ETIMEDOUT'))).toBe('Error: connect ETIMEDOUT');
   });
 });

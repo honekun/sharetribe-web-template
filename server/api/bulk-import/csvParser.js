@@ -130,12 +130,12 @@ function validateRows(rows, imageMap, authorOptions = {}) {
   const errors = [];
 
   if (rows.length === 0) {
-    errors.push('CSV file is empty.');
+    errors.push('El archivo CSV está vacío.');
     return { valid: false, rows: [], errors };
   }
 
   if (rows.length > MAX_ROWS) {
-    errors.push(`CSV has ${rows.length} rows. Maximum is ${MAX_ROWS}.`);
+    errors.push(`El CSV tiene ${rows.length} filas. El máximo es ${MAX_ROWS}.`);
     return { valid: false, rows: [], errors };
   }
 
@@ -143,7 +143,7 @@ function validateRows(rows, imageMap, authorOptions = {}) {
   const columns = Object.keys(rows[0]);
   for (const col of REQUIRED_COLUMNS) {
     if (!columns.includes(col)) {
-      errors.push(`Missing required column: "${col}".`);
+      errors.push(`Falta la columna obligatoria: "${col}".`);
     }
   }
   if (errors.length > 0) {
@@ -157,23 +157,25 @@ function validateRows(rows, imageMap, authorOptions = {}) {
 
     // Required fields
     if (!row.title || row.title.trim() === '') {
-      rowErrors.push(`Row ${rowNum}: "title" is empty.`);
+      rowErrors.push(`Fila ${rowNum}: "title" está vacío.`);
     }
     if (!row.description || row.description.trim() === '') {
-      rowErrors.push(`Row ${rowNum}: "description" is empty.`);
+      rowErrors.push(`Fila ${rowNum}: "description" está vacío.`);
     }
 
     // Price validation
     const price = parsePrice(row.price);
     if (isNaN(price) || price <= 0) {
-      rowErrors.push(`Row ${rowNum}: "price" must be a positive number, got "${row.price}".`);
+      rowErrors.push(
+        `Fila ${rowNum}: "price" debe ser un número positivo, se recibió "${row.price}".`
+      );
     }
 
     // Required image columns
     for (const col of REQUIRED_IMAGE_COLUMNS) {
       const filename = row[col];
       if (!filename || filename.trim() === '') {
-        rowErrors.push(`Row ${rowNum}: "${col}" is required.`);
+        rowErrors.push(`Fila ${rowNum}: "${col}" es obligatorio.`);
       }
     }
 
@@ -184,7 +186,9 @@ function validateRows(rows, imageMap, authorOptions = {}) {
       if (filename && filename.trim() !== '') {
         const trimmed = filename.trim();
         if (!imageMap.has(trimmed)) {
-          rowErrors.push(`Row ${rowNum}: Image "${trimmed}" (${col}) not found in uploaded files.`);
+          rowErrors.push(
+            `Fila ${rowNum}: La imagen "${trimmed}" (${col}) no se encontró en los archivos subidos.`
+          );
         }
         const slotKey = col.replace('image_', ''); // image_front -> front
         imageSlots[slotKey] = trimmed;
@@ -200,7 +204,7 @@ function validateRows(rows, imageMap, authorOptions = {}) {
         const pdKey = key.slice(prefix.length); // pub_color / pd_color -> color
         if (RESERVED_PD_KEYS.has(pdKey)) {
           rowErrors.push(
-            `Row ${rowNum}: publicData column "${key}" uses a reserved key and was skipped.`
+            `Fila ${rowNum}: La columna publicData "${key}" usa una clave reservada y se omitió.`
           );
           continue;
         }
@@ -221,7 +225,7 @@ function validateRows(rows, imageMap, authorOptions = {}) {
     const lat = row.location_lat ? parseFloat(row.location_lat) : null;
     const lng = row.location_lng ? parseFloat(row.location_lng) : null;
     if ((lat !== null && isNaN(lat)) || (lng !== null && isNaN(lng))) {
-      rowErrors.push(`Row ${rowNum}: Invalid geolocation values.`);
+      rowErrors.push(`Fila ${rowNum}: Valores de geolocalización inválidos.`);
     }
 
     // Stock — explicit validation: empty defaults to 1, otherwise must be a non-negative integer.
@@ -231,7 +235,7 @@ function validateRows(rows, imageMap, authorOptions = {}) {
       const parsedStock = Number(rawStock);
       if (!Number.isInteger(parsedStock) || parsedStock < 0) {
         rowErrors.push(
-          `Row ${rowNum}: "stock" must be a non-negative integer, got "${row.stock}".`
+          `Fila ${rowNum}: "stock" debe ser un número entero no negativo, se recibió "${row.stock}".`
         );
       } else {
         stock = parsedStock;
@@ -244,7 +248,7 @@ function validateRows(rows, imageMap, authorOptions = {}) {
     const rawAuthorId = (row.author_id || '').trim();
     if (rawAuthorId && !allowAuthorOverride && rawAuthorId !== currentUserId) {
       rowErrors.push(
-        `Row ${rowNum}: "user_id" override is not permitted for your account. Remove the column.`
+        `Fila ${rowNum}: La sustitución de "user_id" no está permitida para tu cuenta. Elimina la columna.`
       );
     }
     const authorId = allowAuthorOverride && rawAuthorId ? rawAuthorId : currentUserId || '';

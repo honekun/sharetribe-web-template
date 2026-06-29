@@ -46,7 +46,7 @@ const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     if (!isZipUpload(file)) {
-      return cb(new Error('Upload must be a .zip file with ZIP content type.'));
+      return cb(new Error('El archivo subido debe ser un .zip con tipo de contenido ZIP.'));
     }
     return cb(null, true);
   },
@@ -60,9 +60,9 @@ const uploadZip = (req, res, next) => {
       return next();
     }
     if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
-      return res
-        .status(400)
-        .json({ error: 'ZIP file is too large. Maximum upload size is 50 MB.' });
+      return res.status(400).json({
+        error: 'El archivo ZIP es demasiado grande. El tamaño máximo de subida es 50 MB.',
+      });
     }
     return res.status(400).json({ error: err.message });
   });
@@ -76,7 +76,9 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, (req, r
   try {
     // Validate ZIP file was uploaded
     if (!req.file) {
-      return res.status(400).json({ error: 'No ZIP file uploaded. Use field name "zipFile".' });
+      return res
+        .status(400)
+        .json({ error: 'No se subió ningún archivo ZIP. Usa el nombre de campo "zipFile".' });
     }
 
     // Per-tier limits: admins get the larger caps, everyone else the standard tier.
@@ -85,7 +87,7 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, (req, r
     // Per-tier compressed-ZIP size cap (multer only enforces the admin ceiling).
     if (req.file.size > limits.maxZipBytes) {
       const mb = Math.round(limits.maxZipBytes / 1024 / 1024);
-      return res.status(400).json({ error: `ZIP exceeds your ${mb} MB limit.` });
+      return res.status(400).json({ error: `El ZIP supera tu límite de ${mb} MB.` });
     }
 
     // Extract and validate ZIP contents
@@ -99,7 +101,7 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, (req, r
     // Per-tier image-count cap.
     if (imageMap.size > limits.maxImages) {
       return res.status(400).json({
-        error: `Too many images (${imageMap.size}). Your limit is ${limits.maxImages}.`,
+        error: `Demasiadas imágenes (${imageMap.size}). Tu límite es ${limits.maxImages}.`,
       });
     }
 
@@ -108,13 +110,13 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, (req, r
     try {
       rows = parseCsv(csvBuffer);
     } catch (err) {
-      return res.status(400).json({ error: `CSV parse error: ${err.message}` });
+      return res.status(400).json({ error: `Error al analizar el CSV: ${err.message}` });
     }
 
     // Per-tier row-count cap.
     if (rows.length > limits.maxRows) {
       return res.status(400).json({
-        error: `CSV has ${rows.length} rows. Your limit is ${limits.maxRows}.`,
+        error: `El CSV tiene ${rows.length} filas. Tu límite es ${limits.maxRows}.`,
       });
     }
 
@@ -126,7 +128,7 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, (req, r
     });
     if (!validation.valid) {
       return res.status(400).json({
-        error: 'CSV validation failed.',
+        error: 'La validación del CSV falló.',
         details: validation.errors,
       });
     }
@@ -135,14 +137,15 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, (req, r
     if (hasActiveJobForUser(req.bulkImportUser.userId)) {
       return res.status(409).json({
         error:
-          'You already have an import in progress. Wait for it to complete before starting a new one.',
+          'Ya tienes una importación en curso. Espera a que termine antes de iniciar una nueva.',
       });
     }
 
     // Cap total concurrent imports across all users.
     if (countActiveJobs() >= MAX_GLOBAL_CONCURRENT_JOBS) {
       return res.status(503).json({
-        error: 'Import capacity is full right now. Please try again in a few minutes.',
+        error:
+          'La capacidad de importación está llena en este momento. Inténtalo de nuevo en unos minutos.',
       });
     }
 
@@ -150,7 +153,7 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, (req, r
     // so failed validations above do not consume the user's budget.
     if (!checkAndRecord(req.bulkImportUser.userId, limits.maxImportsPerHour)) {
       return res.status(429).json({
-        error: `Too many imports. You can start ${limits.maxImportsPerHour} per hour. Try again later.`,
+        error: `Demasiadas importaciones. Puedes iniciar ${limits.maxImportsPerHour} por hora. Inténtalo más tarde.`,
       });
     }
 
@@ -171,7 +174,7 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, (req, r
     });
   } catch (err) {
     console.error('[bulk-import] Start error:', err);
-    res.status(500).json({ error: 'Internal server error.' });
+    res.status(500).json({ error: 'Error interno del servidor.' });
   }
 });
 
@@ -181,7 +184,9 @@ router.get('/status/:jobId', requireUserSession, requireActionToken, (req, res) 
   // Owner-scoped: a job belonging to another user reads as "not found" (404,
   // not 403) so we never confirm the existence of someone else's job.
   if (!job || job.ownerId !== req.bulkImportUser.userId) {
-    return res.status(404).json({ error: 'Job not found. It may have expired (1hr TTL).' });
+    return res
+      .status(404)
+      .json({ error: 'Trabajo no encontrado. Es posible que haya expirado (TTL de 1 hora).' });
   }
 
   res.json({
