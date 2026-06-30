@@ -102,8 +102,32 @@ function parsePrice(raw) {
 }
 
 /**
- * Parse a CSV buffer and return structured rows.
+ * Build a reverse lookup from canonical column name -> the original header the
+ * operator actually typed. This lets validation errors name the real CSV column
+ * (e.g. "Nombre imagen 1*" or "imagen_1") instead of the internal canonical key
+ * ("image_front"). It is built from the raw parsed records *before*
+ * normalizeColumns() rewrites the keys. The first header mapping to a given
+ * canonical name wins.
+ */
+function buildHeaderMap(records) {
+  const map = {};
+  if (records.length === 0) return map;
+  for (const header of Object.keys(records[0])) {
+    const trimmed = header.trim();
+    const canonical = COLUMN_ALIASES[trimmed] || trimmed;
+    if (!(canonical in map)) map[canonical] = trimmed;
+  }
+  return map;
+}
+
+/**
+ * Parse a CSV buffer and return structured rows plus a header map.
  * Throws on parse errors.
+ *
+ * Returns { rows, headerMap }:
+ *  - rows: records with canonical column keys (see normalizeColumns).
+ *  - headerMap: canonical name -> the original header the operator typed, used
+ *    by validateRows to surface real column names in error messages.
  */
 function parseCsv(buffer) {
   const records = parse(buffer, {
@@ -112,21 +136,27 @@ function parseCsv(buffer) {
     trim: true,
     bom: true,
   });
-  return normalizeColumns(records);
+  return { rows: normalizeColumns(records), headerMap: buildHeaderMap(records) };
 }
 
 /**
  * Validate parsed CSV rows against required columns and image references.
  *
- * authorOptions resolves each row's listing author:
+ * authorOptions resolves each row's listing author and labels error columns:
  *  - currentUserId: the signed-in user; listings default to this author.
  *  - allowAuthorOverride: when true (admin uploads), a row's `user_id`/`author_id`
  *    column overrides the author. When false, any override value is rejected.
+ *  - headerMap: canonical name -> original CSV header (from parseCsv), so errors
+ *    name the column the operator actually typed (e.g. "imagen_1", not
+ *    "image_front"). Optional; falls back to the canonical name when absent.
  *
  * Returns { valid: boolean, rows: Array, errors: Array<string> }
  */
 function validateRows(rows, imageMap, authorOptions = {}) {
-  const { currentUserId = null, allowAuthorOverride = false } = authorOptions;
+  const { currentUserId = null, allowAuthorOverride = false, headerMap = {} } = authorOptions;
+  // Show the operator the actual CSV column header they typed rather than the
+  // internal canonical key.
+  const label = col => headerMap[col] || col;
   const errors = [];
 
   if (rows.length === 0) {
@@ -157,17 +187,19 @@ function validateRows(rows, imageMap, authorOptions = {}) {
 
     // Required fields
     if (!row.title || row.title.trim() === '') {
-      rowErrors.push(`Fila ${rowNum}: "title" está vacío.`);
+      rowErrors.push(`Fila ${rowNum}: "${label('title')}" está vacío.`);
     }
     if (!row.description || row.description.trim() === '') {
-      rowErrors.push(`Fila ${rowNum}: "description" está vacío.`);
+      rowErrors.push(`Fila ${rowNum}: "${label('description')}" está vacío.`);
     }
 
     // Price validation
     const price = parsePrice(row.price);
     if (isNaN(price) || price <= 0) {
       rowErrors.push(
-        `Fila ${rowNum}: "price" debe ser un número positivo, se recibió "${row.price}".`
+        `Fila ${rowNum}: "${label('price')}" debe ser un número positivo, se recibió "${
+          row.price
+        }".`
       );
     }
 
@@ -175,7 +207,7 @@ function validateRows(rows, imageMap, authorOptions = {}) {
     for (const col of REQUIRED_IMAGE_COLUMNS) {
       const filename = row[col];
       if (!filename || filename.trim() === '') {
-        rowErrors.push(`Fila ${rowNum}: "${col}" es obligatorio.`);
+        rowErrors.push(`Fila ${rowNum}: "${label(col)}" es obligatorio.`);
       }
     }
 
@@ -187,7 +219,9 @@ function validateRows(rows, imageMap, authorOptions = {}) {
         const trimmed = filename.trim();
         if (!imageMap.has(trimmed)) {
           rowErrors.push(
-            `Fila ${rowNum}: La imagen "${trimmed}" (${col}) no se encontró en los archivos subidos.`
+            `Fila ${rowNum}: La imagen "${trimmed}" (${label(
+              col
+            )}) no se encontró en los archivos subidos.`
           );
         }
         const slotKey = col.replace('image_', ''); // image_front -> front
@@ -235,7 +269,9 @@ function validateRows(rows, imageMap, authorOptions = {}) {
       const parsedStock = Number(rawStock);
       if (!Number.isInteger(parsedStock) || parsedStock < 0) {
         rowErrors.push(
-          `Fila ${rowNum}: "stock" debe ser un número entero no negativo, se recibió "${row.stock}".`
+          `Fila ${rowNum}: "${label('stock')}" debe ser un número entero no negativo, se recibió "${
+            row.stock
+          }".`
         );
       } else {
         stock = parsedStock;
@@ -281,4 +317,4 @@ function validateRows(rows, imageMap, authorOptions = {}) {
   };
 }
 
-module.exports = { parseCsv, validateRows, normalizeColumns, COLUMN_ALIASES };
+module.exports = { parseCsv, validateRows, normalizeColumns, buildHeaderMap, COLUMN_ALIASES };

@@ -31,14 +31,16 @@ import css from './ShippingDetails.module.css';
  * @param {string} props.fieldId - The field ID
  */
 const ShippingDetails = props => {
-  const { rootClassName, className, intl, disabled, formApi, fieldId } = props;
+  const { rootClassName, className, intl, disabled, formApi, fieldId, showHeading = true } = props;
   const classes = classNames(rootClassName || css.root, className);
 
   return (
     <div className={classes}>
-      <Heading as="h3" rootClassName={css.heading}>
-        <FormattedMessage id="ShippingDetails.mxTitle" />
-      </Heading>
+      {showHeading ? (
+        <Heading as="h3" rootClassName={css.heading}>
+          <FormattedMessage id="ShippingDetails.mxTitle" />
+        </Heading>
+      ) : null}
 
       <FieldTextInput
         id={`${fieldId}.recipientName`}

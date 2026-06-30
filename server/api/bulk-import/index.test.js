@@ -493,14 +493,14 @@ describe('bulk import router', () => {
 
     it('parses cleanly back through the importer with valid values', () => {
       // Round-trip: the served template must validate against its own example row.
-      const rows = parseCsv(Buffer.from(templateBody));
+      const { rows, headerMap } = parseCsv(Buffer.from(templateBody));
       const imageMap = new Map();
       for (const r of rows) {
         for (const k of ['image_front', 'image_back', 'image_horizontal', 'image_details']) {
           if (r[k] && r[k].trim()) imageMap.set(r[k].trim(), Buffer.from('x'));
         }
       }
-      const result = validateRows(rows, imageMap, { currentUserId: 'me' });
+      const result = validateRows(rows, imageMap, { currentUserId: 'me', headerMap });
       expect(result.valid).toBe(true);
       expect(result.rows[0].price).toBe(450);
       expect(result.rows[0].publicData.brand).toBe('zara');

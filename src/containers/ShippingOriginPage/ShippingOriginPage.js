@@ -12,6 +12,8 @@ import { H3, Page, UserNav, LayoutSideNavigation } from '../../components';
 import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
 
+import { shippingOriginFromValues, valuesFromShippingOrigin } from '../../util/shippingOrigin';
+
 import ShippingOriginForm from './ShippingOriginForm';
 import { saveShippingOrigin, saveShippingOriginClear } from './ShippingOriginPage.duck';
 import css from './ShippingOriginPage.module.css';
@@ -45,12 +47,14 @@ export const ShippingOriginPageComponent = props => {
   const user = ensureCurrentUser(currentUser);
   const shippingOrigin = user.attributes?.profile?.protectedData?.shippingOrigin || {};
 
-  const handleSubmit = values => onSubmit(values);
+  // The form uses the granular checkout fields (recipient*); compose them into the
+  // stored origin on submit and seed the form from the stored origin on load.
+  const handleSubmit = values => onSubmit(shippingOriginFromValues(values));
 
   const form = user.id ? (
     <ShippingOriginForm
       className={css.form}
-      initialValues={shippingOrigin}
+      initialValues={valuesFromShippingOrigin(shippingOrigin)}
       inProgress={saveInProgress}
       ready={saveSuccess}
       saveError={saveError}
