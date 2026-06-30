@@ -191,7 +191,9 @@ describe('CheckoutPageWithPayment live-quote shipping', () => {
       />
     );
     // Address is collected inside the payment form (no longer gated by type choice).
-    expect(screen.getByText('ShippingDetails.mxNameLabel')).toBeInTheDocument();
+    // The shipping section is identified by its heading (billing reuses the same
+    // MX field labels, so mxNameLabel alone is ambiguous).
+    expect(screen.getByRole('heading', { name: 'ShippingDetails.mxTitle' })).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: 'StripePaymentForm.paymentHeading' })
     ).toBeInTheDocument();
@@ -219,7 +221,11 @@ describe('CheckoutPageWithPayment live-quote shipping', () => {
         fetchSpeculatedTransaction={noop}
       />
     );
-    expect(screen.queryByText('ShippingDetails.mxNameLabel')).not.toBeInTheDocument();
+    // No shipping address form for pickup (identified by the shipping heading).
+    // Billing still renders with the same MX fields, so we check the heading.
+    expect(
+      screen.queryByRole('heading', { name: 'ShippingDetails.mxTitle' })
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: 'StripePaymentForm.paymentHeading' })
     ).toBeInTheDocument();

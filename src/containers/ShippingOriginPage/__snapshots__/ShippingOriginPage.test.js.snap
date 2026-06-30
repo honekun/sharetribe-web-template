@@ -318,14 +318,14 @@ exports[`ShippingOriginPage matches snapshot 1`] = `
                       class="root field"
                     >
                       <label
-                        for="shippingOrigin.recipientPostalCode"
+                        for="shippingOrigin.recipientPostal"
                       >
                         ShippingDetails.mxPostalLabel
                       </label>
                       <input
                         autocomplete="shipping postal-code"
                         class="input"
-                        id="shippingOrigin.recipientPostalCode"
+                        id="shippingOrigin.recipientPostal"
                         name="recipientPostal"
                         placeholder="ShippingDetails.mxPostalPlaceholder"
                         type="text"

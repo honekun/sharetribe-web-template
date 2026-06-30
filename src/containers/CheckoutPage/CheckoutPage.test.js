@@ -155,30 +155,26 @@ describe('CheckoutPage', () => {
 
     const shippingHeading = 'ShippingDetails.mxTitle';
     expect(screen.getByRole('heading', { name: shippingHeading })).toBeInTheDocument();
-    expect(getTextbox('ShippingDetails.mxNameLabel')).toBeInTheDocument();
-    expect(getTextbox('ShippingDetails.mxStreetLabel')).toBeInTheDocument();
-    expect(getTextbox('ShippingDetails.mxExteriorLabel')).toBeInTheDocument();
-    expect(getTextbox('ShippingDetails.mxInteriorLabel')).toBeInTheDocument();
-    expect(getTextbox('ShippingDetails.mxColoniaLabel')).toBeInTheDocument();
-    expect(getTextbox('ShippingDetails.mxPostalLabel')).toBeInTheDocument();
-    expect(getTextbox('ShippingDetails.mxCityLabel')).toBeInTheDocument();
+
+    // Shipping AND billing both use the MX ShippingDetails fields, so the shared
+    // fields appear twice; Estado is an MX-states dropdown; billing has no phone.
+    const countByName = (role, name) => screen.getAllByRole(role, { name }).length;
+    expect(countByName('textbox', 'ShippingDetails.mxNameLabel')).toBe(2);
+    expect(countByName('textbox', 'ShippingDetails.mxStreetLabel')).toBe(2);
+    expect(countByName('textbox', 'ShippingDetails.mxExteriorLabel')).toBe(2);
+    expect(countByName('textbox', 'ShippingDetails.mxInteriorLabel')).toBe(2);
+    expect(countByName('textbox', 'ShippingDetails.mxColoniaLabel')).toBe(2);
+    expect(countByName('textbox', 'ShippingDetails.mxPostalLabel')).toBe(2);
+    expect(countByName('textbox', 'ShippingDetails.mxCityLabel')).toBe(2);
+    expect(countByName('combobox', 'ShippingDetails.mxStateLabel')).toBe(2);
+    // Phone is shipping-only (billing omits it).
     expect(getTextbox('ShippingDetails.mxPhoneLabel')).toBeInTheDocument();
-    // Estado is now a Mexican-states dropdown (select), not a free-text field.
-    expect(
-      screen.getByRole('combobox', { name: 'ShippingDetails.mxStateLabel' })
-    ).toBeInTheDocument();
 
     const paymentHeading = 'StripePaymentForm.paymentHeading';
     expect(screen.getByRole('heading', { name: paymentHeading })).toBeInTheDocument();
 
     const billingDetails = 'StripePaymentForm.billingDetails';
     expect(screen.getByRole('heading', { name: billingDetails })).toBeInTheDocument();
-    expect(getTextbox('StripePaymentForm.billingDetailsNameLabel')).toBeInTheDocument();
-    expect(getTextbox('StripePaymentAddress.addressLine1Label')).toBeInTheDocument();
-    expect(getTextbox('StripePaymentAddress.addressLine2Label')).toBeInTheDocument();
-    expect(getTextbox('StripePaymentAddress.postalCodeLabel')).toBeInTheDocument();
-    expect(getTextbox('StripePaymentAddress.cityLabel')).toBeInTheDocument();
-    expect(getTextbox('StripePaymentAddress.stateLabel')).toBeInTheDocument();
     expect(getTextbox('StripePaymentForm.messageLabel')).toBeInTheDocument();
 
     expect(
@@ -227,12 +223,16 @@ describe('CheckoutPage', () => {
 
     const billingDetails = 'StripePaymentForm.billingDetails';
     expect(screen.getByRole('heading', { name: billingDetails })).toBeInTheDocument();
-    expect(getTextbox('StripePaymentForm.billingDetailsNameLabel')).toBeInTheDocument();
-    expect(getTextbox('StripePaymentAddress.addressLine1Label')).toBeInTheDocument();
-    expect(getTextbox('StripePaymentAddress.addressLine2Label')).toBeInTheDocument();
-    expect(getTextbox('StripePaymentAddress.postalCodeLabel')).toBeInTheDocument();
-    expect(getTextbox('StripePaymentAddress.cityLabel')).toBeInTheDocument();
-    expect(getTextbox('StripePaymentAddress.stateLabel')).toBeInTheDocument();
+    // Booking has no shipping address, so the billing MX fields render once each.
+    expect(getTextbox('ShippingDetails.mxNameLabel')).toBeInTheDocument();
+    expect(getTextbox('ShippingDetails.mxStreetLabel')).toBeInTheDocument();
+    expect(getTextbox('ShippingDetails.mxExteriorLabel')).toBeInTheDocument();
+    expect(getTextbox('ShippingDetails.mxColoniaLabel')).toBeInTheDocument();
+    expect(getTextbox('ShippingDetails.mxPostalLabel')).toBeInTheDocument();
+    expect(getTextbox('ShippingDetails.mxCityLabel')).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: 'ShippingDetails.mxStateLabel' })
+    ).toBeInTheDocument();
     expect(getTextbox('StripePaymentForm.messageLabel')).toBeInTheDocument();
 
     expect(

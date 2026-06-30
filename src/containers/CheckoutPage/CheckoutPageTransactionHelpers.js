@@ -36,34 +36,50 @@ export const bookingDatesMaybe = bookingDates => {
 };
 
 /**
- * Construct billing details (JSON-like object) for the Stripe API
+ * Construct billing details (JSON-like object) for the Stripe API.
  *
- * @param {Object} formValues object containing name, addressLine1, addressLine2, postal, city, state, country
+ * AV: the billing address uses the same MX field set as the shipping address
+ * (the ShippingDetails component with the `billing` prefix), so we compose the
+ * granular fields (Calle + Número Exterior [Int.] → line1, Colonia → line2) into
+ * Stripe's flat address, country hardcoded to 'MX'.
+ *
+ * @param {Object} formValues - billingName/billingAddressLine1/billingExteriorNumber/
+ *   billingInteriorNumber/billingColonia/billingPostal/billingCity/billingState
  * @param {Object} currentUser
  * @returns Object that contains name, email and potentially address data for the Stripe API
  */
 export const getBillingDetails = (formValues, currentUser) => {
-  const { name, addressLine1, addressLine2, postal, city, state, country } = formValues;
+  const {
+    billingName,
+    billingAddressLine1,
+    billingExteriorNumber,
+    billingInteriorNumber,
+    billingColonia,
+    billingPostal,
+    billingCity,
+    billingState,
+  } = formValues;
 
-  // Billing address is recommended.
-  // However, let's not assume that <StripePaymentAddress> data is among formValues.
-  // Read more about this from Stripe's docs
-  // https://stripe.com/docs/stripe-js/reference#stripe-handle-card-payment-no-element
+  const streetBase = [billingAddressLine1, billingExteriorNumber].filter(Boolean).join(' ');
+  const line1 = billingInteriorNumber ? `${streetBase} Int. ${billingInteriorNumber}` : streetBase;
+
+  // Billing address is recommended but optional — only include it once the buyer
+  // has filled the minimum fields.
   const addressMaybe =
-    addressLine1 && postal
+    billingAddressLine1 && billingPostal
       ? {
           address: {
-            city: city,
-            country: country,
-            line1: addressLine1,
-            line2: addressLine2,
-            postal_code: postal,
-            state: state,
+            city: billingCity,
+            country: 'MX',
+            line1,
+            line2: billingColonia,
+            postal_code: billingPostal,
+            state: billingState,
           },
         }
       : {};
   return {
-    name,
+    name: billingName,
     email: currentUser?.attributes?.email,
     ...addressMaybe,
   };

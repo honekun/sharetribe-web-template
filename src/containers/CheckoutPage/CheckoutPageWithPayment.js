@@ -46,8 +46,6 @@ import MobileOrderBreakdown from './MobileOrderBreakdown';
 
 import css from './CheckoutPage.module.css';
 
-// AV: keep marketplace defaults out of upstream literals
-import { defaultCountry } from '../../config/configAV';
 // AV shipping: live eShip quote selector (Express/Estándar + raw rates)
 import AVShippingSelector from './AVShippingSelector/AVShippingSelector';
 import { resolvePackageSize, isEspecialSize } from '../../config/configAVShipping';
@@ -591,12 +589,12 @@ export const CheckoutPageWithPayment = props => {
   const hasPaymentIntentUserActionsDone =
     paymentIntent && STRIPE_PI_USER_ACTIONS_DONE_STATUSES.includes(paymentIntent.status);
 
+  // AV: shipping + billing both use the MX ShippingDetails fields (recipient* /
+  // billing*); pre-fill the name fields with the buyer's name. Country is always
+  // MX (composed in getShippingDetailsMaybe / getBillingDetails), no country field.
   const initialValuesForStripePayment = {
-    name: userName,
     recipientName: userName,
-    // `country` is the billing-address field (StripePaymentAddress). The MX shipping
-    // form has no country field — `getShippingDetailsMaybe` hardcodes 'MX'.
-    country: defaultCountry,
+    billingName: userName,
   };
   // AV: every product ships and the Console shipping setting is always off, so
   // OrderPanel emits deliveryMethod 'none' (or nothing). For purchases, treat

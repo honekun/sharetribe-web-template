@@ -10,29 +10,49 @@ import { FieldSelect, FieldTextInput, Heading } from '../../../components';
 import css from './ShippingDetails.module.css';
 
 /**
- * Buyer-facing shipping-address form on the checkout page.
+ * Mexico-only address form used for both the checkout shipping address and the
+ * checkout billing address (and the account/shipping-origin form), so the field
+ * set stays identical everywhere.
  *
- * AV: Mexico-only address layout matching the brand reference — Calle, Número
- * Exterior/Interior, Colonia, C.P./Ciudad, Estado (MX states dropdown) and
- * Teléfono. Country is dropped from the UI and hardcoded to 'MX' downstream in
- * `getShippingDetailsMaybe`. All labels/placeholders use AV-owned `ShippingDetails.mx*`
- * keys (defined in en_av.json) so hosted Console translations can't override the
- * intended copy. Field `name`s are kept aligned with the upstream shippingDetails
- * mapping where they overlap (recipientName/recipientPhoneNumber/recipientAddressLine1/
- * recipientPostal/recipientCity/recipientState) plus the new MX-specific fields.
+ * AV: layout matching the brand reference — Calle, Número Exterior/Interior,
+ * Colonia, C.P./Ciudad, Estado (MX states dropdown) and (optionally) Teléfono.
+ * Country is dropped from the UI and hardcoded to 'MX' downstream. Labels use
+ * AV-owned `ShippingDetails.mx*` keys so hosted Console translations can't override.
+ *
+ * Field names are `${fieldPrefix}${Suffix}` so two instances (shipping + billing)
+ * can coexist in the same Final Form without colliding: prefix `recipient`
+ * (default) for shipping/origin, `billing` for the billing address.
  *
  * @component
  * @param {Object} props
- * @param {string} props.rootClassName - The root class name for the shipping details
- * @param {string} props.className - The class name for the shipping details
- * @param {intlShape} props.intl - The intl object
- * @param {boolean} props.disabled - Whether the form is disabled
+ * @param {string} [props.rootClassName]
+ * @param {string} [props.className]
+ * @param {intlShape} props.intl
+ * @param {boolean} [props.disabled]
  * @param {Object} props.formApi - The form API from React Final Form
- * @param {string} props.fieldId - The field ID
+ * @param {string} props.fieldId
+ * @param {boolean} [props.showHeading=true] - Render the "Dirección de Envío" heading
+ * @param {boolean} [props.showPhone=true] - Render the Teléfono field
+ * @param {'recipient'|'billing'} [props.fieldPrefix='recipient'] - Field-name prefix
  */
 const ShippingDetails = props => {
-  const { rootClassName, className, intl, disabled, formApi, fieldId, showHeading = true } = props;
+  const {
+    rootClassName,
+    className,
+    intl,
+    disabled,
+    formApi,
+    fieldId,
+    showHeading = true,
+    showPhone = true,
+    fieldPrefix = 'recipient',
+  } = props;
   const classes = classNames(rootClassName || css.root, className);
+
+  // `${prefix}Name`, `${prefix}AddressLine1`, … so shipping + billing don't collide.
+  const fieldName = suffix => `${fieldPrefix}${suffix}`;
+  // Keep autocomplete tokens in the right section so the browser doesn't cross-fill.
+  const ac = token => (fieldPrefix === 'billing' ? token.replace('shipping', 'billing') : token);
 
   return (
     <div className={classes}>
@@ -43,37 +63,37 @@ const ShippingDetails = props => {
       ) : null}
 
       <FieldTextInput
-        id={`${fieldId}.recipientName`}
-        name="recipientName"
+        id={`${fieldId}.${fieldName('Name')}`}
+        name={fieldName('Name')}
         disabled={disabled}
         className={css.fieldFullWidth}
         type="text"
-        autoComplete="shipping name"
+        autoComplete={ac('shipping name')}
         label={intl.formatMessage({ id: 'ShippingDetails.mxNameLabel' })}
         placeholder={intl.formatMessage({ id: 'ShippingDetails.mxNamePlaceholder' })}
         validate={validators.required(intl.formatMessage({ id: 'ShippingDetails.mxNameRequired' }))}
-        onUnmount={() => formApi.change('recipientName', undefined)}
+        onUnmount={() => formApi.change(fieldName('Name'), undefined)}
       />
 
       <FieldTextInput
-        id={`${fieldId}.recipientAddressLine1`}
-        name="recipientAddressLine1"
+        id={`${fieldId}.${fieldName('AddressLine1')}`}
+        name={fieldName('AddressLine1')}
         disabled={disabled}
         className={css.fieldFullWidth}
         type="text"
-        autoComplete="shipping address-line1"
+        autoComplete={ac('shipping address-line1')}
         label={intl.formatMessage({ id: 'ShippingDetails.mxStreetLabel' })}
         placeholder={intl.formatMessage({ id: 'ShippingDetails.mxStreetPlaceholder' })}
         validate={validators.required(
           intl.formatMessage({ id: 'ShippingDetails.mxStreetRequired' })
         )}
-        onUnmount={() => formApi.change('recipientAddressLine1', undefined)}
+        onUnmount={() => formApi.change(fieldName('AddressLine1'), undefined)}
       />
 
       <div className={css.formRow}>
         <FieldTextInput
-          id={`${fieldId}.recipientExteriorNumber`}
-          name="recipientExteriorNumber"
+          id={`${fieldId}.${fieldName('ExteriorNumber')}`}
+          name={fieldName('ExteriorNumber')}
           disabled={disabled}
           className={css.field}
           type="text"
@@ -83,25 +103,25 @@ const ShippingDetails = props => {
           validate={validators.required(
             intl.formatMessage({ id: 'ShippingDetails.mxExteriorRequired' })
           )}
-          onUnmount={() => formApi.change('recipientExteriorNumber', undefined)}
+          onUnmount={() => formApi.change(fieldName('ExteriorNumber'), undefined)}
         />
 
         <FieldTextInput
-          id={`${fieldId}.recipientInteriorNumber`}
-          name="recipientInteriorNumber"
+          id={`${fieldId}.${fieldName('InteriorNumber')}`}
+          name={fieldName('InteriorNumber')}
           disabled={disabled}
           className={css.field}
           type="text"
           autoComplete="off"
           label={intl.formatMessage({ id: 'ShippingDetails.mxInteriorLabel' })}
           placeholder={intl.formatMessage({ id: 'ShippingDetails.mxInteriorPlaceholder' })}
-          onUnmount={() => formApi.change('recipientInteriorNumber', undefined)}
+          onUnmount={() => formApi.change(fieldName('InteriorNumber'), undefined)}
         />
       </div>
 
       <FieldTextInput
-        id={`${fieldId}.recipientColonia`}
-        name="recipientColonia"
+        id={`${fieldId}.${fieldName('Colonia')}`}
+        name={fieldName('Colonia')}
         disabled={disabled}
         className={css.fieldFullWidth}
         type="text"
@@ -111,44 +131,44 @@ const ShippingDetails = props => {
         validate={validators.required(
           intl.formatMessage({ id: 'ShippingDetails.mxColoniaRequired' })
         )}
-        onUnmount={() => formApi.change('recipientColonia', undefined)}
+        onUnmount={() => formApi.change(fieldName('Colonia'), undefined)}
       />
 
       <div className={css.formRow}>
         <FieldTextInput
-          id={`${fieldId}.recipientPostalCode`}
-          name="recipientPostal"
+          id={`${fieldId}.${fieldName('Postal')}`}
+          name={fieldName('Postal')}
           disabled={disabled}
           className={css.field}
           type="text"
-          autoComplete="shipping postal-code"
+          autoComplete={ac('shipping postal-code')}
           label={intl.formatMessage({ id: 'ShippingDetails.mxPostalLabel' })}
           placeholder={intl.formatMessage({ id: 'ShippingDetails.mxPostalPlaceholder' })}
           validate={validators.required(
             intl.formatMessage({ id: 'ShippingDetails.mxPostalRequired' })
           )}
-          onUnmount={() => formApi.change('recipientPostal', undefined)}
+          onUnmount={() => formApi.change(fieldName('Postal'), undefined)}
         />
 
         <FieldTextInput
-          id={`${fieldId}.recipientCity`}
-          name="recipientCity"
+          id={`${fieldId}.${fieldName('City')}`}
+          name={fieldName('City')}
           disabled={disabled}
           className={css.field}
           type="text"
-          autoComplete="shipping address-level2"
+          autoComplete={ac('shipping address-level2')}
           label={intl.formatMessage({ id: 'ShippingDetails.mxCityLabel' })}
           placeholder={intl.formatMessage({ id: 'ShippingDetails.mxCityPlaceholder' })}
           validate={validators.required(
             intl.formatMessage({ id: 'ShippingDetails.mxCityRequired' })
           )}
-          onUnmount={() => formApi.change('recipientCity', undefined)}
+          onUnmount={() => formApi.change(fieldName('City'), undefined)}
         />
       </div>
 
       <FieldSelect
-        id={`${fieldId}.recipientState`}
-        name="recipientState"
+        id={`${fieldId}.${fieldName('State')}`}
+        name={fieldName('State')}
         disabled={disabled}
         className={css.fieldFullWidth}
         label={intl.formatMessage({ id: 'ShippingDetails.mxStateLabel' })}
@@ -166,20 +186,22 @@ const ShippingDetails = props => {
         ))}
       </FieldSelect>
 
-      <FieldTextInput
-        id={`${fieldId}.recipientPhoneNumber`}
-        name="recipientPhoneNumber"
-        disabled={disabled}
-        className={css.fieldFullWidth}
-        type="text"
-        autoComplete="shipping tel"
-        label={intl.formatMessage({ id: 'ShippingDetails.mxPhoneLabel' })}
-        placeholder={intl.formatMessage({ id: 'ShippingDetails.mxPhonePlaceholder' })}
-        validate={validators.required(
-          intl.formatMessage({ id: 'ShippingDetails.mxPhoneRequired' })
-        )}
-        onUnmount={() => formApi.change('recipientPhoneNumber', undefined)}
-      />
+      {showPhone ? (
+        <FieldTextInput
+          id={`${fieldId}.${fieldName('PhoneNumber')}`}
+          name={fieldName('PhoneNumber')}
+          disabled={disabled}
+          className={css.fieldFullWidth}
+          type="text"
+          autoComplete={ac('shipping tel')}
+          label={intl.formatMessage({ id: 'ShippingDetails.mxPhoneLabel' })}
+          placeholder={intl.formatMessage({ id: 'ShippingDetails.mxPhonePlaceholder' })}
+          validate={validators.required(
+            intl.formatMessage({ id: 'ShippingDetails.mxPhoneRequired' })
+          )}
+          onUnmount={() => formApi.change(fieldName('PhoneNumber'), undefined)}
+        />
+      ) : null}
     </div>
   );
 };
