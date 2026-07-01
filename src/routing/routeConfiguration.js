@@ -33,6 +33,7 @@ const MyPurchasesPage = loadable(() => import(/* webpackChunkName: "MyPurchasesP
 const MyBalancePage = loadable(() => import(/* webpackChunkName: "MyBalancePage" */ '../containers/MyBalancePage/MyBalancePage'));
 const BulkImportPage = loadable(() => import(/* webpackChunkName: "BulkImportPage" */ '../containers/BulkImportPage/BulkImportPage'));
 const MySalesPage = loadable(() => import(/* webpackChunkName: "MySalesPage" */ '../containers/MySalesPage/MySalesPage'));
+const FavoritesPage = loadable(() => import(/* webpackChunkName: "FavoritesPage" */ '../containers/FavoritesPage/FavoritesPage'));
 const PasswordChangePage = loadable(() => import(/* webpackChunkName: "PasswordChangePage" */ '../containers/PasswordChangePage/PasswordChangePage'));
 const PasswordRecoveryPage = loadable(() => import(/* webpackChunkName: "PasswordRecoveryPage" */ '../containers/PasswordRecoveryPage/PasswordRecoveryPage'));
 const PasswordResetPage = loadable(() => import(/* webpackChunkName: "PasswordResetPage" */ '../containers/PasswordResetPage/PasswordResetPage'));
@@ -295,6 +296,14 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       authPage: 'LoginPage',
       component: MyBalancePage,
       loadData: pageDataLoadingAPI.MyBalancePage.loadData,
+    },
+    {
+      path: '/favorites',
+      name: 'FavoritesPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: FavoritesPage,
+      loadData: pageDataLoadingAPI.FavoritesPage.loadData,
     },
     {
       path: '/admin/bulk-import',

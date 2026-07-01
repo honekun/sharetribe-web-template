@@ -15,6 +15,7 @@ import ManageListingsPage from './ManageListingsPage/ManageListingsPage.duck';
 import MyPurchasesPage from './MyPurchasesPage/MyPurchasesPage.duck';
 import MyBalancePage from './MyBalancePage/MyBalancePage.duck';
 import MySalesPage from './MySalesPage/MySalesPage.duck';
+import FavoritesPage from './FavoritesPage/FavoritesPage.duck';
 import PasswordChangePage from './PasswordChangePage/PasswordChangePage.duck';
 import PasswordRecoveryPage from './PasswordRecoveryPage/PasswordRecoveryPage.duck';
 import PasswordResetPage from './PasswordResetPage/PasswordResetPage.duck';
@@ -42,6 +43,7 @@ export {
   MyPurchasesPage,
   MyBalancePage,
   MySalesPage,
+  FavoritesPage,
   PasswordChangePage,
   PasswordRecoveryPage,
   PasswordResetPage,
