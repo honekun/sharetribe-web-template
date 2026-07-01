@@ -1,0 +1,110 @@
+.modalContainer {
+  max-width: 420px;
+  width: 100%;
+}
+
+.heading {
+  margin: 0 0 16px 0;
+}
+
+.itemList {
+  margin: 0 0 20px 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.itemImage {
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: var(--borderRadiusMedium, 6px);
+}
+
+.itemInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.itemTitle {
+  font-weight: var(--fontWeightSemiBold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemPrice {
+  color: var(--colorGrey500);
+}
+
+/* Shared 32×32 grey-hover control pattern (× remove). */
+.removeButton {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--colorGrey500);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--colorGrey100);
+    color: var(--colorFail);
+  }
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.goToBag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 26px;
+  background-color: var(--avBlue);
+  color: var(--avYellowLight);
+  font-weight: var(--fontWeightBold);
+
+  &:hover {
+    background-color: var(--avBlueDark);
+    color: var(--avYellowLight);
+    text-decoration: none;
+  }
+}
+
+.keepBrowsing {
+  border: none;
+  background: none;
+  color: var(--colorGrey700);
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--marketplaceColor);
+  }
+}

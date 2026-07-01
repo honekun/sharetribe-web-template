@@ -15,6 +15,7 @@ import { hydrateBag } from '../../ducks/bag.duck';
 import { manageDisableScrolling } from '../../ducks/ui.duck';
 import { canShowWelcomePopup, welcomePopupSuppressedPaths } from '../../config/configAV';
 import AVWelcomePopup from '../../components/AVWelcomePopup';
+import { BagPopup } from '../../components';
 
 const Topbar = loadable(() => import(/* webpackChunkName: "Topbar" */ './Topbar/Topbar'));
 
@@ -91,6 +92,7 @@ export const TopbarContainerComponent = props => {
         onClose={handlePopupClose}
         onManageDisableScrolling={onManageDisableScrolling}
       />
+      <BagPopup />
     </>
   );
 };
