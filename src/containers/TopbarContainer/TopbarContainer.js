@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { compose } from 'redux';
-import { connect } from 'react-redux';
+import { connect, useDispatch } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import loadable from '@loadable/component';
 
@@ -10,6 +10,7 @@ import {
   markVendedorOnboarded,
 } from '../../ducks/user.duck';
 import { logout, authenticationInProgress } from '../../ducks/auth.duck';
+import { syncFavoritesFromUser } from '../../ducks/favorites.duck';
 import { manageDisableScrolling } from '../../ducks/ui.duck';
 import { canShowWelcomePopup, welcomePopupSuppressedPaths } from '../../config/configAV';
 import AVWelcomePopup from '../../components/AVWelcomePopup';
@@ -41,6 +42,18 @@ export const TopbarContainerComponent = props => {
   } = props;
 
   const [popupDismissed, setPopupDismissed] = useState(false);
+
+  // Hydrate the global favorites list from the fetched currentUser's privateData
+  // so hearts reflect saved state on every page. Runs whenever the saved list
+  // changes (login, favorite persisted elsewhere).
+  const dispatch = useDispatch();
+  const favoritesSource = currentUser?.attributes?.profile?.privateData?.favoriteListingIds;
+  useEffect(() => {
+    if (favoritesSource) {
+      dispatch(syncFavoritesFromUser(currentUser));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(favoritesSource)]);
 
   const publicData = currentUser?.attributes?.profile?.publicData || {};
   // Suppressed on the signup page, where it would cover the "check your email"
