@@ -11,6 +11,7 @@ import {
 } from '../../ducks/user.duck';
 import { logout, authenticationInProgress } from '../../ducks/auth.duck';
 import { syncFavoritesFromUser } from '../../ducks/favorites.duck';
+import { hydrateBag } from '../../ducks/bag.duck';
 import { manageDisableScrolling } from '../../ducks/ui.duck';
 import { canShowWelcomePopup, welcomePopupSuppressedPaths } from '../../config/configAV';
 import AVWelcomePopup from '../../components/AVWelcomePopup';
@@ -54,6 +55,11 @@ export const TopbarContainerComponent = props => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(favoritesSource)]);
+
+  // Hydrate the shopping bag from localStorage once on mount (client-only).
+  useEffect(() => {
+    dispatch(hydrateBag());
+  }, [dispatch]);
 
   const publicData = currentUser?.attributes?.profile?.publicData || {};
   // Suppressed on the signup page, where it would cover the "check your email"

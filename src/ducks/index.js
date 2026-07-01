@@ -17,6 +17,7 @@ import stripeConnectAccount from './stripeConnectAccount.duck';
 import user from './user.duck';
 import avLandingExtension from './avExtension.duck';
 import favorites from './favorites.duck';
+import bag from './bag.duck';
 
 export {
   auth,
@@ -32,4 +33,5 @@ export {
   user,
   avLandingExtension,
   favorites,
+  bag,
 };
