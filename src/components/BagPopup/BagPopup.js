@@ -50,7 +50,6 @@ const BagPopup = () => {
       onManageDisableScrolling={(componentId, disableScrolling) =>
         dispatch(manageDisableScrolling(componentId, disableScrolling))
       }
-      containerClassName={css.modalContainer}
     >
       <h3 className={css.heading}>
         <FormattedMessage id="BagPopup.addedToBag" />
