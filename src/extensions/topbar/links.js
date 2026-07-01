@@ -9,6 +9,14 @@
 
 export const AV_PROFILE_LINKS = [
   {
+    pageName: 'FavoritesPage',
+    labels: {
+      desktop: 'TopbarDesktop.favoritesLink',
+      mobile: 'TopbarMobileMenu.favoritesLink',
+      userNav: 'UserNav.favorites',
+    },
+  },
+  {
     pageName: 'MyPurchasesPage',
     labels: {
       desktop: 'TopbarDesktop.myPurchasesLink',
