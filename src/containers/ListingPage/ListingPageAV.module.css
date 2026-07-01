@@ -31,10 +31,15 @@
 }
 
 /* Heart favorite toggle overlaid on the gallery image, mirrored to the top-right
-   (StoreTypeTags sit top-left). Anchored within .productGallery. */
+   (StoreTypeTags sit top-left). Anchored within .productGallery.
+   z-index 5 lifts it above ListingImageGallery's transparent right-edge next-nav
+   click zone (.navRight, z-index 1, full-height, later in the DOM) and the arrow
+   / index / bullet controls (z-index 4) so the heart actually receives clicks.
+   It only ties the fullscreen modal (z-index 5), which renders later in the DOM
+   and therefore still paints over the button in fullscreen mode. */
 .galleryFavorite {
   position: absolute;
   top: 16px;
   right: 16px;
-  z-index: 1;
+  z-index: 5;
 }
