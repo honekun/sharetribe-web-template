@@ -1,0 +1,36 @@
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.85);
+  color: var(--colorGrey700);
+  cursor: pointer;
+  transition: transform 0.1s ease, color 0.1s ease;
+
+  &:hover {
+    transform: scale(1.08);
+    color: var(--marketplaceColor);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--marketplaceColor);
+    outline-offset: 2px;
+  }
+}
+
+.active {
+  color: var(--marketplaceColor);
+}
+
+.icon {
+  display: block;
+}
+
+.iconFilled {
+  /* fill handled inline via currentColor */
+}
