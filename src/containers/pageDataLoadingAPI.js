@@ -21,6 +21,7 @@ import { loadData as ProfilePageLoader } from './ProfilePage/ProfilePage.duck';
 import { loadData as RequestQuotePageLoader } from './RequestQuotePage/RequestQuotePage.duck';
 import { loadData as SearchPageLoader } from './SearchPage/SearchPage.duck';
 import { loadData as ShippingOriginPageLoader } from './ShippingOriginPage/ShippingOriginPage.duck';
+import { loadData as MyAddressesPageLoader } from './MyAddressesPage/MyAddressesPage.duck';
 import { loadData as StripePayoutPageLoader } from './StripePayoutPage/StripePayoutPage.duck';
 import { loadData as TermsOfServicePageLoader } from './TermsOfServicePage/TermsOfServicePage.duck';
 import {
@@ -47,6 +48,9 @@ const getPageDataLoadingAPI = () => {
     },
     ShippingOriginPage: {
       loadData: ShippingOriginPageLoader,
+    },
+    MyAddressesPage: {
+      loadData: MyAddressesPageLoader,
     },
     EditListingPage: {
       loadData: EditListingPageLoader,

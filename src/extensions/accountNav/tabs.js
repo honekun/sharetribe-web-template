@@ -58,6 +58,12 @@ export const getAccountSettingsTabs = ({
       linkProps: { name: 'ContactDetailsPage' },
     },
     {
+      text: <FormattedMessage id="LayoutWrapperAccountSettingsSideNav.myAddressesTabTitle" />,
+      selected: currentPage === 'MyAddressesPage',
+      id: 'MyAddressesPageTab',
+      linkProps: { name: 'MyAddressesPage' },
+    },
+    {
       text: <FormattedMessage id="LayoutWrapperAccountSettingsSideNav.shippingOriginTabTitle" />,
       selected: currentPage === 'ShippingOriginPage',
       id: 'ShippingOriginPageTab',

@@ -18,6 +18,7 @@ const CMSPage = loadable(() => import(/* webpackChunkName: "CMSPage" */ '../cont
 const ContactDetailsPage = loadable(() => import(/* webpackChunkName: "ContactDetailsPage" */ '../containers/ContactDetailsPage/ContactDetailsPage'));
 const EditListingPage = loadable(() => import(/* webpackChunkName: "EditListingPage" */ '../containers/EditListingPage/EditListingPage'));
 const ShippingOriginPage = loadable(() => import(/* webpackChunkName: "ShippingOriginPage" */ '../containers/ShippingOriginPage/ShippingOriginPage'));
+const MyAddressesPage = loadable(() => import(/* webpackChunkName: "MyAddressesPage" */ '../containers/MyAddressesPage/MyAddressesPage'));
 const EmailVerificationPage = loadable(() => import(/* webpackChunkName: "EmailVerificationPage" */ '../containers/EmailVerificationPage/EmailVerificationPage'));
 const InboxPage = loadable(() => import(/* webpackChunkName: "InboxPage" */ '../containers/InboxPage/InboxPage'));
 const MakeOfferPage = loadable(() => import(/* webpackChunkName: "MakeOfferPage" */ '../containers/MakeOfferPage/MakeOfferPage'));
@@ -358,6 +359,14 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       authPage: 'LoginPage',
       component: ContactDetailsPage,
       loadData: pageDataLoadingAPI.ContactDetailsPage.loadData,
+    },
+    {
+      path: '/account/my-addresses',
+      name: 'MyAddressesPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: MyAddressesPage,
+      loadData: pageDataLoadingAPI.MyAddressesPage.loadData,
     },
     {
       path: '/account/shipping-origin',

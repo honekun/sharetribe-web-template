@@ -1,13 +1,13 @@
 import React from 'react';
 import classNames from 'classnames';
 
-import { FormattedMessage } from '../../../util/reactIntl';
-import * as validators from '../../../util/validators';
-import { MX_STATES } from '../../../config/configMxStates';
+import { FormattedMessage } from '../../util/reactIntl';
+import * as validators from '../../util/validators';
+import { MX_STATES } from '../../config/configMxStates';
 
-import { FieldSelect, FieldTextInput, Heading } from '../../../components';
+import { FieldSelect, FieldTextInput, Heading } from '../../components';
 
-import css from './ShippingDetails.module.css';
+import css from './MxAddressFields.module.css';
 
 /**
  * Mexico-only address form used for both the checkout shipping address and the
@@ -35,7 +35,7 @@ import css from './ShippingDetails.module.css';
  * @param {boolean} [props.showPhone=true] - Render the Teléfono field
  * @param {'recipient'|'billing'} [props.fieldPrefix='recipient'] - Field-name prefix
  */
-const ShippingDetails = props => {
+const MxAddressFields = props => {
   const {
     rootClassName,
     className,
@@ -206,4 +206,4 @@ const ShippingDetails = props => {
   );
 };
 
-export default ShippingDetails;
+export default MxAddressFields;

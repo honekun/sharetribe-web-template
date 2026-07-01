@@ -22,9 +22,8 @@ import {
   IconSpinner,
   SavedCardDetails,
   CustomExtendedDataField,
+  MxAddressFields,
 } from '../../../components';
-
-import ShippingDetails from '../ShippingDetails/ShippingDetails';
 
 import css from './StripePaymentForm.module.css';
 
@@ -228,7 +227,7 @@ const LocationOrShippingDetails = props => {
     : intl.formatMessage({ id: 'StripePaymentForm.locationUnknown' });
 
   return askShippingDetails ? (
-    <ShippingDetails intl={intl} formApi={formApi} locale={locale} />
+    <MxAddressFields intl={intl} formApi={formApi} locale={locale} />
   ) : showPickUpLocation ? (
     <div className={css.locationWrapper}>
       <Heading as="h3" rootClassName={css.heading}>
@@ -559,7 +558,7 @@ class StripePaymentForm extends Component {
     // the `billing` prefix, no phone), composed into Stripe billing_details by
     // getBillingDetails. This replaces the upstream flat <StripePaymentAddress>.
     const billingAddress = (
-      <ShippingDetails
+      <MxAddressFields
         intl={intl}
         formApi={formApi}
         fieldId={`${formId}.billing`}

@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`ShippingOriginPage matches snapshot 1`] = `
+exports[`MyAddressesPage matches snapshot 1`] = `
 <DocumentFragment>
   <div
     class="root"
@@ -126,7 +126,7 @@ exports[`ShippingOriginPage matches snapshot 1`] = `
                 id="MyAddressesPageTab"
               >
                 <a
-                  class="link"
+                  class="link selectedLink"
                   href="/account/my-addresses"
                 >
                   <span>
@@ -139,7 +139,7 @@ exports[`ShippingOriginPage matches snapshot 1`] = `
                 id="ShippingOriginPageTab"
               >
                 <a
-                  class="link selectedLink"
+                  class="link"
                   href="/account/shipping-origin"
                 >
                   <span>
@@ -212,14 +212,14 @@ exports[`ShippingOriginPage matches snapshot 1`] = `
                 class="h3"
               >
                 <span>
-                  ShippingOriginPage.heading
+                  MyAddressesPage.heading
                 </span>
               </h1>
               <p
                 class="intro"
               >
                 <span>
-                  ShippingOriginPage.intro
+                  MyAddressesPage.intro
                 </span>
               </p>
               <form
@@ -234,14 +234,14 @@ exports[`ShippingOriginPage matches snapshot 1`] = `
                     class="root fieldFullWidth"
                   >
                     <label
-                      for="shippingOrigin.recipientName"
+                      for="myAddress.recipientName"
                     >
                       ShippingDetails.mxNameLabel
                     </label>
                     <input
                       autocomplete="shipping name"
                       class="input"
-                      id="shippingOrigin.recipientName"
+                      id="myAddress.recipientName"
                       name="recipientName"
                       placeholder="ShippingDetails.mxNamePlaceholder"
                       type="text"
@@ -252,14 +252,14 @@ exports[`ShippingOriginPage matches snapshot 1`] = `
                     class="root fieldFullWidth"
                   >
                     <label
-                      for="shippingOrigin.recipientAddressLine1"
+                      for="myAddress.recipientAddressLine1"
                     >
                       ShippingDetails.mxStreetLabel
                     </label>
                     <input
                       autocomplete="shipping address-line1"
                       class="input"
-                      id="shippingOrigin.recipientAddressLine1"
+                      id="myAddress.recipientAddressLine1"
                       name="recipientAddressLine1"
                       placeholder="ShippingDetails.mxStreetPlaceholder"
                       type="text"
@@ -273,14 +273,14 @@ exports[`ShippingOriginPage matches snapshot 1`] = `
                       class="root field"
                     >
                       <label
-                        for="shippingOrigin.recipientExteriorNumber"
+                        for="myAddress.recipientExteriorNumber"
                       >
                         ShippingDetails.mxExteriorLabel
                       </label>
                       <input
                         autocomplete="off"
                         class="input"
-                        id="shippingOrigin.recipientExteriorNumber"
+                        id="myAddress.recipientExteriorNumber"
                         name="recipientExteriorNumber"
                         placeholder="ShippingDetails.mxExteriorPlaceholder"
                         type="text"
@@ -291,14 +291,14 @@ exports[`ShippingOriginPage matches snapshot 1`] = `
                       class="root field"
                     >
                       <label
-                        for="shippingOrigin.recipientInteriorNumber"
+                        for="myAddress.recipientInteriorNumber"
                       >
                         ShippingDetails.mxInteriorLabel
                       </label>
                       <input
                         autocomplete="off"
                         class="input inputSuccess"
-                        id="shippingOrigin.recipientInteriorNumber"
+                        id="myAddress.recipientInteriorNumber"
                         name="recipientInteriorNumber"
                         placeholder="ShippingDetails.mxInteriorPlaceholder"
                         type="text"
@@ -310,14 +310,14 @@ exports[`ShippingOriginPage matches snapshot 1`] = `
                     class="root fieldFullWidth"
                   >
                     <label
-                      for="shippingOrigin.recipientColonia"
+                      for="myAddress.recipientColonia"
                     >
                       ShippingDetails.mxColoniaLabel
                     </label>
                     <input
                       autocomplete="off"
                       class="input"
-                      id="shippingOrigin.recipientColonia"
+                      id="myAddress.recipientColonia"
                       name="recipientColonia"
                       placeholder="ShippingDetails.mxColoniaPlaceholder"
                       type="text"
@@ -331,14 +331,14 @@ exports[`ShippingOriginPage matches snapshot 1`] = `
                       class="root field"
                     >
                       <label
-                        for="shippingOrigin.recipientPostal"
+                        for="myAddress.recipientPostal"
                       >
                         ShippingDetails.mxPostalLabel
                       </label>
                       <input
                         autocomplete="shipping postal-code"
                         class="input"
-                        id="shippingOrigin.recipientPostal"
+                        id="myAddress.recipientPostal"
                         name="recipientPostal"
                         placeholder="ShippingDetails.mxPostalPlaceholder"
                         type="text"
@@ -349,14 +349,14 @@ exports[`ShippingOriginPage matches snapshot 1`] = `
                       class="root field"
                     >
                       <label
-                        for="shippingOrigin.recipientCity"
+                        for="myAddress.recipientCity"
                       >
                         ShippingDetails.mxCityLabel
                       </label>
                       <input
                         autocomplete="shipping address-level2"
                         class="input"
-                        id="shippingOrigin.recipientCity"
+                        id="myAddress.recipientCity"
                         name="recipientCity"
                         placeholder="ShippingDetails.mxCityPlaceholder"
                         type="text"
@@ -369,13 +369,13 @@ exports[`ShippingOriginPage matches snapshot 1`] = `
                   >
                     <label
                       class=""
-                      for="shippingOrigin.recipientState"
+                      for="myAddress.recipientState"
                     >
                       ShippingDetails.mxStateLabel
                     </label>
                     <select
                       class=""
-                      id="shippingOrigin.recipientState"
+                      id="myAddress.recipientState"
                       name="recipientState"
                     >
                       <option
@@ -550,14 +550,14 @@ exports[`ShippingOriginPage matches snapshot 1`] = `
                     class="root fieldFullWidth"
                   >
                     <label
-                      for="shippingOrigin.recipientPhoneNumber"
+                      for="myAddress.recipientPhoneNumber"
                     >
                       ShippingDetails.mxPhoneLabel
                     </label>
                     <input
                       autocomplete="shipping tel"
                       class="input"
-                      id="shippingOrigin.recipientPhoneNumber"
+                      id="myAddress.recipientPhoneNumber"
                       name="recipientPhoneNumber"
                       placeholder="ShippingDetails.mxPhonePlaceholder"
                       type="text"
@@ -571,7 +571,7 @@ exports[`ShippingOriginPage matches snapshot 1`] = `
                   type="submit"
                 >
                   <span>
-                    ShippingOriginPage.submit
+                    MyAddressesPage.submit
                   </span>
                 </button>
               </form>

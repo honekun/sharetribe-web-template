@@ -50,6 +50,8 @@ import css from './CheckoutPage.module.css';
 import AVShippingSelector from './AVShippingSelector/AVShippingSelector';
 import { resolvePackageSize, isEspecialSize } from '../../config/configAVShipping';
 import { fetchShippingQuote } from './shippingQuote.duck';
+// AV: prefill checkout shipping fields from the buyer's saved address (MyAddressesPage)
+import { valuesFromShippingOrigin } from '../../util/shippingOrigin';
 // AV shipping: "contact the seller" reuses the ListingPage inquiry-modal flow
 import { setInitialValues as setListingPageInitialValues } from '../ListingPage/ListingPage.duck';
 
@@ -589,12 +591,15 @@ export const CheckoutPageWithPayment = props => {
   const hasPaymentIntentUserActionsDone =
     paymentIntent && STRIPE_PI_USER_ACTIONS_DONE_STATUSES.includes(paymentIntent.status);
 
-  // AV: shipping + billing both use the MX ShippingDetails fields (recipient* /
-  // billing*); pre-fill the name fields with the buyer's name. Country is always
-  // MX (composed in getShippingDetailsMaybe / getBillingDetails), no country field.
+  // AV: shipping + billing both use the MX address fields (recipient* / billing*);
+  // pre-fill the name fields with the buyer's name, and the shipping fields from the
+  // buyer's saved address (MyAddressesPage) to speed up checkout — still editable.
+  // Country is always MX (composed downstream), no country field.
+  const savedAddress = currentUser?.attributes?.profile?.protectedData?.shippingAddress;
   const initialValuesForStripePayment = {
     recipientName: userName,
     billingName: userName,
+    ...(savedAddress ? valuesFromShippingOrigin(savedAddress) : {}),
   };
   // AV: every product ships and the Console shipping setting is always off, so
   // OrderPanel emits deliveryMethod 'none' (or nothing). For purchases, treat

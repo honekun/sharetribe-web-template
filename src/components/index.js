@@ -89,6 +89,9 @@ export { default as MenuContent } from './MenuContent/MenuContent';
 export { default as MenuLabel } from './MenuLabel/MenuLabel';
 export { default as Menu } from './Menu/Menu';
 
+// AV: shared Mexico-only address fields (checkout shipping/billing, origin, my-addresses)
+export { default as MxAddressFields } from './MxAddressFields/MxAddressFields';
+
 // Modal
 export { default as Modal } from './Modal/Modal';
 export { default as ModalInMobile } from './ModalInMobile/ModalInMobile';

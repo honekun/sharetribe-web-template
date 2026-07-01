@@ -1,0 +1,26 @@
+.content {
+  width: 100%;
+}
+
+.intro {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorGrey700);
+  margin: 0 0 24px 0;
+}
+
+.form {
+  margin-top: 24px;
+}
+
+.error {
+  composes: marketplaceModalErrorStyles from global;
+}
+
+.success {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorSuccess);
+}
+
+.desktopTopbar,
+.mobileTopbar {
+}
