@@ -1,0 +1,30 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`FavoriteButton matches snapshot 1`] = `
+<DocumentFragment>
+  <button
+    aria-label="Add to favorites"
+    aria-pressed="false"
+    class="root"
+    title="Add to favorites"
+    type="button"
+  >
+    <svg
+      aria-hidden="true"
+      class="icon"
+      height="18"
+      viewBox="0 0 24 22"
+      width="20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M12 21S2 14.6 2 7.9C2 4.6 4.6 2 7.8 2c1.7 0 3.3.8 4.2 2.1C12.9 2.8 14.5 2 16.2 2 19.4 2 22 4.6 22 7.9 22 14.6 12 21 12 21z"
+        fill="none"
+        stroke="currentColor"
+        stroke-linejoin="round"
+        stroke-width="2"
+      />
+    </svg>
+  </button>
+</DocumentFragment>
+`;

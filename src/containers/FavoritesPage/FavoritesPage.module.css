@@ -1,0 +1,58 @@
+@import '../../styles/customMediaQueries.css';
+
+.content {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.heading {
+  margin-bottom: 24px;
+}
+
+/* Same display rules as SearchResultsPanel .listingCards (non-map grid) — copied
+   verbatim so future search-grid tweaks are easy to mirror here. */
+.listingCards {
+  padding: 0 0 72px 0;
+
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 24px;
+  width: 100%;
+  margin: 0;
+  list-style: none;
+
+  @media (min-width: 550px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (--viewportMedium) {
+    padding: 0 0 96px 0;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (--viewportLarge) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (min-width: 1440px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  @media (--viewportXLarge) {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.resultItem {
+  margin: 0;
+}
+
+.listingCard {
+  width: 100%;
+}
+
+.noResults,
+.error {
+  color: var(--colorGrey500);
+}

@@ -21,11 +21,9 @@ import {
   FieldTextInput,
   IconSpinner,
   SavedCardDetails,
-  StripePaymentAddress,
   CustomExtendedDataField,
+  MxAddressFields,
 } from '../../../components';
-
-import ShippingDetails from '../ShippingDetails/ShippingDetails';
 
 import css from './StripePaymentForm.module.css';
 
@@ -229,7 +227,7 @@ const LocationOrShippingDetails = props => {
     : intl.formatMessage({ id: 'StripePaymentForm.locationUnknown' });
 
   return askShippingDetails ? (
-    <ShippingDetails intl={intl} formApi={formApi} locale={locale} />
+    <MxAddressFields intl={intl} formApi={formApi} locale={locale} />
   ) : showPickUpLocation ? (
     <div className={css.locationWrapper}>
       <Heading as="h3" rootClassName={css.heading}>
@@ -364,16 +362,18 @@ class StripePaymentForm extends Component {
   updateBillingDetailsToMatchShippingAddress(shouldFill) {
     const formApi = this.finalFormAPI;
     const values = formApi.getState()?.values || {};
+    // AV: billing uses the same granular MX fields as shipping (the ShippingDetails
+    // component with the `billing` prefix). Copy each shipping field to its billing
+    // counterpart (no phone — billing doesn't collect it).
     formApi.batch(() => {
-      formApi.change('name', shouldFill ? values.recipientName : '');
-      formApi.change('addressLine1', shouldFill ? values.recipientAddressLine1 : '');
-      // AV: the MX shipping form has no addressLine2/country fields — colonia maps
-      // to billing line2 and the country is always Mexico.
-      formApi.change('addressLine2', shouldFill ? values.recipientColonia : '');
-      formApi.change('postal', shouldFill ? values.recipientPostal : '');
-      formApi.change('city', shouldFill ? values.recipientCity : '');
-      formApi.change('state', shouldFill ? values.recipientState : '');
-      formApi.change('country', shouldFill ? 'MX' : '');
+      formApi.change('billingName', shouldFill ? values.recipientName : '');
+      formApi.change('billingAddressLine1', shouldFill ? values.recipientAddressLine1 : '');
+      formApi.change('billingExteriorNumber', shouldFill ? values.recipientExteriorNumber : '');
+      formApi.change('billingInteriorNumber', shouldFill ? values.recipientInteriorNumber : '');
+      formApi.change('billingColonia', shouldFill ? values.recipientColonia : '');
+      formApi.change('billingPostal', shouldFill ? values.recipientPostal : '');
+      formApi.change('billingCity', shouldFill ? values.recipientCity : '');
+      formApi.change('billingState', shouldFill ? values.recipientState : '');
     });
   }
 
@@ -539,14 +539,6 @@ class StripePaymentForm extends Component {
         ? intl.formatMessage({ id: 'StripePaymentForm.confirmPaymentError' })
         : intl.formatMessage({ id: 'StripePaymentForm.genericError' });
 
-    const billingDetailsNameLabel = intl.formatMessage({
-      id: 'StripePaymentForm.billingDetailsNameLabel',
-    });
-
-    const billingDetailsNamePlaceholder = intl.formatMessage({
-      id: 'StripePaymentForm.billingDetailsNamePlaceholder',
-    });
-
     const messagePlaceholder = intl.formatMessage(
       { id: 'StripePaymentForm.messagePlaceholder' },
       { name: providerDisplayName }
@@ -562,14 +554,17 @@ class StripePaymentForm extends Component {
     );
 
     // Asking billing address is recommended in PaymentIntent flow.
-    // In CheckoutPage, we send name and email as billing details, but address only if it exists.
+    // AV: billing uses the same MX address fields as shipping (ShippingDetails with
+    // the `billing` prefix, no phone), composed into Stripe billing_details by
+    // getBillingDetails. This replaces the upstream flat <StripePaymentAddress>.
     const billingAddress = (
-      <StripePaymentAddress
+      <MxAddressFields
         intl={intl}
-        form={formApi}
-        fieldId={formId}
-        card={this.card}
-        locale={locale}
+        formApi={formApi}
+        fieldId={`${formId}.billing`}
+        fieldPrefix="billing"
+        showPhone={false}
+        showHeading={false}
       />
     );
 
@@ -658,16 +653,8 @@ class StripePaymentForm extends Component {
                   />
                 ) : null}
 
-                <FieldTextInput
-                  className={css.field}
-                  type="text"
-                  id="name"
-                  name="name"
-                  autoComplete="cc-name"
-                  label={billingDetailsNameLabel}
-                  placeholder={billingDetailsNamePlaceholder}
-                />
-
+                {/* AV: the billing name field is part of the ShippingDetails (billing)
+                    block below, so no separate cardholder-name input here. */}
                 {billingAddress}
               </div>
             ) : null}

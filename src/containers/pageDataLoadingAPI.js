@@ -15,12 +15,14 @@ import { loadData as ManageListingsPageLoader } from './ManageListingsPage/Manag
 import { loadData as MyPurchasesPageLoader } from './MyPurchasesPage/MyPurchasesPage.duck';
 import { loadData as MyBalancePageLoader } from './MyBalancePage/MyBalancePage.duck';
 import { loadData as MySalesPageLoader } from './MySalesPage/MySalesPage.duck';
+import { loadData as FavoritesPageLoader } from './FavoritesPage/FavoritesPage.duck';
 import { loadData as PaymentMethodsPageLoader } from './PaymentMethodsPage/PaymentMethodsPage.duck';
 import { loadData as PrivacyPolicyPageLoader } from './PrivacyPolicyPage/PrivacyPolicyPage.duck';
 import { loadData as ProfilePageLoader } from './ProfilePage/ProfilePage.duck';
 import { loadData as RequestQuotePageLoader } from './RequestQuotePage/RequestQuotePage.duck';
 import { loadData as SearchPageLoader } from './SearchPage/SearchPage.duck';
 import { loadData as ShippingOriginPageLoader } from './ShippingOriginPage/ShippingOriginPage.duck';
+import { loadData as MyAddressesPageLoader } from './MyAddressesPage/MyAddressesPage.duck';
 import { loadData as StripePayoutPageLoader } from './StripePayoutPage/StripePayoutPage.duck';
 import { loadData as TermsOfServicePageLoader } from './TermsOfServicePage/TermsOfServicePage.duck';
 import {
@@ -48,6 +50,9 @@ const getPageDataLoadingAPI = () => {
     ShippingOriginPage: {
       loadData: ShippingOriginPageLoader,
     },
+    MyAddressesPage: {
+      loadData: MyAddressesPageLoader,
+    },
     EditListingPage: {
       loadData: EditListingPageLoader,
     },
@@ -74,6 +79,9 @@ const getPageDataLoadingAPI = () => {
     },
     MySalesPage: {
       loadData: MySalesPageLoader,
+    },
+    FavoritesPage: {
+      loadData: FavoritesPageLoader,
     },
     PaymentMethodsPage: {
       loadData: PaymentMethodsPageLoader,

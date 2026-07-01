@@ -5,6 +5,9 @@
   display: flex;
   flex-direction: column;
 
+  /* Positioning context for the FavoriteButton overlay (sibling of cardLink). */
+  position: relative;
+
   /* Allow the card to shrink to its grid/flex track instead of letting inner
      text set a min-content width that would unbalance equal-width columns. */
   min-width: 0;
@@ -209,4 +212,13 @@
   bottom: -6px;
   left: 8px;
   max-width: calc(85% - 16px);
+}
+
+/* AV: heart favorite toggle overlaid on the card image, top-right. Rendered as a
+   sibling of the card NamedLink (not inside it) to avoid <button> inside <a>. */
+.favoriteButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
 }

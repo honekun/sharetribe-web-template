@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import classNames from 'classnames';
 import { Form as FinalForm, FormSpy } from 'react-final-form';
 
 import { FormattedMessage, useIntl } from '../../../util/reactIntl';
@@ -12,6 +13,7 @@ import {
   FieldTextInput,
   InlineTextButton,
   PrimaryButton,
+  AddToBagButton,
   H3,
   H6,
 } from '../../../components';
@@ -280,7 +282,7 @@ const renderForm = formRenderProps => {
 
       <FetchLineItemsError error={fetchLineItemsError} />
 
-      <div className={css.submitButton}>
+      <div className={classNames(css.submitButton, avCss.submitButtonRow)}>
         <PrimaryButton
           type="submit"
           className={avCss.submitButtonCta}
@@ -293,6 +295,9 @@ const renderForm = formRenderProps => {
             <FormattedMessage id="ProductOrderForm.ctaButtonNoStock" />
           )}
         </PrimaryButton>
+        {hasStock && listingId ? (
+          <AddToBagButton listingId={listingId.uuid} className={avCss.addToBagButton} />
+        ) : null}
         {secondaryCtaButton}
       </div>
       <p className={css.finePrint}>

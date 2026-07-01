@@ -18,6 +18,7 @@ const CMSPage = loadable(() => import(/* webpackChunkName: "CMSPage" */ '../cont
 const ContactDetailsPage = loadable(() => import(/* webpackChunkName: "ContactDetailsPage" */ '../containers/ContactDetailsPage/ContactDetailsPage'));
 const EditListingPage = loadable(() => import(/* webpackChunkName: "EditListingPage" */ '../containers/EditListingPage/EditListingPage'));
 const ShippingOriginPage = loadable(() => import(/* webpackChunkName: "ShippingOriginPage" */ '../containers/ShippingOriginPage/ShippingOriginPage'));
+const MyAddressesPage = loadable(() => import(/* webpackChunkName: "MyAddressesPage" */ '../containers/MyAddressesPage/MyAddressesPage'));
 const EmailVerificationPage = loadable(() => import(/* webpackChunkName: "EmailVerificationPage" */ '../containers/EmailVerificationPage/EmailVerificationPage'));
 const InboxPage = loadable(() => import(/* webpackChunkName: "InboxPage" */ '../containers/InboxPage/InboxPage'));
 const MakeOfferPage = loadable(() => import(/* webpackChunkName: "MakeOfferPage" */ '../containers/MakeOfferPage/MakeOfferPage'));
@@ -32,6 +33,8 @@ const MyPurchasesPage = loadable(() => import(/* webpackChunkName: "MyPurchasesP
 const MyBalancePage = loadable(() => import(/* webpackChunkName: "MyBalancePage" */ '../containers/MyBalancePage/MyBalancePage'));
 const BulkImportPage = loadable(() => import(/* webpackChunkName: "BulkImportPage" */ '../containers/BulkImportPage/BulkImportPage'));
 const MySalesPage = loadable(() => import(/* webpackChunkName: "MySalesPage" */ '../containers/MySalesPage/MySalesPage'));
+const FavoritesPage = loadable(() => import(/* webpackChunkName: "FavoritesPage" */ '../containers/FavoritesPage/FavoritesPage'));
+const BagPage = loadable(() => import(/* webpackChunkName: "BagPage" */ '../containers/BagPage/BagPage'));
 const PasswordChangePage = loadable(() => import(/* webpackChunkName: "PasswordChangePage" */ '../containers/PasswordChangePage/PasswordChangePage'));
 const PasswordRecoveryPage = loadable(() => import(/* webpackChunkName: "PasswordRecoveryPage" */ '../containers/PasswordRecoveryPage/PasswordRecoveryPage'));
 const PasswordResetPage = loadable(() => import(/* webpackChunkName: "PasswordResetPage" */ '../containers/PasswordResetPage/PasswordResetPage'));
@@ -296,6 +299,21 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       loadData: pageDataLoadingAPI.MyBalancePage.loadData,
     },
     {
+      path: '/favorites',
+      name: 'FavoritesPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: FavoritesPage,
+      loadData: pageDataLoadingAPI.FavoritesPage.loadData,
+    },
+    {
+      // Public: the bag lives in localStorage, so no auth and no loadData
+      // (the page fetches client-side after hydration).
+      path: '/bag',
+      name: 'BagPage',
+      component: BagPage,
+    },
+    {
       path: '/admin/bulk-import',
       name: 'BulkImportPage',
       auth: true,
@@ -358,6 +376,14 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       authPage: 'LoginPage',
       component: ContactDetailsPage,
       loadData: pageDataLoadingAPI.ContactDetailsPage.loadData,
+    },
+    {
+      path: '/account/my-addresses',
+      name: 'MyAddressesPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: MyAddressesPage,
+      loadData: pageDataLoadingAPI.MyAddressesPage.loadData,
     },
     {
       path: '/account/shipping-origin',

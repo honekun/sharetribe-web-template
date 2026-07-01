@@ -11,27 +11,41 @@ function buildCsv(headers, ...rows) {
 describe('parseCsv', () => {
   it('parses a valid CSV buffer into row objects', () => {
     const buf = buildCsv(['title', 'price', 'description'], ['"A Dress"', '100', '"Nice dress"']);
-    const rows = parseCsv(buf);
+    const { rows } = parseCsv(buf);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toEqual({ title: 'A Dress', price: '100', description: 'Nice dress' });
   });
 
   it('trims whitespace from values', () => {
     const buf = Buffer.from('title,price,description\n  Hat  , 50 , A hat \n');
-    const rows = parseCsv(buf);
+    const { rows } = parseCsv(buf);
     expect(rows[0].title).toBe('Hat');
     expect(rows[0].price).toBe('50');
   });
 
   it('skips empty lines', () => {
     const buf = Buffer.from('title,price,description\nA,10,B\n\nC,20,D\n');
-    const rows = parseCsv(buf);
+    const { rows } = parseCsv(buf);
     expect(rows).toHaveLength(2);
   });
 
   it('throws on malformed CSV', () => {
     const buf = Buffer.from('"unclosed quote');
     expect(() => parseCsv(buf)).toThrow();
+  });
+
+  it('returns a headerMap of canonical name -> original operator header', () => {
+    const buf = buildCsv(
+      ['Nombre de Producto*', 'Precio Venta (MXN)*', 'Descripción*', 'Nombre imagen 1*'],
+      ['A', '100', 'B', 'img.jpg']
+    );
+    const { rows, headerMap } = parseCsv(buf);
+    // rows are normalized to canonical keys…
+    expect(rows[0].title).toBe('A');
+    // …while headerMap remembers what the operator actually typed.
+    expect(headerMap.title).toBe('Nombre de Producto*');
+    expect(headerMap.price).toBe('Precio Venta (MXN)*');
+    expect(headerMap.image_front).toBe('Nombre imagen 1*');
   });
 });
 
@@ -559,7 +573,7 @@ describe('validateRows', () => {
   });
 
   it('maps imagen_1..4 headers to the four image slots', () => {
-    const rows = parseCsv(
+    const { rows } = parseCsv(
       buildCsv(
         ['title', 'description', 'price', 'imagen_1', 'imagen_2', 'imagen_3', 'imagen_4'],
         ['Item', 'Desc', '100', 'front.jpg', 'back.jpg', 'front.jpg', 'back.jpg']
@@ -576,7 +590,7 @@ describe('validateRows', () => {
   });
 
   it('processes a full current-template row (pub_* + imagen_N) end-to-end', () => {
-    const rows = parseCsv(
+    const { rows } = parseCsv(
       buildCsv(
         [
           'title',
@@ -701,7 +715,7 @@ describe('validateRows', () => {
         'Camisa NOA,Hermosa camisa vintage,1500,camisa_frontal.jpg,camisa_posterior.jpg,camisa_detalle.jpg,ropa,ropa-camisas,rosa,s|m,vintage,mujer,como-nuevo,vintage',
       ].join('\n')
     );
-    const rows = parseCsv(buf);
+    const { rows } = parseCsv(buf);
     expect(rows[0].title).toBe('Camisa NOA');
     expect(rows[0].price).toBe('1500');
     expect(rows[0].description).toBe('Hermosa camisa vintage');
@@ -726,7 +740,7 @@ describe('validateRows', () => {
 
   it('passes through English column names unchanged', () => {
     const buf = Buffer.from('title,price,description\nHat,50,A hat\n');
-    const rows = parseCsv(buf);
+    const { rows } = parseCsv(buf);
     expect(rows[0].title).toBe('Hat');
     expect(rows[0].price).toBe('50');
     expect(rows[0].description).toBe('A hat');
@@ -816,7 +830,7 @@ describe('validateRows', () => {
     }
 
     it('maps the operator template headers to canonical keys', () => {
-      const rows = parseCsv(buildTemplateCsv());
+      const { rows } = parseCsv(buildTemplateCsv());
       expect(rows[0].pd_brand).toBe('Prada');
       expect(rows[0].title).toBe('Chamarra vintage');
       expect(rows[0].description).toBe('chamarra azul');
@@ -836,11 +850,30 @@ describe('validateRows', () => {
     });
 
     it('validates a full operator-template row (with a "$4,500.00" price)', () => {
-      const rows = parseCsv(buildTemplateCsv('$4,500.00'));
+      const { rows } = parseCsv(buildTemplateCsv('$4,500.00'));
       const result = validateRows(rows, tmplImageMap);
       expect(result.valid).toBe(true);
       expect(result.rows[0].price).toBe(4500);
       expect(result.rows[0].publicData.temporada).toBe('Invierno');
+    });
+
+    it('names the operator template column in errors, not the canonical key', () => {
+      // A row missing the first image: the error must reference the header the
+      // operator actually typed ("Nombre imagen 1*"), never the internal
+      // canonical key ("image_front").
+      const csv = Buffer.from(
+        [
+          'Marca*,Nombre de Producto*,Descripción*,Precio Venta (MXN)*,Género*,Nombre imagen 1*,Nombre imagen 2,Nombre imagen 3',
+          'Prada,Chamarra,azul,3500,Mujer,,img2.jpg,img3.jpg',
+        ].join('\n')
+      );
+      const { rows, headerMap } = parseCsv(csv);
+      const result = validateRows(rows, tmplImageMap, { headerMap });
+      expect(result.valid).toBe(false);
+      expect(result.errors).toEqual(
+        expect.arrayContaining([expect.stringContaining('"Nombre imagen 1*" es obligatorio.')])
+      );
+      expect(result.errors.join(' ')).not.toMatch(/image_front/);
     });
   });
 
@@ -961,7 +994,7 @@ describe('validateRows', () => {
     });
 
     it('normalizes the user_id header to an author override end-to-end', () => {
-      const rows = parseCsv(
+      const { rows } = parseCsv(
         buildCsv(
           [
             'title',

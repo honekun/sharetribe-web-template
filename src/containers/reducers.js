@@ -15,6 +15,8 @@ import ManageListingsPage from './ManageListingsPage/ManageListingsPage.duck';
 import MyPurchasesPage from './MyPurchasesPage/MyPurchasesPage.duck';
 import MyBalancePage from './MyBalancePage/MyBalancePage.duck';
 import MySalesPage from './MySalesPage/MySalesPage.duck';
+import FavoritesPage from './FavoritesPage/FavoritesPage.duck';
+import BagPage from './BagPage/BagPage.duck';
 import PasswordChangePage from './PasswordChangePage/PasswordChangePage.duck';
 import PasswordRecoveryPage from './PasswordRecoveryPage/PasswordRecoveryPage.duck';
 import PasswordResetPage from './PasswordResetPage/PasswordResetPage.duck';
@@ -25,6 +27,7 @@ import ProfileSettingsPage from './ProfileSettingsPage/ProfileSettingsPage.duck'
 import RequestQuotePage from './RequestQuotePage/RequestQuotePage.duck';
 import SearchPage from './SearchPage/SearchPage.duck';
 import ShippingOriginPage from './ShippingOriginPage/ShippingOriginPage.duck';
+import MyAddressesPage from './MyAddressesPage/MyAddressesPage.duck';
 import StripePayoutPage from './StripePayoutPage/StripePayoutPage.duck';
 import TransactionPage from './TransactionPage/TransactionPage.duck';
 
@@ -41,6 +44,8 @@ export {
   MyPurchasesPage,
   MyBalancePage,
   MySalesPage,
+  FavoritesPage,
+  BagPage,
   PasswordChangePage,
   PasswordRecoveryPage,
   PasswordResetPage,
@@ -51,6 +56,7 @@ export {
   RequestQuotePage,
   SearchPage,
   ShippingOriginPage,
+  MyAddressesPage,
   StripePayoutPage,
   TransactionPage,
 };

@@ -106,9 +106,9 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, (req, r
     }
 
     // Parse CSV
-    let rows;
+    let rows, headerMap;
     try {
-      rows = parseCsv(csvBuffer);
+      ({ rows, headerMap } = parseCsv(csvBuffer));
     } catch (err) {
       return res.status(400).json({ error: `Error al analizar el CSV: ${err.message}` });
     }
@@ -122,9 +122,11 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, (req, r
 
     // Validate rows against imageMap. Listings author to the signed-in user;
     // admins (req.bulkImportUser.isAdmin) may override per row via `user_id`.
+    // headerMap lets validation errors name the operator's real CSV columns.
     const validation = validateRows(rows, imageMap, {
       currentUserId: req.bulkImportUser.userId,
       allowAuthorOverride: req.bulkImportUser.isAdmin,
+      headerMap,
     });
     if (!validation.valid) {
       return res.status(400).json({

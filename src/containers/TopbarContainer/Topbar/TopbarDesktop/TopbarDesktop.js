@@ -12,12 +12,11 @@ import {
   MenuContent,
   MenuItem,
   NamedLink,
+  BagLink,
 } from '../../../../components';
 
 import TopbarSearchForm from '../TopbarSearchForm/TopbarSearchForm';
 import CustomLinksMenu from './CustomLinksMenu/CustomLinksMenu';
-
-import IconRegisterDesktop from './IconRegisterDesktop';
 
 import css from './TopbarDesktop.module.css';
 import { AV_PROFILE_LINKS } from '../../../../extensions/topbar/links';
@@ -34,21 +33,36 @@ const SignupLink = () => {
   );
 };
 
-const CartLink = () => {
-  return (
-    <a href="/cart" className={css.topbarLink}>
-      <span className={css.topbarLinkLabel}>
-        <IconRegisterDesktop />
-      </span>
-    </a>
-  );
-};
-
 const LoginLink = () => {
   return (
     <NamedLink id="login-link" name="LoginPage" className={css.topbarLink}>
       <span className={css.topbarLinkLabel}>
         <FormattedMessage id="TopbarDesktop.login" />
+      </span>
+    </NamedLink>
+  );
+};
+
+// Purple pill link to the favorites page, sits between the create-listing button
+// and the inbox link. Heart icon + label.
+const FavoritesLink = () => {
+  return (
+    <NamedLink id="favorites-link" className={css.favoritesButton} name="FavoritesPage">
+      <svg
+        className={css.favoritesHeart}
+        width="18"
+        height="16"
+        viewBox="0 0 24 22"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <path
+          d="M12 21S2 14.6 2 7.9C2 4.6 4.6 2 7.8 2c1.7 0 3.3.8 4.2 2.1C12.9 2.8 14.5 2 16.2 2 19.4 2 22 4.6 22 7.9 22 14.6 12 21 12 21z"
+          fill="currentColor"
+        />
+      </svg>
+      <span className={css.favoritesLabel}>
+        <FormattedMessage id="TopbarDesktop.favoritesLink" />
       </span>
     </NamedLink>
   );
@@ -183,6 +197,8 @@ const TopbarDesktop = props => {
   const giveSpaceForSearch = customLinks == null || customLinks?.length === 0;
   const classes = classNames(rootClassName || css.root, className);
 
+  const favoritesLinkMaybe = authenticatedOnClientSide ? <FavoritesLink /> : null;
+
   const inboxLinkMaybe = authenticatedOnClientSide ? (
     <InboxLink notificationCount={notificationCount} inboxTab={inboxTab} />
   ) : null;
@@ -238,6 +254,8 @@ const TopbarDesktop = props => {
 
         <div className={css.rightGroup}>
           {createListingMaybe}
+          {favoritesLinkMaybe}
+          <BagLink />
           {inboxLinkMaybe}
           {profileMenuMaybe}
           {signupLinkMaybe}

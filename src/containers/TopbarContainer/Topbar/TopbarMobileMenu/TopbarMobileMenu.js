@@ -141,6 +141,14 @@ const TopbarMobileMenu = props => {
             />
           </div>
 
+          <ul className={css.accountLinksWrapper}>
+            <li className={css.navigationLink}>
+              <NamedLink name="BagPage">
+                <FormattedMessage id="TopbarMobileMenu.bagLink" />
+              </NamedLink>
+            </li>
+          </ul>
+
           <MobileCustomLinksMenu intl={intl} />
 
           <ul className={css.customLinksWrapper}>{extraLinks}</ul>
@@ -192,6 +200,11 @@ const TopbarMobileMenu = props => {
             </NamedLink>
           </li>
           {manageListingsLinkMaybe}
+          <li className={classNames(css.navigationLink, currentPageClass('BagPage'))}>
+            <NamedLink name="BagPage">
+              <FormattedMessage id="TopbarMobileMenu.bagLink" />
+            </NamedLink>
+          </li>
           {AV_PROFILE_LINKS.map(({ pageName, labels }) => (
             <li
               key={pageName}

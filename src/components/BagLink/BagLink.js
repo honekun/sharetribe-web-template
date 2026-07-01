@@ -1,0 +1,40 @@
+import React from 'react';
+import classNames from 'classnames';
+import { useSelector } from 'react-redux';
+
+import { useIntl } from '../../util/reactIntl';
+import { selectBagCount } from '../../ducks/bag.duck';
+import { NamedLink } from '../../components';
+
+import css from './BagLink.module.css';
+
+const IconBag = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      d="M6 8V6a6 6 0 0 1 12 0v2h3l-1 13a2 2 0 0 1-2 1.8H6A2 2 0 0 1 4 21L3 8h3zm2 0h8V6a4 4 0 0 0-8 0v2z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+/**
+ * Topbar bag icon with item-count badge. Links to BagPage.
+ */
+const BagLink = ({ className }) => {
+  const intl = useIntl();
+  const count = useSelector(selectBagCount);
+
+  return (
+    <NamedLink
+      name="BagPage"
+      className={classNames(css.root, className)}
+      title={intl.formatMessage({ id: 'BagLink.label' })}
+    >
+      <IconBag />
+      {count > 0 ? <span className={css.badge}>{count}</span> : null}
+      <span className={css.srOnly}>{intl.formatMessage({ id: 'BagLink.label' })}</span>
+    </NamedLink>
+  );
+};
+
+export default BagLink;

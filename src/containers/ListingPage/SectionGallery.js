@@ -1,6 +1,6 @@
 import React from 'react';
 import ListingImageGallery from './ListingImageGallery/ListingImageGallery';
-import { StoreTypeTags } from '../../components';
+import { StoreTypeTags, FavoriteButton } from '../../components';
 
 import css from './ListingPage.module.css';
 import avCss from './ListingPageAV.module.css';
@@ -14,6 +14,9 @@ const SectionGallery = props => {
   return (
     <section className={className || css.productGallery} data-testid="carousel">
       <StoreTypeTags author={listing?.author} className={avCss.galleryStoreTags} />
+      {listing?.id?.uuid ? (
+        <FavoriteButton listingId={listing.id.uuid} className={avCss.galleryFavorite} />
+      ) : null}
       <ListingImageGallery
         images={images}
         imageSlots={imageSlots}
