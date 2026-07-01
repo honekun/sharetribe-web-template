@@ -46,6 +46,7 @@
 /* "Create listing" pill button. */
 .newListingButton {
   display: inline-flex;
+  flex-direction: row-reverse;
   align-items: center;
   justify-content: center;
   padding: 10px 20px;
