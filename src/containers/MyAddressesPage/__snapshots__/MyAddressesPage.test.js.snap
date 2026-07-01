@@ -39,6 +39,18 @@ exports[`MyAddressesPage matches snapshot 1`] = `
             >
               <a
                 class="tabContent tabContentDarkSkin"
+                href="/favorites"
+              >
+                <span>
+                  UserNav.favorites
+                </span>
+              </a>
+            </div>
+            <div
+              class="tab"
+            >
+              <a
+                class="tabContent tabContentDarkSkin"
                 href="/my-purchases"
               >
                 <span>
