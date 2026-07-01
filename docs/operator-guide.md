@@ -40,9 +40,11 @@ in bulk, and understanding the application settings. No technical background is 
    - [ZIP File Structure](#83-zip-file-structure)
    - [CSV Column Reference](#84-csv-column-reference)
    - [Field Values Quick Reference](#85-field-values-quick-reference)
-   - [Troubleshooting](#86-troubleshooting)
+   - [What Is Validated Before the Import Starts](#86-what-is-validated-before-the-import-starts)
+   - [Troubleshooting](#87-troubleshooting)
 9. [Application Settings](#9-application-settings)
 10. [Custom Translation Strings](#10-custom-translation-strings)
+11. [Favorites (Wish List)](#11-favorites-wish-list)
 
 ---
 
@@ -868,6 +870,14 @@ Vestidos, Ropa Deportiva, Jumpsuits, Sets
 This dropdown builds itself automatically from the brand field options in the app configuration. You
 do not need to configure it — it always reflects the current brand list.
 
+### Favorites Button (Desktop)
+
+Signed-in users see a purple **Favorites** button (with a heart icon) in the top-right area of the
+desktop top bar, between the "Create listing" button and the "Inbox" link. It links to the user's
+personal favorites page (`/favorites`). It appears only when a user is logged in, and requires no
+configuration. Its label comes from the `TopbarDesktop.favoritesLink` translation string. See
+[Section 11 — Favorites](#11-favorites-wish-list) for the full feature.
+
 ---
 
 ## 7. The Hot List
@@ -917,8 +927,8 @@ no separate operator password or allowlist to join. The new-listing screen (`/l/
 blue **"Bulk import"** button (on desktop) that links straight to the tool.
 
 **Admins** (the small set of emails configured in `BULK_IMPORT_OPERATOR_EMAILS` — see
-[Bulk import settings](#bulk-import)) get one extra power: they can add a `user_id` column to the CSV
-to create listings **on behalf of other sellers**. For everyone else that column is ignored and
+[Bulk import settings](#bulk-import)) get one extra power: they can add a `user_id` column to the
+CSV to create listings **on behalf of other sellers**. For everyone else that column is ignored and
 rejected.
 
 **Key facts:**
@@ -928,12 +938,12 @@ rejected.
 - Listings are created under the uploader's account by default (admins can override per row).
 - The tool is **tiered** — admins can import bigger batches than regular sellers:
 
-  | Limit                | Regular seller | Admin  |
-  | -------------------- | -------------- | ------ |
-  | Listings per import  | 25             | 100    |
-  | Images per ZIP       | 100            | 400    |
-  | ZIP file size        | 20 MB          | 50 MB  |
-  | Imports per hour     | 3              | 20     |
+  | Limit               | Regular seller | Admin |
+  | ------------------- | -------------- | ----- |
+  | Listings per import | 25             | 100   |
+  | Images per ZIP      | 100            | 400   |
+  | ZIP file size       | 20 MB          | 50 MB |
+  | Imports per hour    | 3              | 20    |
 
 - You can only run **one import at a time** per account, and the server runs at most **3 imports at
   once** across all users — if it's busy you'll be asked to try again shortly.
@@ -942,17 +952,17 @@ rejected.
 
 ### 8.2 How to Use It
 
-1. **Open the tool** — go to `[your marketplace URL]/admin/bulk-import`, or click the blue
-   **"Bulk import"** button on the new-listing screen. Just be signed in — there is no import key or
+1. **Open the tool** — go to `[your marketplace URL]/admin/bulk-import`, or click the blue **"Bulk
+   import"** button on the new-listing screen. Just be signed in — there is no import key or
    password to enter.
 2. **Download the CSV template** — click "Download CSV Template" to get a spreadsheet pre-filled
    with the correct column headers (in Spanish, e.g. `Nombre de Producto*`, `Precio Venta (MXN)*`)
    plus one example row. The "Ver ejemplo de ZIP" link in the help bar downloads a complete,
-   ready-to-upload example ZIP (a CSV plus matching images) you can open to see exactly how a finished
-   import looks.
+   ready-to-upload example ZIP (a CSV plus matching images) you can open to see exactly how a
+   finished import looks.
 3. **Fill in the CSV** — one row per listing, replacing the example row. See the
-   [CSV Column Reference](#84-csv-column-reference) below. Leave the `user_id` column empty unless you
-   are an admin importing for another seller.
+   [CSV Column Reference](#84-csv-column-reference) below. Leave the `user_id` column empty unless
+   you are an admin importing for another seller.
 4. **Prepare your images** — name each image file clearly. Image filenames in the CSV must exactly
    match the filename (including extension) of the image files in your ZIP. Images must be real
    `.jpg`, `.png`, or `.webp` files (the tool checks the actual file contents, not just the
@@ -998,10 +1008,10 @@ my-listings.zip
 
 > **Template headers.** The downloadable template (`PLANTILLA_CARGA_MASIVA.csv`) uses the field
 > names directly: the listing-attribute columns carry a **`pub_`** prefix (e.g. `pub_brand`,
-> `pub_color`) and the image columns are **`imagen_1`–`imagen_4`**. Keep the headers from the template
-> as-is. The importer is also backward-compatible — it still accepts the older `pd_` prefix, the
-> `image_front`/`image_back`/`image_horizontal`/`image_details` names, and the Spanish Google Sheets
-> headers — so old spreadsheets keep working without changes.
+> `pub_color`) and the image columns are **`imagen_1`–`imagen_4`**. Keep the headers from the
+> template as-is. The importer is also backward-compatible — it still accepts the older `pd_`
+> prefix, the `image_front`/`image_back`/`image_horizontal`/`image_details` names, and the Spanish
+> Google Sheets headers — so old spreadsheets keep working without changes.
 
 #### Required columns
 
@@ -1013,21 +1023,21 @@ my-listings.zip
 
 #### Optional core columns
 
-| Column             | Default          | What to enter                                                                                                                                                  |
+| Column             | Default          | What to enter                                                                                                                                                 |
 | ------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `user_id`          | The current user | **Admins only.** The Sharetribe UUID of the seller the listing should belong to. Leave empty for normal use — a non-admin who fills it in gets a clear error. |
-| `currency`         | `MXN`            | Currency code. Leave blank for MXN.                                                                                                                            |
+| `currency`         | `MXN`            | Currency code. Leave blank for MXN.                                                                                                                           |
 | `publish`          | `yes`            | `yes` to publish immediately, `no` to save as draft.                                                                                                          |
 | `shipping_enabled` | `true`           | `true` or `false`                                                                                                                                             |
 | `pickup_enabled`   | `false`          | `true` or `false`                                                                                                                                             |
 | `location_address` | _(empty)_        | Human-readable address (optional).                                                                                                                            |
-| `location_lat`     | _(empty)_        | Latitude number (optional, used for location search).                                                                                                        |
+| `location_lat`     | _(empty)_        | Latitude number (optional, used for location search).                                                                                                         |
 | `location_lng`     | _(empty)_        | Longitude number (optional).                                                                                                                                  |
 
 > **About `user_id`.** Regular sellers should leave this column empty (or remove it) — every listing
-> is automatically created under your own account. Admins find a seller's UUID in
-> Console → Manage → Users. The older column name `author_id` and the Spanish header `ID Vendedor`
-> still work as the same thing.
+> is automatically created under your own account. Admins find a seller's UUID in Console → Manage →
+> Users. The older column name `author_id` and the Spanish header `ID Vendedor` still work as the
+> same thing.
 
 #### Image columns
 
@@ -1035,12 +1045,12 @@ Each listing has four labeled image slots in order: `imagen_1` = front, `imagen_
 `imagen_3` = horizontal (wide-angle), `imagen_4` = details. The first three are required, details is
 optional.
 
-| Column     | Slot       | Required | Description                                         |
-| ---------- | ---------- | -------- | --------------------------------------------------- |
-| `imagen_1` | Front      | Yes      | Filename of the front-facing image                  |
-| `imagen_2` | Back       | Yes      | Filename of the back-facing image                   |
-| `imagen_3` | Horizontal | Yes      | Filename of the horizontal / wide-angle image       |
-| `imagen_4` | Details    | No       | Filename of the close-up details image              |
+| Column     | Slot       | Required | Description                                   |
+| ---------- | ---------- | -------- | --------------------------------------------- |
+| `imagen_1` | Front      | Yes      | Filename of the front-facing image            |
+| `imagen_2` | Back       | Yes      | Filename of the back-facing image             |
+| `imagen_3` | Horizontal | Yes      | Filename of the horizontal / wide-angle image |
+| `imagen_4` | Details    | No       | Filename of the close-up details image        |
 
 Filenames are **case-sensitive** and must match exactly the filename inside the ZIP (the folder path
 is ignored — only the filename matters). The legacy `image_front`/`image_back`/`image_horizontal`/
@@ -1052,20 +1062,20 @@ These columns set the listing's searchable attributes. Each column name is the f
 `pub_` prefix; the prefix is stripped when saving — so `pub_brand` becomes the `brand` attribute on
 the listing. (The legacy `pd_` prefix is still accepted.)
 
-| CSV Column           | Required | Valid values                                                                                                 |
-| -------------------- | -------- | ------------------------------------------------------------------------------------------------------------ |
-| `pub_categoryLevel1` | Yes      | See [Category IDs](#category-ids) below                                                                      |
-| `pub_categoryLevel2` | Yes      | See [Category IDs](#category-ids) below                                                                      |
-| `pub_categoryLevel3` | No       | See [Category IDs](#category-ids) below                                                                      |
-| `pub_color`          | Yes      | One or more color option keys, pipe-separated (e.g. `azul` or `azul\|negro`)                                 |
-| `pub_all_sizes`      | Yes      | One or more size option keys, pipe-separated (e.g. `s\|m\|l`)                                                |
-| `pub_brand`          | Yes      | One brand option key (e.g. `zara`, `gucci`)                                                                  |
-| `pub_genero`         | Yes      | One gender option key                                                                                        |
-| `pub_estado`         | Yes      | One condition option key                                                                                     |
-| `pub_estilo`         | Yes      | One or more style option keys, pipe-separated                                                                |
+| CSV Column           | Required | Valid values                                                                                                        |
+| -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
+| `pub_categoryLevel1` | Yes      | See [Category IDs](#category-ids) below                                                                             |
+| `pub_categoryLevel2` | Yes      | See [Category IDs](#category-ids) below                                                                             |
+| `pub_categoryLevel3` | No       | See [Category IDs](#category-ids) below                                                                             |
+| `pub_color`          | Yes      | One or more color option keys, pipe-separated (e.g. `azul` or `azul\|negro`)                                        |
+| `pub_all_sizes`      | Yes      | One or more size option keys, pipe-separated (e.g. `s\|m\|l`)                                                       |
+| `pub_brand`          | Yes      | One brand option key (e.g. `zara`, `gucci`)                                                                         |
+| `pub_genero`         | Yes      | One gender option key                                                                                               |
+| `pub_estado`         | Yes      | One condition option key                                                                                            |
+| `pub_estilo`         | Yes      | One or more style option keys, pipe-separated                                                                       |
 | `pub_temporada`      | No       | Season slug (e.g. `primavera`, `verano`, `otono`, `invierno`). Saved as data but not currently a searchable filter. |
-| `pub_originalPrice`  | No       | The original retail price in pesos (e.g. `650.00`). Must be higher than `price` to show as a strike-through. |
-| `pub_tags`           | No       | Pipe-separated tags (e.g. `hot-list` or `hot-list\|nueva-llegada`)                                           |
+| `pub_originalPrice`  | No       | The original retail price in pesos (e.g. `650.00`). Must be higher than `price` to show as a strike-through.        |
+| `pub_tags`           | No       | Pipe-separated tags (e.g. `hot-list` or `hot-list\|nueva-llegada`)                                                  |
 
 > **Multi-value fields** (`pub_color`, `pub_all_sizes`, `pub_estilo`, `pub_tags`): separate multiple
 > values with a pipe character `|`. A single value is also valid. Example: `azul|negro|crema`
@@ -1352,26 +1362,144 @@ see `docs/data/brand.csv`.
 
 ---
 
-### 8.6 Troubleshooting
+### 8.6 What Is Validated Before the Import Starts
 
-| Problem                                  | Likely cause                                            | What to do                                                            |
-| ---------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------- |
-| "requires a signed-in session" error     | You are signed out                                      | Sign in to the marketplace and try again                             |
-| "expired action token" error             | The short-lived upload token expired                    | Reload the page and start the upload again                           |
-| `"user_id" override is not permitted`    | A non-admin filled in the `user_id` column              | Remove the `user_id` column (your listings are created under you)    |
-| "ZIP exceeds your … limit" / "Too many images" / "Your limit is … rows" | The import is over your tier's limit | Split it into smaller batches, or ask an admin to run the larger import |
-| "Too many imports" (try again later)     | You hit your hourly import limit                        | Wait up to an hour and try again (3/hr seller, 20/hr admin)          |
-| "already have an import in progress"     | A previous import of yours is still running             | Wait for it to finish before starting another                        |
-| "capacity is full" (try again shortly)   | Three imports are already running across all users      | Wait a few minutes and retry                                         |
-| "ZIP contains no .csv file"              | CSV is missing from the archive                         | Make sure you included exactly one CSV file inside the ZIP           |
-| "ZIP contains N .csv files"              | Multiple CSVs in the archive                            | Remove extra CSV files — only one is allowed                         |
-| "Duplicate image filename"               | Two images share the same filename in different folders | Rename images so all filenames are unique across the entire ZIP      |
-| "does not match its file extension"      | A file isn't a real image (e.g. renamed to `.jpg`)      | Re-export it as a genuine `.jpg`, `.png`, or `.webp`                 |
-| Image "not found in uploaded files"      | Filename in the CSV doesn't match the image file        | Check spelling, case, and file extension — they must match exactly   |
-| Row fails with "missing required column" | A required `pub_*` field is empty                       | Fill in all required fields for that row                             |
-| Row fails with "invalid price"           | Price is zero, negative, or not a number                | Enter a positive number like `450.00`                                |
-| All rows fail with API error             | Integration API credentials are wrong                   | Contact your administrator to check the server configuration         |
-| Job not found (after waiting)            | Job data expired, or the server restarted mid-import    | Jobs expire after 1 hour and don't survive a server restart. Re-run the import. |
+Before a single listing is created, the tool runs a strict **pre-flight check** on your whole ZIP
+and CSV. If anything in this check fails, the import is **rejected immediately** — no job is
+started, no listings are touched — and you get back a list of **every** problem found, so you can
+fix them all in one pass and re-upload.
+
+This is different from the per-row errors you may see **while** an import is running. Once the
+pre-flight check passes, rows are created one by one; if an individual row fails at that stage (for
+example, an invalid colour value), it is reported in the results table and the **other rows keep
+going**. See [Troubleshooting](#87-troubleshooting) for those.
+
+The pre-flight check runs in two passes.
+
+#### Pass 1 — the ZIP file itself
+
+- The file is a valid, readable `.zip` archive.
+- It contains **exactly one** CSV file (any filename, at any folder level).
+- The CSV file is not empty.
+- **Every image is a genuine image** — the tool reads the actual file contents (magic bytes), so a
+  non-image renamed to `.jpg` is rejected. Allowed types: `.jpg`/`.jpeg`, `.png`, `.webp`.
+- **No two images share the same filename**, even across different subfolders.
+- The archive stays within your tier's limits: total entries, image count, per-image size (10 MB),
+  CSV size (5 MB), and total uncompressed size.
+- macOS junk that Finder adds when zipping (`__MACOSX/`, `._*` resource forks, and `.DS_Store`
+  files) is **ignored automatically** — it never causes an error.
+
+#### Pass 2 — the CSV contents
+
+This is the "missing values" check. It runs in two stages.
+
+**File-level checks (stop the import right away):**
+
+- The CSV has at least one data row.
+- It has no more than your tier's row cap (regular sellers 25, admins 100; a hard ceiling of 100
+  applies to everyone).
+- The header row contains the three **required columns**: `title`, `price`, and `description`
+  (Spanish template headers such as `Nombre de Producto*` are recognised and mapped automatically).
+  If any required column is missing entirely, the check stops here.
+
+**Per-row checks (every row is checked, and all problems are collected together):**
+
+| What is checked                 | Rule the row must satisfy                                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `title`                         | Not empty.                                                                                                         |
+| `description`                   | Not empty.                                                                                                         |
+| `price`                         | Reads as a **positive** number. A `$` sign and thousands separators are fine; `0`, negatives, and text are not.    |
+| Required image columns          | `image_front`, `image_back`, and `image_horizontal` each have a filename. (`image_details` / image 4 is optional.) |
+| Image filenames                 | Every filename referenced in the row **exists in the ZIP**. A typo or wrong extension fails here.                  |
+| `pub_*` keys                    | A `pub_*`/`pd_*` column does not use a reserved name (`__proto__`, `constructor`, `prototype`).                    |
+| `location_lat` / `location_lng` | If present, both are valid numbers.                                                                                |
+| `stock`                         | Empty defaults to `1`; otherwise must be a whole number that is zero or greater.                                   |
+| `user_id`                       | May only be filled in by an **admin**. A non-admin who sets it gets a clear error and the row is rejected.         |
+
+**What is _not_ checked at this stage** (important):
+
+- **Option values are not verified against the Console.** Values for fields like colour, size,
+  brand, `categoría`, `género`, `estado`, `estilo`, and `temporada` are passed through as-is. A typo
+  such as `pub_color = blu` **passes** the pre-flight check and only fails later, per row, as an API
+  error in the results table. Always use the exact option keys from
+  [8.5 Field Values Quick Reference](#85-field-values-quick-reference).
+- **Category existence** is likewise confirmed by the Sharetribe API during processing, not here.
+
+#### What you see when it fails
+
+All problems are returned together under the heading **"La validación del CSV falló."**, with one
+line per issue. Row-specific problems are prefixed **`Fila N:`** (where `N` is the data-row number,
+starting at 1). For example, for a CSV using the operator-template headers:
+
+```
+La validación del CSV falló.
+Fila 2: "Nombre de Producto*" está vacío.
+Fila 2: "Precio Venta (MXN)*" debe ser un número positivo, se recibió "abc".
+Fila 5: "Nombre imagen 1*" es obligatorio.
+Fila 7: La imagen "vestido-frente.jpg" (Nombre imagen 1*) no se encontró en los archivos subidos.
+```
+
+Fix every listed line, then upload the ZIP again.
+
+#### Errors name your own column headers
+
+Every error message quotes the **exact column header you typed in your CSV** — never an internal
+name. This matters because the importer accepts several header "dialects" (the operator template,
+the older Google Sheets export, and the internal English names) and maps them all to the same fields
+behind the scenes. Whatever heading is in _your_ file is what you'll see in the error, so you can
+find and fix the offending column without translating anything.
+
+**Why this helps.** Internally the tool refers to the four image columns as `image_front`,
+`image_back`, `image_horizontal`, and `image_details`. If your spreadsheet's first image column is
+headed `Nombre imagen 1*`, an older error might have told you `"image_front" es obligatorio` — a
+name that appears **nowhere** in your file. Now the same error reads
+`"Nombre imagen 1*" es obligatorio`, pointing straight at the column you need to fix.
+
+**How your header appears, by template.** The same missing first-image error is phrased using
+whichever header your file uses:
+
+| Header dialect in your CSV                       | First-image column header | Error you see                                  |
+| ------------------------------------------------ | ------------------------- | ---------------------------------------------- |
+| Operator template (`PLANTILLA_CARGA_MASIVA.csv`) | `Nombre imagen 1*`        | `Fila N: "Nombre imagen 1*" es obligatorio.`   |
+| Current seller template (`pub_*` + numbered)     | `imagen_1`                | `Fila N: "imagen_1" es obligatorio.`           |
+| Google Sheets export                             | `Imagen 1: Frontal*`      | `Fila N: "Imagen 1: Frontal*" es obligatorio.` |
+| Internal English names                           | `image_front`             | `Fila N: "image_front" es obligatorio.`        |
+
+This applies to **all** the per-row value errors — empty title/description, invalid price, a missing
+or unresolved image, and an invalid `stock` — not just the image columns.
+
+**Two edge cases where you'll still see the field's generic name:**
+
+- **A required column is missing entirely.** If your CSV has no title/price/description column at
+  all, there is no header to quote, so the error names the field itself
+  (`Falta la columna obligatoria: "title".`). Add the missing column and re-export.
+- **The `user_id` (admin) override.** The "not permitted" message always says `user_id` — the
+  documented admin column name — regardless of the alias you used (`user_id` or `ID Vendedor`).
+
+---
+
+### 8.7 Troubleshooting
+
+| Problem                                                                                    | Likely cause                                                                     | What to do                                                                                                     |
+| ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| "…requiere una sesión iniciada" error                                                      | You are signed out                                                               | Sign in to the marketplace and try again                                                                       |
+| "Token de acción… inválido o expirado"                                                     | The short-lived upload token expired                                             | Reload the page and start the upload again                                                                     |
+| `La sustitución de "user_id" no está permitida`                                            | A non-admin filled in the `user_id` column                                       | Remove the `user_id` column (your listings are created under you)                                              |
+| "El ZIP supera tu límite…" / "Demasiadas imágenes" / "El CSV tiene … filas. Tu límite es…" | The import is over your tier's limit                                             | Split it into smaller batches, or ask an admin to run the larger import                                        |
+| "Demasiadas importaciones" (try again later)                                               | You hit your hourly import limit                                                 | Wait up to an hour and try again (3/hr seller, 20/hr admin)                                                    |
+| "Ya tienes una importación en curso"                                                       | A previous import of yours is still running                                      | Wait for it to finish before starting another                                                                  |
+| "La capacidad de importación está llena"                                                   | Three imports are already running across all users                               | Wait a few minutes and retry                                                                                   |
+| "El ZIP no contiene ningún archivo .csv"                                                   | CSV is missing from the archive                                                  | Make sure you included exactly one CSV file inside the ZIP                                                     |
+| "El ZIP contiene N archivos .csv"                                                          | Multiple CSVs in the archive                                                     | Remove extra CSV files — only one is allowed                                                                   |
+| "…nombre de imagen duplicado…"                                                             | Two images share the same filename in different folders                          | Rename images so all filenames are unique across the entire ZIP                                                |
+| "…no coincide con su extensión de archivo"                                                 | A file isn't a real image (e.g. renamed to `.jpg`)                               | Re-export it as a genuine `.jpg`, `.png`, or `.webp`                                                           |
+| "…no se encontró en los archivos subidos"                                                  | Filename in the CSV doesn't match the image file                                 | Check spelling, case, and file extension — they must match exactly                                             |
+| `Falta la columna obligatoria: "X"`                                                        | A required header column (`title`/`price`/`description`) is missing              | Add the missing column header and re-export the CSV                                                            |
+| `Fila N: "X" es obligatorio` / `Fila N: "X" está vacío`                                    | A required field (title, description, or a required image) is empty              | Fill in that field for the listed row                                                                          |
+| `Fila N: "price" debe ser un número positivo`                                              | Price is zero, negative, or not a number                                         | Enter a positive number like `450.00`                                                                          |
+| All rows fail with API error                                                               | Integration API credentials are wrong                                            | Contact your administrator to check the server configuration                                                   |
+| All rows fail "user not found" (409)                                                       | The server's Integration API points at a different marketplace than your account | Admin: ensure the Integration API and the marketplace your users sign into are the same Sharetribe marketplace |
+| Job not found (after waiting)                                                              | Job data expired, or the server restarted mid-import                             | Jobs expire after 1 hour and don't survive a server restart. Re-run the import.                                |
 
 ---
 
@@ -1407,10 +1535,10 @@ plain language.
 The bulk import tool no longer uses an access password or a default-author setting — any signed-in
 user imports for their own account. The only access-related setting is the admin list.
 
-| Setting                          | What it controls                                                                                                                                                                    |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Setting                                          | What it controls                                                                                                                                                                                                                      |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Admin emails** (`BULK_IMPORT_OPERATOR_EMAILS`) | A comma-separated list of emails treated as bulk-import **admins**. Admins may add a `user_id` column to import on behalf of other sellers, and get the larger size/rate limits. Optional — leave empty if no one needs admin powers. |
-| **Listing Type**                 | The listing type all imported listings are created as. Default: `av-listing`.                                                                                                       |
+| **Listing Type**                                 | The listing type all imported listings are created as. Default: `av-listing`.                                                                                                                                                         |
 
 > Removed settings: the old **Bulk Import API Key**, **Default Author ID**, and operator user-ID
 > allowlist are no longer used and have been deleted from the server configuration.
@@ -1542,6 +1670,9 @@ to be silently hidden — the app never shows a raw key string to users.
 | Topbar menu 1 label      | `Topbar.custom.menuOne`                               | `Shop`               | `Comprar`            | First dropdown menu label.                                 |
 | Topbar menu 2 label      | `Topbar.custom.menuTwo`                               | `Explore`            | `Explorar`           | Second dropdown menu label.                                |
 | Topbar menu 3 label      | `Topbar.custom.menuThree`                             | `Brands`             | `Marcas`             | Third dropdown menu label.                                 |
+| Desktop favorites button | `TopbarDesktop.favoritesLink`                         | `Favorites`          | `Favoritos`          | Purple heart button in the top bar (also the profile menu).|
+| Mobile menu              | `TopbarMobileMenu.favoritesLink`                      | `Favorites`          | `Favoritos`          | Mobile menu link to the favorites page.                    |
+| Account sidebar tab      | `UserNav.favorites`                                   | `Favorites`          | `Favoritos`          | Tab label in the account navigation sidebar.               |
 | Desktop profile menu     | `TopbarDesktop.myPurchasesLink`                       | `My Purchases`       | `Mis Compras`        | Profile dropdown link to the purchases page.               |
 | Desktop profile menu     | `TopbarDesktop.mySalesLink`                           | `My Sales`           | `Mis Ventas`         | Profile dropdown link to the sales page.                   |
 | Desktop profile menu     | `TopbarDesktop.myBalanceLink`                         | `My Balance`         | `Mi Balance`         | Profile dropdown link to the balance page.                 |
@@ -1723,35 +1854,37 @@ The checkout (step shown after the buyer clicks **Comprar ahora**) has these AV-
    Interior, Colonia, C.P. / Ciudad, Estado (a dropdown of the 32 Mexican states) and Teléfono. The
    country is always Mexico, so there is no country field. The list of states is fixed in code.
 2. **Delivery options (live quote)** — once the address is complete, the platform requests a **live
-   shipping quote** from the carrier (eShip) using the listing's package size (S/M/L) and the buyer's
-   address. The buyer then picks **Express** (the fastest rate) or **Estándar** (the cheapest rate);
-   below them, every rate the carrier returned is listed for transparency. Buyer prices include a
-   margin buffer over the raw carrier cost. Prices are **not** set in the Console — they come from the
-   carrier in real time. The **Pay** button stays disabled until a delivery option is chosen.
+   shipping quote** from the carrier (eShip) using the listing's package size (S/M/L) and the
+   buyer's address. The buyer then picks **Express** (the fastest rate) or **Estándar** (the
+   cheapest rate); below them, every rate the carrier returned is listed for transparency. Buyer
+   prices include a margin buffer over the raw carrier cost. Prices are **not** set in the Console —
+   they come from the carrier in real time. The **Pay** button stays disabled until a delivery
+   option is chosen.
 3. **No automatic quote → Contactar AV** — if the seller hasn't set a shipping-origin address, the
-   item is package size **especial**, or the carrier can't be reached, the buyer sees a retry and/or a
-   **Contactar a AV** button instead of priced options (they cannot complete an automatic purchase).
+   item is package size **especial**, or the carrier can't be reached, the buyer sees a retry and/or
+   a **Contactar a AV** button instead of priced options (they cannot complete an automatic
+   purchase).
 
 > **Seller requirement:** each seller must set their **shipping-origin address** under **Account →
 > Dirección de origen** (`/account/shipping-origin`). Without it, their listings can't be quoted and
-> buyers see *Contactar a AV*. Sellers missing it get a reminder banner on **Manage listings**.
+> buyers see _Contactar a AV_. Sellers missing it get a reminder banner on **Manage listings**.
 
 The current keys are `AVShippingSelector.*` (see below). The older `AVShippingTypeSelector.*` keys
 listed further down are from the previous static-price selector and are no longer used at checkout.
 
-| Area             | Key                                  | English meaning                                  | Spanish (shipped)                                  | Operator note                                |
-| ---------------- | ------------------------------------ | ------------------------------------------------ | -------------------------------------------------- | -------------------------------------------- |
-| Delivery options | `AVShippingSelector.express`         | `Express`                                        | `Express`                                          | Fastest-rate bucket label.                   |
-| Delivery options | `AVShippingSelector.estandar`        | `Standard`                                       | `Estándar`                                         | Cheapest-rate bucket label.                  |
-| Delivery options | `AVShippingSelector.days`            | `{days} days`                                    | `{days} días`                                      | Transit-time note on each option.            |
-| Delivery options | `AVShippingSelector.loading`         | `Calculating shipping…`                          | `Calculando envío…`                                | Shown while the quote loads.                 |
-| Delivery options | `AVShippingSelector.errorTransient`  | `We couldn't calculate shipping right now.`      | `No pudimos calcular el envío en este momento.`    | Transient carrier error (shows **Retry**).   |
-| Delivery options | `AVShippingSelector.errorPermanent`  | `Automatic shipping isn't available…`            | `El envío automático no está disponible…`          | No origin / especial (shows **Contactar**).  |
-| Delivery options | `AVShippingSelector.retry`           | `Try again`                                      | `Reintentar`                                       | Retry button on a transient error.           |
-| Delivery options | `AVShippingSelector.contactSeller`   | `Contact AV`                                     | `Contactar a AV`                                   | Fallback button when no quote is possible.   |
-| Delivery options | `AVShippingSelector.rawListTitle`    | `All available rates`                            | `Todas las tarifas disponibles`                    | Heading above the raw rate list.             |
-| Seller origin    | `ShippingOriginPage.heading`         | `Shipping origin address`                        | `Dirección de origen de envíos`                    | Account settings page heading.               |
-| Seller origin    | `ShippingOriginBanner.message`       | `Add your shipping origin address…`              | `Agrega tu dirección de origen…`                   | Manage-listings reminder banner.             |
+| Area             | Key                                 | English meaning                             | Spanish (shipped)                               | Operator note                               |
+| ---------------- | ----------------------------------- | ------------------------------------------- | ----------------------------------------------- | ------------------------------------------- |
+| Delivery options | `AVShippingSelector.express`        | `Express`                                   | `Express`                                       | Fastest-rate bucket label.                  |
+| Delivery options | `AVShippingSelector.estandar`       | `Standard`                                  | `Estándar`                                      | Cheapest-rate bucket label.                 |
+| Delivery options | `AVShippingSelector.days`           | `{days} days`                               | `{days} días`                                   | Transit-time note on each option.           |
+| Delivery options | `AVShippingSelector.loading`        | `Calculating shipping…`                     | `Calculando envío…`                             | Shown while the quote loads.                |
+| Delivery options | `AVShippingSelector.errorTransient` | `We couldn't calculate shipping right now.` | `No pudimos calcular el envío en este momento.` | Transient carrier error (shows **Retry**).  |
+| Delivery options | `AVShippingSelector.errorPermanent` | `Automatic shipping isn't available…`       | `El envío automático no está disponible…`       | No origin / especial (shows **Contactar**). |
+| Delivery options | `AVShippingSelector.retry`          | `Try again`                                 | `Reintentar`                                    | Retry button on a transient error.          |
+| Delivery options | `AVShippingSelector.contactSeller`  | `Contact AV`                                | `Contactar a AV`                                | Fallback button when no quote is possible.  |
+| Delivery options | `AVShippingSelector.rawListTitle`   | `All available rates`                       | `Todas las tarifas disponibles`                 | Heading above the raw rate list.            |
+| Seller origin    | `ShippingOriginPage.heading`        | `Shipping origin address`                   | `Dirección de origen de envíos`                 | Account settings page heading.              |
+| Seller origin    | `ShippingOriginBanner.message`      | `Add your shipping origin address…`         | `Agrega tu dirección de origen…`                | Manage-listings reminder banner.            |
 
 All text below is operator-editable. These are AV-owned keys, so they will **not** appear in Console
 until you add them (use **Add translation** — see
@@ -1794,3 +1927,65 @@ optional field; everything else is required.
 | Address form         | `ShippingDetails.mxPhoneLabel`                 | `Phone`                                                 | `Teléfono`                                                        | Phone label.                            |
 | Address form         | `ShippingDetails.mxPhonePlaceholder`           | `+52 55 1234 5678`                                      | `+52 55 1234 5678`                                                | Phone placeholder.                      |
 | Address form         | `ShippingDetails.mxPhoneRequired`              | `Phone is required.`                                    | `El teléfono es obligatorio.`                                     | Validation message.                     |
+
+---
+
+## 11. Favorites (Wish List)
+
+Favorites let a shopper save listings they like and revisit them later from a personal page. It works
+like a "wish list" or "likes" feature. **There is nothing to configure** — it is on by default. This
+section explains how it behaves so you can support users and, if you wish, customize the wording.
+
+### What the shopper sees
+
+- **Heart button on every listing card.** A small heart appears in the top-right corner of each
+  listing card everywhere cards are shown — search results, the landing page carousels, the Hot List,
+  category pages, and profile pages. Clicking it saves (or unsaves) the listing. Clicking the heart
+  does **not** open the listing; it only toggles the favorite.
+- **Heart button on the listing page.** The individual listing page shows a heart in the top-right of
+  the photo gallery. It stays in sync with the heart on the cards — favoriting in one place updates
+  the other.
+- **The Favorites page (`/favorites`).** A dedicated page that lists every listing the shopper has
+  favorited, shown in the same grid layout and card style as search results, newest favorite first.
+
+### How a shopper reaches the Favorites page
+
+The favorites page is linked from four places (all created automatically):
+
+| Location                       | What it looks like                                                             |
+| ------------------------------ | ----------------------------------------------------------------------------- |
+| **Desktop top bar**            | A purple **Favorites** button with a heart, between "Create listing" and "Inbox". |
+| **Desktop profile dropdown**   | A "Favorites" entry in the avatar dropdown menu.                               |
+| **Mobile menu**                | A "Favorites" entry in the slide-out mobile menu.                              |
+| **Account sidebar**            | A "Favorites" tab alongside My Purchases / My Sales / My Balance.             |
+
+### Rules and behavior
+
+- **Sign-in required.** Favorites are tied to a user account. If a signed-out visitor clicks a heart,
+  they are sent to the sign-up page. There is no "guest" favorites list.
+- **Private to each user.** A user's favorites are visible only to that user. Sellers cannot see who
+  favorited their listings, and there is no public "likes" count on listings.
+- **Limit of 100.** A shopper can keep up to 100 favorites. Adding the 101st automatically removes the
+  oldest one.
+- **Deleted or closed listings disappear.** If a favorited listing is later removed or closed, it
+  simply stops showing on the favorites page — no action is needed from the shopper or operator.
+- **Nothing for the operator to manage.** Favorites are stored on each user's own profile. They do
+  not appear in the Console listing data, and there is no admin screen for them.
+
+### Customizing the wording
+
+All favorites text can be changed via **Console → Content → Translations** (see
+[Section 1](#1-sharetribe-console-overview) for how translations work). The navigation labels are also
+listed in the [Navigation](#navigation) table above.
+
+| Area              | Key                                | English default                                                                     | Spanish default                                                                                    | Operator note                                       |
+| ----------------- | ---------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Heart button      | `FavoriteButton.addToFavorites`    | `Add to favorites`                                                                   | `Agregar a favoritos`                                                                               | Tooltip/label shown when a listing is not favorited. |
+| Heart button      | `FavoriteButton.removeFromFavorites` | `Remove from favorites`                                                            | `Quitar de favoritos`                                                                               | Tooltip/label shown when a listing is favorited.     |
+| Desktop top bar   | `TopbarDesktop.favoritesLink`      | `Favorites`                                                                          | `Favoritos`                                                                                         | Purple top-bar button and profile-menu link.         |
+| Mobile menu       | `TopbarMobileMenu.favoritesLink`   | `Favorites`                                                                          | `Favoritos`                                                                                         | Mobile menu link.                                    |
+| Account sidebar   | `UserNav.favorites`                | `Favorites`                                                                          | `Favoritos`                                                                                         | Account sidebar tab.                                 |
+| Favorites page    | `FavoritesPage.title`              | `Favorites`                                                                          | `Favoritos`                                                                                         | Browser tab / page title.                            |
+| Favorites page    | `FavoritesPage.heading`            | `My favorites`                                                                       | `Mis favoritos`                                                                                     | Heading at the top of the page.                      |
+| Favorites page    | `FavoritesPage.noFavorites`        | `You haven't liked any listings yet. Tap the heart on a listing to save it here.`    | `Aún no has guardado ningún artículo. Toca el corazón en un artículo para guardarlo aquí.`          | Empty state (no favorites yet).                      |
+| Favorites page    | `FavoritesPage.queryError`         | `Loading favorites failed. Please try again.`                                        | `No se pudieron cargar tus favoritos. Inténtalo de nuevo.`                                          | Error state.                                         |

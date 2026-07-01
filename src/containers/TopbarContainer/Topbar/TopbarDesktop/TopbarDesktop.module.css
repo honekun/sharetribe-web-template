@@ -398,3 +398,45 @@
   justify-content: right;
   height: 100%;
 }
+
+/* Purple pill link to /favorites, between the create-listing button and inbox. */
+.favoritesButton {
+  flex-shrink: 0;
+  align-self: center;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 8px 16px;
+  margin: 0 8px;
+  border-radius: 100px;
+
+  background-color: var(--avPurple);
+  color: var(--colorWhite);
+  font-weight: var(--fontWeightBold);
+  font-size: 15px;
+  line-height: 18px;
+  letter-spacing: 1px;
+
+  transition: var(--transitionStyleButton);
+
+  &:hover {
+    background-color: var(--avPurpleLight);
+    color: var(--colorWhite);
+    text-decoration: none;
+  }
+
+  @media (--viewportLargeWithPaddings) {
+    font-size: 14px;
+  }
+}
+
+.favoritesHeart {
+  display: block;
+  flex-shrink: 0;
+}
+
+.favoritesLabel {
+  display: inline-block;
+}
