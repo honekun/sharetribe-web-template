@@ -12,12 +12,11 @@ import {
   MenuContent,
   MenuItem,
   NamedLink,
+  BagLink,
 } from '../../../../components';
 
 import TopbarSearchForm from '../TopbarSearchForm/TopbarSearchForm';
 import CustomLinksMenu from './CustomLinksMenu/CustomLinksMenu';
-
-import IconRegisterDesktop from './IconRegisterDesktop';
 
 import css from './TopbarDesktop.module.css';
 import { AV_PROFILE_LINKS } from '../../../../extensions/topbar/links';
@@ -31,16 +30,6 @@ const SignupLink = () => {
         <FormattedMessage id="TopbarDesktop.signup" />
       </span>
     </NamedLink>
-  );
-};
-
-const CartLink = () => {
-  return (
-    <a href="/cart" className={css.topbarLink}>
-      <span className={css.topbarLinkLabel}>
-        <IconRegisterDesktop />
-      </span>
-    </a>
   );
 };
 
@@ -266,6 +255,7 @@ const TopbarDesktop = props => {
         <div className={css.rightGroup}>
           {createListingMaybe}
           {favoritesLinkMaybe}
+          <BagLink />
           {inboxLinkMaybe}
           {profileMenuMaybe}
           {signupLinkMaybe}
