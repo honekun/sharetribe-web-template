@@ -141,6 +141,7 @@ export { default as ListingCard } from './ListingCard/ListingCard';
 export { default as AVListingCard } from './AVListingCard/AVListingCard';
 export { default as StoreTypeTags } from './StoreTypeTags/StoreTypeTags';
 export { default as FavoriteButton } from './FavoriteButton/FavoriteButton';
+export { default as AddToBagButton } from './AddToBagButton/AddToBagButton';
 export { default as AVWelcomePopup } from './AVWelcomePopup/AVWelcomePopup';
 export { default as BalanceSummary } from './BalanceSummary/BalanceSummary';
 export { default as PayoutItem } from './PayoutItem/PayoutItem';
