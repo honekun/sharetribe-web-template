@@ -19,6 +19,7 @@ import {
   ResponsiveImage,
   AvatarSmall,
   StoreTypeTags,
+  FavoriteButton,
 } from '../../components';
 
 import css from './AVListingCard.module.css';
@@ -150,6 +151,9 @@ export const AVListingCard = props => {
 
   return (
     <div className={classes}>
+      {/* Sibling of the NamedLink (not inside it): a <button> nested in an <a> is
+          invalid HTML. Positioned over the image's top-right via css.favoriteButton. */}
+      <FavoriteButton listingId={id} className={css.favoriteButton} />
       <NamedLink className={css.cardLink} name="ListingPage" params={{ id, slug }}>
         <AspectRatioWrapper
           className={css.aspectRatioWrapper}

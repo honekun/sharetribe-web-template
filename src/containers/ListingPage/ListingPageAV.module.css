@@ -29,3 +29,12 @@
     left: calc(16px + var(--ig-thumbnail-size, 102px) + 8px);
   }
 }
+
+/* Heart favorite toggle overlaid on the gallery image, mirrored to the top-right
+   (StoreTypeTags sit top-left). Anchored within .productGallery. */
+.galleryFavorite {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
+}
