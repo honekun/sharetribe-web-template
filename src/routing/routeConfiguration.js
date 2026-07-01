@@ -34,6 +34,7 @@ const MyBalancePage = loadable(() => import(/* webpackChunkName: "MyBalancePage"
 const BulkImportPage = loadable(() => import(/* webpackChunkName: "BulkImportPage" */ '../containers/BulkImportPage/BulkImportPage'));
 const MySalesPage = loadable(() => import(/* webpackChunkName: "MySalesPage" */ '../containers/MySalesPage/MySalesPage'));
 const FavoritesPage = loadable(() => import(/* webpackChunkName: "FavoritesPage" */ '../containers/FavoritesPage/FavoritesPage'));
+const BagPage = loadable(() => import(/* webpackChunkName: "BagPage" */ '../containers/BagPage/BagPage'));
 const PasswordChangePage = loadable(() => import(/* webpackChunkName: "PasswordChangePage" */ '../containers/PasswordChangePage/PasswordChangePage'));
 const PasswordRecoveryPage = loadable(() => import(/* webpackChunkName: "PasswordRecoveryPage" */ '../containers/PasswordRecoveryPage/PasswordRecoveryPage'));
 const PasswordResetPage = loadable(() => import(/* webpackChunkName: "PasswordResetPage" */ '../containers/PasswordResetPage/PasswordResetPage'));
@@ -304,6 +305,13 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       authPage: 'LoginPage',
       component: FavoritesPage,
       loadData: pageDataLoadingAPI.FavoritesPage.loadData,
+    },
+    {
+      // Public: the bag lives in localStorage, so no auth and no loadData
+      // (the page fetches client-side after hydration).
+      path: '/bag',
+      name: 'BagPage',
+      component: BagPage,
     },
     {
       path: '/admin/bulk-import',
