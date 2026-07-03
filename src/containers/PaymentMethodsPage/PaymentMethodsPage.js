@@ -10,7 +10,8 @@ import { showCreateListingLinkForUser, showPaymentDetailsForUser } from '../../u
 import { savePaymentMethod, deletePaymentMethod } from '../../ducks/paymentMethods.duck';
 import { handleCardSetup } from '../../ducks/stripe.duck';
 import { manageDisableScrolling, isScrollingDisabled } from '../../ducks/ui.duck';
-import { defaultCountry } from '../../config/configAV';
+// AV: reuse the shared MX billing composition (billing* fields -> Stripe billing_details)
+import { getBillingDetails } from '../CheckoutPage/CheckoutPageTransactionHelpers';
 
 import { H3, SavedCardDetails, Page, UserNav, LayoutSideNavigation } from '../../components';
 
@@ -69,25 +70,9 @@ const PaymentMethodsPageComponent = props => {
     return setupIntent && setupIntent.attributes ? setupIntent.attributes.clientSecret : null;
   };
   const getPaymentParams = (currentUser, formValues) => {
-    const { name, addressLine1, addressLine2, postal, state, city, country } = formValues;
-    const addressMaybe =
-      addressLine1 && postal
-        ? {
-            address: {
-              city: city,
-              country: country,
-              line1: addressLine1,
-              line2: addressLine2,
-              postal_code: postal,
-              state: state,
-            },
-          }
-        : {};
-    const billingDetails = {
-      name,
-      email: ensureCurrentUser(currentUser).attributes.email,
-      ...addressMaybe,
-    };
+    // AV: billing address uses the shared MX fields (billing* prefix), composed into
+    // Stripe billing_details by getBillingDetails (same as checkout).
+    const billingDetails = getBillingDetails(formValues, ensureCurrentUser(currentUser));
 
     const paymentParams = {
       payment_method_data: {
@@ -154,7 +139,8 @@ const PaymentMethodsPageComponent = props => {
     ? `${ensuredCurrentUser.attributes.profile.firstName} ${ensuredCurrentUser.attributes.profile.lastName}`
     : null;
 
-  const initialValuesForStripePayment = { name: userName, country: defaultCountry };
+  // AV: billing uses the MX MxAddressFields (billing* prefix), country hardcoded MX.
+  const initialValuesForStripePayment = { billingName: userName };
 
   const card = hasDefaultPaymentMethod
     ? ensurePaymentMethodCard(currentUser.stripeCustomer.defaultPaymentMethod).attributes.card

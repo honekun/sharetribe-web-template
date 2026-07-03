@@ -9,7 +9,7 @@ import { NamedLink } from '../../components';
 import css from './BagLink.module.css';
 
 const IconBag = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+  <svg height="25" viewBox="3 0 18 23" aria-hidden="true">
     <path
       d="M6 8V6a6 6 0 0 1 12 0v2h3l-1 13a2 2 0 0 1-2 1.8H6A2 2 0 0 1 4 21L3 8h3zm2 0h8V6a4 4 0 0 0-8 0v2z"
       fill="currentColor"

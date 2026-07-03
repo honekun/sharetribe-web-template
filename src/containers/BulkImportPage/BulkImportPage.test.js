@@ -151,7 +151,8 @@ describe('BulkImportPage', () => {
       .mockResolvedValueOnce({
         ok: false,
         json: async () => ({
-          error: 'La validación del CSV falló.',
+          error:
+            'Falta información para completar en tu archivo CSV. Completa la información en la plantilla y vuelve a exportar.',
           details: ['Fila 1: "image_back" es obligatorio.'],
         }),
       });
@@ -165,7 +166,9 @@ describe('BulkImportPage', () => {
     fireEvent.click(screen.getByText('BulkImportPage.startImport'));
 
     await waitFor(() => {
-      expect(screen.getByText(/La validación del CSV falló\./)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Falta información para completar en tu archivo CSV\./)
+      ).toBeInTheDocument();
       expect(screen.getByText(/image_back/)).toBeInTheDocument();
     });
     expect(global.fetch).toHaveBeenCalledWith(

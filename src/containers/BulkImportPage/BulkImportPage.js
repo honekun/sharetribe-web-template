@@ -427,7 +427,7 @@ const BulkImportPageComponent = props => {
       <span className={css.helpDivider} aria-hidden="true" />
 
       <div className={css.helpLinks}>
-        <a href="/static/files/ZIP_CARGA_MASIVA.zip" className={css.helpItem} download>
+        <a href="/static/files/NEOCHILANGO.zip" className={css.helpItem} download>
           <span className={css.helpIcon}>
             <FolderIcon />
           </span>

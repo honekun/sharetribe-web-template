@@ -53,11 +53,11 @@ const Heading = props => {
         />
       </H3>
       <div className={avCss.buttonGroup}>
-        <NamedLink className={avCss.newListingButton} name="BulkImportPage">
-          <FormattedMessage id="ManageListingsPage.bulkImport" />
-        </NamedLink>
         <NamedLink className={avCss.newListingButton} name="NewListingPage">
           <FormattedMessage id="ManageListingsPage.createListing" />
+        </NamedLink>
+        <NamedLink className={avCss.newListingButton} name="BulkImportPage">
+          <FormattedMessage id="ManageListingsPage.bulkImport" />
         </NamedLink>
       </div>
     </div>
@@ -67,11 +67,11 @@ const Heading = props => {
         <FormattedMessage id="ManageListingsPage.noResults" />
       </H3>
       <div className={`${avCss.buttonGroup} ${avCss.noListingsButtonGroup}`}>
-        <NamedLink className={avCss.newListingButton} name="BulkImportPage">
-          <FormattedMessage id="ManageListingsPage.bulkImport" />
-        </NamedLink>
         <NamedLink className={avCss.newListingButton} name="NewListingPage">
           <FormattedMessage id="ManageListingsPage.createListing" />
+        </NamedLink>
+        <NamedLink className={avCss.newListingButton} name="BulkImportPage">
+          <FormattedMessage id="ManageListingsPage.bulkImport" />
         </NamedLink>
       </div>
     </div>

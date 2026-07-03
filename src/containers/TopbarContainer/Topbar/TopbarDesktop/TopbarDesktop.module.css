@@ -208,10 +208,10 @@
   height: 7px;
   border-radius: 50%;
 
-  /* Position */
+  /* Position: top-right corner of the envelope icon */
   position: absolute;
-  top: 2px;
-  right: -9px;
+  top: -1px;
+  right: -2px;
 
   /* Style: red dot */
   background-color: var(--colorFail);
@@ -399,36 +399,21 @@
   height: 100%;
 }
 
-/* Purple pill link to /favorites, between the create-listing button and inbox. */
+/* Icon-only heart link to /favorites (like BagLink), between the create-listing
+   button and inbox. avBlue heart, 29x25px. */
 .favoritesButton {
   flex-shrink: 0;
-  align-self: center;
-
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
-
-  padding: 8px 16px;
-  margin: 0 8px;
-  border-radius: 100px;
-
-  background-color: var(--avPurple);
-  color: var(--colorWhite);
-  font-weight: var(--fontWeightBold);
-  font-size: 15px;
-  line-height: 18px;
-  letter-spacing: 1px;
-
+  justify-content: center;
+  padding: 0 12px;
+  height: 100%;
+  color: var(--avBlue);
   transition: var(--transitionStyleButton);
 
   &:hover {
-    background-color: var(--avPurpleLight);
-    color: var(--colorWhite);
+    color: var(--avBlueDark);
     text-decoration: none;
-  }
-
-  @media (--viewportLargeWithPaddings) {
-    font-size: 14px;
   }
 }
 
@@ -437,6 +422,34 @@
   flex-shrink: 0;
 }
 
-.favoritesLabel {
-  display: inline-block;
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Icon-only envelope link to the inbox (matches the heart/bag icon cluster). */
+.inboxLink {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  height: 100%;
+  color: var(--avBlue);
+  transition: var(--transitionStyleButton);
+
+  &:hover {
+    color: var(--avBlueDark);
+    text-decoration: none;
+  }
+}
+
+.inboxIcon {
+  position: relative;
+  display: inline-flex;
+  line-height: 0;
 }

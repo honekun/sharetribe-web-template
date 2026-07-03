@@ -10,7 +10,7 @@ import classNames from 'classnames';
 import { useConfiguration } from '../../../context/configurationContext';
 import { FormattedMessage, useIntl } from '../../../util/reactIntl';
 
-import { Form, PrimaryButton, FieldTextInput, StripePaymentAddress, H4 } from '../../../components';
+import { Form, PrimaryButton, MxAddressFields, H4 } from '../../../components';
 
 import css from './PaymentMethodsForm.module.css';
 
@@ -202,14 +202,6 @@ class PaymentMethodsForm extends Component {
 
     const errorMessage = intl.formatMessage({ id: 'PaymentMethodsForm.genericError' });
 
-    const billingDetailsNameLabel = intl.formatMessage({
-      id: 'PaymentMethodsForm.billingDetailsNameLabel',
-    });
-
-    const billingDetailsNamePlaceholder = intl.formatMessage({
-      id: 'PaymentMethodsForm.billingDetailsNamePlaceholder',
-    });
-
     const infoText = intl.formatMessage(
       {
         id: 'PaymentMethodsForm.infoText',
@@ -217,15 +209,16 @@ class PaymentMethodsForm extends Component {
       { marketplaceName: config.marketplaceName }
     );
 
-    // Stripe recommends asking billing address.
-    // In PaymentMethodsForm, we send name and email as billing details, but address only if it exists.
+    // AV: billing address uses the shared MX fields (billing* prefix, no phone),
+    // composed into Stripe billing_details by getBillingDetails (same as checkout).
     const billingAddress = (
-      <StripePaymentAddress
+      <MxAddressFields
         intl={intl}
-        form={form}
-        fieldId={formId}
-        card={this.card}
-        locale={config.localization.locale}
+        formApi={form}
+        fieldId={`${formId}.billing`}
+        fieldPrefix="billing"
+        showPhone={false}
+        showHeading={false}
       />
     );
 
@@ -251,16 +244,7 @@ class PaymentMethodsForm extends Component {
             <FormattedMessage id="PaymentMethodsForm.billingDetails" />
           </H4>
 
-          <FieldTextInput
-            className={css.field}
-            type="text"
-            id="name"
-            name="name"
-            autoComplete="cc-name"
-            label={billingDetailsNameLabel}
-            placeholder={billingDetailsNamePlaceholder}
-          />
-
+          {/* AV: the billing name field is part of the MxAddressFields block. */}
           {billingAddress}
         </div>
 

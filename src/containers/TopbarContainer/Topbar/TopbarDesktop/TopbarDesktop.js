@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import classNames from 'classnames';
 
-import { FormattedMessage } from '../../../../util/reactIntl';
+import { FormattedMessage, useIntl } from '../../../../util/reactIntl';
 import { ACCOUNT_SETTINGS_PAGES } from '../../../../routing/routeConfiguration';
 import {
   Avatar,
@@ -46,13 +46,20 @@ const LoginLink = () => {
 // Purple pill link to the favorites page, sits between the create-listing button
 // and the inbox link. Heart icon + label.
 const FavoritesLink = () => {
+  const intl = useIntl();
+  const label = intl.formatMessage({ id: 'TopbarDesktop.favoritesLink' });
   return (
-    <NamedLink id="favorites-link" className={css.favoritesButton} name="FavoritesPage">
+    <NamedLink
+      id="favorites-link"
+      className={css.favoritesButton}
+      name="FavoritesPage"
+      title={label}
+      aria-label={label}
+    >
       <svg
         className={css.favoritesHeart}
-        width="18"
-        height="16"
-        viewBox="0 0 24 22"
+        height="25"
+        viewBox="2 2 20 19"
         xmlns="http://www.w3.org/2000/svg"
         aria-hidden="true"
       >
@@ -61,26 +68,34 @@ const FavoritesLink = () => {
           fill="currentColor"
         />
       </svg>
-      <span className={css.favoritesLabel}>
-        <FormattedMessage id="TopbarDesktop.favoritesLink" />
-      </span>
+      <span className={css.srOnly}>{label}</span>
     </NamedLink>
   );
 };
 
 const InboxLink = ({ notificationCount, inboxTab }) => {
+  const intl = useIntl();
+  const label = intl.formatMessage({ id: 'TopbarDesktop.inbox' });
   const notificationDot = notificationCount > 0 ? <div className={css.notificationDot} /> : null;
   return (
     <NamedLink
       id="inbox-link"
-      className={css.topbarLink}
+      className={css.inboxLink}
       name="InboxPage"
       params={{ tab: inboxTab }}
+      title={label}
+      aria-label={label}
     >
-      <span className={css.topbarLinkLabel}>
-        <FormattedMessage id="TopbarDesktop.inbox" />
+      <span className={css.inboxIcon}>
+        <svg height="25" viewBox="2 5 20 14" aria-hidden="true">
+          <path
+            d="M3 5a1 1 0 0 0-1 1v1.2l10 5.8 10-5.8V6a1 1 0 0 0-1-1H3zM2 9.5V18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V9.5l-9.5 5.5a1 1 0 0 1-1 0L2 9.5z"
+            fill="currentColor"
+          />
+        </svg>
         {notificationDot}
       </span>
+      <span className={css.srOnly}>{label}</span>
     </NamedLink>
   );
 };
