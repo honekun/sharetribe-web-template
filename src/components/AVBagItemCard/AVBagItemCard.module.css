@@ -1,0 +1,209 @@
+@import '../../styles/customMediaQueries.css';
+
+.card {
+  list-style: none;
+  background-color: var(--colorWhite);
+  border-radius: var(--borderRadiusMedium, 6px);
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+}
+
+/* ================ Author header ================ */
+
+.authorHeader {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.authorAvatar {
+  width: 36px;
+  height: 36px;
+
+  > span {
+    font-size: 14px;
+  }
+}
+
+.authorName {
+  font-size: 16px;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--avBlue);
+
+  &:hover {
+    text-decoration: none;
+    color: var(--marketplaceColor);
+  }
+}
+
+/* ================ Columns ================ */
+
+.columns {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'image detail'
+    'totals totals';
+  gap: 16px;
+  align-items: start;
+}
+
+/* Three-column layout on wider viewports (page context). */
+@media (--viewportSmall) {
+  .card:not(.popup) .columns {
+    grid-template-columns: auto minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-areas: 'image detail totals';
+    gap: 24px;
+    align-items: stretch;
+  }
+}
+
+.imageCol {
+  grid-area: image;
+  display: block;
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.imageWrapper {
+  border-radius: var(--borderRadiusMedium, 6px);
+  overflow: hidden;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ================ Detail column ================ */
+
+.detailCol {
+  grid-area: detail;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.title {
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey700);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--marketplaceColor);
+    text-decoration: none;
+  }
+}
+
+.price {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.priceValue {
+  font-size: 16px;
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.originalPrice {
+  font-size: 14px;
+  color: var(--colorGrey300);
+  text-decoration: line-through;
+}
+
+.sizes {
+  font-size: 16px;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey500);
+}
+
+.removeButton {
+  align-self: flex-start;
+  margin-top: 2px;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--colorGrey500);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 13px;
+  letter-spacing: 1px;
+
+  &:hover {
+    color: var(--colorFail);
+  }
+}
+
+/* ================ Totals column ================ */
+
+.totalsCol {
+  grid-area: totals;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* On wide/page layout the totals sit in their own column, so give them a
+   subtle divider from the details. */
+@media (--viewportSmall) {
+  .card:not(.popup) .totalsCol {
+    padding-left: 24px;
+    border-left: 1px solid var(--colorGrey100);
+  }
+}
+
+.totalsRow {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.totalsRowTotal {
+  padding-top: 8px;
+  border-top: 1px solid var(--colorGrey100);
+}
+
+.totalsLabel {
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey700);
+}
+
+.totalsValue {
+  font-weight: var(--fontWeightBold);
+  color: var(--colorGrey700);
+}
+
+.shippingNote {
+  margin: 0;
+  font-size: 14px;
+  color: var(--colorGrey500);
+}
+
+/* Reuse the PageBuilder blue CTA styling verbatim. TODO: extract shared CTA/
+   button styles so this cross-module compose isn't needed (tracked separately).
+   The self-chained override only sets card spacing (beats the composed
+   margin-top regardless of CSS-module source order). */
+.checkoutButton {
+  composes: ctaButtonBlue from '../../containers/PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  cursor: pointer;
+}
+
+.checkoutButton.checkoutButton {
+  margin-top: 8px;
+}

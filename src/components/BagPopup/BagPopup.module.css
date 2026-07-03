@@ -1,53 +1,37 @@
-.heading {
-  margin: 0 0 16px 0;
-}
+@import '../../styles/customMediaQueries.css';
 
-.itemList {
-  margin: 0 0 20px 0;
-  padding: 0;
-  list-style: none;
+/* Anchored under the topbar bag icon (BagLink root is position:relative). */
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 60;
+  width: 375px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - var(--topbarHeightDesktop, 72px) - 24px);
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.itemImage {
-  flex: 0 0 56px;
-  width: 56px;
-  height: 56px;
-  object-fit: cover;
+  background-color: var(--colorWhite);
+  border: 1px solid var(--colorGrey100);
   border-radius: var(--borderRadiusMedium, 6px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
 }
 
-.itemInfo {
-  flex: 1;
+.header {
+  flex: 0 0 auto;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
 }
 
-.itemTitle {
-  font-weight: var(--fontWeightSemiBold);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.heading {
+  margin: 0;
 }
 
-.itemPrice {
-  color: var(--colorGrey500);
-}
-
-/* Shared 32×32 grey-hover control pattern (× remove). */
-.removeButton {
+.closeButton {
   flex: 0 0 32px;
   width: 32px;
   height: 32px;
@@ -57,21 +41,35 @@
   border: none;
   border-radius: 4px;
   background: none;
-  color: var(--colorGrey500);
-  font-size: 20px;
+  color: var(--colorGrey700);
+  font-size: 24px;
   line-height: 1;
   cursor: pointer;
 
   &:hover {
     background-color: var(--colorGrey100);
-    color: var(--colorFail);
+    color: var(--marketplaceColor);
   }
 }
 
+.itemList {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0 20px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
 .actions {
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding: 16px 20px;
 }
 
 .goToBag {
@@ -89,17 +87,5 @@
     background-color: var(--avBlueDark);
     color: var(--avYellowLight);
     text-decoration: none;
-  }
-}
-
-.keepBrowsing {
-  border: none;
-  background: none;
-  color: var(--colorGrey700);
-  text-decoration: underline;
-  cursor: pointer;
-
-  &:hover {
-    color: var(--marketplaceColor);
   }
 }

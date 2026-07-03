@@ -1,0 +1,190 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AVBagItemCard matches snapshot 1`] = `
+<DocumentFragment>
+  <li
+    class="card"
+  >
+    <div
+      class="authorHeader"
+    >
+      <div
+        class="smallAvatar authorAvatar"
+        title="author-1 display name"
+      >
+        <span
+          class="initialsSmall"
+        >
+          TT
+        </span>
+      </div>
+      <a
+        class="authorName"
+        href="/u/author-1"
+        title="author-1 display name"
+      >
+        <span>
+          author-1 display name
+        </span>
+      </a>
+    </div>
+    <div
+      class="columns"
+    >
+      <a
+        class="imageCol"
+        href="/l/vintage-jacket/bag-item-1"
+        title="Vintage jacket"
+      >
+        <div
+          class="root imageWrapper"
+        >
+          <div
+            class="aspectPadding"
+            style="padding-bottom: 100%;"
+          >
+            <div
+              class="aspectBox"
+            >
+              <div
+                class="image noImageContainer"
+              >
+                <div
+                  class="noImageWrapper"
+                >
+                  <svg
+                    class="noImageIcon"
+                    height="49"
+                    role="none"
+                    viewBox="0 -1 48 49"
+                    width="48"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <g
+                      fill="none"
+                      fill-rule="evenodd"
+                    >
+                      <path
+                        d="M13.6 9.6L24 .8l10.4 8.8z"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                      />
+                      <path
+                        d="M.8 46.4h46.4V9.6H.8z"
+                        stroke-width="2"
+                      />
+                      <path
+                        d="M5.6 41.6h36.8V14.4H5.6z"
+                        stroke-width="2"
+                      />
+                      <path
+                        d="M19.998 31.636l.835-.835a4.035 4.035 0 0 1 2.853-1.183h.693c1.07 0 2.097.426 2.853 1.183l.835.835"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                      />
+                      <path
+                        d="M21.599 23.983a1.009 1.009 0 1 0 0 2.018 1.009 1.009 0 0 0 0-2.018M26.402 23.983a1.009 1.009 0 1 0 0 2.018 1.009 1.009 0 0 0 0-2.018"
+                      />
+                    </g>
+                  </svg>
+                  <div
+                    class="noImageText"
+                  >
+                    <span>
+                      ResponsiveImage.noImage
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </a>
+      <div
+        class="detailCol"
+      >
+        <a
+          class="title"
+          href="/l/vintage-jacket/bag-item-1"
+        >
+          Vintage jacket
+        </a>
+        <div
+          class="price"
+        >
+          <span
+            class="priceValue"
+          >
+            $77.00
+          </span>
+        </div>
+        <div
+          class="sizes"
+        >
+          Medium
+        </div>
+        <button
+          class="removeButton"
+          type="button"
+        >
+          <span>
+            Remove
+          </span>
+        </button>
+      </div>
+      <div
+        class="totalsCol"
+      >
+        <div
+          class="totalsRow"
+        >
+          <span
+            class="totalsLabel"
+          >
+            <span>
+              Item(s)
+            </span>
+          </span>
+          <span
+            class="totalsValue"
+          >
+            $77.00
+          </span>
+        </div>
+        <div
+          class="totalsRow totalsRowTotal"
+        >
+          <span
+            class="totalsLabel"
+          >
+            <span>
+              Total
+            </span>
+          </span>
+          <span
+            class="totalsValue"
+          >
+            $77.00
+          </span>
+        </div>
+        <p
+          class="shippingNote"
+        >
+          <span>
+            Shipping calculated at checkout
+          </span>
+        </p>
+        <button
+          class="checkoutButton"
+          type="button"
+        >
+          <span>
+            Checkout 1 item
+          </span>
+        </button>
+      </div>
+    </div>
+  </li>
+</DocumentFragment>
+`;

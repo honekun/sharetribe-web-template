@@ -4,76 +4,22 @@ import { connect, useDispatch } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
-import { formatMoney } from '../../util/currency';
-import { createSlug } from '../../util/urlHelpers';
-import { createResourceLocatorString, findRouteByRouteName } from '../../util/routes';
+import { checkoutBagItem } from '../../util/bagCheckout';
 import { useRouteConfiguration } from '../../context/routeConfigurationContext';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { removeFromBag, selectBagCount } from '../../ducks/bag.duck';
 // Checkout state is seeded exactly like ListingPageCarousel: callSetInitialValues
 // dispatches CheckoutPage's OWN setInitialValues (resolved via
-// findRouteByRouteName), so do NOT import CheckoutPage.duck directly.
+// findRouteByRouteName inside checkoutBagItem), so do NOT import CheckoutPage.duck.
 import { initializeCardPaymentData } from '../../ducks/stripe.duck.js';
 
-import {
-  AspectRatioWrapper,
-  H2,
-  IconSpinner,
-  NamedLink,
-  Page,
-  LayoutSingleColumn,
-  PrimaryButton,
-  ResponsiveImage,
-} from '../../components';
+import { AVBagItemCard, H2, IconSpinner, Page, LayoutSingleColumn } from '../../components';
 import TopbarContainer from '../TopbarContainer/TopbarContainer';
 import FooterContainer from '../FooterContainer/FooterContainer';
 
 import { loadBagThunk, listingRefRemoved } from './BagPage.duck';
 import css from './BagPage.module.css';
-
-// Navigate into the normal buy flow for one bag item. Mirrors handleSubmit in
-// ListingPage.shared.js: when the delivery method is unambiguous we go straight
-// to CheckoutPage; otherwise the user picks it on the listing page OrderPanel.
-export const checkoutBagItem = ({
-  listing,
-  history,
-  routes,
-  currentUser,
-  callSetInitialValues,
-  onInitializeCardPaymentData,
-}) => {
-  const { shippingEnabled, pickupEnabled } = listing.attributes.publicData || {};
-  const onlyMethod =
-    shippingEnabled && !pickupEnabled
-      ? 'shipping'
-      : pickupEnabled && !shippingEnabled
-      ? 'pickup'
-      : null;
-
-  const slug = createSlug(listing.attributes.title);
-
-  if (!onlyMethod) {
-    history.push(
-      createResourceLocatorString('ListingPage', routes, { id: listing.id.uuid, slug }, {})
-    );
-    return;
-  }
-
-  const initialValues = {
-    listing,
-    orderData: { quantity: 1, deliveryMethod: onlyMethod },
-    confirmPaymentError: null,
-  };
-  // Match ListingPage.shared.js: only persist to sessionStorage for logged-out users.
-  const saveToSessionStorage = !currentUser;
-  const { setInitialValues } = findRouteByRouteName('CheckoutPage', routes);
-  callSetInitialValues(setInitialValues, initialValues, saveToSessionStorage);
-  onInitializeCardPaymentData();
-  history.push(
-    createResourceLocatorString('CheckoutPage', routes, { id: listing.id.uuid, slug }, {})
-  );
-};
 
 export const BagPageComponent = props => {
   const {
@@ -129,64 +75,23 @@ export const BagPageComponent = props => {
             </p>
           ) : (
             <ul className={css.itemList}>
-              {listings.map(l => {
-                const firstImage = l.images?.[0];
-                const slug = createSlug(l.attributes.title);
-                return (
-                  <li key={l.id.uuid} className={css.item}>
-                    <NamedLink
-                      name="ListingPage"
-                      params={{ id: l.id.uuid, slug }}
-                      className={css.itemImageLink}
-                    >
-                      <AspectRatioWrapper width={1} height={1} className={css.itemImageWrapper}>
-                        <ResponsiveImage
-                          rootClassName={css.itemImage}
-                          alt={l.attributes.title}
-                          image={firstImage}
-                          variants={['listing-card', 'listing-card-2x']}
-                          sizes="96px"
-                        />
-                      </AspectRatioWrapper>
-                    </NamedLink>
-                    <div className={css.itemInfo}>
-                      <NamedLink
-                        name="ListingPage"
-                        params={{ id: l.id.uuid, slug }}
-                        className={css.itemTitle}
-                      >
-                        {l.attributes.title}
-                      </NamedLink>
-                      <span className={css.itemPrice}>{formatMoney(intl, l.attributes.price)}</span>
-                    </div>
-                    <div className={css.itemActions}>
-                      <PrimaryButton
-                        type="button"
-                        className={css.checkoutButton}
-                        onClick={() =>
-                          checkoutBagItem({
-                            listing: l,
-                            history,
-                            routes,
-                            currentUser,
-                            callSetInitialValues,
-                            onInitializeCardPaymentData,
-                          })
-                        }
-                      >
-                        <FormattedMessage id="BagPage.checkout" />
-                      </PrimaryButton>
-                      <button
-                        type="button"
-                        className={css.removeButton}
-                        onClick={() => handleRemove(l.id.uuid)}
-                      >
-                        <FormattedMessage id="BagPage.remove" />
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
+              {listings.map(l => (
+                <AVBagItemCard
+                  key={l.id.uuid}
+                  listing={l}
+                  onRemove={handleRemove}
+                  onCheckout={listing =>
+                    checkoutBagItem({
+                      listing,
+                      history,
+                      routes,
+                      currentUser,
+                      callSetInitialValues,
+                      onInitializeCardPaymentData,
+                    })
+                  }
+                />
+              ))}
             </ul>
           )}
         </div>

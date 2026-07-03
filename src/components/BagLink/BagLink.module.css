@@ -1,3 +1,11 @@
+/* Relative anchor so the bag dropdown can position itself under the icon. */
+.wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
 .root {
   position: relative;
   display: flex;

@@ -29,6 +29,9 @@ const bagSlice = createSlice({
     listingRemovedFromBag(state, action) {
       state.bagListingIds = state.bagListingIds.filter(x => x !== action.payload);
     },
+    bagPopupOpened(state) {
+      state.isPopupOpen = true;
+    },
     bagPopupClosed(state) {
       state.isPopupOpen = false;
     },
@@ -39,6 +42,7 @@ export const {
   bagHydrated,
   listingAddedToBag,
   listingRemovedFromBag,
+  bagPopupOpened,
   bagPopupClosed,
 } = bagSlice.actions;
 export default bagSlice.reducer;
@@ -76,7 +80,7 @@ export const fetchBagListings = () => (dispatch, getState, sdk) => {
   return sdk.listings
     .query({
       ids,
-      include: ['author', 'images'],
+      include: ['author', 'author.profileImage', 'images'],
       'fields.listing': [
         'title',
         'price',
@@ -84,10 +88,17 @@ export const fetchBagListings = () => (dispatch, getState, sdk) => {
         'publicData.transactionProcessAlias',
         'publicData.unitType',
         'publicData.originalPrice',
+        'publicData.all_sizes',
         'publicData.shippingEnabled',
         'publicData.pickupEnabled',
       ],
-      'fields.image': ['variants.listing-card', 'variants.listing-card-2x'],
+      'fields.user': ['profile.displayName', 'profile.abbreviatedName'],
+      'fields.image': [
+        'variants.listing-card',
+        'variants.listing-card-2x',
+        'variants.square-small',
+        'variants.square-small2x',
+      ],
       // REQUIRED: these spreads are what make the SDK actually generate the
       // variants named above. Without them ResponsiveImage renders blank.
       ...createImageVariantConfig('listing-card', 400, CARD_ASPECT_RATIO),
