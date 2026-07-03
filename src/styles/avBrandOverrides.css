@@ -21,6 +21,7 @@
   --avPink: hsl(326 63% 59%); /* #d8559f */
   --avPurple: hsl(284 40% 66%); /* #b986cb */
   --avPurpleLight: hsl(284 42% 88%); /* #e8d8ef */
+  --avPurpleDark: hsl(284 42% 52%); /* hover/active state purple */
   --avYellow: hsl(59 71% 66%); /* #e6e469 */
   --avYellowLight: hsl(63 71% 89%); /* #f5f7d0 */
 
