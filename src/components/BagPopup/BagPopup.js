@@ -1,32 +1,43 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useHistory, useLocation } from 'react-router-dom';
 
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
-import { formatMoney } from '../../util/currency';
-import { manageDisableScrolling } from '../../ducks/ui.duck';
+import { checkoutBagItem } from '../../util/bagCheckout';
+import { useRouteConfiguration } from '../../context/routeConfigurationContext';
+import { initializeCardPaymentData } from '../../ducks/stripe.duck.js';
 import {
   bagPopupClosed,
   fetchBagListings,
   removeFromBag,
+  selectBagCount,
   selectBagIds,
 } from '../../ducks/bag.duck';
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
-import { Modal, NamedLink, ResponsiveImage } from '../../components';
+import { AVBagItemCard, NamedLink } from '../../components';
 
 import css from './BagPopup.module.css';
 
 /**
- * Small modal shown when an item is added to the bag. Lists current bag
- * contents with remove buttons and a "Go to bag" CTA. Rendered globally by
- * TopbarContainer (same pattern as AVWelcomePopup).
+ * Bag dropdown anchored under the topbar bag icon (rendered inside BagLink).
+ * Opens when an item is added to the bag; lists current bag contents as
+ * AVBagItemCards with remove + per-item checkout, plus a "Go to bag" CTA.
+ * No overlay — closes on outside click, Escape, or navigation.
  */
 const BagPopup = () => {
   const intl = useIntl();
   const dispatch = useDispatch();
+  const history = useHistory();
+  const location = useLocation();
+  const routes = useRouteConfiguration();
   const isOpen = useSelector(state => state.bag.isPopupOpen);
   const bagIds = useSelector(selectBagIds);
+  const count = useSelector(selectBagCount);
+  const currentUser = useSelector(state => state.user.currentUser);
   const [refs, setRefs] = useState([]);
   const listings = useSelector(state => getMarketplaceEntities(state, refs));
+  const rootRef = useRef(null);
+  const prevPath = useRef(location.pathname);
 
   useEffect(() => {
     if (isOpen && bagIds.length > 0) {
@@ -39,55 +50,95 @@ const BagPopup = () => {
     }
   }, [isOpen, bagIds.length, dispatch]);
 
+  // Close on outside click / Escape while open.
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+    const onDocMouseDown = e => {
+      if (rootRef.current && !rootRef.current.contains(e.target)) {
+        dispatch(bagPopupClosed());
+      }
+    };
+    const onKeyDown = e => {
+      if (e.key === 'Escape') {
+        dispatch(bagPopupClosed());
+      }
+    };
+    document.addEventListener('mousedown', onDocMouseDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onDocMouseDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isOpen, dispatch]);
+
+  // Close when the user navigates away (e.g. taps a listing/author link).
+  useEffect(() => {
+    if (prevPath.current !== location.pathname) {
+      prevPath.current = location.pathname;
+      dispatch(bagPopupClosed());
+    }
+  }, [location.pathname, dispatch]);
+
   const onClose = () => dispatch(bagPopupClosed());
 
+  const handleCheckout = listing => {
+    onClose();
+    checkoutBagItem({
+      listing,
+      history,
+      routes,
+      currentUser,
+      callSetInitialValues: (setInitialValuesFn, values, saveToSessionStorage) =>
+        dispatch(setInitialValuesFn(values, saveToSessionStorage)),
+      onInitializeCardPaymentData: () => dispatch(initializeCardPaymentData()),
+    });
+  };
+
+  if (!isOpen) {
+    return null;
+  }
+
   return (
-    <Modal
-      id="BagPopup"
-      isOpen={isOpen}
-      onClose={onClose}
-      usePortal
-      onManageDisableScrolling={(componentId, disableScrolling) =>
-        dispatch(manageDisableScrolling(componentId, disableScrolling))
-      }
+    <div
+      className={css.dropdown}
+      ref={rootRef}
+      role="dialog"
+      aria-label={intl.formatMessage({ id: 'BagPopup.title' }, { count })}
     >
-      <h3 className={css.heading}>
-        <FormattedMessage id="BagPopup.addedToBag" />
-      </h3>
+      <div className={css.header}>
+        <h3 className={css.heading}>
+          <FormattedMessage id="BagPopup.title" values={{ count }} />
+        </h3>
+        <button
+          type="button"
+          className={css.closeButton}
+          onClick={onClose}
+          aria-label={intl.formatMessage({ id: 'BagPopup.close' })}
+        >
+          ×
+        </button>
+      </div>
+
       <ul className={css.itemList}>
         {listings.map(l => (
-          <li key={l.id.uuid} className={css.item}>
-            <ResponsiveImage
-              rootClassName={css.itemImage}
-              alt={l.attributes.title}
-              image={l.images?.[0]}
-              variants={['listing-card']}
-              sizes="56px"
-            />
-            <div className={css.itemInfo}>
-              <span className={css.itemTitle}>{l.attributes.title}</span>
-              <span className={css.itemPrice}>{formatMoney(intl, l.attributes.price)}</span>
-            </div>
-            <button
-              type="button"
-              className={css.removeButton}
-              onClick={() => dispatch(removeFromBag(l.id.uuid))}
-              aria-label={intl.formatMessage({ id: 'BagPopup.remove' })}
-            >
-              ×
-            </button>
-          </li>
+          <AVBagItemCard
+            key={l.id.uuid}
+            listing={l}
+            variant="popup"
+            onRemove={listingId => dispatch(removeFromBag(listingId))}
+            onCheckout={handleCheckout}
+          />
         ))}
       </ul>
+
       <div className={css.actions}>
         <NamedLink name="BagPage" className={css.goToBag} onClick={onClose}>
           <FormattedMessage id="BagPopup.goToBag" />
         </NamedLink>
-        <button type="button" className={css.keepBrowsing} onClick={onClose}>
-          <FormattedMessage id="BagPopup.keepBrowsing" />
-        </button>
       </div>
-    </Modal>
+    </div>
   );
 };
 

@@ -1,28 +1,30 @@
+/* avBlueLight pill (matches the ctaButtonLightBlue treatment): full width,
+   avBlueLight background, avYellowLight text + outline. */
 .root {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
 
+  width: 100%;
   min-height: 48px;
   padding: 0 16px;
-  border: 1px solid var(--marketplaceColor);
-  border-radius: var(--borderRadiusMedium, 6px);
-  background-color: var(--colorWhite);
-  color: var(--marketplaceColor);
-  font-weight: var(--fontWeightSemiBold);
+  border: 1px solid var(--avYellowLight);
+  border-radius: 26px;
+  background-color: var(--avBlueLight);
+  color: var(--avYellowLight);
+  font-weight: 700;
   cursor: pointer;
   transition: background-color 0.1s ease;
 
   &:hover {
-    background-color: var(--marketplaceColorLight);
-    color: var(--colorWhite);
+    background-color: #3489d2;
+    color: var(--avYellowLight);
   }
 }
 
+/* Already-in-bag state: darker blue so the toggle reads as active. */
 .inBag {
-  background-color: var(--marketplaceColor);
-  color: var(--colorWhite);
+  background-color: #3489d2;
 }
 
 .label {

@@ -1,10 +1,11 @@
 import React from 'react';
 import classNames from 'classnames';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { useIntl } from '../../util/reactIntl';
-import { selectBagCount } from '../../ducks/bag.duck';
+import { bagPopupClosed, bagPopupOpened, selectBagCount } from '../../ducks/bag.duck';
 import { NamedLink } from '../../components';
+import BagPopup from '../BagPopup/BagPopup';
 
 import css from './BagLink.module.css';
 
@@ -22,18 +23,36 @@ const IconBag = () => (
  */
 const BagLink = ({ className }) => {
   const intl = useIntl();
+  const dispatch = useDispatch();
   const count = useSelector(selectBagCount);
 
+  // Open the bag dropdown on hover (only when the bag has items). Leaving the
+  // whole wrapper — icon or dropdown — closes it; moving between them does not,
+  // since the dropdown is a DOM child of the wrapper.
+  const onMouseEnter = () => {
+    if (count > 0) {
+      dispatch(bagPopupOpened());
+    }
+  };
+  const onMouseLeave = () => dispatch(bagPopupClosed());
+
   return (
-    <NamedLink
-      name="BagPage"
-      className={classNames(css.root, className)}
-      title={intl.formatMessage({ id: 'BagLink.label' })}
+    <div
+      className={classNames(css.wrapper, className)}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
-      <IconBag />
-      {count > 0 ? <span className={css.badge}>{count}</span> : null}
-      <span className={css.srOnly}>{intl.formatMessage({ id: 'BagLink.label' })}</span>
-    </NamedLink>
+      <NamedLink
+        name="BagPage"
+        className={css.root}
+        title={intl.formatMessage({ id: 'BagLink.label' })}
+      >
+        <IconBag />
+        {count > 0 ? <span className={css.badge}>{count}</span> : null}
+        <span className={css.srOnly}>{intl.formatMessage({ id: 'BagLink.label' })}</span>
+      </NamedLink>
+      <BagPopup />
+    </div>
   );
 };
 

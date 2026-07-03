@@ -149,39 +149,46 @@
   color: var(--colorGrey500);
 }
 
-/* "Comprar" + "Chat" share a single row. */
+/* Comprar / Add-to-bag / Chat stack as a full-width column (desktop order
+   panel lives inside .detailsColumn, so this needs to win over the row default). */
 .detailsColumn :global([class*='ProductOrderForm_submitButton__']) {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: stretch;
   gap: 12px;
 }
-.detailsColumn :global([class*='ProductOrderForm_submitButton__']) > :first-child {
-  flex: 1 1 auto;
+
+/* Cap the whole order-panel content (ModalInMobile modalContent) — title, price,
+   details and buttons — at 375px on desktop only (>= --viewportLarge / 1024px).
+   Below that the order panel is a full-width fixed bottom-bar modal. */
+@media (--viewportLarge) {
+  .orderPanel :global([class*='ModalInMobile_modalContent__']) {
+    max-width: 375px;
+  }
 }
 
-/* Chat button: AV ctaButtonYellow theming, icon to the left of the label. */
+/* avPurple pill (matches the ctaButtonPurple treatment): full width, below the
+   add-to-bag button. */
 .chatButton {
-  flex: 0 0 auto;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  width: 100%;
   min-height: 46px;
   padding: 0 18px;
-  width: auto;
 
-  background-color: var(--avYellow);
-  color: var(--avBlueLight);
-  border-color: var(--avBlueLight);
+  background-color: var(--avPurple);
+  color: var(--avYellowLight);
+  border: 1px solid var(--avYellowLight);
   border-radius: 26px;
   font-weight: 700;
 }
 .chatButton:hover,
 .chatButton:focus {
-  background-color: #bfbd59;
-  color: var(--avBlueLight);
-  border-color: var(--avBlueLight);
+  background-color: var(--avPurpleDark);
+  color: var(--avYellowLight);
+  border-color: var(--avYellowLight);
   box-shadow: none;
 }
 .chatIcon {
@@ -190,15 +197,10 @@
 }
 
 /* Mobile/tablet (below --viewportLarge, where the order panel renders as the
-   fixed-bottom modal): chat button matches the submit button's size, with
-   more breathing room between the two. */
+   fixed-bottom modal): more breathing room between the stacked buttons. */
 @media (max-width: 1023px) {
   .detailsColumn :global([class*='ProductOrderForm_submitButton__']) {
     gap: 1.5rem;
-  }
-  .detailsColumn :global([class*='ProductOrderForm_submitButton__']) > :first-child,
-  .chatButton {
-    flex: 1 1 0;
   }
 }
 

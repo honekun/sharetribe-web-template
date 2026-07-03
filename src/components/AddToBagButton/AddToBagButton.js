@@ -7,15 +7,6 @@ import { addToBag, removeFromBag, selectIsInBag } from '../../ducks/bag.duck';
 
 import css from './AddToBagButton.module.css';
 
-const IconBag = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-    <path
-      d="M6 8V6a6 6 0 0 1 12 0v2h3l-1 13a2 2 0 0 1-2 1.8H6A2 2 0 0 1 4 21L3 8h3zm2 0h8V6a4 4 0 0 0-8 0v2z"
-      fill="currentColor"
-    />
-  </svg>
-);
-
 /**
  * Secondary "add to bag" toggle, rendered next to the buy CTA in
  * ProductOrderForm. Self-connected to the bag duck so the upstream form only
@@ -41,7 +32,6 @@ const AddToBagButton = ({ listingId, className }) => {
       onClick={handleClick}
       aria-pressed={isInBag}
     >
-      <IconBag />
       <span className={css.label}>
         <FormattedMessage id={isInBag ? 'AddToBagButton.inBag' : 'AddToBagButton.addToBag'} />
       </span>

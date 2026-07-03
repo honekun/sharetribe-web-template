@@ -143,6 +143,7 @@ export { default as StoreTypeTags } from './StoreTypeTags/StoreTypeTags';
 export { default as FavoriteButton } from './FavoriteButton/FavoriteButton';
 export { default as AddToBagButton } from './AddToBagButton/AddToBagButton';
 export { default as BagLink } from './BagLink/BagLink';
+export { default as AVBagItemCard } from './AVBagItemCard/AVBagItemCard';
 export { default as BagPopup } from './BagPopup/BagPopup';
 export { default as AVWelcomePopup } from './AVWelcomePopup/AVWelcomePopup';
 export { default as BalanceSummary } from './BalanceSummary/BalanceSummary';

@@ -17,21 +17,16 @@
   box-shadow: none;
 }
 
-/* Lay the submit row out as a wrapping flex row so the buy CTA, the add-to-bag
-   button, and the secondary (chat) button share the row and wrap gracefully in
-   the mobile OrderPanel bottom bar. Applied alongside upstream css.submitButton
-   (which keeps its padding/margins). */
+/* Stack the buy CTA, the add-to-bag button, and the secondary (chat) button as a
+   full-width column (Comprar → Add to bag → Chat). Applied alongside upstream
+   css.submitButton (which keeps its padding/margins). */
 .submitButtonRow {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 12px;
   align-items: stretch;
 }
 
-.submitButtonRow .submitButtonCta {
-  flex: 1 1 auto;
-}
-
-.addToBagButton {
-  flex: 0 0 auto;
+.submitButtonRow > * {
+  width: 100%;
 }
