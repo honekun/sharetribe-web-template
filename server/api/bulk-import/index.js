@@ -130,7 +130,8 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, (req, r
     });
     if (!validation.valid) {
       return res.status(400).json({
-        error: 'La validación del CSV falló.',
+        error:
+          'Falta información para completar en tu archivo CSV. Completa la información en la plantilla y vuelve a exportar.',
         details: validation.errors,
       });
     }
