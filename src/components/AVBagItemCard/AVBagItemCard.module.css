@@ -195,10 +195,9 @@
   color: var(--colorGrey500);
 }
 
-/* Reuse the PageBuilder blue CTA styling verbatim. TODO: extract shared CTA/
-   button styles so this cross-module compose isn't needed (tracked separately).
-   The self-chained override only sets card spacing (beats the composed
-   margin-top regardless of CSS-module source order). */
+/* Canonical blue CTA composed from SectionBuilder (the standard pattern for
+   all AV buttons). The self-chained override only sets card spacing (beats
+   the composed margin-top regardless of CSS-module emit order). */
 .checkoutButton {
   composes: ctaButtonBlue from '../../containers/PageBuilder/SectionBuilder/SectionBuilder.module.css';
   cursor: pointer;

@@ -72,20 +72,17 @@
   padding: 16px 20px;
 }
 
+/* Canonical blue CTA (composed from SectionBuilder), reshaped as the popup's
+   full-width pill. Self-chained (0,2,0) overrides pin the pill geometry so
+   they beat the composed base regardless of CSS-module emit order. */
 .goToBag {
+  composes: ctaButtonBlue from '../../containers/PageBuilder/SectionBuilder/SectionBuilder.module.css';
+}
+.goToBag.goToBag {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 48px;
+  margin-top: 0;
   padding: 0 20px;
-  border-radius: 26px;
-  background-color: var(--avBlue);
-  color: var(--avYellowLight);
-  font-weight: var(--fontWeightBold);
-
-  &:hover {
-    background-color: var(--avBlueDark);
-    color: var(--avYellowLight);
-    text-decoration: none;
-  }
 }

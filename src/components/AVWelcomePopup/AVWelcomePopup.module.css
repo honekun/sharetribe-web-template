@@ -91,45 +91,15 @@
   gap: 12px;
 }
 
-/* avCtaButton-style buttons (mirrors SectionBuilder.module.css — cannot compose cross-module) */
+/* Canonical AV CTA buttons composed from SectionBuilder; the `.buttons` flex
+   column stretches them full width. Drop the ctaButton top margin — the
+   column gap handles spacing. */
 .primaryButton {
-  display: block;
-  text-align: center;
-  text-decoration: none;
-  padding: 13px 20px;
-  border-radius: 26px;
-  font-size: 16px;
-  font-weight: 700;
-  font-family: var(--fontFamilyHeadings);
-  border: none;
-  background-color: var(--avBlue);
-  color: var(--avYellowLight);
-  transition: var(--colorTransition);
-
-  &:hover {
-    text-decoration: none;
-    background-color: var(--avBlueDark);
-    color: var(--avYellowLight);
-  }
+  composes: ctaButtonBlue from '../../containers/PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  margin-top: 0;
 }
 
 .secondaryButton {
-  display: block;
-  text-align: center;
-  text-decoration: none;
-  padding: 13px 20px;
-  border-radius: 26px;
-  font-size: 16px;
-  font-weight: 700;
-  font-family: var(--fontFamilyHeadings);
-  border: none;
-  background-color: var(--avPink);
-  color: var(--avYellowLight);
-  transition: var(--colorTransition);
-
-  &:hover {
-    text-decoration: none;
-    background-color: #db2777;
-    color: var(--avYellowLight);
-  }
+  composes: ctaButtonPink from '../../containers/PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  margin-top: 0;
 }

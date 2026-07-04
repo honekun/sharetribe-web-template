@@ -2,19 +2,40 @@
    ProductOrderForm.module.css so that file stays pristine. Imported by
    ProductOrderForm.js as `avCss`. */
 
-/* "Comprar" submit button — AV ctaButtonBlue theming. */
+/* "Comprar" submit button — canonical blue CTA composed from SectionBuilder.
+   Hosted on a <PrimaryButton>: the global .buttonPrimary rest/hover/focus
+   styles tie with the composed classes (emit order is unreliable), so the
+   self-chained (0,2,0) rules pin the Button-root geometry AND re-assert the
+   AV colors + outline via the --_av-* vars in every state. Disabled keeps the
+   upstream grey. */
 .submitButtonCta {
-  background-color: var(--avBlue);
-  color: var(--avYellowLight);
-  border: 1px solid var(--avYellowLight);
-  border-radius: 26px;
-  font-weight: 700;
+  composes: ctaButtonBlue from '../../../containers/PageBuilder/SectionBuilder/SectionBuilder.module.css';
 }
-.submitButtonCta:hover,
-.submitButtonCta:focus {
-  background-color: var(--avBlueDark);
-  color: var(--avYellowLight);
+.submitButtonCta.submitButtonCta {
+  display: block;
+  width: 100%;
+  margin-top: 0;
+  /* <button> elements center their content; the composed padding is sized for
+     PageBuilder link-buttons. */
+  padding: 0;
+  border: none;
+  background-color: var(--_av-bg);
+  color: var(--_av-fg);
+  outline: 1px var(--_av-outline-style, solid) var(--_av-outline-color, var(--_av-fg));
+}
+.submitButtonCta.submitButtonCta:hover,
+.submitButtonCta.submitButtonCta:focus {
+  background-color: var(--_av-bg-hover, var(--_av-bg));
+  color: var(--_av-fg);
+  outline: 1px var(--_av-outline-style, solid) var(--_av-outline-color, var(--_av-fg));
   box-shadow: none;
+}
+.submitButtonCta.submitButtonCta:disabled {
+  background-color: var(--colorGrey100);
+  color: var(--colorGrey700);
+  outline: none;
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 /* Stack the buy CTA, the add-to-bag button, and the secondary (chat) button as a

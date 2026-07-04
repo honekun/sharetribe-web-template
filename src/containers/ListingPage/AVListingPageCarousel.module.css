@@ -167,29 +167,43 @@
   }
 }
 
-/* avPurple pill (matches the ctaButtonPurple treatment): full width, below the
-   add-to-bag button. */
+/* Chat CTA — canonical purple CTA composed from SectionBuilder, reshaped as a
+   full-width pill below the add-to-bag button. Hosted on a <SecondaryButton>:
+   the global .buttonSecondary rest/hover/focus styles tie with the composed
+   classes (emit order is unreliable), so the self-chained (0,2,0) rules pin
+   the pill geometry AND re-assert the AV colors + outline via the --_av-*
+   vars in every state. Disabled keeps the upstream grey. */
 .chatButton {
+  composes: ctaButtonPurple from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+}
+.chatButton.chatButton {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   width: 100%;
   min-height: 46px;
+  margin-top: 0;
   padding: 0 18px;
-
-  background-color: var(--avPurple);
-  color: var(--avYellowLight);
-  border: 1px solid var(--avYellowLight);
-  border-radius: 26px;
-  font-weight: 700;
+  border: none;
+  background-color: var(--_av-bg);
+  color: var(--_av-fg);
+  outline: 1px var(--_av-outline-style, solid) var(--_av-outline-color, var(--_av-fg));
 }
-.chatButton:hover,
-.chatButton:focus {
-  background-color: var(--avPurpleDark);
-  color: var(--avYellowLight);
-  border-color: var(--avYellowLight);
+.chatButton.chatButton:hover,
+.chatButton.chatButton:focus {
+  background-color: var(--_av-bg-hover, var(--_av-bg));
+  color: var(--_av-fg);
+  outline: 1px var(--_av-outline-style, solid) var(--_av-outline-color, var(--_av-fg));
+  border: none;
   box-shadow: none;
+}
+.chatButton.chatButton:disabled {
+  background-color: var(--colorGrey100);
+  color: var(--colorWhite);
+  outline: none;
+  box-shadow: none;
+  cursor: not-allowed;
 }
 .chatIcon {
   width: 22px;

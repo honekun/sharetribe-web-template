@@ -43,25 +43,13 @@
   margin-top: 8px;
 }
 
-/* "Create listing" pill button. */
+/* "Create listing" pill — canonical blue CTA composed from SectionBuilder.
+   Self-chained (0,2,0) overrides pin the header layout bits so they beat the
+   composed base regardless of CSS-module emit order. */
 .newListingButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 20px;
-  border-radius: 26px;
-  background-color: var(--avBlue);
-  color: var(--avYellowLight);
-  outline: 1px solid var(--avYellowLight);
-  font-family: var(--fontFamily);
-  font-size: 16px;
-  font-weight: 700;
+  composes: ctaButtonBlue from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+}
+.newListingButton.newListingButton {
+  margin-top: 0;
   white-space: nowrap;
-  text-decoration: none;
-
-  &:hover {
-    background-color: var(--avBlueDark);
-    color: var(--avYellowLight);
-    text-decoration: none;
-  }
 }

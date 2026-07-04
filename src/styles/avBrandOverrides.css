@@ -657,6 +657,21 @@ textarea {
   }
 }
 
+/* ================ Sharetribe <Button> rounding (AV) ================
+   Round the global button classes (marketplaceDefaults.css) to the avCtaButton
+   pill radius. Colors, sizing, and the inProgress/ready spinner-checkmark
+   animations stay upstream — this is deliberately NOT the composed avCtaButton
+   treatment (see src/containers/PageBuilder/SectionBuilder/SectionBuilder.module.css).
+   Same (0,1,0) specificity as the upstream rules; this file loads after
+   marketplaceDefaults.css (src/index.js), so source order breaks the tie. */
+.buttonDefault,
+.buttonPrimary,
+.buttonSecondary,
+.buttonPrimaryInline,
+.buttonSecondaryInline {
+  border-radius: 26px;
+}
+
 /* ================ Upstream component restyles (AV) ================
    Cosmetic tweaks that previously lived inside upstream component *.module.css
    files, relocated here so those files stay byte-identical to upstream. Each

@@ -158,11 +158,7 @@ const SectionSelectedUser = props => {
               options={fieldOptions}
             />
           </div>
-          <Field
-            data={callToAction}
-            className={classNames(defaultClasses.ctaButton, css.ctaButton)}
-            options={fieldOptions}
-          />
+          <Field data={callToAction} className={defaultClasses.ctaButton} options={fieldOptions} />
         </header>
       ) : null}
       {hasUsers ? (
