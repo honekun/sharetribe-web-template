@@ -167,20 +167,20 @@
   }
 }
 
-/* Chat CTA — canonical purple CTA composed from SectionBuilder, reshaped as a
-   full-width pill below the add-to-bag button. Hosted on a <SecondaryButton>:
-   the global .buttonSecondary rest/hover/focus styles tie with the composed
-   classes (emit order is unreliable), so the self-chained (0,2,0) rules pin
-   the pill geometry AND re-assert the AV colors + outline via the --_av-*
-   vars in every state. Disabled keeps the upstream grey. */
+/* Chat CTA — canonical secondary CTA (white/black) composed from
+   SectionBuilder, sharing the half-width row with the add-to-bag button.
+   Hosted on a <SecondaryButton>: the global .buttonSecondary rest/hover/focus
+   styles tie with the composed classes (emit order is unreliable), so the
+   self-chained (0,2,0) rules pin the pill geometry AND re-assert the AV
+   colors + outline via the --_av-* vars in every state. Disabled keeps the
+   upstream grey. */
 .chatButton {
-  composes: ctaButtonPurple from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonSecondary from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
 }
 .chatButton.chatButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
   width: 100%;
   min-height: 46px;
   margin-top: 0;
@@ -204,10 +204,6 @@
   outline: none;
   box-shadow: none;
   cursor: not-allowed;
-}
-.chatIcon {
-  width: 22px;
-  height: 22px;
 }
 
 /* Mobile/tablet (below --viewportLarge, where the order panel renders as the

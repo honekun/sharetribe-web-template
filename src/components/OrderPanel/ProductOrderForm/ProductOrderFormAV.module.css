@@ -51,3 +51,15 @@
 .submitButtonRow > * {
   width: 100%;
 }
+
+/* Second + third buttons (add-to-bag / chat) share one row, half width each.
+   flex-basis 0 overrides the buttons' own width:100% for the main-axis size. */
+.secondaryButtonsRow {
+  display: flex;
+  gap: 12px;
+
+  & > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}

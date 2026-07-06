@@ -807,6 +807,31 @@ textarea {
   color: var(--avBlue);
 }
 
+/* Product-layout action bar ("Este es tu producto — Editar producto"): white
+   card with black text instead of the upstream dark-grey bar. The edit/payout
+   links set their own grey100 colour, so they need the explicit override;
+   ownListingText has no colour of its own and inherits the bar's black. The
+   pending-approval / missing-payout warning texts keep their own
+   `--colorAttention` (their (0,1,0) rules still colour the element itself). */
+:root [class*='ListingPage_actionBarForProductLayout__'] {
+  background-color: transparent;
+  color: var(--colorWhite);
+}
+:root [class*='ListingPage_actionBarForProductLayout__'] [class*='ListingPage_editListingLink__'],
+:root [class*='ListingPage_actionBarForProductLayout__'] [class*='ListingPage_addPayoutDetails__'] {
+  color: var(--colorBlack);
+  font-size: 18px;
+}
+
+/* The upstream EditIcon hardcodes stroke="#FFFFFF" (invisible outside the old
+   dark bar). CSS beats SVG presentation attributes, so follow the link colour. */
+:root
+  [class*='ListingPage_actionBarForProductLayout__']
+  [class*='ListingPage_editIcon__']
+  g[stroke] {
+  stroke: currentColor;
+}
+
 /* Section titles use the AV listing-section title scale (upstream composes the
    body `p`). */
 :root [class*='ListingPage_sectionHeading__'],

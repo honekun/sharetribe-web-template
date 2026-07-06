@@ -50,11 +50,13 @@
     border-bottom: 0;
   }
 
+  /* Mirrors ctaButtonBlue (SectionBuilder.module.css) — composes can't reach
+     this nested rule, so keep the colors in sync with the canonical variant. */
   .priorityLinkLabel {
     margin: auto;
     padding: 11px 22px;
     font-size: 14px;
-    background-color: var(--avPurple);
+    background-color: var(--avBlue);
     border-radius: 26px;
     color: var(--avYellowLight);
     border: none;
@@ -66,7 +68,7 @@
     transition: var(--colorTransition);
 
     &:hover {
-      background-color: var(--avPurpleDark);
+      background-color: var(--avBlueDark);
       color: var(--avYellowLight);
       outline-color: var(--avYellowLight);
     }

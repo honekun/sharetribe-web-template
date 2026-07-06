@@ -24,7 +24,6 @@ import {
   LayoutSingleColumn,
   AvatarMedium,
   SecondaryButton,
-  IconChat,
 } from '../../components';
 
 // Related components and modules
@@ -235,7 +234,6 @@ export const ListingPageComponent = props => {
 
   const chatButton = (
     <SecondaryButton type="button" className={avCss.chatButton} onClick={() => onContactUser()}>
-      <IconChat className={avCss.chatIcon} />
       <FormattedMessage id="ListingPage.chat" />
     </SecondaryButton>
   );

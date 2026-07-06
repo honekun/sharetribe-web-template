@@ -295,10 +295,14 @@ const renderForm = formRenderProps => {
             <FormattedMessage id="ProductOrderForm.ctaButtonNoStock" />
           )}
         </PrimaryButton>
-        {hasStock && listingId ? (
-          <AddToBagButton listingId={listingId.uuid} className={avCss.addToBagButton} />
+        {(hasStock && listingId) || secondaryCtaButton ? (
+          <div className={avCss.secondaryButtonsRow}>
+            {hasStock && listingId ? (
+              <AddToBagButton listingId={listingId.uuid} className={avCss.addToBagButton} />
+            ) : null}
+            {secondaryCtaButton}
+          </div>
         ) : null}
-        {secondaryCtaButton}
       </div>
       <p className={css.finePrint}>
         {payoutDetailsWarning ? (

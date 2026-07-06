@@ -77,10 +77,10 @@
    specificity). Element selectors cross the CSS-module boundary because
    only .bottomRow is hashed. */
 .bottomRow :is(a, button, span) {
-  color: var(--avBlue);
+  color: var(--colorBlack);
 }
 .bottomRow :is(a, button):hover {
-  color: var(--avBlue);
+  color: var(--colorBlack);
 }
 
 /* logo */
@@ -145,12 +145,12 @@
   max-width: 520px;
   height: 40px;
   padding: 0 20px;
-  border: 2px solid var(--colorGrey300);
+  border: 2px solid var(--colorBlack);
   border-radius: 999px;
   background-color: var(--colorGrey50);
 
   &:focus-within {
-    border-color: var(--colorGrey500);
+    border-color: var(--colorBlack);
   }
 }
 
@@ -399,8 +399,8 @@
   height: 100%;
 }
 
-/* Icon-only heart link to /favorites (like BagLink), between the create-listing
-   button and inbox. avBlue heart, 29x25px. */
+/* Icon-only heart link to /favorites (like BagLink), between inbox and bag.
+   Black heart in a 25px box. */
 .favoritesButton {
   flex-shrink: 0;
   display: flex;
@@ -408,11 +408,11 @@
   justify-content: center;
   padding: 0 12px;
   height: 100%;
-  color: var(--avBlue);
+  color: var(--colorBlack);
   transition: var(--transitionStyleButton);
 
   &:hover {
-    color: var(--avBlueDark);
+    color: var(--colorBlack);
     text-decoration: none;
   }
 }
@@ -439,11 +439,11 @@
   justify-content: center;
   padding: 0 12px;
   height: 100%;
-  color: var(--avBlue);
+  color: var(--colorBlack);
   transition: var(--transitionStyleButton);
 
   &:hover {
-    color: var(--avBlueDark);
+    color: var(--colorBlack);
     text-decoration: none;
   }
 }

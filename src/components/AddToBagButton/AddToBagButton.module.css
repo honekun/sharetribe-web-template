@@ -1,8 +1,9 @@
-/* Canonical light-blue CTA (composed from SectionBuilder), reshaped as a
-   full-width pill. Self-chained (0,2,0) overrides pin the pill geometry so
-   they beat the composed base regardless of CSS-module emit order. */
+/* Canonical secondary CTA (white/black, composed from SectionBuilder),
+   reshaped as a full-width pill. Self-chained (0,2,0) overrides pin the pill
+   geometry so they beat the composed base regardless of CSS-module emit
+   order. */
 .root {
-  composes: ctaButtonLightBlue from '../../containers/PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonSecondary from '../../containers/PageBuilder/SectionBuilder/SectionBuilder.module.css';
   cursor: pointer;
 }
 
@@ -17,10 +18,9 @@
   padding: 0 16px;
 }
 
-/* Already-in-bag state: rest state uses the hover blue so the toggle reads
-   as active. */
+/* Already-in-bag state: light grey fill so the toggle reads as active. */
 .inBag.inBag {
-  --_av-bg: var(--_av-bg-hover);
+  --_av-bg: var(--colorGrey100);
 }
 
 .label {

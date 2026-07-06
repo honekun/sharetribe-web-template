@@ -86,6 +86,7 @@
   letter-spacing: 1px;
   font-weight: var(--fontWeightSemiBold);
   line-height: unset;
+  color: var(--colorBlack);
 
   /* Borders — reset AV global override */
   border: none !important;
@@ -112,7 +113,7 @@
 
   &:hover::placeholder,
   &:focus::placeholder {
-    color: var(--colorGrey700);
+    color: var(--colorBlack);
   }
 
   /* Placeholder text might be too wide */
@@ -120,7 +121,7 @@
     font-size: 19px;
     letter-spacing: 1px;
     font-weight: var(--fontWeightSemiBold);
-    color: var(--colorGrey500);
+    color: var(--colorBlack);
     text-overflow: ellipsis;
     overflow-x: hidden;
     transition: var(--transitionStyleButton);

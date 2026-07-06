@@ -180,19 +180,6 @@
   composes: ctaButton;
 }
 
-.ctaButtonSecondary {
-  composes: ctaButton;
-  background-color: var(--ctaSecondaryBG);
-  color: var(--ctaSecondary);
-  border-color: var(--ctaSecondaryBG);
-
-  &:hover {
-    background-color: var(--ctaPrimaryBG);
-    color: var(--ctaPrimary);
-    border-color: var(--ctaPrimary);
-  }
-}
-
 /* ── AV base: all shared button styles live here. Variants (and the modifier
    classes below) only set the `--_av-*` theming vars this base reads.
    Defaults: yellow-light text, outline matching the text color, solid 1px. ── */
@@ -249,6 +236,14 @@
   --_av-bg: var(--avYellow);
   --_av-bg-hover: #bfbd59;
   --_av-color: var(--avBlueLight);
+}
+
+/* Secondary: white with black text; the outline follows the text color, so
+   the black border comes from the base's fg default. */
+.ctaButtonSecondary {
+  composes: avCtaButton;
+  --_av-bg: var(--colorWhite);
+  --_av-color: var(--colorBlack);
 }
 
 /* ── AV button modifiers — override single theming vars ── */

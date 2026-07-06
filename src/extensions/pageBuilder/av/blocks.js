@@ -57,6 +57,7 @@ const buildBlockCtaBaseMap = css => ({
   blockCtaBtnPurple: css.ctaButtonPurple,
   blockCtaBtnPink: css.ctaButtonPink,
   blockCtaBtnYellow: css.ctaButtonYellow,
+  blockCtaBtnSecondary: css.ctaButtonSecondary,
 });
 
 const buildBlockCtaModifierMap = css => ({
