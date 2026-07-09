@@ -15,6 +15,7 @@
 :root {
   /* ================ AV Brand Palette ================ */
   --avGray1: hsl(0 0% 80%);
+  --avGray2: rgb(238, 238, 238); /* #eeeeee — light card background */
   --avBlue: hsl(234 88% 48%); /* #0f26e4 */
   --avBlueLight: hsl(208 89% 63%); /* #4da8f5 */
   --avBlueDark: #1d4ed8; /* hover/active state blue */
@@ -154,6 +155,18 @@
 /* Moved from marketplaceDefaults.css to keep that file upstream-clean. */
 
 body {
+  letter-spacing: 1px;
+}
+
+/* Buttons don't inherit letter-spacing from body: the UA stylesheet resets it
+   on form controls, so button text renders tighter than everything else.
+   Restore inheritance; .buttonSecondaryInline is the one global button class
+   that sets an explicit 0 upstream (marketplaceDefaults.css), so re-assert
+   the 1px there too (same specificity, this file loads later). */
+button {
+  letter-spacing: inherit;
+}
+.buttonSecondaryInline {
   letter-spacing: 1px;
 }
 
@@ -678,13 +691,6 @@ textarea {
    targets the stable scoped-class prefix and raises specificity with `:root`
    (0,2,0) to beat the module's own rule regardless of source order. Only the
    AV-changed properties are set; all other upstream rules are untouched. */
-
-/* Button — extra letter-spacing on the pill button label (desktop). */
-:root [class*='Button_buttonPill__'] {
-  @media (--viewportMedium) {
-    letter-spacing: 1px;
-  }
-}
 
 /* ValidationError — slightly larger error text (upstream: 13px). */
 :root [class*='ValidationError_root__'] {

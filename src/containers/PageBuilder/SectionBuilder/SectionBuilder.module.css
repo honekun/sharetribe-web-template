@@ -196,6 +196,9 @@
   border-radius: var(--_av-radius, 26px);
   font-size: var(--fontSizeBase, 16px);
   font-weight: 700;
+  /* Pin the global 1px here: <button> hosts don't inherit it from body (UA
+     form-control reset) and <a> hosts could sit in tighter-spaced parents. */
+  letter-spacing: 1px;
   min-width: 140px;
 
   /* re-declare what .ctaButton:hover changes (background, color) */
