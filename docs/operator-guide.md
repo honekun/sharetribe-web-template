@@ -2110,8 +2110,8 @@ their products and offers two cards:
   visitors are sent to the login page first.
 - **Bulk import is open to every seller.** The "Subir varios" card links to the same bulk import
   tool described in [Section 8](#8-bulk-import-tool), with the usual per-account limits.
-- **The mobile menu is unchanged.** The "create listing" link in the mobile slide-out menu still
-  goes directly to the listing form (`/l/new`).
+- **The mobile menu goes here too.** The "create listing" link in the mobile slide-out menu
+  (`TopbarMobileMenu.newListingLink`) opens the same chooser page.
 - The VENDE button label itself is the existing `TopbarDesktop.createListing` translation (see
   [Section 6](#6-navigation-bar)).
 
