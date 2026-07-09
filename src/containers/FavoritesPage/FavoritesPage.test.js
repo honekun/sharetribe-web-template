@@ -1,7 +1,8 @@
 import React from 'react';
 import '@testing-library/jest-dom';
 import { renderWithProviders as render, testingLibrary } from '../../util/testHelpers';
-import { FavoritesPageComponent } from './FavoritesPage';
+import { createListing } from '../../util/testData';
+import FavoritesPage, { FavoritesPageComponent } from './FavoritesPage';
 
 const { screen } = testingLibrary;
 
@@ -31,5 +32,51 @@ describe('FavoritesPage', () => {
   it('matches snapshot (empty state)', () => {
     const { asFragment } = render(<FavoritesPageComponent {...baseProps} />, { messages });
     expect(asFragment()).toMatchSnapshot();
+  });
+
+  // The connected page live-filters the loaded refs by the favorites duck, so
+  // un-favoriting a card (which updates state.favorites optimistically) removes
+  // it without a refetch.
+  describe('live filter by favorites state', () => {
+    const listingA = createListing('listing-a');
+    const listingB = createListing('listing-b');
+
+    const stateWithFavorites = favoriteListingIds => ({
+      FavoritesPage: {
+        listingRefs: [
+          { id: listingA.id, type: 'listing' },
+          { id: listingB.id, type: 'listing' },
+        ],
+        queryInProgress: false,
+        queryError: null,
+      },
+      favorites: { favoriteListingIds },
+      marketplaceData: {
+        entities: { listing: { 'listing-a': listingA, 'listing-b': listingB } },
+      },
+    });
+
+    it('renders all loaded listings while they are favorited', () => {
+      render(<FavoritesPage />, {
+        initialState: stateWithFavorites(['listing-a', 'listing-b']),
+        messages,
+      });
+      expect(screen.getByText('listing-a title')).toBeInTheDocument();
+      expect(screen.getByText('listing-b title')).toBeInTheDocument();
+    });
+
+    it('hides a loaded listing once it is no longer in favorites', () => {
+      render(<FavoritesPage />, {
+        initialState: stateWithFavorites(['listing-b']),
+        messages,
+      });
+      expect(screen.queryByText('listing-a title')).not.toBeInTheDocument();
+      expect(screen.getByText('listing-b title')).toBeInTheDocument();
+    });
+
+    it('shows the empty state when every loaded listing is un-favorited', () => {
+      render(<FavoritesPage />, { initialState: stateWithFavorites([]), messages });
+      expect(screen.getByText('You have not liked any listings yet.')).toBeInTheDocument();
+    });
   });
 });

@@ -45,6 +45,8 @@ in bulk, and understanding the application settings. No technical background is 
 9. [Application Settings](#9-application-settings)
 10. [Custom Translation Strings](#10-custom-translation-strings)
 11. [Favorites (Wish List)](#11-favorites-wish-list)
+12. [Shopping Bag](#12-shopping-bag)
+13. [Upload Chooser Page](#13-upload-chooser-page-create-type)
 
 ---
 
@@ -648,7 +650,7 @@ strings. If you set none, buttons use the default `primary` style.
   token ends with a space + `::`). This overrides the section-level style for just that panel. See
   [Block Name Tokens](#52-block-name-tokens) for the full list.
   - Colour (pick one): `blockCtaBtnBlue`, `blockCtaBtnLightBlue`, `blockCtaBtnPurple`,
-    `blockCtaBtnPink`, `blockCtaBtnYellow`
+    `blockCtaBtnPink`, `blockCtaBtnYellow`, `blockCtaBtnSecondary` (white, black text + border)
   - Shape / style: `roundedFull`, `rounded`, `square`, `dashed`, `solid`, `noOutline`,
     `ctaBtnCenter`
   - Example Block Name: `blockCtaBtnBlue :: rounded ::`
@@ -758,13 +760,14 @@ dash, a space, then the token (`- Token`). Combine as many as you like.
 Restyles the CTA buttons inside the section (hero buttons, feature buttons, etc.). Pick **one**
 colour.
 
-| Token                      | Effect            |
-| -------------------------- | ----------------- |
-| `- SectionCtaBtnBlue`      | Blue button       |
-| `- SectionCtaBtnLightBlue` | Light-blue button |
-| `- SectionCtaBtnPurple`    | Purple button     |
-| `- SectionCtaBtnPink`      | Pink button       |
-| `- SectionCtaBtnYellow`    | Yellow button     |
+| Token                      | Effect                                        |
+| -------------------------- | --------------------------------------------- |
+| `- SectionCtaBtnBlue`      | Blue button                                   |
+| `- SectionCtaBtnLightBlue` | Light-blue button                             |
+| `- SectionCtaBtnPurple`    | Purple button                                 |
+| `- SectionCtaBtnPink`      | Pink button                                   |
+| `- SectionCtaBtnYellow`    | Yellow button                                 |
+| `- SectionCtaBtnSecondary` | White button with black text and black border |
 
 #### Call-to-action button shape and font
 
@@ -819,13 +822,14 @@ Each token ends with `::` (a space, then a double colon). Combine as many as you
 These set the colour of a single block's call-to-action button. They are mainly used to override the
 section-level button colour on one `avHero3` panel (see §4.9). Pick **one** colour.
 
-| Token                     | Effect            |
-| ------------------------- | ----------------- |
-| `blockCtaBtnBlue ::`      | Blue button       |
-| `blockCtaBtnLightBlue ::` | Light-blue button |
-| `blockCtaBtnPurple ::`    | Purple button     |
-| `blockCtaBtnPink ::`      | Pink button       |
-| `blockCtaBtnYellow ::`    | Yellow button     |
+| Token                     | Effect                                        |
+| ------------------------- | --------------------------------------------- |
+| `blockCtaBtnBlue ::`      | Blue button                                   |
+| `blockCtaBtnLightBlue ::` | Light-blue button                             |
+| `blockCtaBtnPurple ::`    | Purple button                                 |
+| `blockCtaBtnPink ::`      | Pink button                                   |
+| `blockCtaBtnYellow ::`    | Yellow button                                 |
+| `blockCtaBtnSecondary ::` | White button with black text and black border |
 
 The same shape and font modifiers available for section buttons also work here with the `::` syntax,
 layered on top of the colour: `roundedFull ::`, `rounded ::`, `square ::`, `dashed ::`, `solid ::`,
@@ -870,13 +874,22 @@ Vestidos, Ropa Deportiva, Jumpsuits, Sets
 This dropdown builds itself automatically from the brand field options in the app configuration. You
 do not need to configure it — it always reflects the current brand list.
 
-### Favorites Button (Desktop)
+### Top-Right Action Icons (Desktop)
 
-Signed-in users see a purple **Favorites** button (with a heart icon) in the top-right area of the
-desktop top bar, between the "Create listing" button and the "Inbox" link. It links to the user's
-personal favorites page (`/favorites`). It appears only when a user is logged in, and requires no
-configuration. Its label comes from the `TopbarDesktop.favoritesLink` translation string. See
-[Section 11 — Favorites](#11-favorites-wish-list) for the full feature.
+The top-right area of the desktop top bar shows a row of actions. From left to right:
+
+| Item | Appearance | Links to | Shown when |
+| --- | --- | --- | --- |
+| **VENDE** (Sell / Create listing) | Purple pill button | Upload chooser page (`/create-type`) — see [Section 13](#13-upload-chooser-page-create-type) | Signed in |
+| **Favorites** | Black heart icon | Favorites page (`/favorites`) | Signed in |
+| **Bag** | Black bag icon with an item-count badge | Bag page (`/bag`) | Always (works logged out) |
+| **Inbox** | Black envelope icon | Inbox | Signed in |
+
+The three icons (heart, bag, envelope) are icon-only — their text is used as a hover tooltip and for
+screen readers, not shown on screen. None of this requires configuration. The relevant labels are
+`TopbarDesktop.favoritesLink`, `BagLink.label`, and `TopbarDesktop.inbox`. See
+[Section 11 — Favorites](#11-favorites-wish-list) and [Section 12 — Shopping Bag](#12-shopping-bag)
+for the full features.
 
 ---
 
@@ -1371,8 +1384,10 @@ fix them all in one pass and re-upload.
 
 This is different from the per-row errors you may see **while** an import is running. Once the
 pre-flight check passes, rows are created one by one; if an individual row fails at that stage (for
-example, an invalid colour value), it is reported in the results table and the **other rows keep
-going**. See [Troubleshooting](#87-troubleshooting) for those.
+example, an invalid colour value), it is reported in the errors table and the **other rows keep
+going**. Successful rows are not listed individually — when every row imports cleanly, the page
+shows a **View your listings** button that opens your listings page (`/listings`) instead. See
+[Troubleshooting](#87-troubleshooting) for the error cases.
 
 The pre-flight check runs in two passes.
 
@@ -1421,18 +1436,19 @@ This is the "missing values" check. It runs in two stages.
 - **Option values are not verified against the Console.** Values for fields like colour, size,
   brand, `categoría`, `género`, `estado`, `estilo`, and `temporada` are passed through as-is. A typo
   such as `pub_color = blu` **passes** the pre-flight check and only fails later, per row, as an API
-  error in the results table. Always use the exact option keys from
+  error in the errors table. Always use the exact option keys from
   [8.5 Field Values Quick Reference](#85-field-values-quick-reference).
 - **Category existence** is likewise confirmed by the Sharetribe API during processing, not here.
 
 #### What you see when it fails
 
-All problems are returned together under the heading **"La validación del CSV falló."**, with one
-line per issue. Row-specific problems are prefixed **`Fila N:`** (where `N` is the data-row number,
-starting at 1). For example, for a CSV using the operator-template headers:
+All problems are returned together under the heading **"Falta información para completar en tu
+archivo CSV. Completa la información en la plantilla y vuelve a exportar."**, with one line per
+issue. Row-specific problems are prefixed **`Fila N:`** (where `N` is the data-row number, starting
+at 1). For example, for a CSV using the operator-template headers:
 
 ```
-La validación del CSV falló.
+Falta información para completar en tu archivo CSV. Completa la información en la plantilla y vuelve a exportar.
 Fila 2: "Nombre de Producto*" está vacío.
 Fila 2: "Precio Venta (MXN)*" debe ser un número positivo, se recibió "abc".
 Fila 5: "Nombre imagen 1*" es obligatorio.
@@ -1663,26 +1679,28 @@ to be silently hidden — the app never shows a raw key string to users.
 
 ### Navigation
 
-| Area                     | Key                                                   | English default      | Spanish default      | Operator note                                              |
-| ------------------------ | ----------------------------------------------------- | -------------------- | -------------------- | ---------------------------------------------------------- |
-| Topbar highlighted link  | `Topbar.custom.leftOne`                               | `Hot list`           | `Lista destacada`    | Label for the single highlighted link in the top bar.      |
-| Topbar highlighted link  | `Topbar.custom.leftOneHref`                           | `?pub_tags=hot-list` | `?pub_tags=hot-list` | Search query URL for the highlighted link.                 |
-| Topbar menu 1 label      | `Topbar.custom.menuOne`                               | `Shop`               | `Comprar`            | First dropdown menu label.                                 |
-| Topbar menu 2 label      | `Topbar.custom.menuTwo`                               | `Explore`            | `Explorar`           | Second dropdown menu label.                                |
-| Topbar menu 3 label      | `Topbar.custom.menuThree`                             | `Brands`             | `Marcas`             | Third dropdown menu label.                                 |
-| Desktop favorites button | `TopbarDesktop.favoritesLink`                         | `Favorites`          | `Favoritos`          | Purple heart button in the top bar (also the profile menu).|
-| Mobile menu              | `TopbarMobileMenu.favoritesLink`                      | `Favorites`          | `Favoritos`          | Mobile menu link to the favorites page.                    |
-| Account sidebar tab      | `UserNav.favorites`                                   | `Favorites`          | `Favoritos`          | Tab label in the account navigation sidebar.               |
-| Desktop profile menu     | `TopbarDesktop.myPurchasesLink`                       | `My Purchases`       | `Mis Compras`        | Profile dropdown link to the purchases page.               |
-| Desktop profile menu     | `TopbarDesktop.mySalesLink`                           | `My Sales`           | `Mis Ventas`         | Profile dropdown link to the sales page.                   |
-| Desktop profile menu     | `TopbarDesktop.myBalanceLink`                         | `My Balance`         | `Mi Balance`         | Profile dropdown link to the balance page.                 |
-| Mobile menu              | `TopbarMobileMenu.myPurchasesLink`                    | `My Purchases`       | `Mis Compras`        | Mobile menu link to the purchases page.                    |
-| Mobile menu              | `TopbarMobileMenu.mySalesLink`                        | `My Sales`           | `Mis Ventas`         | Mobile menu link to the sales page.                        |
-| Mobile menu              | `TopbarMobileMenu.myBalanceLink`                      | `My Balance`         | `Mi Balance`         | Mobile menu link to the balance page.                      |
-| Account sidebar tab      | `UserNav.myPurchases`                                 | `My Purchases`       | `Mis Compras`        | Tab label in the account navigation sidebar.               |
-| Account sidebar tab      | `UserNav.mySales`                                     | `My Sales`           | `Mis Ventas`         | Tab label in the account navigation sidebar.               |
-| Account sidebar tab      | `UserNav.myBalance`                                   | `My Balance`         | `Mi Balance`         | Tab label in the account navigation sidebar.               |
-| Account settings sidebar | `LayoutWrapperAccountSettingsSideNav.profileTabTitle` | `Profile`            | `Perfil`             | Label for the Profile tab in the account settings sidebar. |
+| Area                     | Key                                                   | English default      | Spanish default      | Operator note                                               |
+| ------------------------ | ----------------------------------------------------- | -------------------- | -------------------- | ----------------------------------------------------------- |
+| Topbar highlighted link  | `Topbar.custom.leftOne`                               | `Hot list`           | `Lista destacada`    | Label for the single highlighted link in the top bar.       |
+| Topbar highlighted link  | `Topbar.custom.leftOneHref`                           | `?pub_tags=hot-list` | `?pub_tags=hot-list` | Search query URL for the highlighted link.                  |
+| Topbar menu 1 label      | `Topbar.custom.menuOne`                               | `Shop`               | `Comprar`            | First dropdown menu label.                                  |
+| Topbar menu 2 label      | `Topbar.custom.menuTwo`                               | `Explore`            | `Explorar`           | Second dropdown menu label.                                 |
+| Topbar menu 3 label      | `Topbar.custom.menuThree`                             | `Brands`             | `Marcas`             | Third dropdown menu label.                                  |
+| Desktop favorites icon   | `TopbarDesktop.favoritesLink`                         | `Favorites`          | `Favoritos`          | Heart icon tooltip in the top bar (also the profile menu).  |
+| Mobile menu              | `TopbarMobileMenu.favoritesLink`                      | `Favorites`          | `Favoritos`          | Mobile menu link to the favorites page.                     |
+| Account sidebar tab      | `UserNav.favorites`                                   | `Favorites`          | `Favoritos`          | Tab label in the account navigation sidebar.                |
+| Desktop bag icon         | `BagLink.label`                                       | `Shopping bag`       | `Bolsa de compras`   | Tooltip / label for the top-bar bag icon.                   |
+| Mobile menu              | `TopbarMobileMenu.bagLink`                            | `My bag`             | `Mi bolsa`           | Mobile menu link to the bag page.                           |
+| Desktop profile menu     | `TopbarDesktop.myPurchasesLink`                       | `My Purchases`       | `Mis Compras`        | Profile dropdown link to the purchases page.                |
+| Desktop profile menu     | `TopbarDesktop.mySalesLink`                           | `My Sales`           | `Mis Ventas`         | Profile dropdown link to the sales page.                    |
+| Desktop profile menu     | `TopbarDesktop.myBalanceLink`                         | `My Balance`         | `Mi Balance`         | Profile dropdown link to the balance page.                  |
+| Mobile menu              | `TopbarMobileMenu.myPurchasesLink`                    | `My Purchases`       | `Mis Compras`        | Mobile menu link to the purchases page.                     |
+| Mobile menu              | `TopbarMobileMenu.mySalesLink`                        | `My Sales`           | `Mis Ventas`         | Mobile menu link to the sales page.                         |
+| Mobile menu              | `TopbarMobileMenu.myBalanceLink`                      | `My Balance`         | `Mi Balance`         | Mobile menu link to the balance page.                       |
+| Account sidebar tab      | `UserNav.myPurchases`                                 | `My Purchases`       | `Mis Compras`        | Tab label in the account navigation sidebar.                |
+| Account sidebar tab      | `UserNav.mySales`                                     | `My Sales`           | `Mis Ventas`         | Tab label in the account navigation sidebar.                |
+| Account sidebar tab      | `UserNav.myBalance`                                   | `My Balance`         | `Mi Balance`         | Tab label in the account navigation sidebar.                |
+| Account settings sidebar | `LayoutWrapperAccountSettingsSideNav.profileTabTitle` | `Profile`            | `Perfil`             | Label for the Profile tab in the account settings sidebar.  |
 
 ### Welcome popup (shown after first registration)
 
@@ -1836,14 +1854,13 @@ again.
 | `BulkImportPage.completed`        | `Import completed`                                             | `Importación completada`                                               | Final status heading.                              |
 | `BulkImportPage.succeeded`        | `{count} succeeded`                                            | `{count} exitosos`                                                     | Success count in the result summary.               |
 | `BulkImportPage.failed`           | `{count} failed`                                               | `{count} fallidos`                                                     | Failure count in the result summary.               |
-| `BulkImportPage.resultsTitle`     | `Created Listings`                                             | `Listings Creados`                                                     | Table heading for successful rows.                 |
 | `BulkImportPage.errorsTitle`      | `Errors`                                                       | `Errores`                                                              | Table heading for failed rows.                     |
 | `BulkImportPage.errorsCapped`     | `Some errors were omitted — only the first 200 are shown.`     | `Algunos errores fueron omitidos — solo se muestran los primeros 200.` | Shown when there are more than 200 errors.         |
 | `BulkImportPage.tableRow`         | `Row`                                                          | `Fila`                                                                 | Error table column header.                         |
-| `BulkImportPage.tableTitle`       | `Title`                                                        | `Título`                                                               | Results table column header.                       |
-| `BulkImportPage.tableStatus`      | `Status`                                                       | `Estado`                                                               | Results table column header.                       |
+| `BulkImportPage.tableTitle`       | `Title`                                                        | `Título`                                                               | Error table column header.                         |
 | `BulkImportPage.tableError`       | `Error`                                                        | `Error`                                                                | Error table column header.                         |
 | `BulkImportPage.newImport`        | `New Import`                                                   | `Nueva Importación`                                                    | Button to start another import after one finishes. |
+| `BulkImportPage.viewListings`     | `View your listings`                                           | `Ver tus anuncios`                                                     | Button shown when every row imported successfully; opens `/listings`. |
 | `BulkImportPage.errorNoZip`       | `Please select a ZIP file.`                                    | `Selecciona un archivo ZIP.`                                           | Validation message.                                |
 
 ### Checkout — delivery options and shipping address
@@ -1932,19 +1949,20 @@ optional field; everything else is required.
 
 ## 11. Favorites (Wish List)
 
-Favorites let a shopper save listings they like and revisit them later from a personal page. It works
-like a "wish list" or "likes" feature. **There is nothing to configure** — it is on by default. This
-section explains how it behaves so you can support users and, if you wish, customize the wording.
+Favorites let a shopper save listings they like and revisit them later from a personal page. It
+works like a "wish list" or "likes" feature. **There is nothing to configure** — it is on by
+default. This section explains how it behaves so you can support users and, if you wish, customize
+the wording.
 
 ### What the shopper sees
 
 - **Heart button on every listing card.** A small heart appears in the top-right corner of each
-  listing card everywhere cards are shown — search results, the landing page carousels, the Hot List,
-  category pages, and profile pages. Clicking it saves (or unsaves) the listing. Clicking the heart
-  does **not** open the listing; it only toggles the favorite.
-- **Heart button on the listing page.** The individual listing page shows a heart in the top-right of
-  the photo gallery. It stays in sync with the heart on the cards — favoriting in one place updates
-  the other.
+  listing card everywhere cards are shown — search results, the landing page carousels, the Hot
+  List, category pages, and profile pages. Clicking it saves (or unsaves) the listing. Clicking the
+  heart does **not** open the listing; it only toggles the favorite.
+- **Heart button on the listing page.** The individual listing page shows a heart in the top-right
+  of the photo gallery. It stays in sync with the heart on the cards — favoriting in one place
+  updates the other.
 - **The Favorites page (`/favorites`).** A dedicated page that lists every listing the shopper has
   favorited, shown in the same grid layout and card style as search results, newest favorite first.
 
@@ -1952,21 +1970,21 @@ section explains how it behaves so you can support users and, if you wish, custo
 
 The favorites page is linked from four places (all created automatically):
 
-| Location                       | What it looks like                                                             |
-| ------------------------------ | ----------------------------------------------------------------------------- |
-| **Desktop top bar**            | A purple **Favorites** button with a heart, between "Create listing" and "Inbox". |
-| **Desktop profile dropdown**   | A "Favorites" entry in the avatar dropdown menu.                               |
-| **Mobile menu**                | A "Favorites" entry in the slide-out mobile menu.                              |
-| **Account sidebar**            | A "Favorites" tab alongside My Purchases / My Sales / My Balance.             |
+| Location                     | What it looks like                                                                |
+| ---------------------------- | --------------------------------------------------------------------------------- |
+| **Desktop top bar**          | A black **heart icon**, between the envelope and bag icons.                  |
+| **Desktop profile dropdown** | A "Favorites" entry in the avatar dropdown menu.                                  |
+| **Mobile menu**              | A "Favorites" entry in the slide-out mobile menu.                                 |
+| **Account sidebar**          | A "Favorites" tab alongside My Purchases / My Sales / My Balance.                 |
 
 ### Rules and behavior
 
-- **Sign-in required.** Favorites are tied to a user account. If a signed-out visitor clicks a heart,
-  they are sent to the sign-up page. There is no "guest" favorites list.
+- **Sign-in required.** Favorites are tied to a user account. If a signed-out visitor clicks a
+  heart, they are sent to the sign-up page. There is no "guest" favorites list.
 - **Private to each user.** A user's favorites are visible only to that user. Sellers cannot see who
   favorited their listings, and there is no public "likes" count on listings.
-- **Limit of 100.** A shopper can keep up to 100 favorites. Adding the 101st automatically removes the
-  oldest one.
+- **Limit of 100.** A shopper can keep up to 100 favorites. Adding the 101st automatically removes
+  the oldest one.
 - **Deleted or closed listings disappear.** If a favorited listing is later removed or closed, it
   simply stops showing on the favorites page — no action is needed from the shopper or operator.
 - **Nothing for the operator to manage.** Favorites are stored on each user's own profile. They do
@@ -1975,17 +1993,141 @@ The favorites page is linked from four places (all created automatically):
 ### Customizing the wording
 
 All favorites text can be changed via **Console → Content → Translations** (see
-[Section 1](#1-sharetribe-console-overview) for how translations work). The navigation labels are also
-listed in the [Navigation](#navigation) table above.
+[Section 1](#1-sharetribe-console-overview) for how translations work). The navigation labels are
+also listed in the [Navigation](#navigation) table above.
 
-| Area              | Key                                | English default                                                                     | Spanish default                                                                                    | Operator note                                       |
-| ----------------- | ---------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| Heart button      | `FavoriteButton.addToFavorites`    | `Add to favorites`                                                                   | `Agregar a favoritos`                                                                               | Tooltip/label shown when a listing is not favorited. |
-| Heart button      | `FavoriteButton.removeFromFavorites` | `Remove from favorites`                                                            | `Quitar de favoritos`                                                                               | Tooltip/label shown when a listing is favorited.     |
-| Desktop top bar   | `TopbarDesktop.favoritesLink`      | `Favorites`                                                                          | `Favoritos`                                                                                         | Purple top-bar button and profile-menu link.         |
-| Mobile menu       | `TopbarMobileMenu.favoritesLink`   | `Favorites`                                                                          | `Favoritos`                                                                                         | Mobile menu link.                                    |
-| Account sidebar   | `UserNav.favorites`                | `Favorites`                                                                          | `Favoritos`                                                                                         | Account sidebar tab.                                 |
-| Favorites page    | `FavoritesPage.title`              | `Favorites`                                                                          | `Favoritos`                                                                                         | Browser tab / page title.                            |
-| Favorites page    | `FavoritesPage.heading`            | `My favorites`                                                                       | `Mis favoritos`                                                                                     | Heading at the top of the page.                      |
-| Favorites page    | `FavoritesPage.noFavorites`        | `You haven't liked any listings yet. Tap the heart on a listing to save it here.`    | `Aún no has guardado ningún artículo. Toca el corazón en un artículo para guardarlo aquí.`          | Empty state (no favorites yet).                      |
-| Favorites page    | `FavoritesPage.queryError`         | `Loading favorites failed. Please try again.`                                        | `No se pudieron cargar tus favoritos. Inténtalo de nuevo.`                                          | Error state.                                         |
+| Area            | Key                                  | English default                                                                   | Spanish default                                                                            | Operator note                                        |
+| --------------- | ------------------------------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| Heart button    | `FavoriteButton.addToFavorites`      | `Add to favorites`                                                                | `Agregar a favoritos`                                                                      | Tooltip/label shown when a listing is not favorited. |
+| Heart button    | `FavoriteButton.removeFromFavorites` | `Remove from favorites`                                                           | `Quitar de favoritos`                                                                      | Tooltip/label shown when a listing is favorited.     |
+| Desktop top bar | `TopbarDesktop.favoritesLink`        | `Favorites`                                                                       | `Favoritos`                                                                                | Heart icon tooltip in the top bar; also the profile-menu link. |
+| Mobile menu     | `TopbarMobileMenu.favoritesLink`     | `Favorites`                                                                       | `Favoritos`                                                                                | Mobile menu link.                                    |
+| Account sidebar | `UserNav.favorites`                  | `Favorites`                                                                       | `Favoritos`                                                                                | Account sidebar tab.                                 |
+| Favorites page  | `FavoritesPage.title`                | `Favorites`                                                                       | `Favoritos`                                                                                | Browser tab / page title.                            |
+| Favorites page  | `FavoritesPage.heading`              | `My favorites`                                                                    | `Mis favoritos`                                                                            | Heading at the top of the page.                      |
+| Favorites page  | `FavoritesPage.noFavorites`          | `You haven't liked any listings yet. Tap the heart on a listing to save it here.` | `Aún no has guardado ningún artículo. Toca el corazón en un artículo para guardarlo aquí.` | Empty state (no favorites yet).                      |
+| Favorites page  | `FavoritesPage.queryError`           | `Loading favorites failed. Please try again.`                                     | `No se pudieron cargar tus favoritos. Inténtalo de nuevo.`                                 | Error state.                                         |
+
+---
+
+## 12. Shopping Bag
+
+The shopping bag lets a shopper collect listings they intend to buy and check them out one at a time.
+It behaves like a "cart" / "wishlist to buy". **There is nothing to configure** — it is on by
+default. This section explains how it works so you can support shoppers and, if you wish, customize
+the wording.
+
+> **Bag vs. Favorites:** the **bag** is for items a shopper plans to buy now (checkout from it); the
+> **favorites/wish list** ([Section 11](#11-favorites-wish-list)) is for items they want to save for
+> later. They are separate lists.
+
+### What the shopper sees
+
+- **"Add to bag" button on the listing page.** On a product listing, below the "Comprar ahora" (Buy
+  now) button, a full-width **Add to bag** button adds the item to the bag. Once added it reads **In
+  your bag**; clicking again removes it.
+- **Bag icon in the top bar.** A blue bag icon (with a small number badge showing how many items are
+  in the bag) sits between the Favorites heart and the Inbox envelope. It is visible to everyone,
+  including signed-out visitors. Clicking it opens the full bag page (`/bag`).
+- **Bag dropdown (quick view).** Hovering the bag icon (when the bag has items), or adding an item,
+  opens a small dropdown under the icon listing the bag's contents. Each row shows the seller, a
+  thumbnail, title, price, size, a **Remove** action, a per-item **total**, and a **Checkout**
+  button. A **Go to bag** link opens the full page. The dropdown closes on clicking away, pressing
+  Escape, or navigating to another page.
+- **The Bag page (`/bag`).** A full page listing every item in the bag using the same item cards as
+  the dropdown (seller, image, title, price, size, remove, per-item total, and checkout).
+
+### How a shopper reaches the bag
+
+| Location            | What it looks like                                              |
+| ------------------- | -------------------------------------------------------------- |
+| **Desktop top bar** | The blue bag icon with the item-count badge → opens `/bag`.    |
+| **Mobile menu**     | A "My bag" entry in the slide-out menu.                         |
+| **Direct URL**      | `/bag`.                                                         |
+
+### Rules and behavior
+
+- **Stored in the browser, not the account.** The bag is saved in the visitor's own browser
+  (local storage). It works without signing in, but it **does not follow the shopper across devices
+  or browsers**, and clearing browser data empties it. It is intentionally different from favorites,
+  which are saved to the account.
+- **Up to 50 items**, newest first. Adding beyond 50 drops the oldest item. A listing can be in the
+  bag only once (this is a one-item marketplace).
+- **Checkout is one item at a time.** There is no combined "cart" order — each Sharetribe transaction
+  is for a single listing. "Checkout" on a bag item starts the normal buy flow for that one item
+  (quantity 1). Shipping is quoted at checkout, so the bag shows a "Shipping calculated at checkout"
+  note rather than a shipping total. The item stays in the bag after checkout starts (in case the
+  purchase is abandoned); the shopper can remove it manually.
+- **Sold or removed listings drop off automatically.** If a listing in the bag is later removed or
+  closed, it simply stops appearing — no action needed.
+- **Nothing for the operator to manage.** Bags live in each visitor's browser; they do not appear in
+  the Console and there is no admin screen for them.
+
+### Customizing the wording
+
+All bag text can be changed via **Console → Content → Translations** (see
+[Section 1](#1-sharetribe-console-overview)).
+
+> **Watch the `{count, plural, …}` parts.** Two strings (`BagPopup.title` and
+> `AVBagItemCard.checkout`) use a plural placeholder that adapts to the number of items. Keep the
+> `{count, plural, one {…} other {…}}` structure and the `#` intact — only change the words around
+> them — or the count will stop displaying correctly.
+
+| Area              | Key                          | English default                                       | Spanish default                                                      | Operator note                                              |
+| ----------------- | ---------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Listing button    | `AddToBagButton.addToBag`    | `Add to bag`                                          | `Agregar a la bolsa`                                                 | Button on the listing when the item is not in the bag.     |
+| Listing button    | `AddToBagButton.inBag`       | `In your bag`                                         | `En tu bolsa`                                                        | Same button once the item has been added.                  |
+| Top bar           | `BagLink.label`              | `Shopping bag`                                        | `Bolsa de compras`                                                  | Tooltip / screen-reader label for the top-bar bag icon.    |
+| Mobile menu       | `TopbarMobileMenu.bagLink`   | `My bag`                                              | `Mi bolsa`                                                          | Mobile menu link to the bag page.                          |
+| Bag dropdown      | `BagPopup.title`             | `Bag ({count, plural, one {# item} other {# items}})` | `Bolsa ({count, plural, one {# artículo} other {# artículos}})`     | Dropdown heading with live item count. Keep the plural part.|
+| Bag dropdown      | `BagPopup.close`             | `Close`                                                | `Cerrar`                                                            | Close (×) button on the dropdown.                          |
+| Bag dropdown      | `BagPopup.goToBag`           | `Go to bag`                                            | `Ir a la bolsa`                                                     | Link from the dropdown to the full bag page.               |
+| Bag / dropdown item | `AVBagItemCard.items`      | `Item(s)`                                              | `Artículo(s)`                                                       | Label in the per-item totals block.                        |
+| Bag / dropdown item | `AVBagItemCard.total`      | `Total`                                                | `Total`                                                             | Total label in the per-item totals block.                  |
+| Bag / dropdown item | `AVBagItemCard.shippingNote` | `Shipping calculated at checkout`                    | `Envío calculado al finalizar la compra`                           | Note under the item total.                                 |
+| Bag / dropdown item | `AVBagItemCard.checkout`   | `Checkout {count, plural, one {# item} other {# items}}` | `Comprar {count, plural, one {# artículo} other {# artículos}}` | Per-item checkout button. Keep the plural part.            |
+| Bag / dropdown item | `BagPage.remove`           | `Remove`                                               | `Eliminar`                                                          | Remove link on each item (page and dropdown).              |
+| Bag page          | `BagPage.title`              | `My bag`                                               | `Mi bolsa`                                                          | Browser tab / page title.                                  |
+| Bag page          | `BagPage.heading`            | `My bag`                                               | `Mi bolsa`                                                          | Heading at the top of the page.                            |
+| Bag page          | `BagPage.empty`              | `Your bag is empty. Browse the catalog and add pieces you love.` | `Tu bolsa está vacía. Explora el catálogo y agrega las piezas que te encanten.` | Empty state.                                  |
+| Bag page          | `BagPage.fetchError`         | `Loading your bag failed. Please try again.`          | `No se pudo cargar tu bolsa. Inténtalo de nuevo.`                  | Error state.                                               |
+
+---
+
+## 13. Upload Chooser Page (`/create-type`)
+
+When a signed-in seller clicks the **VENDE** button in the desktop top bar, they land on the upload
+chooser page instead of going straight into the listing form. The page asks how they want to upload
+their products and offers two cards:
+
+| Card                       | Button           | Where it goes                                                              |
+| -------------------------- | ---------------- | -------------------------------------------------------------------------- |
+| **Subir un Producto**      | `subir producto` | The normal one-at-a-time listing form (`/l/new`).                          |
+| **Subir varios Productos** | `subir varios`   | The bulk import tool (`/admin/bulk-import`) — see [Section 8](#8-bulk-import-tool). |
+
+**There is nothing to configure** — the page is on by default. Notes:
+
+- **Sign-in required.** The page (and both destinations) require a signed-in user; signed-out
+  visitors are sent to the login page first.
+- **Bulk import is open to every seller.** The "Subir varios" card links to the same bulk import
+  tool described in [Section 8](#8-bulk-import-tool), with the usual per-account limits.
+- **The mobile menu goes here too.** The "create listing" link in the mobile slide-out menu
+  (`TopbarMobileMenu.newListingLink`) opens the same chooser page.
+- The VENDE button label itself is the existing `TopbarDesktop.createListing` translation (see
+  [Section 6](#6-navigation-bar)).
+
+### Customizing the wording
+
+All text on the page can be changed via **Console → Content → Translations** (see
+[Section 1](#1-sharetribe-console-overview)).
+
+| Area              | Key                          | English default                                                            | Spanish default                                                              | Operator note                             |
+| ----------------- | ---------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------ |
+| Browser tab       | `CreateTypePage.title`       | `Upload your products \| Archivo Vintach`                                   | `Sube tus productos \| Archivo Vintach`                                       | Browser tab / page title.                  |
+| Page heading      | `CreateTypePage.heading`     | `Choose how you want to upload your products.`                              | `Elige cómo quieres subir tus productos.`                                     | Heading at the top of the page.            |
+| Single-item card  | `CreateTypePage.singleTitle` | `Upload one Product`                                                        | `Subir un Producto`                                                           | Title of the left card.                    |
+| Single-item card  | `CreateTypePage.singleText`  | `Ideal for uploading one garment or just a few at a time`                   | `Ideal para subir una prenda o pocas prendas a la vez`                        | Description of the left card.              |
+| Single-item card  | `CreateTypePage.singleCta`   | `upload product`                                                            | `subir producto`                                                              | Blue button — goes to the listing form.    |
+| Bulk-upload card  | `CreateTypePage.bulkTitle`   | `Upload multiple Products`                                                  | `Subir varios Productos`                                                      | Title of the right card.                   |
+| Bulk-upload card  | `CreateTypePage.bulkText`    | `Upload several garments with a template. Ideal for big closets or stores.` | `Sube varias prendas con una plantilla. Ideal para closets grandes o tiendas.` | Description of the right card.             |
+| Bulk-upload card  | `CreateTypePage.bulkCta`     | `upload multiple`                                                           | `subir varios`                                                                | Blue button — goes to the bulk import tool. |

@@ -73,12 +73,12 @@
   /* Text size should be inherited */
   text-decoration: none;
 
-  /* Logout font is smaller and gray since the action is not recommended. */
+  /* Logout font is smaller since the action is not recommended. */
   font-weight: var(--fontWeightSemiBold);
   font-size: 18px;
   line-height: 24px;
 
-  color: var(--colorGrey600);
+  color: var(--colorBlack);
 
   /* Position component */
   width: initial;
@@ -126,14 +126,14 @@
 .navigationLink {
   /* Font */
   composes: customLinkFont;
-  color: var(--colorGrey900);
+  color: var(--colorBlack);
 
   /* Layout */
   margin-top: 0;
   margin-bottom: 11px;
 
   & a {
-    color: var(--colorGrey900);
+    color: var(--colorBlack);
   }
 
   &:hover,
@@ -206,7 +206,7 @@
   font-size: 18px;
   font-weight: var(--fontWeightBold);
   letter-spacing: 0.1em;
-  color: var(--colorGrey900);
+  color: var(--colorBlack);
   padding: 4px 0 2px 0;
   margin-top: 0;
   margin-bottom: 11px;

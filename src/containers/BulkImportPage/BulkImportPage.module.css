@@ -38,7 +38,7 @@
 }
 
 .pageSubtitle {
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   font-size: 16px;
   margin: 0 0 24px;
 }
@@ -114,7 +114,7 @@
 }
 
 .stepText {
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   font-size: 16px;
   line-height: 1.45;
   margin: 0;
@@ -156,7 +156,7 @@
 }
 
 .dropSubtitle {
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   font-size: 16px;
   margin: 0 auto 24px;
   max-width: 340px;
@@ -198,7 +198,7 @@
 }
 
 .fileSelected {
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   font-size: 15px;
   font-weight: var(--fontWeightSemiBold);
   margin: 0;
@@ -225,7 +225,7 @@
 
 .reviewText {
   margin: 0;
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   font-size: 15px;
   line-height: 1.45;
 }
@@ -366,7 +366,7 @@
 }
 
 .helpItemText {
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   font-size: 14px;
   line-height: 1.4;
 }
@@ -383,7 +383,7 @@
 }
 
 .statusText {
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   font-size: 16px;
 }
 
@@ -408,7 +408,7 @@
 
 .progressText {
   margin-top: 8px;
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   font-size: 14px;
 }
 
@@ -454,8 +454,7 @@
   margin: 20px 0 8px;
 }
 
-.errorsSection,
-.resultsSection {
+.errorsSection {
   margin-top: 16px;
 }
 
@@ -481,13 +480,22 @@
   color: var(--colorFail, #ff0000);
 }
 
-.successCell {
-  color: var(--colorSuccess, #2ecc71);
+.completedActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.viewListingsLink {
+  composes: ctaButtonBlue from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  margin-top: 0;
 }
 
 .resetButton {
   composes: ctaButtonBlue from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
-  margin-top: 20px;
+  margin-top: 0;
 }
 
 .errorBox {
@@ -512,5 +520,5 @@
   background: #fff8e1;
   border-left: 3px solid #f9a825;
   font-size: 13px;
-  color: #555;
+  color: var(--colorBlack);
 }

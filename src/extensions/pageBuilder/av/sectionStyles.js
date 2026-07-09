@@ -40,6 +40,7 @@ const buildSectionCtaBaseMap = css => ({
   SectionCtaBtnPurple: css.ctaButtonPurple,
   SectionCtaBtnPink: css.ctaButtonPink,
   SectionCtaBtnYellow: css.ctaButtonYellow,
+  SectionCtaBtnSecondary: css.ctaButtonSecondary,
 });
 
 const buildCtaModifierMap = css => ({

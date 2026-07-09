@@ -21,7 +21,7 @@
   composes: h5 from global;
 
   flex-shrink: 0;
-  color: var(--colorGrey600);
+  color: var(--colorBlack);
   margin-top: 24px;
   margin-bottom: 60px;
 

@@ -9,7 +9,7 @@
   font-size: 13px;
   line-height: 16px;
   margin-bottom: 0;
-  color: var(--colorGrey900);
+  color: var(--colorBlack);
 }
 
 .control {
@@ -198,7 +198,7 @@
   border-bottom: 1px solid var(--colorGrey100);
   cursor: pointer;
   font-size: 14px;
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   text-align: left;
   transition: background-color 0.1s ease;
 }

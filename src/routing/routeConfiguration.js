@@ -35,6 +35,7 @@ const BulkImportPage = loadable(() => import(/* webpackChunkName: "BulkImportPag
 const MySalesPage = loadable(() => import(/* webpackChunkName: "MySalesPage" */ '../containers/MySalesPage/MySalesPage'));
 const FavoritesPage = loadable(() => import(/* webpackChunkName: "FavoritesPage" */ '../containers/FavoritesPage/FavoritesPage'));
 const BagPage = loadable(() => import(/* webpackChunkName: "BagPage" */ '../containers/BagPage/BagPage'));
+const CreateTypePage = loadable(() => import(/* webpackChunkName: "CreateTypePage" */ '../containers/CreateTypePage/CreateTypePage'));
 const PasswordChangePage = loadable(() => import(/* webpackChunkName: "PasswordChangePage" */ '../containers/PasswordChangePage/PasswordChangePage'));
 const PasswordRecoveryPage = loadable(() => import(/* webpackChunkName: "PasswordRecoveryPage" */ '../containers/PasswordRecoveryPage/PasswordRecoveryPage'));
 const PasswordResetPage = loadable(() => import(/* webpackChunkName: "PasswordResetPage" */ '../containers/PasswordResetPage/PasswordResetPage'));
@@ -319,6 +320,16 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       auth: true,
       authPage: 'LoginPage',
       component: BulkImportPage,
+    },
+    {
+      // Chooser between single-listing creation and bulk ZIP import;
+      // the topbar VENDE (create listing) button points here.
+      path: '/create-type',
+      name: 'CreateTypePage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: CreateTypePage,
+      loadData: pageDataLoadingAPI.CreateTypePage.loadData,
     },
     {
       path: '/order/:id',

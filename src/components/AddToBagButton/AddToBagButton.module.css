@@ -1,30 +1,26 @@
-/* avBlueLight pill (matches the ctaButtonLightBlue treatment): full width,
-   avBlueLight background, avYellowLight text + outline. */
+/* Canonical secondary CTA (white/black, composed from SectionBuilder),
+   reshaped as a full-width pill. Self-chained (0,2,0) overrides pin the pill
+   geometry so they beat the composed base regardless of CSS-module emit
+   order. */
 .root {
+  composes: ctaButtonSecondary from '../../containers/PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  cursor: pointer;
+}
+
+.root.root {
   display: flex;
   align-items: center;
   justify-content: center;
 
   width: 100%;
   min-height: 48px;
+  margin-top: 0;
   padding: 0 16px;
-  border: 1px solid var(--avYellowLight);
-  border-radius: 26px;
-  background-color: var(--avBlueLight);
-  color: var(--avYellowLight);
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.1s ease;
-
-  &:hover {
-    background-color: #3489d2;
-    color: var(--avYellowLight);
-  }
 }
 
-/* Already-in-bag state: darker blue so the toggle reads as active. */
-.inBag {
-  background-color: #3489d2;
+/* Already-in-bag state: light grey fill so the toggle reads as active. */
+.inBag.inBag {
+  --_av-bg: var(--colorGrey100);
 }
 
 .label {

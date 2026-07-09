@@ -168,6 +168,13 @@ describe('parseBlockCtaClass', () => {
     });
   });
 
+  it('parses the secondary base token', () => {
+    expect(parseBlockCtaClass('blockCtaBtnSecondary ::', cssMock)).toEqual({
+      baseClass: 'ctaButtonSecondary',
+      modifierClasses: [],
+    });
+  });
+
   it('parses a modifier-only token with no base color (does NOT inject a default base)', () => {
     expect(parseBlockCtaClass('ctaBtnCenter ::', cssMock)).toEqual({
       baseClass: null,

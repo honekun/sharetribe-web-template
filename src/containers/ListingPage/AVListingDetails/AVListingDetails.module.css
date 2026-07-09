@@ -13,12 +13,12 @@
 .descriptionRow {
   font-size: 16px;
   line-height: 1.4;
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   margin: 0;
 }
 
 .label {
-  color: var(--colorGrey900);
+  color: var(--colorBlack);
 }
 
 .link {
@@ -121,7 +121,7 @@
 
 /* description excerpt + toggle */
 .descriptionRow {
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
 }
 .descriptionText {
   white-space: pre-wrap;

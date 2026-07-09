@@ -80,7 +80,7 @@
 }
 
 .label {
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
 }
 
 .labelSelected {
@@ -101,7 +101,7 @@
   margin: 0;
   display: block;
   font-weight: var(--fontWeightMedium);
-  color: var(--colorGrey600);
+  color: var(--colorBlack);
   padding: 2px 0 4px 12px;
 
   /* Override button styles */

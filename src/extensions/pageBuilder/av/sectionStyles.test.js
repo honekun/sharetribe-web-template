@@ -162,6 +162,11 @@ describe('parseSectionCtaClass', () => {
     expect(result).toContain('ctaButtonPink');
   });
 
+  it('returns ctaButtonSecondary class for "- SectionCtaBtnSecondary" token', () => {
+    const result = parseSectionCtaClass('Section - SectionCtaBtnSecondary', css);
+    expect(result).toContain('ctaButtonSecondary');
+  });
+
   it('includes modifier classes alongside base class', () => {
     const result = parseSectionCtaClass('Section - SectionCtaBtnBlue - RoundedFull', css);
     expect(result).toContain('ctaButtonBlue');

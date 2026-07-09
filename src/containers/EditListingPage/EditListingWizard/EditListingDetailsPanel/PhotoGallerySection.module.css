@@ -22,7 +22,7 @@
 
 .photosTip {
   font-size: 14px;
-  color: var(--colorGrey600);
+  color: var(--colorBlack);
   margin: -8px 0 16px 0;
 }
 
@@ -66,7 +66,7 @@
   margin-top: 6px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   text-align: center;
 }
 

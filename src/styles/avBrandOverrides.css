@@ -15,6 +15,7 @@
 :root {
   /* ================ AV Brand Palette ================ */
   --avGray1: hsl(0 0% 80%);
+  --avGray2: rgb(238, 238, 238); /* #eeeeee — light card background */
   --avBlue: hsl(234 88% 48%); /* #0f26e4 */
   --avBlueLight: hsl(208 89% 63%); /* #4da8f5 */
   --avBlueDark: #1d4ed8; /* hover/active state blue */
@@ -157,8 +158,20 @@ body {
   letter-spacing: 1px;
 }
 
+/* Buttons don't inherit letter-spacing from body: the UA stylesheet resets it
+   on form controls, so button text renders tighter than everything else.
+   Restore inheritance; .buttonSecondaryInline is the one global button class
+   that sets an explicit 0 upstream (marketplaceDefaults.css), so re-assert
+   the 1px there too (same specificity, this file loads later). */
+button {
+  letter-spacing: inherit;
+}
+.buttonSecondaryInline {
+  letter-spacing: 1px;
+}
+
 html {
-  color: var(--colorGrey900);
+  color: var(--colorBlack);
 }
 
 h1,
@@ -657,19 +670,27 @@ textarea {
   }
 }
 
+/* ================ Sharetribe <Button> rounding (AV) ================
+   Round the global button classes (marketplaceDefaults.css) to the avCtaButton
+   pill radius. Colors, sizing, and the inProgress/ready spinner-checkmark
+   animations stay upstream — this is deliberately NOT the composed avCtaButton
+   treatment (see src/containers/PageBuilder/SectionBuilder/SectionBuilder.module.css).
+   Same (0,1,0) specificity as the upstream rules; this file loads after
+   marketplaceDefaults.css (src/index.js), so source order breaks the tie. */
+.buttonDefault,
+.buttonPrimary,
+.buttonSecondary,
+.buttonPrimaryInline,
+.buttonSecondaryInline {
+  border-radius: 26px;
+}
+
 /* ================ Upstream component restyles (AV) ================
    Cosmetic tweaks that previously lived inside upstream component *.module.css
    files, relocated here so those files stay byte-identical to upstream. Each
    targets the stable scoped-class prefix and raises specificity with `:root`
    (0,2,0) to beat the module's own rule regardless of source order. Only the
    AV-changed properties are set; all other upstream rules are untouched. */
-
-/* Button — extra letter-spacing on the pill button label (desktop). */
-:root [class*='Button_buttonPill__'] {
-  @media (--viewportMedium) {
-    letter-spacing: 1px;
-  }
-}
 
 /* ValidationError — slightly larger error text (upstream: 13px). */
 :root [class*='ValidationError_root__'] {
@@ -790,6 +811,31 @@ textarea {
 :root [class*='ListingPage_desktopPriceValue__'],
 :root [class*='ListingPage_authorNameLink__'] {
   color: var(--avBlue);
+}
+
+/* Product-layout action bar ("Este es tu producto — Editar producto"): white
+   card with black text instead of the upstream dark-grey bar. The edit/payout
+   links set their own grey100 colour, so they need the explicit override;
+   ownListingText has no colour of its own and inherits the bar's black. The
+   pending-approval / missing-payout warning texts keep their own
+   `--colorAttention` (their (0,1,0) rules still colour the element itself). */
+:root [class*='ListingPage_actionBarForProductLayout__'] {
+  background-color: transparent;
+  color: var(--colorWhite);
+}
+:root [class*='ListingPage_actionBarForProductLayout__'] [class*='ListingPage_editListingLink__'],
+:root [class*='ListingPage_actionBarForProductLayout__'] [class*='ListingPage_addPayoutDetails__'] {
+  color: var(--colorBlack);
+  font-size: 18px;
+}
+
+/* The upstream EditIcon hardcodes stroke="#FFFFFF" (invisible outside the old
+   dark bar). CSS beats SVG presentation attributes, so follow the link colour. */
+:root
+  [class*='ListingPage_actionBarForProductLayout__']
+  [class*='ListingPage_editIcon__']
+  g[stroke] {
+  stroke: currentColor;
 }
 
 /* Section titles use the AV listing-section title scale (upstream composes the

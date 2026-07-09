@@ -105,7 +105,9 @@ const TopbarMobileMenu = props => {
   });
 
   const createListingsLinkMaybe = showCreateListingsLink ? (
-    <NamedLink className={css.createNewListingLink} name="NewListingPage">
+    // AV: points to the create-type chooser (single listing vs bulk import),
+    // same as the desktop VENDE button.
+    <NamedLink className={css.createNewListingLink} name="CreateTypePage">
       <FormattedMessage id="TopbarMobileMenu.newListingLink" />
     </NamedLink>
   ) : null;

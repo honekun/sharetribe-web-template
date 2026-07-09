@@ -5,6 +5,7 @@ import { connect } from 'react-redux';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
+import { selectFavoriteIds } from '../../ducks/favorites.duck';
 
 import {
   AVListingCard,
@@ -84,8 +85,14 @@ export const FavoritesPageComponent = props => {
 
 const mapStateToProps = state => {
   const { listingRefs, queryInProgress, queryError } = state.FavoritesPage;
+  // Live-filter the loaded refs by the favorites duck so un-favoriting a card
+  // removes it immediately without a refetch. toggleFavorite is optimistic and
+  // rolls back on API failure, which makes the card reappear. The duck is
+  // hydrated in this page's loadData, so the filter is a no-op on first render.
+  const favoriteIds = selectFavoriteIds(state);
+  const currentRefs = listingRefs.filter(ref => favoriteIds.includes(ref.id.uuid));
   return {
-    listings: getMarketplaceEntities(state, listingRefs),
+    listings: getMarketplaceEntities(state, currentRefs),
     queryInProgress,
     queryError,
     scrollingDisabled: isScrollingDisabled(state),

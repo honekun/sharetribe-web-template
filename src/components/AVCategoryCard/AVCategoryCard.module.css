@@ -59,7 +59,7 @@
   font-family: var(--fontFamilyHeadings, sans-serif);
   font-size: 24px;
   font-weight: var(--fontWeightBold);
-  color: var(--colorGrey900);
+  color: var(--colorBlack);
   text-align: center;
   line-height: 1.2;
 }

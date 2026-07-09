@@ -16,6 +16,7 @@ import { loadData as MyPurchasesPageLoader } from './MyPurchasesPage/MyPurchases
 import { loadData as MyBalancePageLoader } from './MyBalancePage/MyBalancePage.duck';
 import { loadData as MySalesPageLoader } from './MySalesPage/MySalesPage.duck';
 import { loadData as FavoritesPageLoader } from './FavoritesPage/FavoritesPage.duck';
+import { loadData as CreateTypePageLoader } from './CreateTypePage/CreateTypePage.duck';
 import { loadData as PaymentMethodsPageLoader } from './PaymentMethodsPage/PaymentMethodsPage.duck';
 import { loadData as PrivacyPolicyPageLoader } from './PrivacyPolicyPage/PrivacyPolicyPage.duck';
 import { loadData as ProfilePageLoader } from './ProfilePage/ProfilePage.duck';
@@ -82,6 +83,9 @@ const getPageDataLoadingAPI = () => {
     },
     FavoritesPage: {
       loadData: FavoritesPageLoader,
+    },
+    CreateTypePage: {
+      loadData: CreateTypePageLoader,
     },
     PaymentMethodsPage: {
       loadData: PaymentMethodsPageLoader,

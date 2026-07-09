@@ -1,0 +1,101 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CreateTypePage matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="root"
+    id="page"
+    style="--marketplaceColor: #7c3aee; --marketplaceColorDark: hsl(262, 84%, 48%); --marketplaceColorLight: hsl(262, 84%, 68%);"
+  >
+    <div
+      class="content"
+    >
+      <div
+        class="root"
+        style="grid-template-areas: 'topbar' 'main' 'footer'; display: grid;"
+      >
+        <header
+          class="topbar"
+          style="grid-area: topbar;"
+        />
+        <main
+          class="main"
+          id="main-content"
+          style="grid-area: main;"
+        >
+          <main
+            class="root"
+          >
+            <h1
+              class="h1 heading"
+            >
+              <span>
+                CreateTypePage.heading
+              </span>
+            </h1>
+            <div
+              class="cards"
+            >
+              <div
+                class="card"
+              >
+                <h2
+                  class="h2 cardTitle"
+                >
+                  <span>
+                    CreateTypePage.singleTitle
+                  </span>
+                </h2>
+                <p
+                  class="cardText"
+                >
+                  <span>
+                    CreateTypePage.singleText
+                  </span>
+                </p>
+                <a
+                  class="cta"
+                  href="/l/new"
+                >
+                  <span>
+                    CreateTypePage.singleCta
+                  </span>
+                </a>
+              </div>
+              <div
+                class="card"
+              >
+                <h2
+                  class="h2 cardTitle"
+                >
+                  <span>
+                    CreateTypePage.bulkTitle
+                  </span>
+                </h2>
+                <p
+                  class="cardText"
+                >
+                  <span>
+                    CreateTypePage.bulkText
+                  </span>
+                </p>
+                <a
+                  class="cta"
+                  href="/admin/bulk-import"
+                >
+                  <span>
+                    CreateTypePage.bulkCta
+                  </span>
+                </a>
+              </div>
+            </div>
+          </main>
+        </main>
+        <div
+          style="grid-area: footer;"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

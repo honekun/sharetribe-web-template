@@ -52,7 +52,7 @@
 
   & li {
     font-size: 14px;
-    color: var(--colorGrey700);
+    color: var(--colorWhite);
     padding: 4px 0px;
     list-style-position: inside;
   }

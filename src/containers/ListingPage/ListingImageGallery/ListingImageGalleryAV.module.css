@@ -11,10 +11,23 @@
   margin-right: 0;
 }
 
+/* Thumbnail selection: thin black border instead of the vendored 4px blue.
+   The base border-width shrinks to match so selecting/hovering never shifts
+   layout. Loads after the vendored image-gallery.css (import order in
+   ListingImageGallery.js), so the specificity ties resolve to these rules. */
+:global(.image-gallery-thumbnail) {
+  border-width: 1px;
+}
+:global(.image-gallery-thumbnail.active),
+:global(.image-gallery-thumbnail:focus),
+:global(.image-gallery-thumbnail:hover) {
+  border: 1px solid var(--colorBlack);
+}
+
 /* Slot caption label (Front / Back / …) shown under each gallery image. */
 .imageLabel {
-  background-color: var(--avBlue);
-  color: var(--colorWhite);
+  background-color: var(--colorWhite);
+  color: var(--colorBlack);
   font-family: var(--fontFamilyHeadings);
   font-weight: var(--fontWeightBold);
   font-size: 16px;

@@ -11,46 +11,28 @@
   margin-bottom: 2rem;
 }
 
+/* Canonical PageBuilder CTA styles (composed from SectionBuilder) so pricing
+   CTAs track the base if it changes. Self-chained (0,2,0) overrides beat the
+   composed base regardless of CSS-module emit order; the card/button-group
+   layouts control their own spacing, so the ctaButton top margin is dropped. */
 .ctaButton {
-  display: inline-block;
-  padding: 11px 22px;
-  font-size: 14px;
-  background-color: var(--ctaSecondaryBG);
-  border-radius: 10px;
-  color: var(--ctaSecondary);
-  border: 1px solid var(--ctaSecondaryBG);
-  text-decoration: none;
-  font-weight: 400;
-  font-family: var(--fontFamilyHeadings);
-  line-height: 150%; /* 21px */
-  transition: var(--colorTransition);
-
-  &:hover {
-    text-decoration: none;
-    background-color: var(--ctaPrimaryBG);
-    color: var(--ctaPrimary);
-    border-color: var(--ctaPrimary);
-  }
+  composes: ctaButtonSecondary from '../../containers/PageBuilder/SectionBuilder/SectionBuilder.module.css';
+}
+.ctaButton.ctaButton {
+  margin-top: 0;
 }
 
 .toggleButton {
-  composes: ctaButton;
-
-  background-color: var(--ctaPrimaryBG);
-  color: var(--ctaPrimary);
-  border-color: var(--ctaPrimary);
+  composes: ctaButtonPrimary from '../../containers/PageBuilder/SectionBuilder/SectionBuilder.module.css';
   cursor: pointer;
-
-  &:hover {
-    background-color: var(--ctaSecondaryBG);
-    color: var(--ctaSecondary);
-    border: 1px solid var(--ctaSecondaryBG);
-  }
+}
+.toggleButton.toggleButton {
+  margin-top: 0;
 }
 
-.active {
+.active.active {
   background-color: var(--ctaSecondaryBG);
-  color: white;
+  color: var(--ctaSecondary);
   border-color: var(--ctaSecondaryBG);
 }
 

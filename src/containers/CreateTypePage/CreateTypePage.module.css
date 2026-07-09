@@ -1,0 +1,64 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+
+  @media (--viewportMedium) {
+    padding: 48px 24px 96px;
+  }
+}
+
+.heading {
+  text-align: center;
+  margin: 0 0 32px;
+
+  @media (--viewportMedium) {
+    margin: 0 0 56px;
+  }
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+
+  @media (--viewportMedium) {
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--avGray2);
+  border-radius: 40px;
+  padding: 40px 48px;
+  transition: box-shadow var(--transitionStyleButton);
+}
+.card:hover {
+  box-shadow: var(--boxShadowSectionLocationHover);
+}
+
+.cardTitle {
+  margin: 0 0 12px;
+}
+
+.cardText {
+  margin: 0 0 24px;
+  /* Pushes the CTA to the bottom so both cards' buttons align. */
+  flex-grow: 1;
+}
+
+.cta {
+  composes: ctaButtonBlue from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+}
+/* Layout pins over the composed avCtaButton base (self-chained per the AV CTA
+   button system so the (0,2,0) specificity wins regardless of module order). */
+.cta.cta {
+  display: block;
+  width: 100%;
+  margin-top: 0;
+}

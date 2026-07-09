@@ -180,77 +180,58 @@
   composes: ctaButton;
 }
 
-.ctaButtonSecondary {
-  composes: ctaButton;
-  background-color: var(--ctaSecondaryBG);
-  color: var(--ctaSecondary);
-  border-color: var(--ctaSecondaryBG);
-
-  &:hover {
-    background-color: var(--ctaPrimaryBG);
-    color: var(--ctaPrimary);
-    border-color: var(--ctaPrimary);
-  }
-}
-
-/* ── AV base: reads theming vars set by each variant ── */
+/* ── AV base: all shared button styles live here. Variants (and the modifier
+   classes below) only set the `--_av-*` theming vars this base reads.
+   Defaults: yellow-light text, outline matching the text color, solid 1px. ── */
 .avCtaButton {
   composes: ctaButton;
+  --_av-fg: var(--_av-color, var(--avYellowLight));
   border: none;
   outline-offset: 0;
   text-align: center;
   background-color: var(--_av-bg);
-  color: var(--_av-color);
-  outline: 1px var(--_av-outline-style, solid) var(--_av-outline-color);
+  color: var(--_av-fg);
+  outline: 1px var(--_av-outline-style, solid) var(--_av-outline-color, var(--_av-fg));
   font-family: var(--_av-font, var(--fontFamily));
   border-radius: var(--_av-radius, 26px);
   font-size: var(--fontSizeBase, 16px);
   font-weight: 700;
+  /* Pin the global 1px here: <button> hosts don't inherit it from body (UA
+     form-control reset) and <a> hosts could sit in tighter-spaced parents. */
+  letter-spacing: 1px;
   min-width: 140px;
 
+  /* re-declare what .ctaButton:hover changes (background, color) */
   &:hover {
     background-color: var(--_av-bg-hover, var(--_av-bg));
-    color: var(--_av-color);
-    outline-color: var(--_av-outline-color);
+    color: var(--_av-fg);
   }
 }
 
-/* Each variant only sets the theming vars */
+/* Each variant only sets its colors */
 
 .ctaButtonBlue {
   composes: avCtaButton;
   --_av-bg: var(--avBlue);
   --_av-bg-hover: var(--avBlueDark);
-  --_av-color: var(--avYellowLight);
-  --_av-outline-color: var(--avYellowLight);
-  --_av-outline-style: solid;
 }
 
 .ctaButtonLightBlue {
   composes: avCtaButton;
   --_av-bg: var(--avBlueLight);
   --_av-bg-hover: #3489d2;
-  --_av-color: var(--avYellowLight);
-  --_av-outline-color: var(--avYellowLight);
-  --_av-outline-style: solid;
 }
 
 .ctaButtonPurple {
   composes: avCtaButton;
   --_av-bg: var(--avPurple);
   --_av-bg-hover: #a468bc;
-  --_av-color: var(--avYellowLight);
-  --_av-outline-color: var(--avYellowLight);
-  --_av-outline-style: solid;
 }
 
 .ctaButtonPink {
   composes: avCtaButton;
   --_av-bg: var(--avPink);
   --_av-bg-hover: #db2777;
-  --_av-color: var(--avYellowLight);
-  --_av-outline-color: var(--avYellowLight);
-  --_av-outline-style: solid;
 }
 
 .ctaButtonYellow {
@@ -258,8 +239,14 @@
   --_av-bg: var(--avYellow);
   --_av-bg-hover: #bfbd59;
   --_av-color: var(--avBlueLight);
-  --_av-outline-color: var(--avBlueLight);
-  --_av-outline-style: solid;
+}
+
+/* Secondary: white with black text; the outline follows the text color, so
+   the black border comes from the base's fg default. */
+.ctaButtonSecondary {
+  composes: avCtaButton;
+  --_av-bg: var(--colorWhite);
+  --_av-color: var(--colorBlack);
 }
 
 /* ── AV button modifiers — override single theming vars ── */
@@ -379,9 +366,11 @@
   }
 }
 
-.darkTheme .ctaButtonPurpleDashed,
-.darkTheme .ctaButtonPink {
-  border: 1px solid transparent;
+/* AV buttons are outline-based (border: none); cancel the border that
+   `.darkTheme .ctaButton` above adds. Composed class, so this hits every
+   ctaButton<Color> variant. */
+.darkTheme .avCtaButton {
+  border: none;
 }
 
 .darkTheme hr {

@@ -4,7 +4,7 @@
 
 .intro {
   composes: marketplaceBodyFontStyles from global;
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   margin: 0 0 24px 0;
 }
 

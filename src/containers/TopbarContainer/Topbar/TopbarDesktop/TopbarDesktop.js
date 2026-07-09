@@ -56,10 +56,12 @@ const FavoritesLink = () => {
       title={label}
       aria-label={label}
     >
+      {/* 25px-tall box; extra viewBox space above the path renders the heart
+          itself 24px tall, bottom-aligned. */}
       <svg
         className={css.favoritesHeart}
         height="25"
-        viewBox="2 2 20 19"
+        viewBox="2 1.21 20 19.79"
         xmlns="http://www.w3.org/2000/svg"
         aria-hidden="true"
       >
@@ -87,7 +89,9 @@ const InboxLink = ({ notificationCount, inboxTab }) => {
       aria-label={label}
     >
       <span className={css.inboxIcon}>
-        <svg height="25" viewBox="2 5 20 14" aria-hidden="true">
+        {/* 25px-tall box; extra viewBox space above the path renders the
+            envelope itself 22px tall, bottom-aligned. */}
+        <svg height="25" viewBox="2 3.09 20 15.91" aria-hidden="true">
           <path
             d="M3 5a1 1 0 0 0-1 1v1.2l10 5.8 10-5.8V6a1 1 0 0 0-1-1H3zM2 9.5V18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V9.5l-9.5 5.5a1 1 0 0 1-1 0L2 9.5z"
             fill="currentColor"
@@ -269,9 +273,9 @@ const TopbarDesktop = props => {
 
         <div className={css.rightGroup}>
           {createListingMaybe}
+          {inboxLinkMaybe}
           {favoritesLinkMaybe}
           <BagLink />
-          {inboxLinkMaybe}
           {profileMenuMaybe}
           {signupLinkMaybe}
           {loginLinkMaybe}
