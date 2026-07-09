@@ -880,7 +880,7 @@ The top-right area of the desktop top bar shows a row of actions. From left to r
 
 | Item | Appearance | Links to | Shown when |
 | --- | --- | --- | --- |
-| **VENDE** (Sell / Create listing) | Purple pill button | Upload chooser page (`/create-type`) — see [Section 13](#13-upload-chooser-page-create-type) | Signed in |
+| **VENDE** (Sell / Create listing) | Blue pill button | Upload chooser page (`/create-type`) — see [Section 13](#13-upload-chooser-page-create-type) | Signed in |
 | **Favorites** | Black heart icon | Favorites page (`/favorites`) | Signed in |
 | **Bag** | Black bag icon with an item-count badge | Bag page (`/bag`) | Always (works logged out) |
 | **Inbox** | Black envelope icon | Inbox | Signed in |
