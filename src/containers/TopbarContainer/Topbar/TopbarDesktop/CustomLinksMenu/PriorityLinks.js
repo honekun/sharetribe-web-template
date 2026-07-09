@@ -10,7 +10,9 @@ import LinksMenuDropdown from './LinksMenuDropdown';
 import css from './PriorityLinks.module.css';
 
 /**
- * Create component that shows only a single "Post a new listing" link.
+ * Create component that shows only a single "Post a new listing" (VENDE) link.
+ * AV: points to the create-type chooser (single listing vs bulk import)
+ * instead of NewListingPage directly.
  *
  * @param {*} props contains customLinksMenuClass
  * @returns div with only one link inside.
@@ -18,7 +20,7 @@ import css from './PriorityLinks.module.css';
 export const CreateListingMenuLink = props => {
   return (
     <div className={props.customLinksMenuClass}>
-      <NamedLink name="NewListingPage" className={classNames(css.priorityLink, css.button)}>
+      <NamedLink name="CreateTypePage" className={classNames(css.priorityLink, css.button)}>
         <span className={css.priorityLinkLabel}>
           <FormattedMessage id="TopbarDesktop.createListing" />
         </span>

@@ -46,6 +46,7 @@ in bulk, and understanding the application settings. No technical background is 
 10. [Custom Translation Strings](#10-custom-translation-strings)
 11. [Favorites (Wish List)](#11-favorites-wish-list)
 12. [Shopping Bag](#12-shopping-bag)
+13. [Upload Chooser Page](#13-upload-chooser-page-create-type)
 
 ---
 
@@ -879,7 +880,7 @@ The top-right area of the desktop top bar shows a row of actions. From left to r
 
 | Item | Appearance | Links to | Shown when |
 | --- | --- | --- | --- |
-| **VENDE** (Sell / Create listing) | Purple pill button | New listing page | Signed in |
+| **VENDE** (Sell / Create listing) | Purple pill button | Upload chooser page (`/create-type`) — see [Section 13](#13-upload-chooser-page-create-type) | Signed in |
 | **Favorites** | Black heart icon | Favorites page (`/favorites`) | Signed in |
 | **Bag** | Black bag icon with an item-count badge | Bag page (`/bag`) | Always (works logged out) |
 | **Inbox** | Black envelope icon | Inbox | Signed in |
@@ -2089,3 +2090,43 @@ All bag text can be changed via **Console → Content → Translations** (see
 | Bag page          | `BagPage.heading`            | `My bag`                                               | `Mi bolsa`                                                          | Heading at the top of the page.                            |
 | Bag page          | `BagPage.empty`              | `Your bag is empty. Browse the catalog and add pieces you love.` | `Tu bolsa está vacía. Explora el catálogo y agrega las piezas que te encanten.` | Empty state.                                  |
 | Bag page          | `BagPage.fetchError`         | `Loading your bag failed. Please try again.`          | `No se pudo cargar tu bolsa. Inténtalo de nuevo.`                  | Error state.                                               |
+
+---
+
+## 13. Upload Chooser Page (`/create-type`)
+
+When a signed-in seller clicks the **VENDE** button in the desktop top bar, they land on the upload
+chooser page instead of going straight into the listing form. The page asks how they want to upload
+their products and offers two cards:
+
+| Card                       | Button           | Where it goes                                                              |
+| -------------------------- | ---------------- | -------------------------------------------------------------------------- |
+| **Subir un Producto**      | `subir producto` | The normal one-at-a-time listing form (`/l/new`).                          |
+| **Subir varios Productos** | `subir varios`   | The bulk import tool (`/admin/bulk-import`) — see [Section 8](#8-bulk-import-tool). |
+
+**There is nothing to configure** — the page is on by default. Notes:
+
+- **Sign-in required.** The page (and both destinations) require a signed-in user; signed-out
+  visitors are sent to the login page first.
+- **Bulk import is open to every seller.** The "Subir varios" card links to the same bulk import
+  tool described in [Section 8](#8-bulk-import-tool), with the usual per-account limits.
+- **The mobile menu is unchanged.** The "create listing" link in the mobile slide-out menu still
+  goes directly to the listing form (`/l/new`).
+- The VENDE button label itself is the existing `TopbarDesktop.createListing` translation (see
+  [Section 6](#6-navigation-bar)).
+
+### Customizing the wording
+
+All text on the page can be changed via **Console → Content → Translations** (see
+[Section 1](#1-sharetribe-console-overview)).
+
+| Area              | Key                          | English default                                                            | Spanish default                                                              | Operator note                             |
+| ----------------- | ---------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------ |
+| Browser tab       | `CreateTypePage.title`       | `Upload your products \| Archivo Vintach`                                   | `Sube tus productos \| Archivo Vintach`                                       | Browser tab / page title.                  |
+| Page heading      | `CreateTypePage.heading`     | `Choose how you want to upload your products.`                              | `Elige cómo quieres subir tus productos.`                                     | Heading at the top of the page.            |
+| Single-item card  | `CreateTypePage.singleTitle` | `Upload one Product`                                                        | `Subir un Producto`                                                           | Title of the left card.                    |
+| Single-item card  | `CreateTypePage.singleText`  | `Ideal for uploading one garment or just a few at a time`                   | `Ideal para subir una prenda o pocas prendas a la vez`                        | Description of the left card.              |
+| Single-item card  | `CreateTypePage.singleCta`   | `upload product`                                                            | `subir producto`                                                              | Blue button — goes to the listing form.    |
+| Bulk-upload card  | `CreateTypePage.bulkTitle`   | `Upload multiple Products`                                                  | `Subir varios Productos`                                                      | Title of the right card.                   |
+| Bulk-upload card  | `CreateTypePage.bulkText`    | `Upload several garments with a template. Ideal for big closets or stores.` | `Sube varias prendas con una plantilla. Ideal para closets grandes o tiendas.` | Description of the right card.             |
+| Bulk-upload card  | `CreateTypePage.bulkCta`     | `upload multiple`                                                           | `subir varios`                                                                | Blue button — goes to the bulk import tool. |
