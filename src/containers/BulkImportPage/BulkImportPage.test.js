@@ -240,7 +240,6 @@ describe('BulkImportPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('BulkImportPage.processing')).toBeInTheDocument();
-      expect(screen.getByText('BulkImportPage.resultsTitle')).toBeInTheDocument();
     });
 
     await act(async () => {
@@ -250,8 +249,14 @@ describe('BulkImportPage', () => {
     await waitFor(() => {
       expect(screen.getByText('BulkImportPage.completed')).toBeInTheDocument();
       expect(screen.getByText('BulkImportPage.newImport')).toBeInTheDocument();
-      expect(screen.getByText('Second listing')).toBeInTheDocument();
     });
+    // The created-listings table is never rendered; a clean import shows the
+    // "view your listings" link instead.
+    expect(screen.queryByText('Second listing')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'BulkImportPage.viewListings' })).toHaveAttribute(
+      'href',
+      '/listings'
+    );
     expect(global.fetch).toHaveBeenCalledWith(
       '/api/bulk-import/start',
       expect.objectContaining({
@@ -267,6 +272,53 @@ describe('BulkImportPage', () => {
         headers: { 'X-Bulk-Import-Token': 'action-token' },
       })
     );
+  });
+
+  it('shows only the error rows (no listings link) when some rows fail', async () => {
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true, token: 'action-token' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ jobId: 'job-123', total: 2 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'job-123',
+          status: 'completed',
+          total: 2,
+          processed: 2,
+          succeeded: 1,
+          failed: 1,
+          errors: [{ row: 2, title: 'Broken listing', error: 'Missing price' }],
+          results: [{ row: 1, title: 'Good listing', status: 'published' }],
+        }),
+      });
+
+    render(<BulkImportPage />, { initialState: baseState });
+
+    const zipInput = await screen.findByLabelText('BulkImportPage.zipLabel');
+    const zipFile = new File(['fake zip content'], 'listings.zip', { type: 'application/zip' });
+    fireEvent.change(zipInput, { target: { files: [zipFile] } });
+
+    fireEvent.click(screen.getByText('BulkImportPage.startImport'));
+
+    await waitFor(() => {
+      expect(screen.getByText('BulkImportPage.completed')).toBeInTheDocument();
+    });
+
+    // Errors table lists the failed row only; the succeeded row is not shown.
+    expect(screen.getByText('BulkImportPage.errorsTitle')).toBeInTheDocument();
+    expect(screen.getByText('Broken listing')).toBeInTheDocument();
+    expect(screen.getByText('Missing price')).toBeInTheDocument();
+    expect(screen.queryByText('Good listing')).not.toBeInTheDocument();
+    // No "view your listings" link when there were failures.
+    expect(
+      screen.queryByRole('link', { name: 'BulkImportPage.viewListings' })
+    ).not.toBeInTheDocument();
   });
 
   it('resets the form after a completed import', async () => {

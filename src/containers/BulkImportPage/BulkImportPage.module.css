@@ -454,8 +454,7 @@
   margin: 20px 0 8px;
 }
 
-.errorsSection,
-.resultsSection {
+.errorsSection {
   margin-top: 16px;
 }
 
@@ -481,13 +480,22 @@
   color: var(--colorFail, #ff0000);
 }
 
-.successCell {
-  color: var(--colorSuccess, #2ecc71);
+.completedActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.viewListingsLink {
+  composes: ctaButtonBlue from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  margin-top: 0;
 }
 
 .resetButton {
   composes: ctaButtonBlue from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
-  margin-top: 20px;
+  margin-top: 0;
 }
 
 .errorBox {

@@ -1384,8 +1384,10 @@ fix them all in one pass and re-upload.
 
 This is different from the per-row errors you may see **while** an import is running. Once the
 pre-flight check passes, rows are created one by one; if an individual row fails at that stage (for
-example, an invalid colour value), it is reported in the results table and the **other rows keep
-going**. See [Troubleshooting](#87-troubleshooting) for those.
+example, an invalid colour value), it is reported in the errors table and the **other rows keep
+going**. Successful rows are not listed individually — when every row imports cleanly, the page
+shows a **View your listings** button that opens your listings page (`/listings`) instead. See
+[Troubleshooting](#87-troubleshooting) for the error cases.
 
 The pre-flight check runs in two passes.
 
@@ -1434,7 +1436,7 @@ This is the "missing values" check. It runs in two stages.
 - **Option values are not verified against the Console.** Values for fields like colour, size,
   brand, `categoría`, `género`, `estado`, `estilo`, and `temporada` are passed through as-is. A typo
   such as `pub_color = blu` **passes** the pre-flight check and only fails later, per row, as an API
-  error in the results table. Always use the exact option keys from
+  error in the errors table. Always use the exact option keys from
   [8.5 Field Values Quick Reference](#85-field-values-quick-reference).
 - **Category existence** is likewise confirmed by the Sharetribe API during processing, not here.
 
@@ -1852,14 +1854,13 @@ again.
 | `BulkImportPage.completed`        | `Import completed`                                             | `Importación completada`                                               | Final status heading.                              |
 | `BulkImportPage.succeeded`        | `{count} succeeded`                                            | `{count} exitosos`                                                     | Success count in the result summary.               |
 | `BulkImportPage.failed`           | `{count} failed`                                               | `{count} fallidos`                                                     | Failure count in the result summary.               |
-| `BulkImportPage.resultsTitle`     | `Created Listings`                                             | `Listings Creados`                                                     | Table heading for successful rows.                 |
 | `BulkImportPage.errorsTitle`      | `Errors`                                                       | `Errores`                                                              | Table heading for failed rows.                     |
 | `BulkImportPage.errorsCapped`     | `Some errors were omitted — only the first 200 are shown.`     | `Algunos errores fueron omitidos — solo se muestran los primeros 200.` | Shown when there are more than 200 errors.         |
 | `BulkImportPage.tableRow`         | `Row`                                                          | `Fila`                                                                 | Error table column header.                         |
-| `BulkImportPage.tableTitle`       | `Title`                                                        | `Título`                                                               | Results table column header.                       |
-| `BulkImportPage.tableStatus`      | `Status`                                                       | `Estado`                                                               | Results table column header.                       |
+| `BulkImportPage.tableTitle`       | `Title`                                                        | `Título`                                                               | Error table column header.                         |
 | `BulkImportPage.tableError`       | `Error`                                                        | `Error`                                                                | Error table column header.                         |
 | `BulkImportPage.newImport`        | `New Import`                                                   | `Nueva Importación`                                                    | Button to start another import after one finishes. |
+| `BulkImportPage.viewListings`     | `View your listings`                                           | `Ver tus anuncios`                                                     | Button shown when every row imported successfully; opens `/listings`. |
 | `BulkImportPage.errorNoZip`       | `Please select a ZIP file.`                                    | `Selecciona un archivo ZIP.`                                           | Validation message.                                |
 
 ### Checkout — delivery options and shipping address

@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
 
-import { Page, LayoutSingleColumn, H2 } from '../../components';
+import { Page, LayoutSingleColumn, H2, NamedLink } from '../../components';
 
 import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
@@ -586,44 +586,20 @@ const BulkImportPageComponent = props => {
                     </div>
                   )}
 
-                  {/* Results table */}
-                  {jobData.results.length > 0 && (
-                    <div className={css.resultsSection}>
-                      <h3 className={css.sectionTitle}>
-                        <FormattedMessage id="BulkImportPage.resultsTitle" />
-                      </h3>
-                      <table className={css.table}>
-                        <thead>
-                          <tr>
-                            <th>
-                              <FormattedMessage id="BulkImportPage.tableRow" />
-                            </th>
-                            <th>
-                              <FormattedMessage id="BulkImportPage.tableTitle" />
-                            </th>
-                            <th>
-                              <FormattedMessage id="BulkImportPage.tableStatus" />
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {jobData.results.map((result, idx) => (
-                            <tr key={idx}>
-                              <td>{result.row}</td>
-                              <td>{result.title}</td>
-                              <td className={css.successCell}>{result.status}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-
-                  {/* Reset button */}
+                  {/* Completed actions. The created-listings table is intentionally
+                      not rendered — on a clean import the "view your listings" link
+                      replaces it; failed rows are covered by the errors table above. */}
                   {status === STATUS_COMPLETED && (
-                    <button className={css.resetButton} onClick={handleReset}>
-                      <FormattedMessage id="BulkImportPage.newImport" />
-                    </button>
+                    <div className={css.completedActions}>
+                      {jobData.failed === 0 && (
+                        <NamedLink className={css.viewListingsLink} name="ManageListingsPage">
+                          <FormattedMessage id="BulkImportPage.viewListings" />
+                        </NamedLink>
+                      )}
+                      <button className={css.resetButton} onClick={handleReset}>
+                        <FormattedMessage id="BulkImportPage.newImport" />
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
