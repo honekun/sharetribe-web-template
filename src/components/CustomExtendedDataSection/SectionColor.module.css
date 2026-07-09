@@ -53,6 +53,6 @@
 .label {
   composes: marketplaceBodyFontStyles from global;
   font-weight: var(--fontWeightMedium);
-  color: var(--colorGrey900);
+  color: var(--colorBlack);
   line-height: 24px;
 }

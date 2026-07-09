@@ -80,13 +80,13 @@
 
 .amountGross {
   font-size: 14px;
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
 }
 
 .amountNet {
   font-size: 16px;
   font-weight: var(--fontWeightSemiBold);
-  color: var(--colorGrey900);
+  color: var(--colorBlack);
 }
 
 /* Status badges */

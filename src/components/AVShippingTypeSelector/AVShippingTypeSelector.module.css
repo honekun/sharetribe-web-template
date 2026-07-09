@@ -67,7 +67,7 @@
   font-weight: var(--fontWeightSemiBold);
 }
 .empty {
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
 }
 
 /* Yellow reminder shown below the cards: prompts the buyer to message the
@@ -96,7 +96,7 @@
   color: var(--colorBlack);
 }
 .alertBody {
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   font-size: 14px;
   line-height: 18px;
 }

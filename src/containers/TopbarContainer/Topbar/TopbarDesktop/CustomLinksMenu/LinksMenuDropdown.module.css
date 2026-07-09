@@ -37,7 +37,7 @@
   font-size: 15px;
   line-height: 18px;
   letter-spacing: 1px;
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
 
   display: inline;
   height: 100%;
@@ -99,7 +99,7 @@
   padding: 10px 24px;
 
   /* Layout details */
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   text-align: left;
   transition: var(--transitionStyleButton);
 

@@ -227,7 +227,7 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: var(--colorGrey900);
+  color: var(--colorBlack);
 }
 .authorAvatar {
   flex-shrink: 0;

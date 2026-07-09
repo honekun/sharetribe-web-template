@@ -92,7 +92,7 @@
   margin: 0 0 16px;
   font-weight: 700;
   line-height: 1.2;
-  color: var(--colorGrey900);
+  color: var(--colorBlack);
 }
 
 .contentPane .titleSmall {
@@ -113,7 +113,7 @@
   p {
     font-size: 16px;
     line-height: 1.6;
-    color: var(--colorGrey700);
+    color: var(--colorBlack);
     margin: 0;
   }
 

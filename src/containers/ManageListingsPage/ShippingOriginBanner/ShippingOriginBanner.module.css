@@ -12,7 +12,7 @@
 .message {
   composes: marketplaceBodyFontStyles from global;
   flex: 1;
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
 }
 
 .cta {

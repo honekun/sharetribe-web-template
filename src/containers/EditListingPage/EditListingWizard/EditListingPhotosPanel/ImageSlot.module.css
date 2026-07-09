@@ -79,7 +79,7 @@
 
 .slotLabel {
   composes: marketplaceTinyFontStyles from global;
-  color: var(--colorGrey600);
+  color: var(--colorBlack);
   text-align: center;
   margin-top: 6px;
   margin-bottom: 0;
@@ -87,7 +87,7 @@
 
 .required {
   composes: slotLabel;
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   font-weight: var(--fontWeightMedium);
 }
 

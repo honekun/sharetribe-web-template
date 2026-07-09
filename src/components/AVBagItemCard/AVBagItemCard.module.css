@@ -95,7 +95,7 @@
 
 .title {
   font-weight: var(--fontWeightSemiBold);
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -181,12 +181,12 @@
 
 .totalsLabel {
   font-weight: var(--fontWeightSemiBold);
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
 }
 
 .totalsValue {
   font-weight: var(--fontWeightBold);
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
 }
 
 .shippingNote {

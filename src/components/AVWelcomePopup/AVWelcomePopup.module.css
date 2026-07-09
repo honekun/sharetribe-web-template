@@ -81,7 +81,7 @@
 .text {
   font-size: 15px;
   line-height: 1.6;
-  color: var(--colorGrey600);
+  color: var(--colorBlack);
   margin: 0 0 20px;
 }
 

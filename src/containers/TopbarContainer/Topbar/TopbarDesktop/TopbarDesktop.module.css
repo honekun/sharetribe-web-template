@@ -118,7 +118,7 @@
   font-size: 15px;
   line-height: 24px;
   letter-spacing: 0;
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
 
   display: inline-block;
   margin: 27px 0;
@@ -246,7 +246,7 @@
   font-size: 15px;
   line-height: 18px;
   letter-spacing: 0;
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
 
   flex-shrink: 0;
   display: flex;
@@ -303,7 +303,7 @@
   padding: 4px 24px;
 
   /* Layout details */
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   text-align: left;
   transition: var(--transitionStyleButton);
 
@@ -342,7 +342,7 @@
   padding: 20px 24px;
 
   /* Layout details */
-  color: var(--colorGrey600);
+  color: var(--colorBlack);
   text-align: left;
   white-space: nowrap;
   transition: var(--transitionStyleButton);

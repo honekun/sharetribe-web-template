@@ -9,7 +9,7 @@
   font-size: 13px;
   line-height: 16px;
   margin-bottom: 0;
-  color: var(--colorGrey900);
+  color: var(--colorBlack);
 }
 
 .control {
@@ -46,7 +46,7 @@
   min-width: 0;
   padding: 7px 0;
   font-size: 16px;
-  color: var(--colorGrey900);
+  color: var(--colorBlack);
   border: none;
   border-radius: 0;
   outline: none;
@@ -123,7 +123,7 @@
 .option {
   padding: 10px 14px;
   font-size: 15px;
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   cursor: pointer;
   transition: background-color 0.1s ease;
 }
