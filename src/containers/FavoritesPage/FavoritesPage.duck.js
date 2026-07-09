@@ -3,6 +3,7 @@ import { storableError } from '../../util/errors';
 import { createImageVariantConfig } from '../../util/sdkLoader';
 import { addMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { fetchCurrentUser } from '../../ducks/user.duck';
+import { syncFavoritesFromUser } from '../../ducks/favorites.duck';
 
 const entityRefs = entities => entities.map(e => ({ id: e.id, type: e.type }));
 
@@ -46,6 +47,9 @@ const queryFavoritesPayloadCreator = (
   return dispatch(fetchCurrentUser())
     .then(() => {
       const currentUser = getState().user.currentUser;
+      // Hydrate the favorites duck here (not only in TopbarContainer's effect)
+      // so the page's live filter matches the loaded refs on SSR/first render.
+      dispatch(syncFavoritesFromUser(currentUser));
       const ids = currentUser?.attributes?.profile?.privateData?.favoriteListingIds || [];
       if (ids.length === 0) {
         return { listingRefs: [] };
