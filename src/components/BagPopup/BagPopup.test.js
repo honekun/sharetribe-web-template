@@ -7,7 +7,8 @@ const { screen } = testingLibrary;
 
 // Harness maps translation keys to themselves; pass real labels for text matchers.
 const messages = {
-  'BagPopup.title': 'Bag ({count} items)',
+  'BagPopup.titleLabel': 'Bag',
+  'BagPopup.titleCount': '({count} items)',
   'BagPopup.close': 'Close',
   'BagPopup.goToBag': 'Go to bag',
 };
@@ -23,8 +24,10 @@ describe('BagPopup', () => {
       messages,
       initialState: { bag: { bagListingIds: ['a'], isPopupOpen: true, hydrated: true } },
     });
-    // Title reflects the item count and the close + Go to bag actions are shown.
-    expect(screen.getByText(/bag \(1 items\)/i)).toBeInTheDocument();
+    // Title label + item count render as separate spans; close + Go to bag actions are shown.
+    expect(screen.getByRole('dialog', { name: 'Bag (1 items)' })).toBeInTheDocument();
+    expect(screen.getByText('Bag')).toBeInTheDocument();
+    expect(screen.getByText('(1 items)')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /go to bag/i })).toHaveAttribute('href', '/bag');
   });
