@@ -880,7 +880,7 @@ The top-right area of the desktop top bar shows a row of actions. From left to r
 
 | Item | Appearance | Links to | Shown when |
 | --- | --- | --- | --- |
-| **VENDE** (Sell / Create listing) | Purple pill button | Upload chooser page (`/create-type`) — see [Section 13](#13-upload-chooser-page-create-type) | Signed in |
+| **VENDE** (Sell / Create listing) | Blue pill button | Upload chooser page (`/create-type`) — see [Section 13](#13-upload-chooser-page-create-type) | Signed in |
 | **Favorites** | Black heart icon | Favorites page (`/favorites`) | Signed in |
 | **Bag** | Black bag icon with an item-count badge | Bag page (`/bag`) | Always (works logged out) |
 | **Inbox** | Black envelope icon | Inbox | Signed in |
@@ -2068,7 +2068,7 @@ the wording.
 All bag text can be changed via **Console → Content → Translations** (see
 [Section 1](#1-sharetribe-console-overview)).
 
-> **Watch the `{count, plural, …}` parts.** Two strings (`BagPopup.title` and
+> **Watch the `{count, plural, …}` parts.** Two strings (`BagPopup.titleCount` and
 > `AVBagItemCard.checkout`) use a plural placeholder that adapts to the number of items. Keep the
 > `{count, plural, one {…} other {…}}` structure and the `#` intact — only change the words around
 > them — or the count will stop displaying correctly.
@@ -2079,7 +2079,8 @@ All bag text can be changed via **Console → Content → Translations** (see
 | Listing button    | `AddToBagButton.inBag`       | `In your bag`                                         | `En tu bolsa`                                                        | Same button once the item has been added.                  |
 | Top bar           | `BagLink.label`              | `Shopping bag`                                        | `Bolsa de compras`                                                  | Tooltip / screen-reader label for the top-bar bag icon.    |
 | Mobile menu       | `TopbarMobileMenu.bagLink`   | `My bag`                                              | `Mi bolsa`                                                          | Mobile menu link to the bag page.                          |
-| Bag dropdown      | `BagPopup.title`             | `Bag ({count, plural, one {# item} other {# items}})` | `Bolsa ({count, plural, one {# artículo} other {# artículos}})`     | Dropdown heading with live item count. Keep the plural part.|
+| Bag dropdown      | `BagPopup.titleLabel`        | `Bag`                                                 | `Bolsa`                                                             | Dropdown heading label; always shown in ALL CAPS.          |
+| Bag dropdown      | `BagPopup.titleCount`        | `({count, plural, one {# item} other {# items}})`     | `({count, plural, one {# artículo} other {# artículos}})`           | Item count next to the heading (regular body font). Keep the plural part.|
 | Bag dropdown      | `BagPopup.close`             | `Close`                                                | `Cerrar`                                                            | Close (×) button on the dropdown.                          |
 | Bag dropdown      | `BagPopup.goToBag`           | `Go to bag`                                            | `Ir a la bolsa`                                                     | Link from the dropdown to the full bag page.               |
 | Bag / dropdown item | `AVBagItemCard.items`      | `Item(s)`                                              | `Artículo(s)`                                                       | Label in the per-item totals block.                        |

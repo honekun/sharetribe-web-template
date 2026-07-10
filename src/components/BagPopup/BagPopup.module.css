@@ -31,6 +31,16 @@
   margin: 0;
 }
 
+.titleLabel {
+  text-transform: uppercase;
+}
+
+/* Item count in parentheses: regular body font, not the bold heading style. */
+.titleCount {
+  font-family: var(--fontFamily);
+  font-weight: var(--fontWeightRegular);
+}
+
 .closeButton {
   flex: 0 0 32px;
   width: 32px;

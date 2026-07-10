@@ -100,16 +100,20 @@ const BagPopup = () => {
     return null;
   }
 
+  const titleLabel = intl.formatMessage({ id: 'BagPopup.titleLabel' });
+  const titleCount = intl.formatMessage({ id: 'BagPopup.titleCount' }, { count });
+
   return (
     <div
       className={css.dropdown}
       ref={rootRef}
       role="dialog"
-      aria-label={intl.formatMessage({ id: 'BagPopup.title' }, { count })}
+      aria-label={`${titleLabel} ${titleCount}`}
     >
       <div className={css.header}>
         <h3 className={css.heading}>
-          <FormattedMessage id="BagPopup.title" values={{ count }} />
+          <span className={css.titleLabel}>{titleLabel}</span>{' '}
+          <span className={css.titleCount}>{titleCount}</span>
         </h3>
         <button
           type="button"
