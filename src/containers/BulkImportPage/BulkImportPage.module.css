@@ -421,20 +421,18 @@
 .successCount {
   color: var(--colorSuccess, #2ecc71);
   font-weight: var(--fontWeightSemiBold);
+  font-size: 18px;
 }
 
 .errorCount {
   color: var(--colorFail, #ff0000);
   font-weight: var(--fontWeightSemiBold);
+  font-size: 18px;
 }
 
 .completedBadge {
-  display: inline-block;
-  background: var(--colorSuccess, #2ecc71);
-  color: white;
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 13px;
+  color: var(--colorBlack);
+  font-size: 18px;
   font-weight: var(--fontWeightSemiBold);
 }
 

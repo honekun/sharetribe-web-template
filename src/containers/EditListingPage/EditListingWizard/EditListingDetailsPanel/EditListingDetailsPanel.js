@@ -26,6 +26,7 @@ import ErrorMessage from './ErrorMessage';
 import EditListingDetailsForm from './EditListingDetailsForm';
 import PhotoGallerySection from './PhotoGallerySection';
 import css from './EditListingDetailsPanel.module.css';
+import avCss from './EditListingDetailsPanel.av.module.css';
 import { reconcileOrderedImages } from './reconcileOrderedImages';
 
 /**
@@ -416,6 +417,9 @@ const EditListingDetailsPanel = props => {
               photoError={photoError}
             />
           )}
+          <h3 className={avCss.formTitle}>
+            <FormattedMessage id="EditListingDetailsPanel.detailsTitle" />
+          </h3>
           <EditListingDetailsForm
             className={css.form}
             initialValues={initialValues}

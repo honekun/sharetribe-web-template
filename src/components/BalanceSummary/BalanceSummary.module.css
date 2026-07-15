@@ -16,17 +16,13 @@
   padding: 8px 16px;
   font-size: 14px;
   font-weight: var(--fontWeightMedium);
-  color: var(--colorGrey500);
+  color: var(--colorBlack);
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
   margin-bottom: -1px;
   transition: color 0.15s ease, border-color 0.15s ease;
-
-  &:hover {
-    color: var(--colorGrey700);
-  }
 }
 
 .tabActive {
@@ -74,7 +70,7 @@
   font-family: var(--fontFamilyHeadings);
   font-size: 13px;
   line-height: 18px;
-  color: var(--colorGrey500);
+  color: var(--colorBlack);
   margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.5px;

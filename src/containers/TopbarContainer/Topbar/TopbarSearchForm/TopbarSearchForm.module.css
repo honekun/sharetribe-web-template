@@ -23,8 +23,8 @@
 }
 
 .fontInput {
-  font-weight: var(--fontWeightBlack);
-  font-size: 24px;
+  font-weight: var(--fontWeightRegular);
+  font-size: 16px;
   line-height: 24px;
 
   /* Layout */
@@ -32,8 +32,6 @@
   padding: 4px 13px 10px 13px;
 
   @media (--viewportMedium) {
-    font-size: 30px;
-    line-height: 40px;
     padding: 5px 13px 15px 13px;
     margin: 0;
   }
@@ -82,9 +80,9 @@
   flex-grow: 1;
   /* Font */
   height: 100%;
-  font-size: 19px;
+  font-size: 16px;
   letter-spacing: 1px;
-  font-weight: var(--fontWeightSemiBold);
+  font-weight: var(--fontWeightRegular);
   line-height: unset;
   color: var(--colorBlack);
 
@@ -118,9 +116,9 @@
 
   /* Placeholder text might be too wide */
   &::placeholder {
-    font-size: 19px;
+    font-size: 16px;
     letter-spacing: 1px;
-    font-weight: var(--fontWeightSemiBold);
+    font-weight: var(--fontWeightRegular);
     color: var(--colorBlack);
     text-overflow: ellipsis;
     overflow-x: hidden;

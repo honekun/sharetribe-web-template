@@ -481,7 +481,9 @@ textarea {
   letter-spacing: 1.5px;
 }
 
-/* All user avatars: white background with brand-blue initials.
+/* All user avatars: black border; black initials on light gray only when there is
+   no profile image (`:not(:has(img))`), so photos with transparency keep a white
+   backdrop instead of the gray showing through.
    Avatar uses CSS Modules, so its DOM class is the scoped `Avatar_avatarBase__<hash>`.
    A plain `.avatarBase` selector can't reach it from this global file, so match the
    stable scoped-class prefix and clear the default gradient instead. */
@@ -490,8 +492,45 @@ textarea {
 :root [class*='Avatar_avatarBase__'] {
   background-image: none;
   background-color: var(--colorWhite);
-  color: var(--avBlue);
-  border: 1px solid var(--avBlue);
+  border: 1px solid var(--colorBlack);
+}
+
+:root [class*='Avatar_avatarBase__']:not(:has(img)) {
+  background-color: var(--avGray2); /* rgb(238, 238, 238) */
+  border-color: var(--avGray2);
+  color: var(--colorBlack);
+}
+
+/* Placeholder initials (all sizes: initials/initialsSmall/initialsMedium/initialsLarge)
+   use the brand headings font. */
+:root [class*='Avatar_avatarBase__'] [class*='Avatar_initials'] {
+  font-family: var(--fontFamilyHeadings);
+}
+
+/* Edit/create listing wizard (all panels at /l/.../edit/* and /l/.../new/*):
+   page heading 30px, section headings 20px, and field labels matching the
+   18px/regular body-font inputs. Scoped to the wizard root (topbar/footer sit
+   outside it); the `:root [class*='…']` pattern reaches the scoped classes and
+   out-specifies both the Heading module classes and the global `label` rule
+   (including its media-query re-assertions). */
+:root [class*='EditListingWizard_root__'] h1 {
+  font-size: 30px;
+  line-height: 38px;
+}
+:root [class*='EditListingWizard_root__'] h3 {
+  font-size: 20px;
+  line-height: 26px;
+}
+:root [class*='EditListingWizard_root__'] label {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: var(--fontWeightSemiBold);
+}
+/* Placeholders (title, description, …) match the black placeholder look of
+   the selects and AV custom fields instead of the global grey300. */
+:root [class*='EditListingWizard_root__'] input::placeholder,
+:root [class*='EditListingWizard_root__'] textarea::placeholder {
+  color: var(--colorBlack);
 }
 
 /* Tighten the grid gap of the PageBuilder article layout.

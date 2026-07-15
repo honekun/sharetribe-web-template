@@ -1638,6 +1638,14 @@ to be silently hidden — the app never shows a raw key string to users.
 | Color selector | `FieldColorDropdown.placeholder`       | `Select colors…`      | `Selecciona colores…` | Empty color field placeholder.                       |
 | Color selector | `FieldColorDropdown.title`             | `Select Color`        | `Seleccionar Color`   | Dropdown panel heading.                              |
 | Color selector | `FieldColorDropdown.close`             | `Close`               | `Cerrar`              | Dropdown close button.                               |
+| Color selector | `FieldColorDropdown.clearAll`          | `Clear all`           | `Borrar todo`         | Clear-all-selected-colors button.                    |
+| Color selector | `FieldColorDropdown.expand`            | `Expand`              | `Expandir`            | Collapsed dropdown toggle label.                     |
+| Color selector | `FieldColorDropdown.collapse`          | `Collapse`            | `Contraer`            | Expanded dropdown toggle label.                      |
+| Size selector  | `FieldGroupedMultiSelect.maxHint`      | `Select up to {max}`  | `Selecciona hasta {max}` | Hint shown when the field caps how many sizes can be picked. |
+| Brand selector | `FieldSearchableSelect.placeholder`    | `Search brand…`       | `Buscar marca…`       | Empty brand field placeholder.                       |
+| Brand selector | `FieldSearchableSelect.clear`          | `Clear`               | `Borrar`              | Clear (×) button.                                    |
+| Brand selector | `FieldSearchableSelect.expand`         | `Expand`              | `Expandir`            | Collapsed dropdown toggle label.                     |
+| Brand selector | `FieldSearchableSelect.collapse`       | `Collapse`            | `Contraer`            | Expanded dropdown toggle label.                      |
 
 ### Listing form — photos and pricing
 
@@ -1669,6 +1677,14 @@ to be silently hidden — the app never shows a raw key string to users.
 | Earnings estimator     | `EarningsEstimator.enterPrice`                    | `Enter a price to see estimated earnings.`                  | `Ingresa un precio para ver tus ganancias estimadas.`          | Shown before a price is entered.                         |
 | Earnings estimator     | `EarningsEstimator.disclaimer`                    | `This is an estimate. Actual fees may vary.`                | `Esto es un estimado. Las tarifas reales pueden variar.`       | Small disclaimer below the estimate.                     |
 | Order breakdown        | `OrderBreakdown.providerCommissionFixed`          | `{marketplaceName} fixed fee`                               | `Tarifa fija de {marketplaceName}`                             | Line item label for the fixed provider commission.       |
+| Photo upload (inline)  | `EditListingDetailsPanel.photoLabel1`             | `Front photo`                                               | `Foto frontal`                                                 | Caption under photo slot 1.                              |
+| Photo upload (inline)  | `EditListingDetailsPanel.photoLabel2`             | `Back photo`                                                | `Foto posterior`                                               | Caption under photo slot 2.                              |
+| Photo upload (inline)  | `EditListingDetailsPanel.photoLabel3`             | `Label or detail`                                           | `Etiqueta o detalle`                                           | Caption under photo slot 3.                              |
+| Photo upload (inline)  | `EditListingDetailsPanel.photoLabel4`             | `Selfie (optional)`                                         | `Selfie (si quieres)`                                          | Caption under photo slot 4.                              |
+| Photo upload (inline)  | `EditListingDetailsPanel.photosTipText`           | `Learn how to take the best photos {link}.`                 | `Aprende a tomar las mejores fotos {link}.`                    | Tip under the uploader; `{link}` renders the link text below. |
+| Photo upload (inline)  | `EditListingDetailsPanel.photosTipLinkText`       | `here`                                                      | `aquí`                                                         | Link text inside the photos tip.                         |
+| Pricing (with stock)   | `EditListingPricingAndStockForm.originalPrice`    | `Original Price (optional)`                                 | `Precio Original (opcional)`                                   | "Was" price label on the pricing + stock panel.          |
+| Pricing (with stock)   | `EditListingPricingAndStockForm.originalPricePlaceholder` | `Add original price…`                               | `Agrega el precio original…`                                   | Placeholder for that original price input.               |
 
 ### Search filters
 
@@ -1745,6 +1761,27 @@ again.
 
 > The popup is shown once per user. After they close it, it will not appear again.
 
+### Store sellers (tienda) wording
+
+Store-seller accounts (user type `vendedor-tienda`) see store-specific wording in signup, profile
+settings, and the account sidebar. These are per-user-type key variants — the `…Tienda` suffix —
+used alongside the regular keys.
+
+| Area             | Key                                                         | English default           | Spanish default                     | Operator note                                     |
+| ---------------- | ----------------------------------------------------------- | -------------------------- | ------------------------------------ | -------------------------------------------------- |
+| Signup           | `SignupForm.displayNameLabel`                               | `Display name`            | `Nombre personalizado`              | Display-name label for regular sellers.           |
+| Signup           | `SignupForm.displayNameLabelTienda`                         | `Store name`              | `Nombre de la tienda`               | Display-name label for store sellers.             |
+| Signup (social)  | `ConfirmSignupForm.displayNameLabelTienda`                  | `Store name`              | `Nombre de la tienda`               | Same label on the social-signup confirm step.     |
+| Profile settings | `ProfileSettingsPage.headingTienda`                         | `Store profile settings`  | `Configuración de perfil de tienda` | Page heading for store sellers.                   |
+| Profile settings | `ProfileSettingsForm.displayNameHeadingTienda`              | `Store name`              | `Nombre de la tienda`               | Display-name section heading.                     |
+| Profile settings | `ProfileSettingsForm.displayNameLabelTienda`                | `Store name`              | `Nombre de la tienda`               | Display-name input label.                         |
+| Profile settings | `ProfileSettingsForm.bioHeadingVendedor`                    | `Your custom description` | `Tu descripción personalizada`      | Bio heading for regular sellers.                  |
+| Profile settings | `ProfileSettingsForm.bioHeadingTienda`                      | `About your store`        | `Acerca de tu tienda`               | Bio heading for store sellers.                    |
+| Profile settings | `ProfileSettingsForm.bioPlaceholderTienda`                  | `Tell us about your brand`| `Cuéntanos sobre tu marca`          | Bio textarea placeholder for store sellers.       |
+| Profile settings | `ProfileSettingsForm.yourProfilePictureTienda`              | `Store logo`              | `Logo de tienda`                    | Avatar section heading for store sellers.         |
+| Account sidebar  | `LayoutWrapperAccountSettingsSideNav.profileTabTitleTienda` | `Store Profile`           | `Perfil de Tienda`                  | Sidebar tab label for store sellers.              |
+| Store tags       | `StoreTypeTags.ariaLabel`                                   | `Store type tags`         | `Etiquetas de tipo de tienda`       | Screen-reader label for the store-type tag chips. |
+
 ### Landing and PageBuilder sections
 
 | Area                | Key / pattern                             | English default               | Spanish default                        | Operator note                                                        |
@@ -1806,12 +1843,15 @@ again.
 | Area            | Key                              | English default                                  | Spanish default                                          | Operator note           |
 | --------------- | -------------------------------- | ------------------------------------------------ | -------------------------------------------------------- | ----------------------- |
 | Purchases page  | `MyPurchasesPage.heading`        | `My Purchases`                                   | `Mis Compras`                                            | Page heading.           |
+| Purchases page  | `MyPurchasesPage.title`          | `My Purchases \| Archivo Vintach`                 | `Mis Compras \| Archivo Vintach`                          | Browser tab title.      |
 | Purchases page  | `MyPurchasesPage.loadingError`   | `Failed to load purchases. Please try again.`    | `No se pudieron cargar las compras. Inténtalo de nuevo.` | Error state.            |
 | Purchases page  | `MyPurchasesPage.noResults`      | `You haven't made any purchases yet.`            | `Aún no has realizado ninguna compra.`                   | Empty state.            |
 | Sales page      | `MySalesPage.heading`            | `My Sales`                                       | `Mis Ventas`                                             | Page heading.           |
+| Sales page      | `MySalesPage.title`              | `My Sales \| Archivo Vintach`                     | `Mis Ventas \| Archivo Vintach`                           | Browser tab title.      |
 | Sales page      | `MySalesPage.loadingError`       | `Failed to load sales. Please try again.`        | `No se pudieron cargar las ventas. Inténtalo de nuevo.`  | Error state.            |
 | Sales page      | `MySalesPage.noResults`          | `You don't have any sales yet.`                  | `Aún no tienes ninguna venta.`                           | Empty state.            |
 | Balance page    | `MyBalancePage.heading`          | `My Balance`                                     | `Mi Balance`                                             | Page heading.           |
+| Balance page    | `MyBalancePage.title`            | `My Balance \| Archivo Vintach`                   | `Mi Balance \| Archivo Vintach`                           | Browser tab title.      |
 | Balance page    | `MyBalancePage.loadingError`     | `Failed to load balance data. Please try again.` | `No se pudieron cargar los datos. Inténtalo de nuevo.`   | Error state.            |
 | Balance page    | `MyBalancePage.noResults`        | `No transactions found.`                         | `No se encontraron transacciones.`                       | Empty state.            |
 | Balance summary | `BalanceSummary.totalEarnings`   | `Total Earnings`                                 | `Ganancias totales`                                      | Summary card heading.   |
@@ -1861,6 +1901,25 @@ again.
 | `BulkImportPage.tableError`       | `Error`                                                        | `Error`                                                                | Error table column header.                         |
 | `BulkImportPage.newImport`        | `New Import`                                                   | `Nueva Importación`                                                    | Button to start another import after one finishes. |
 | `BulkImportPage.viewListings`     | `View your listings`                                           | `Ver tus anuncios`                                                     | Button shown when every row imported successfully; opens `/listings`. |
+| `BulkImportPage.title`            | `Bulk Import \| Archivo Vintach`                               | `Importación Masiva \| Archivo Vintach`                                | Browser tab title.                                 |
+| `BulkImportPage.stepsTitle`       | `Before uploading:`                                            | `Antes de subir:`                                                      | Heading of the three-step instructions sidebar.    |
+| `BulkImportPage.step1Title`       | `1. Complete the template`                                     | `1. Completa la plantilla`                                             | Step 1 title.                                      |
+| `BulkImportPage.step1Text`        | `Add one row per item.`                                        | `Agrega una fila por prenda.`                                          | Step 1 text.                                       |
+| `BulkImportPage.step2Title`       | `2. Photo instructions`                                        | `2. Instrucciones de fotos`                                            | Step 2 title.                                      |
+| `BulkImportPage.step2Text`        | `Each photo's filename must match the item name…`              | `El nombre de tus fotos debe ser igual al nombre…`                     | Step 2 text.                                       |
+| `BulkImportPage.step3Title`       | `3. Compress everything into a ZIP`                            | `3. Comprime todo en ZIP`                                              | Step 3 title.                                      |
+| `BulkImportPage.step3Text`        | `Include the template and the photos folder…`                  | `Incluye la plantilla y la carpeta de fotos…`                          | Step 3 text.                                       |
+| `BulkImportPage.dropzoneTitle`    | `Upload your ZIP file`                                         | `Sube tu archivo ZIP`                                                  | Drop-zone heading.                                 |
+| `BulkImportPage.dropzoneSubtitle` | `Drag your file here or select it from your computer.`         | `Arrastra tu archivo aquí o selecciónalo desde tu computadora.`        | Drop-zone subtitle.                                |
+| `BulkImportPage.selectZip`        | `Select ZIP file`                                              | `Seleccionar archivo ZIP`                                              | File-picker button label.                          |
+| `BulkImportPage.noFileSelected`   | `No file selected`                                             | `Ningún archivo seleccionado`                                          | Shown before a file is chosen.                     |
+| `BulkImportPage.dividerOr`        | `or`                                                           | `o`                                                                    | Divider between drag-and-drop and the button.      |
+| `BulkImportPage.reviewNotice`     | `We'll review your file before creating your listings…`        | `Revisaremos tu archivo antes de crear tus publicaciones…`             | Review notice under the drop zone.                 |
+| `BulkImportPage.exampleZipTitle`  | `View ZIP example`                                             | `Ver ejemplo de ZIP`                                                   | Example-download card title.                       |
+| `BulkImportPage.exampleZipText`   | `Download an example of how your file should look.`            | `Descarga un ejemplo de cómo debe ir tu archivo.`                      | Example-download card text.                        |
+| `BulkImportPage.helpTitle`        | `Need help?`                                                   | `¿Necesitas ayuda?`                                                    | Help bar heading.                                  |
+| `BulkImportPage.whatsappContact`  | `Contact us on WhatsApp`                                       | `Contáctanos por WhatsApp`                                             | WhatsApp support link label.                       |
+| `ManageListingsPage.bulkImport`   | `Carga Masiva`                                                 | `Carga Masiva`                                                         | Blue bulk-import CTA on Manage listings and the new-listing flow. |
 | `BulkImportPage.errorNoZip`       | `Please select a ZIP file.`                                    | `Selecciona un archivo ZIP.`                                           | Validation message.                                |
 
 ### Checkout — delivery options and shipping address
@@ -1902,6 +1961,20 @@ listed further down are from the previous static-price selector and are no longe
 | Delivery options | `AVShippingSelector.rawListTitle`   | `All available rates`                       | `Todas las tarifas disponibles`                 | Heading above the raw rate list.            |
 | Seller origin    | `ShippingOriginPage.heading`        | `Shipping origin address`                   | `Dirección de origen de envíos`                 | Account settings page heading.              |
 | Seller origin    | `ShippingOriginBanner.message`      | `Add your shipping origin address…`         | `Agrega tu dirección de origen…`                | Manage-listings reminder banner.            |
+| Seller origin    | `ShippingOriginBanner.cta`          | `Complete address`                          | `Completar dirección`                           | Reminder banner button.                     |
+| Seller origin    | `ShippingOriginPage.title`          | `Shipping origin address`                   | `Dirección de origen de envíos`                 | Browser tab title.                          |
+| Seller origin    | `ShippingOriginPage.intro`          | `We use this address to quote shipping…`    | `Usamos esta dirección para cotizar el envío…`  | Intro paragraph.                            |
+| Seller origin    | `ShippingOriginPage.submit`         | `Save address`                              | `Guardar dirección`                             | Save button.                                |
+| Seller origin    | `ShippingOriginPage.saveSuccess`    | `Shipping origin saved.`                    | `Dirección de origen guardada.`                 | Success message.                            |
+| Seller origin    | `ShippingOriginPage.saveError`      | `Could not save your shipping origin…`      | `No pudimos guardar tu dirección de origen…`    | Error message.                              |
+| Seller origin    | `LayoutWrapperAccountSettingsSideNav.shippingOriginTabTitle` | `Shipping origin`  | `Dirección de origen`                           | Account sidebar tab.                        |
+| Buyer address    | `MyAddressesPage.title`             | `My addresses`                              | `Mis direcciones`                               | Browser tab title.                          |
+| Buyer address    | `MyAddressesPage.heading`           | `My shipping address`                       | `Mi dirección de envío`                         | Page heading.                               |
+| Buyer address    | `MyAddressesPage.intro`             | `Save your shipping address so checkout…`   | `Guarda tu dirección de envío para que…`        | Intro paragraph.                            |
+| Buyer address    | `MyAddressesPage.submit`            | `Save address`                              | `Guardar dirección`                             | Save button.                                |
+| Buyer address    | `MyAddressesPage.saveSuccess`       | `Address saved.`                            | `Dirección guardada.`                           | Success message.                            |
+| Buyer address    | `MyAddressesPage.saveError`         | `Could not save your address…`              | `No pudimos guardar tu dirección…`              | Error message.                              |
+| Buyer address    | `LayoutWrapperAccountSettingsSideNav.myAddressesTabTitle` | `My addresses`        | `Mis direcciones`                               | Account sidebar tab.                        |
 
 All text below is operator-editable. These are AV-owned keys, so they will **not** appear in Console
 until you add them (use **Add translation** — see

@@ -6,8 +6,8 @@
 .label {
   display: block;
   font-weight: var(--fontWeightSemiBold);
-  font-size: 13px;
-  line-height: 16px;
+  font-size: 16px;
+  line-height: 24px;
   margin-bottom: 0;
   color: var(--colorBlack);
 }
@@ -45,7 +45,8 @@
   width: auto;
   min-width: 0;
   padding: 7px 0;
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: var(--fontWeightRegular);
   color: var(--colorBlack);
   border: none;
   border-radius: 0;
@@ -62,8 +63,10 @@
   background-color: transparent;
 }
 
+/* Match the placeholder look of the standard selects (e.g. Género), which
+   render black at 18px/400. */
 .input::placeholder {
-  color: var(--colorGrey400);
+  color: var(--colorBlack);
 }
 
 .controls {

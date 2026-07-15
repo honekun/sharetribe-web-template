@@ -19,7 +19,8 @@ import {
 import './image-gallery.css';
 
 import css from './ListingImageGallery.module.css';
-import avCss from './ListingImageGalleryAV.module.css';
+// AV: side-effect import — the module only contains :global thumbnail tweaks.
+import './ListingImageGalleryAV.module.css';
 
 const IMAGE_GALLERY_OPTIONS = {
   showPlayButton: false,
@@ -86,18 +87,6 @@ const getFirstImageAspectRatio = (firstImage, scaledVariant) => {
  * @param {Array<string>} props.thumbnailVariants - The thumbnail variants
  * @returns {JSX.Element} listing image gallery component
  */
-// AV: returns the human-readable slot label for an image when the listing was
-// created in slot-mode (publicData.imageSlots present). For listings created
-// under the upstream gallery mode, imageSlots is undefined and this is a no-op.
-const getSlotLabelForImage = (image, imageSlots, intl) => {
-  if (!imageSlots) return null;
-  const imageUuid = image?.id?.uuid;
-  if (!imageUuid) return null;
-  const slotKey = Object.keys(imageSlots).find(k => imageSlots[k] === imageUuid);
-  if (!slotKey) return null;
-  return intl.formatMessage({ id: `ListingImageGallery.imageLabel.${slotKey}` });
-};
-
 const ListingImageGallery = props => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const intl = useIntl();
@@ -105,7 +94,6 @@ const ListingImageGallery = props => {
     rootClassName,
     className,
     images,
-    imageSlots,
     imageVariants,
     thumbnailVariants,
     // AV: 'top' | 'right' | 'bottom' | 'left' (react-image-gallery). Default keeps
@@ -132,7 +120,6 @@ const ListingImageGallery = props => {
       ),
       thumbnail: img.attributes?.variants?.[thumbVariants[0]],
       image: img,
-      slotLabel: getSlotLabelForImage(img, imageSlots, intl),
     };
   });
   const imageSizesMaybe = isFullscreen
@@ -156,7 +143,6 @@ const ListingImageGallery = props => {
             />
           </div>
         </AspectRatioWrapper>
-        {item.slotLabel ? <p className={avCss.imageLabel}>{item.slotLabel}</p> : null}
       </div>
     );
   };

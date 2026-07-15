@@ -1,8 +1,9 @@
 /* AV-only ListingImageGallery styles, kept out of the upstream
    ListingImageGallery.module.css so that file stays pristine. Imported by
-   ListingImageGallery.js as `avCss`. The two :global rules tweak the vendored
-   react-image-gallery thumbnail margins; they load with the component (same as
-   the original module) so source order is preserved. */
+   ListingImageGallery.js for its side effects (only :global rules remain).
+   The two margin rules tweak the vendored react-image-gallery thumbnails;
+   they load with the component (same as the original module) so source
+   order is preserved. */
 
 :global(.image-gallery-thumbnails-left .image-gallery-thumbnail:first-child) {
   margin-left: 0;
@@ -22,19 +23,4 @@
 :global(.image-gallery-thumbnail:focus),
 :global(.image-gallery-thumbnail:hover) {
   border: 1px solid var(--colorBlack);
-}
-
-/* Slot caption label (Front / Back / …) shown under each gallery image. */
-.imageLabel {
-  background-color: var(--colorWhite);
-  color: var(--colorBlack);
-  font-family: var(--fontFamilyHeadings);
-  font-weight: var(--fontWeightBold);
-  font-size: 16px;
-  line-height: 1.4;
-  text-align: center;
-  margin-top: 6px;
-  margin-bottom: 0;
-  padding: 6px 12px;
-  border-radius: var(--borderRadiusMedium);
 }

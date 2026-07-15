@@ -18,6 +18,12 @@
     margin: 0 0 56px;
   }
 }
+/* Page-specific H1 size; self-chained so it beats the Heading module's default
+   class regardless of CSS-module source order in prod. */
+.heading.heading {
+  font-size: 30px;
+  line-height: 38px;
+}
 
 .cards {
   display: grid;
@@ -44,6 +50,11 @@
 
 .cardTitle {
   margin: 0 0 12px;
+}
+/* Page-specific H2 size; self-chained for the same source-order reason. */
+.cardTitle.cardTitle {
+  font-size: 28px;
+  line-height: 36px;
 }
 
 .cardText {

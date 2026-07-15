@@ -6,8 +6,8 @@
 .label {
   display: block;
   font-weight: var(--fontWeightSemiBold);
-  font-size: 13px;
-  line-height: 16px;
+  font-size: 16px;
+  line-height: 24px;
   margin-bottom: 0;
   color: var(--colorBlack);
 }
@@ -78,10 +78,16 @@
   border-radius: 4px;
 }
 
+/* Match the placeholder look of the standard selects (e.g. Género), which
+   render black at 18px/400. */
 .placeholder {
-  color: var(--colorGrey400);
-  font-size: 14px;
+  color: var(--colorBlack);
+  font-size: 18px;
+  font-weight: var(--fontWeightRegular);
   line-height: 32px;
+  /* The trigger is a <button>, which inherits the AV button letter-spacing;
+     reset so the placeholder tracks like the standard inputs. */
+  letter-spacing: normal;
 }
 
 .chip {
@@ -92,9 +98,9 @@
   color: var(--avSecondary);
   border-radius: 12px;
   padding: 2px 8px;
-  font-size: 13px;
+  font-size: 18px;
   line-height: 24px;
-  font-weight: var(--fontWeightMedium);
+  font-weight: var(--fontWeightRegular);
 }
 
 .chipRemove {
