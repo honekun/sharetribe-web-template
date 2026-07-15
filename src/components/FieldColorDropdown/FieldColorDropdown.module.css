@@ -6,8 +6,8 @@
 .label {
   display: block;
   font-weight: var(--fontWeightSemiBold);
-  font-size: 13px;
-  line-height: 16px;
+  font-size: 16px;
+  line-height: 24px;
   margin-bottom: 0;
   color: var(--colorBlack);
 }
@@ -43,9 +43,15 @@
   flex: 1;
 }
 
+/* Match the placeholder look of the standard selects (e.g. Género), which
+   render black at 18px/400. */
 .placeholder {
-  color: var(--colorGrey400);
-  font-size: 14px;
+  color: var(--colorBlack);
+  font-size: 18px;
+  font-weight: var(--fontWeightRegular);
+  /* The control is a <button>, which inherits the AV button letter-spacing;
+     reset so the placeholder tracks like the standard inputs. */
+  letter-spacing: normal;
 }
 
 .selectedCircle {

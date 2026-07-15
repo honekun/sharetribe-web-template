@@ -1,0 +1,8 @@
+/* AV-only additions for EditListingDetailsPanel, kept out of the upstream
+   EditListingDetailsPanel.module.css. */
+
+/* Heading for the details form section — same styles as the
+   PhotoGallerySection title above it. */
+.formTitle {
+  composes: title from './PhotoGallerySection.module.css';
+}

@@ -44,7 +44,7 @@
   gap: 12px;
   margin-top: 4px;
   font-size: 14px;
-  color: var(--colorGrey500);
+  color: var(--colorBlack);
 }
 
 .buyer {
@@ -73,7 +73,7 @@
 
 .amountLabel {
   font-size: 12px;
-  color: var(--colorGrey500);
+  color: var(--colorBlack);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
