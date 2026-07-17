@@ -478,6 +478,15 @@
   color: var(--colorFail, #ff0000);
 }
 
+/* Small, muted, language-neutral support hint (raw API error code) under the
+   translated row-error message. */
+.errorCodeHint {
+  margin-top: 2px;
+  font-size: 11px;
+  opacity: 0.7;
+  font-family: var(--fontFamilyMono, monospace);
+}
+
 .completedActions {
   display: flex;
   flex-wrap: wrap;

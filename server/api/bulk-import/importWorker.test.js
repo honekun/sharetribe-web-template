@@ -288,6 +288,8 @@ describe('processImportJob', () => {
     expect(finalJob.status).toBe('completed');
     expect(finalJob.failed).toBe(1);
     expect(finalJob.errors[0].error).toMatch(/timed out/);
+    // Carries the synthetic code the client maps to a translated message.
+    expect(finalJob.errors[0].code).toBe('row-timeout');
   });
 });
 
