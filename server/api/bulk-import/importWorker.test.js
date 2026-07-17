@@ -7,7 +7,7 @@ jest.mock('../../services/integrationSdk', () => ({
 
 const { getIntegrationSdk } = require('../../services/integrationSdk');
 const { createJob, getJob } = require('./jobStore');
-const { processImportJob } = require('./importWorker');
+const { processImportJob, _test: workerTest } = require('./importWorker');
 
 // Suppress console.error/log during tests
 beforeAll(() => {
@@ -267,5 +267,38 @@ describe('processImportJob', () => {
 
     const params = mockSdk.listings.create.mock.calls[0][0];
     expect(params.publicData.location).toEqual({ address: 'CDMX, México' });
+  });
+
+  it('bounds a hanging row so the job fails it instead of wedging in processing', async () => {
+    const mockSdk = createMockSdk();
+    // The row's first SDK call never resolves. Shrink the per-row timeout so the
+    // test stays fast while exercising the real timeout wiring in processImportJob.
+    mockSdk.images.upload.mockReturnValue(new Promise(() => {}));
+    getIntegrationSdk.mockReturnValue(mockSdk);
+
+    const job = createJob(1, 'owner-hang');
+    const row = makeRow({ imageSlots: { front: 'front.jpg' } });
+    const imageMap = new Map([['front.jpg', Buffer.from('x')]]);
+
+    // Shrink the per-row timeout so the test stays fast while exercising the real
+    // timeout wiring in processImportJob.
+    await processImportJob(job.id, [row], imageMap, { rowTimeoutMs: 30 });
+
+    const finalJob = getJob(job.id);
+    expect(finalJob.status).toBe('completed');
+    expect(finalJob.failed).toBe(1);
+    expect(finalJob.errors[0].error).toMatch(/timed out/);
+  });
+});
+
+describe('withTimeout', () => {
+  it('rejects when the promise does not settle in time', async () => {
+    await expect(workerTest.withTimeout(new Promise(() => {}), 20, 'Fila 1')).rejects.toThrow(
+      /timed out/
+    );
+  });
+
+  it('resolves with the value when the promise settles in time', async () => {
+    await expect(workerTest.withTimeout(Promise.resolve('ok'), 1000, 'Fila 1')).resolves.toBe('ok');
   });
 });

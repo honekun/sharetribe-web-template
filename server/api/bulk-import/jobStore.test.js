@@ -67,6 +67,29 @@ describe('jobStore', () => {
       updateJob(j3.id, { status: 'completed' });
       expect(countActiveJobs()).toBe(2);
     });
+
+    it('stops counting a wedged (stale) processing job as active', () => {
+      const job = createJob(1, 'user-a');
+      expect(hasActiveJobForUser('user-a')).toBe(true);
+      expect(countActiveJobs()).toBe(1);
+
+      // Simulate a job that has sat in 'processing' with no progress past the
+      // stale window (the worker never called updateJob again).
+      job.updatedAt = Date.now() - (_test.STALE_ACTIVE_MS + 1000);
+
+      expect(hasActiveJobForUser('user-a')).toBe(false);
+      expect(countActiveJobs()).toBe(0);
+    });
+
+    it('refreshes updatedAt on progress so a healthy job stays active', () => {
+      const job = createJob(1, 'user-a');
+      job.updatedAt = Date.now() - (_test.STALE_ACTIVE_MS + 1000); // pretend it went stale
+      expect(hasActiveJobForUser('user-a')).toBe(false);
+
+      // A progress update (as the worker does after each row) revives it.
+      updateJob(job.id, { processed: 1 });
+      expect(hasActiveJobForUser('user-a')).toBe(true);
+    });
   });
 
   describe('getJob', () => {

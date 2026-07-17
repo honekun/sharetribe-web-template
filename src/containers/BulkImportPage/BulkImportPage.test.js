@@ -274,6 +274,78 @@ describe('BulkImportPage', () => {
     );
   });
 
+  it('stops polling and shows an error when the job is no longer found (404)', async () => {
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true, token: 'action-token' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ jobId: 'job-404', total: 1 }),
+      })
+      // Every status poll returns 404 (job expired / server restarted).
+      .mockResolvedValue({ ok: false, status: 404, json: async () => ({ error: 'not found' }) });
+
+    render(<BulkImportPage />, { initialState: baseState });
+
+    const zipInput = await screen.findByLabelText('BulkImportPage.zipLabel');
+    const zipFile = new File(['fake zip content'], 'listings.zip', { type: 'application/zip' });
+    fireEvent.change(zipInput, { target: { files: [zipFile] } });
+
+    fireEvent.click(screen.getByText('BulkImportPage.startImport'));
+
+    await waitFor(() => {
+      expect(screen.getByText('BulkImportPage.errorJobUnavailable')).toBeInTheDocument();
+    });
+
+    // A 404 stops polling immediately: only the first (immediate) status call runs.
+    const statusCalls = global.fetch.mock.calls.filter(c => String(c[0]).includes('/status/'));
+    expect(statusCalls.length).toBe(1);
+  });
+
+  it('stops polling after repeated status failures instead of spinning forever', async () => {
+    jest.useFakeTimers();
+
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true, token: 'action-token' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ jobId: 'job-err', total: 1 }),
+      })
+      // Non-404 failures (e.g. transient 500) keep failing on every poll.
+      .mockResolvedValue({ ok: false, status: 500, json: async () => ({}) });
+
+    render(<BulkImportPage />, { initialState: baseState });
+
+    const zipInput = await screen.findByLabelText('BulkImportPage.zipLabel');
+    const zipFile = new File(['fake zip content'], 'listings.zip', { type: 'application/zip' });
+    fireEvent.change(zipInput, { target: { files: [zipFile] } });
+
+    fireEvent.click(screen.getByText('BulkImportPage.startImport'));
+
+    await waitFor(() => {
+      expect(screen.getByText('BulkImportPage.processing')).toBeInTheDocument();
+    });
+
+    // Advance through several poll intervals; polling must give up (not loop forever).
+    for (let i = 0; i < 6; i++) {
+      // eslint-disable-next-line no-await-in-loop
+      await act(async () => {
+        jest.advanceTimersByTime(2000);
+      });
+    }
+
+    await waitFor(() => {
+      expect(screen.getByText('BulkImportPage.errorStatusUnavailable')).toBeInTheDocument();
+    });
+
+    jest.useRealTimers();
+  });
+
   it('shows only the error rows (no listings link) when some rows fail', async () => {
     global.fetch
       .mockResolvedValueOnce({
