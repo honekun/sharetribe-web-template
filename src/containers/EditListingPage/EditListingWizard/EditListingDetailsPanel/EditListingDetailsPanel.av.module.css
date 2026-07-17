@@ -6,3 +6,21 @@
 .formTitle {
   composes: title from './PhotoGallerySection.module.css';
 }
+
+/* AV: blue CTA linking to the bulk importer on the new-listing flow. Styled as
+   the canonical blue avCtaButton (composed from SectionBuilder), right-aligned
+   in normal flow just above the PhotoGallerySection. */
+.bulkImportLink {
+  composes: ctaButtonBlue from '../../../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  display: block;
+  width: fit-content;
+  margin-left: auto;
+  margin-top: 0;
+}
+
+@media (max-width: 767px) {
+  /* Bulk import is a desktop workflow; hide the CTA on small screens. */
+  .bulkImportLink {
+    display: none;
+  }
+}

@@ -18,7 +18,7 @@ import {
 import { isBookingProcessAlias } from '../../../../transactions/transaction';
 
 // Import shared components
-import { H3, ListingLink } from '../../../../components';
+import { H3, ListingLink, NamedLink } from '../../../../components';
 import { requireListingImage } from '../../../../util/configHelpers';
 
 // Import modules from this directory
@@ -406,6 +406,11 @@ const EditListingDetailsPanel = props => {
 
       {canShowEditListingDetailsForm ? (
         <>
+          {requiresImages && !isPublished && (
+            <NamedLink name="BulkImportPage" className={avCss.bulkImportLink}>
+              <FormattedMessage id="EditListingWizard.bulkImportLink" />
+            </NamedLink>
+          )}
           {requiresImages && (
             <PhotoGallerySection
               images={orderedImages}

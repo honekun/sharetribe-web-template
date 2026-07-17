@@ -40,7 +40,6 @@ import { INQUIRY_PROCESS_NAME, resolveLatestProcessName } from '../../../transac
 import {
   Heading,
   Modal,
-  NamedLink,
   NamedRedirect,
   Tabs,
   StripeConnectAccountStatusBox,
@@ -659,11 +658,6 @@ class EditListingWizard extends Component {
 
     return (
       <div className={classes}>
-        {isNewListingFlow ? (
-          <NamedLink name="BulkImportPage" className={css.bulkImportLink}>
-            <FormattedMessage id="EditListingWizard.bulkImportLink" />
-          </NamedLink>
-        ) : null}
         <Tabs
           rootClassName={css.tabsContainer}
           navRootClassName={css.nav}

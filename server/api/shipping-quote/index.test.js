@@ -101,6 +101,35 @@ it('maps EspecialError to 422 ESPECIAL', async () => {
   expect(res.body.code).toBe('ESPECIAL');
 });
 
+it('maps OriginLookupError to 502 ORIGIN_LOOKUP (distinct from a carrier error)', async () => {
+  svc.quoteForCheckout.mockRejectedValue(new svc.OriginLookupError({ status: 404 }));
+  const res = createRes();
+  await getQuoteHandler()(createReq(body), res);
+  expect(res.statusCode).toBe(502);
+  expect(res.body.code).toBe('ORIGIN_LOOKUP');
+});
+
+it('includes origin lookup detail + status when ESHIP_API_DEBUG is "true"', async () => {
+  const ORIGINAL = process.env.ESHIP_API_DEBUG;
+  process.env.ESHIP_API_DEBUG = 'true';
+  try {
+    svc.quoteForCheckout.mockRejectedValue(
+      Object.assign(new svc.OriginLookupError(), {
+        status: 404,
+        message: 'Request failed with status code 404',
+      })
+    );
+    const res = createRes();
+    await getQuoteHandler()(createReq(body), res);
+    expect(res.body.code).toBe('ORIGIN_LOOKUP');
+    expect(res.body.originStatus).toBe(404);
+    expect(res.body.detail).toMatch(/404/);
+  } finally {
+    if (ORIGINAL === undefined) delete process.env.ESHIP_API_DEBUG;
+    else process.env.ESHIP_API_DEBUG = ORIGINAL;
+  }
+});
+
 it('maps any other error to 502 ESHIP_ERROR', async () => {
   svc.quoteForCheckout.mockRejectedValue(new Error('boom'));
   const res = createRes();

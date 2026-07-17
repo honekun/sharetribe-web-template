@@ -38,7 +38,8 @@ const Bucket = ({ labelId, type, data, selectedType, onSelect, intl }) =>
  *
  * @param {Object} props
  * @param {'idle'|'quoting'|'quoted'|'error'} props.status
- * @param {string} [props.errorCode] - NO_ORIGIN | ESPECIAL | ESHIP_ERROR
+ * @param {string} [props.errorCode] - NO_ORIGIN | ESPECIAL | ORIGIN_LOOKUP | ESHIP_ERROR
+ *   (only ESHIP_ERROR is transient/retryable; the rest show "Contactar AV")
  * @param {Object} [props.express] - { amountSubunits, currency, days }
  * @param {Object} [props.estandar]
  * @param {Array} [props.rawRates]

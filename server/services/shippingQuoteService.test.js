@@ -82,6 +82,24 @@ describe('resolveOrigin', () => {
     const result = await svc.resolveOrigin({ id: { uuid: 'l1' }, attributes: {} });
     expect(result).toBe(null);
   });
+
+  it('throws OriginLookupError (not NoOrigin) when the Integration call fails', async () => {
+    // A 404 here = author absent from the Integration app's marketplace (a
+    // Marketplace/Integration credential-env mismatch). Must be distinct from
+    // "seller saved no origin" so the endpoint can report it separately.
+    const err = Object.assign(new Error('Request failed with status code 404'), { status: 404 });
+    getIntegrationSdk.mockReturnValue({
+      users: {
+        show: async () => {
+          throw err;
+        },
+      },
+    });
+    await expect(svc.resolveOrigin(relListing('author-9'))).rejects.toBeInstanceOf(
+      svc.OriginLookupError
+    );
+    await expect(svc.resolveOrigin(relListing('author-9'))).rejects.toMatchObject({ status: 404 });
+  });
 });
 
 describe('resolveParcel', () => {

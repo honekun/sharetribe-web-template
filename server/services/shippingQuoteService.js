@@ -29,6 +29,23 @@ class EspecialError extends Error {
     this.name = 'EspecialError';
   }
 }
+// The Integration API call that reads the seller's shipping origin failed
+// outright (as opposed to succeeding with no origin saved, which is NoOrigin).
+// Common causes: 404 = author not in the Integration app's marketplace (a
+// Marketplace/Integration credential-environment mismatch), 401/403 = bad
+// creds, or a network error. Kept distinct from EshipApiError so an upstream
+// Sharetribe failure is never misattributed to the eShip carrier.
+class OriginLookupError extends Error {
+  constructor(cause) {
+    const status = cause?.status ?? cause?.response?.status;
+    super(
+      `Failed to look up seller origin${status ? ` [${status}]` : ''}: ${cause?.message || cause}`
+    );
+    this.name = 'OriginLookupError';
+    this.status = status;
+    this.cause = cause;
+  }
+}
 
 // eShip `amount` is in major units (pesos). Convert to subunits + apply markup.
 function __toSubunitsWithMarkup(amountMajor) {
@@ -53,7 +70,15 @@ async function resolveOrigin(listing) {
     listing?.author?.id?.uuid || listing?.relationships?.author?.data?.id?.uuid || null;
   if (!authorId) return null;
   const integrationSdk = getIntegrationSdk();
-  const res = await integrationSdk.users.show({ id: authorId });
+  let res;
+  try {
+    res = await integrationSdk.users.show({ id: authorId });
+  } catch (e) {
+    // A thrown error here is an Integration API failure (see OriginLookupError),
+    // NOT "seller has no origin". Surface it distinctly instead of letting it
+    // fall through to the endpoint's generic eShip catch-all.
+    throw new OriginLookupError(e);
+  }
   const origin = res?.data?.data?.attributes?.profile?.protectedData?.shippingOrigin;
   if (!origin || !origin.zip || !origin.state) return null;
   return origin;
@@ -169,5 +194,6 @@ module.exports = {
   resolveBucketPrice,
   NoOriginError,
   EspecialError,
+  OriginLookupError,
   __toSubunitsWithMarkup, // test helper
 };

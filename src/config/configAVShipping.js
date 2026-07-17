@@ -17,7 +17,10 @@ const roundUpToSubunits = 100;
 // Dormant: docs don't state whether eShip `amount` includes IVA. We fold IVA
 // into the buffer for now; flip this once real responses are reconciled.
 const eshipAmountIncludesIva = false;
-const eshipBaseUrl = process.env.ESHIP_BASE_URL || 'https://api.myeship.co/rest';
+// eShip endpoint: always taken from ESHIP_BASE_URL (no URL hardcoded here). Set
+// it per environment — QA (`https://apiqa.myeship.co/rest`) on the test env to
+// match the QA ESHIP_API_KEY, production (`https://api.myeship.co/rest`) live.
+const eshipBaseUrl = process.env.ESHIP_BASE_URL;
 
 const packageSizes = {
   S: { dimsCm: [25, 20, 8], weightMaxKg: 0.5, packaging: 'polymailer' },
