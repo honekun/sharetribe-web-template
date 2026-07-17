@@ -365,7 +365,14 @@ describe('BulkImportPage', () => {
           processed: 2,
           succeeded: 1,
           failed: 1,
-          errors: [{ row: 2, title: 'Broken listing', error: 'Missing price' }],
+          errors: [
+            {
+              row: 2,
+              title: 'Broken listing',
+              error: 'Request failed with status code 400',
+              status: 400,
+            },
+          ],
           results: [{ row: 1, title: 'Good listing', status: 'published' }],
         }),
       });
@@ -385,12 +392,84 @@ describe('BulkImportPage', () => {
     // Errors table lists the failed row only; the succeeded row is not shown.
     expect(screen.getByText('BulkImportPage.errorsTitle')).toBeInTheDocument();
     expect(screen.getByText('Broken listing')).toBeInTheDocument();
-    expect(screen.getByText('Missing price')).toBeInTheDocument();
+    // The row error is shown via its translated (status-mapped) message, not the
+    // raw English SDK string.
+    expect(screen.getByText('BulkImportPage.rowError.http400')).toBeInTheDocument();
+    expect(screen.queryByText('Request failed with status code 400')).not.toBeInTheDocument();
     expect(screen.queryByText('Good listing')).not.toBeInTheDocument();
     // No "view your listings" link when there were failures.
     expect(
       screen.queryByRole('link', { name: 'BulkImportPage.viewListings' })
     ).not.toBeInTheDocument();
+  });
+
+  it('renders row errors translated by code/status, with a raw code hint', async () => {
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true, token: 'action-token' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ jobId: 'job-err', total: 2 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'job-err',
+          status: 'completed',
+          total: 2,
+          processed: 2,
+          succeeded: 0,
+          failed: 2,
+          errors: [
+            {
+              row: 1,
+              title: 'Bad image',
+              error: 'Request failed with status code 400',
+              status: 400,
+              sdkErrors: [
+                {
+                  status: 400,
+                  code: 'image-invalid-content',
+                  title: 'Invalid or unrecognized image file.',
+                  source: { path: ['images'] },
+                },
+              ],
+            },
+            // No structured code — falls back to the HTTP-status message + hint.
+            {
+              row: 2,
+              title: 'Server hiccup',
+              error: 'Request failed with status code 500',
+              status: 500,
+            },
+          ],
+          results: [],
+        }),
+      });
+
+    render(<BulkImportPage />, { initialState: baseState });
+
+    const zipInput = await screen.findByLabelText('BulkImportPage.zipLabel');
+    const zipFile = new File(['fake zip content'], 'listings.zip', { type: 'application/zip' });
+    fireEvent.change(zipInput, { target: { files: [zipFile] } });
+    fireEvent.click(screen.getByText('BulkImportPage.startImport'));
+
+    await waitFor(() => {
+      expect(screen.getByText('BulkImportPage.completed')).toBeInTheDocument();
+    });
+
+    // Code-mapped translated message (react-intl renders the key id in tests), and
+    // the raw English SDK/axios string is no longer shown.
+    expect(screen.getByText('BulkImportPage.rowError.imageInvalidContent')).toBeInTheDocument();
+    expect(screen.queryByText('Request failed with status code 400')).not.toBeInTheDocument();
+    // Raw code hint (with offending field) is retained for support.
+    expect(screen.getByText('image-invalid-content (images)')).toBeInTheDocument();
+
+    // Row without a structured code falls back to the HTTP-status message + hint.
+    expect(screen.getByText('BulkImportPage.rowError.http500')).toBeInTheDocument();
+    expect(screen.getByText('HTTP 500')).toBeInTheDocument();
   });
 
   it('resets the form after a completed import', async () => {

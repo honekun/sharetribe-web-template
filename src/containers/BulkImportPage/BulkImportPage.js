@@ -23,6 +23,47 @@ const STATUS_ERROR = 'error';
 // sustained network errors) surfaces an error instead of spinning forever.
 const MAX_POLL_FAILURES = 5;
 
+// Per-row worker/SDK errors arrive as raw Sharetribe API strings (English). We map
+// the stable, machine-readable error `code` (or an HTTP status fallback) to a
+// translated message so the errors table matches the rest of the UI. Unknown codes
+// fall through to a generic message; the raw code is still shown as a small support
+// hint. Server-thrown errors carry a synthetic code (importWorker `avCode`).
+const ROW_ERROR_CODE_KEYS = {
+  'image-invalid-content': 'BulkImportPage.rowError.imageInvalidContent',
+  'user-not-found': 'BulkImportPage.rowError.userNotFound',
+  'row-timeout': 'BulkImportPage.rowError.rowTimeout',
+  'no-author': 'BulkImportPage.rowError.noAuthor',
+};
+const HTTP_STATUS_KEYS = {
+  400: 'BulkImportPage.rowError.http400',
+  403: 'BulkImportPage.rowError.http403',
+  409: 'BulkImportPage.rowError.http409',
+  429: 'BulkImportPage.rowError.http429',
+  500: 'BulkImportPage.rowError.http500',
+};
+const GENERIC_ROW_ERROR_KEY = 'BulkImportPage.rowError.generic';
+
+// Pick the best translation key for a job error row: a known SDK/synthetic code
+// first, then an HTTP-status fallback, then the generic message.
+const resolveRowErrorKey = err => {
+  const codes = [...(err.sdkErrors || []).map(e => e.code), err.code].filter(Boolean);
+  const known = codes.find(code => ROW_ERROR_CODE_KEYS[code]);
+  if (known) return ROW_ERROR_CODE_KEYS[known];
+  if (err.status && HTTP_STATUS_KEYS[err.status]) return HTTP_STATUS_KEYS[err.status];
+  return GENERIC_ROW_ERROR_KEY;
+};
+
+// Small, language-neutral support hint: the raw error code(s) (+ offending field),
+// or an HTTP status when the API returned no structured code.
+const rowErrorHint = err => {
+  const hints = (err.sdkErrors || []).map(e =>
+    e.source && Array.isArray(e.source.path) ? `${e.code} (${e.source.path.join('.')})` : e.code
+  );
+  if (hints.length === 0 && err.code) hints.push(err.code);
+  if (hints.length === 0 && err.status) hints.push(`HTTP ${err.status}`);
+  return hints.filter(Boolean).join(', ');
+};
+
 // WhatsApp support contact (E.164 without "+"): +52 55 3131 4247
 const WHATSAPP_URL = 'https://wa.me/525531314247';
 
@@ -585,23 +626,9 @@ const BulkImportPageComponent = props => {
                               <td>{err.row}</td>
                               <td>{err.title}</td>
                               <td className={css.errorCell}>
-                                <div>{err.error}</div>
-                                {err.sdkErrors && err.sdkErrors.length > 0 && (
-                                  <ul
-                                    style={{
-                                      margin: '4px 0 0',
-                                      paddingLeft: '16px',
-                                      fontSize: '11px',
-                                      opacity: 0.8,
-                                    }}
-                                  >
-                                    {err.sdkErrors.map((e, i) => (
-                                      <li key={i}>
-                                        {e.code}: {e.title}
-                                        {e.source ? ` (${JSON.stringify(e.source)})` : ''}
-                                      </li>
-                                    ))}
-                                  </ul>
+                                <div>{intl.formatMessage({ id: resolveRowErrorKey(err) })}</div>
+                                {rowErrorHint(err) && (
+                                  <div className={css.errorCodeHint}>{rowErrorHint(err)}</div>
                                 )}
                               </td>
                             </tr>

@@ -24,7 +24,11 @@ const ROW_TIMEOUT_MS = 90 * 1000;
 function withTimeout(promise, ms, label) {
   let timer;
   const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    timer = setTimeout(() => {
+      const err = new Error(`${label} timed out after ${ms}ms`);
+      err.avCode = 'row-timeout'; // stable code the client maps to a translated message
+      reject(err);
+    }, ms);
     if (timer.unref) timer.unref();
   });
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
@@ -44,6 +48,9 @@ function serializeSdkError(err) {
     message: err.message || 'Unknown error',
   };
   if (err.status) out.status = err.status;
+  // Synthetic AV error code for worker-thrown errors (kept in its own namespace so
+  // axios/SDK internal `err.code` values never leak to the client mapping).
+  if (err.avCode) out.code = err.avCode;
   const sdkErrors = err.data && Array.isArray(err.data.errors) ? err.data.errors : null;
   if (sdkErrors && sdkErrors.length > 0) {
     out.sdkErrors = sdkErrors.slice(0, MAX_SDK_ERRORS_KEPT).map(e => ({
@@ -144,7 +151,9 @@ async function processRow(sdk, row, imageMap, config) {
   // signed-in user by default, or an admin `user_id` override).
   const authorId = row.authorId;
   if (!authorId) {
-    throw new Error('No se resolvió ningún autor para la fila del CSV.');
+    const err = new Error('No se resolvió ningún autor para la fila del CSV.');
+    err.avCode = 'no-author';
+    throw err;
   }
 
   const priceAmount = Math.round(row.price * 100);
@@ -239,6 +248,7 @@ async function processImportJob(jobId, rows, imageMap, { rowTimeoutMs = ROW_TIME
           title: row.title,
           error: serialized.message,
           ...(serialized.status ? { status: serialized.status } : {}),
+          ...(serialized.code ? { code: serialized.code } : {}),
           ...(serialized.sdkErrors ? { sdkErrors: serialized.sdkErrors } : {}),
           ...(serialized.sdkErrorsTruncated
             ? { sdkErrorsTruncated: serialized.sdkErrorsTruncated }
