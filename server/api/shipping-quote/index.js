@@ -28,6 +28,15 @@ router.post('/quote', express.json(), async (req, res) => {
   } catch (e) {
     if (e instanceof svc.NoOriginError) return res.status(409).json({ code: 'NO_ORIGIN' });
     if (e instanceof svc.EspecialError) return res.status(422).json({ code: 'ESPECIAL' });
+    // The seller-origin lookup (Sharetribe Integration API) failed — distinct
+    // from a carrier failure. Reported separately so a 404/creds mismatch isn't
+    // mistaken for an eShip problem (as it was before this branch existed).
+    if (e instanceof svc.OriginLookupError) {
+      console.error('[shipping/quote] seller-origin lookup failed (Integration API):', e.message);
+      const debug = String(process.env.ESHIP_API_DEBUG).toLowerCase() === 'true';
+      const detailMaybe = debug ? { detail: e.message, originStatus: e.status } : {};
+      return res.status(502).json({ code: 'ORIGIN_LOOKUP', ...detailMaybe });
+    }
     // Surface the carrier's actual response — without it, account/config errors
     // like "No couriers found for this account" are invisible.
     console.error(

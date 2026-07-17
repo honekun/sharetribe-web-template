@@ -7,32 +7,8 @@
   display: flex;
   flex-direction: column;
 
-  /* AV: anchor for the absolutely-positioned bulk-import CTA */
-  position: relative;
-
   /* Content of EditListingWizard should have smaller z-index than Topbar */
   z-index: 0;
-}
-
-/* AV: blue CTA linking to the bulk importer on the new-listing flow. Styled as
-   the canonical blue avCtaButton (composed from SectionBuilder), positioned to
-   sit on the same line as the panel's page title, aligned right. */
-.bulkImportLink {
-  composes: ctaButtonBlue from '../../PageBuilder/SectionBuilder/SectionBuilder.module.css';
-  position: absolute;
-  /* Align with the panel's page title (H1 sits ~64px below the wizard root top). */
-  top: 64px;
-  right: 24px;
-  z-index: 1;
-  /* avCtaButton/ctaButton add a top margin; drop it so `top` controls alignment. */
-  margin-top: 0;
-}
-
-@media (max-width: 767px) {
-  /* Bulk import is a desktop workflow; hide the CTA on small screens. */
-  .bulkImportLink {
-    display: none;
-  }
 }
 
 .tabsContainer {
