@@ -189,6 +189,8 @@
   "BulkImportPage.newImport": "New Import",
   "BulkImportPage.viewListings": "View your listings",
   "BulkImportPage.errorNoZip": "Please select a ZIP file.",
+  "BulkImportPage.errorJobUnavailable": "This import is no longer available — it may have expired or the server restarted. Please check your listings or start a new import.",
+  "BulkImportPage.errorStatusUnavailable": "We couldn't check the import status. It may still be processing in the background — refresh in a moment, or start a new import.",
   "BulkImportPage.errorsCapped": "Some errors were omitted — only the first 200 are shown.",
   "CreateTypePage.title": "Upload your products | Archivo Vintach",
   "CreateTypePage.heading": "Choose how you want to upload your products.",

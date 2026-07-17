@@ -18,6 +18,11 @@ const STATUS_PROCESSING = 'processing';
 const STATUS_COMPLETED = 'completed';
 const STATUS_ERROR = 'error';
 
+// Stop polling /status after this many consecutive failures (~2s apart) so a job
+// that has become permanently unreachable (server restart, token/TTL expiry,
+// sustained network errors) surfaces an error instead of spinning forever.
+const MAX_POLL_FAILURES = 5;
+
 // WhatsApp support contact (E.164 without "+"): +52 55 3131 4247
 const WHATSAPP_URL = 'https://wa.me/525531314247';
 
@@ -152,6 +157,7 @@ const BulkImportPageComponent = props => {
   const [jobData, setJobData] = useState(null);
   const [uploadError, setUploadError] = useState(null);
   const pollRef = useRef(null);
+  const pollFailuresRef = useRef(0);
   const fileInputRef = useRef(null);
 
   const requestActionToken = useCallback(async () => {
@@ -174,38 +180,62 @@ const BulkImportPageComponent = props => {
   useEffect(() => {
     if (status !== STATUS_PROCESSING || !jobId || !actionToken) return;
 
+    pollFailuresRef.current = 0;
+
+    const stopPolling = () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+
+    // Stop polling and surface an error instead of spinning forever.
+    const failPolling = messageId => {
+      stopPolling();
+      setUploadError(intl.formatMessage({ id: messageId }));
+      setStatus(STATUS_ERROR);
+    };
+
     const poll = async () => {
       try {
         const res = await fetch(`/api/bulk-import/status/${jobId}`, {
           credentials: 'include',
           headers: { 'X-Bulk-Import-Token': actionToken },
         });
+        // A missing job (expired from the 1-hour TTL, or the server restarted and
+        // lost its in-memory store) will never recover — stop immediately rather
+        // than polling forever.
+        if (res.status === 404) {
+          failPolling('BulkImportPage.errorJobUnavailable');
+          return;
+        }
         if (!res.ok) {
           throw new Error(`Status check failed: ${res.status}`);
         }
         const data = await res.json();
+        pollFailuresRef.current = 0;
         setJobData(data);
 
         if (data.status === 'completed' || data.status === 'failed') {
           setStatus(STATUS_COMPLETED);
-          clearInterval(pollRef.current);
-          pollRef.current = null;
+          stopPolling();
         }
       } catch (err) {
         console.error('Poll error:', err);
+        // Give up after several consecutive failures (network errors, transient
+        // 5xx/401) instead of retrying indefinitely.
+        pollFailuresRef.current += 1;
+        if (pollFailuresRef.current >= MAX_POLL_FAILURES) {
+          failPolling('BulkImportPage.errorStatusUnavailable');
+        }
       }
     };
 
     poll(); // Immediate first poll
     pollRef.current = setInterval(poll, 2000);
 
-    return () => {
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
-    };
-  }, [status, jobId, actionToken]);
+    return stopPolling;
+  }, [status, jobId, actionToken, intl]);
 
   const handleSubmit = async e => {
     e.preventDefault();

@@ -13,6 +13,23 @@ const { UUID, Money, LatLng } = types;
 const DELAY_BETWEEN_ROWS_MS = 500;
 const MAX_JOB_ERRORS = 200;
 
+// Upper bound on how long a single row (image uploads + listing create + stock)
+// may take. If an SDK request stalls with no response, the row is failed instead
+// of wedging the whole job in 'processing' forever. Kept well below the jobStore
+// STALE_ACTIVE_MS window so a slow-but-healthy row never looks wedged.
+const ROW_TIMEOUT_MS = 90 * 1000;
+
+// Reject `promise` if it hasn't settled within `ms`. The underlying request may
+// still resolve later in the background, but the caller stops waiting on it.
+function withTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    if (timer.unref) timer.unref();
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 const SLOT_ORDER = ['front', 'back', 'horizontal', 'details'];
 
 const MAX_SDK_ERRORS_KEPT = 5;
@@ -176,8 +193,12 @@ async function processRow(sdk, row, imageMap, config) {
 /**
  * Process all rows of an import job asynchronously.
  * Updates job state after each row.
+ *
+ * @param {object} [options]
+ * @param {number} [options.rowTimeoutMs] - per-row timeout (defaults to ROW_TIMEOUT_MS;
+ *   overridable in tests to exercise the timeout path quickly).
  */
-async function processImportJob(jobId, rows, imageMap) {
+async function processImportJob(jobId, rows, imageMap, { rowTimeoutMs = ROW_TIMEOUT_MS } = {}) {
   const sdk = getIntegrationSdk();
 
   const config = {
@@ -193,7 +214,11 @@ async function processImportJob(jobId, rows, imageMap) {
     const row = rows[i];
 
     try {
-      const listingId = await processRow(sdk, row, imageMap, config);
+      const listingId = await withTimeout(
+        processRow(sdk, row, imageMap, config),
+        rowTimeoutMs,
+        `Fila ${row.rowNum}`
+      );
       succeeded += 1;
 
       const job = updateJob(jobId, { processed: i + 1, succeeded });
@@ -241,3 +266,4 @@ async function processImportJob(jobId, rows, imageMap) {
 }
 
 module.exports = { processImportJob, serializeSdkError };
+module.exports._test = { withTimeout, ROW_TIMEOUT_MS };
