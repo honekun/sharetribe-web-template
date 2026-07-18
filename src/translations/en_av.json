@@ -215,7 +215,7 @@
   "NewsletterForm.errorMessage": "Subscription failed. Try again later.",
   "NewsletterForm.invalidEmail": "Please enter a valid email.",
   "NewsletterForm.networkError": "Network error. Try again.",
-  "NewsletterForm.successMessage": "Thanks! Please check your inbox.",
+  "NewsletterForm.successMessage": "You're subscribed! Thanks for joining our newsletter.",
   "LayoutWrapperAccountSettingsSideNav.profileTabTitle": "Profile",
   "LayoutWrapperAccountSettingsSideNav.profileTabTitleTienda": "Store Profile",
   "ProfileSettingsPage.headingTienda": "Store profile settings",

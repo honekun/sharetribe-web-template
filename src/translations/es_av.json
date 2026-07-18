@@ -214,7 +214,7 @@
   "NewsletterForm.errorMessage": "Error en la suscripción. Inténtalo más tarde.",
   "NewsletterForm.invalidEmail": "Introduce un email válido.",
   "NewsletterForm.networkError": "Error de red. Inténtalo de nuevo.",
-  "NewsletterForm.successMessage": "¡Gracias! Revisa tu bandeja de entrada.",
+  "NewsletterForm.successMessage": "¡Listo! Te suscribiste a nuestro boletín.",
   "LayoutWrapperAccountSettingsSideNav.profileTabTitle": "Perfil",
   "LayoutWrapperAccountSettingsSideNav.profileTabTitleTienda": "Perfil de Tienda",
   "ProfileSettingsPage.headingTienda": "Configuración de perfil de tienda",

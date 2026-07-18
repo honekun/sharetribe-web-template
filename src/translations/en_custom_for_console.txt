@@ -62,7 +62,7 @@
   "NewsletterForm.errorMessage": "Subscription failed. Try again later.",
   "NewsletterForm.invalidEmail": "Please enter a valid email.",
   "NewsletterForm.networkError": "Network error. Try again.",
-  "NewsletterForm.successMessage": "Thanks! Please check your inbox.",
+  "NewsletterForm.successMessage": "You're subscribed! Thanks for joining our newsletter.",
   "RequestQuotePage.defaultMessageLabel": "Describe your requirements",
   "RequestQuotePage.defaultMessagePlaceholder": "What do you need?",
   "RequestQuotePage.defaultMessageRequired": "You need to describe your requirements",
