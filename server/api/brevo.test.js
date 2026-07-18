@@ -103,10 +103,8 @@ afterAll(() => {
 describe('POST /subscribe', () => {
   const handler = getSubscribeHandler();
 
-  it('returns ok:true for a valid new subscriber', async () => {
-    fetch
-      .mockResolvedValueOnce(brevoOk(201)) // contact upsert
-      .mockResolvedValueOnce(brevoOk(201)); // add to list
+  it('subscribes a new contact in a single atomic call with listIds', async () => {
+    fetch.mockResolvedValueOnce(brevoOk(201)); // create contact + add to list in one call
 
     const req = createReq({ email: 'new@example.com', hp: '' });
     const res = createRes();
@@ -114,13 +112,20 @@ describe('POST /subscribe', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ ok: true });
-    expect(fetch).toHaveBeenCalledTimes(2);
+    // One atomic POST /v3/contacts with updateEnabled + listIds — no separate add step.
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const [url, opts] = fetch.mock.calls[0];
+    expect(url).toBe('https://api.brevo.com/v3/contacts');
+    const body = JSON.parse(opts.body);
+    expect(body).toEqual(
+      expect.objectContaining({ email: 'new@example.com', updateEnabled: true, listIds: [9] })
+    );
   });
 
-  it('returns ok:true when contact already existed (step-1 returns 204)', async () => {
-    fetch
-      .mockResolvedValueOnce(brevoOk(204)) // updated, no body
-      .mockResolvedValueOnce(brevoOk(201));
+  it('returns ok:true when the contact already exists / is already listed (204)', async () => {
+    // updateEnabled + listIds makes an existing or already-listed contact a no-op
+    // success — no second call, so nothing to mask.
+    fetch.mockResolvedValueOnce(brevoOk(204));
 
     const req = createReq({ email: 'existing@example.com', hp: '' });
     const res = createRes();
@@ -128,22 +133,7 @@ describe('POST /subscribe', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ ok: true });
-  });
-
-  it('returns ok:true when contact is already in the list (step-2 returns 400 invalid_parameter)', async () => {
-    // This is the main bug fix: Brevo returns 400 for already-subscribed contacts.
-    fetch
-      .mockResolvedValueOnce(brevoOk(204))
-      .mockResolvedValueOnce(
-        brevoErr(400, { message: 'Contact already in list', code: 'invalid_parameter' })
-      );
-
-    const req = createReq({ email: 'already@example.com', hp: '' });
-    const res = createRes();
-    await handler(req, res, jest.fn());
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ ok: true });
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 
   it('returns 400 for an invalid email', async () => {
@@ -178,7 +168,7 @@ describe('POST /subscribe', () => {
 
   it('records consent evidence (server-derived user id + ip) before subscribing', async () => {
     mockCurrentUserShow.mockResolvedValue({ data: { data: { id: { uuid: 'user-9' } } } });
-    fetch.mockResolvedValueOnce(brevoOk(201)).mockResolvedValueOnce(brevoOk(201));
+    fetch.mockResolvedValueOnce(brevoOk(201));
 
     const req = {
       body: {
@@ -211,7 +201,7 @@ describe('POST /subscribe', () => {
   });
 
   it('falls back to a default policy version and null user id for anonymous signups', async () => {
-    fetch.mockResolvedValueOnce(brevoOk(201)).mockResolvedValueOnce(brevoOk(201));
+    fetch.mockResolvedValueOnce(brevoOk(201));
 
     const req = { body: { email: 'anon@example.com', hp: '' }, ip: '203.0.113.2' };
     const res = createRes();
@@ -249,7 +239,7 @@ describe('POST /subscribe', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('returns 400 when Brevo rejects the contact upsert (step 1)', async () => {
+  it('returns 502 and surfaces failure when Brevo rejects the subscribe call', async () => {
     fetch.mockResolvedValueOnce(
       brevoErr(400, { message: 'Invalid API key', code: 'unauthorized' })
     );
@@ -258,24 +248,24 @@ describe('POST /subscribe', () => {
     const res = createRes();
     await handler(req, res, jest.fn());
 
-    expect(res.statusCode).toBe(400);
-    expect(res.body).toEqual({ ok: false, error: 'brevo_create_failed' });
+    expect(res.statusCode).toBe(502);
+    expect(res.body).toEqual({ ok: false, error: 'brevo_subscribe_failed' });
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
-  it('returns 400 when Brevo rejects add-to-list with a real error (not already-in-list)', async () => {
-    fetch
-      .mockResolvedValueOnce(brevoOk(201))
-      .mockResolvedValueOnce(
-        brevoErr(404, { message: 'List not found', code: 'document_not_found' })
-      );
+  it('does not mask an unexpected invalid_parameter error as success (BR-05)', async () => {
+    // Previously any list-add invalid_parameter was treated as "already subscribed";
+    // with the single atomic call, a real error (e.g. bad list id) surfaces as failure.
+    fetch.mockResolvedValueOnce(
+      brevoErr(400, { message: 'Invalid list id', code: 'invalid_parameter' })
+    );
 
     const req = createReq({ email: 'user@example.com', hp: '' });
     const res = createRes();
     await handler(req, res, jest.fn());
 
-    expect(res.statusCode).toBe(400);
-    expect(res.body).toEqual({ ok: false, error: 'brevo_add_to_list_failed' });
+    expect(res.statusCode).toBe(502);
+    expect(res.body).toEqual({ ok: false, error: 'brevo_subscribe_failed' });
   });
 
   it('returns 500 when fetch throws (network error)', async () => {

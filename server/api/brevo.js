@@ -1,12 +1,16 @@
 const express = require('express');
 const fetch = require('node-fetch');
-const { createRateLimiter } = require('../api-util/rateLimit');
+const { createSharedRateLimit } = require('../services/rateLimitStore');
 const { getNotificationConfigReadiness } = require('../services/notificationConfig');
 const { createNewsletterConsentStore } = require('../services/newsletterConsent');
 const { getSdk } = require('../api-util/sdk');
 
 const router = express.Router();
-const subscribeRateLimit = createRateLimiter({
+// Shared PostgreSQL-backed limiter (BR-07): consistent across web processes and
+// durable across restarts. Keyed on the derived client IP; fails open if the store
+// is unavailable.
+const subscribeRateLimit = createSharedRateLimit({
+  bucket: 'brevo_subscribe',
   windowMs: 60 * 1000,
   max: 20,
   message: { ok: false, error: 'rate_limited' },
@@ -97,67 +101,36 @@ router.post('/subscribe', subscribeRateLimit, async (req, res) => {
       return res.status(503).json({ ok: false, error: 'consent_record_failed' });
     }
 
-    // 1) Upsert the contact.
-    {
-      const r = await fetch('https://api.brevo.com/v3/contacts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'api-key': BREVO_API_KEY,
-          accept: 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          updateEnabled: true,
-          ...(BREVO_CONSENT_ATTRIBUTES_ENABLED
-            ? { attributes: consentBrevoAttributes(evidence) }
-            : {}),
-        }),
-      });
+    // Create/update the contact AND add it to the list in one atomic call
+    // (BR-05/BR-06). `listIds` with `updateEnabled: true` makes membership
+    // idempotent via a supported API pattern: a new contact is created and listed,
+    // an existing contact is updated and listed, and an already-listed contact is a
+    // no-op. There is no separate add-to-list step to leave a partial-success window
+    // (BR-06) or to mask an unrelated error as "already subscribed" (BR-05).
+    const r = await fetch('https://api.brevo.com/v3/contacts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': BREVO_API_KEY,
+        accept: 'application/json',
+      },
+      body: JSON.stringify({
+        email: email.trim(),
+        updateEnabled: true,
+        listIds: [Number(BREVO_LIST_ID)],
+        ...(BREVO_CONSENT_ATTRIBUTES_ENABLED
+          ? { attributes: consentBrevoAttributes(evidence) }
+          : {}),
+      }),
+    });
 
-      // Brevo returns 201 for created, 204 for updated; 400-range includes already blacklisted, etc.
-      if (r.status >= 400) {
-        const j = await r.json().catch(() => ({}));
-        // eslint-disable-next-line no-console
-        console.error('[brevo] contact upsert failed', {
-          status: r.status,
-          email: email.trim(),
-          body: j,
-        });
-        return res.status(400).json({ ok: false, error: 'brevo_create_failed' });
-      }
-    }
-
-    // 2) Add to target list by email.
-    {
-      const r = await fetch(
-        `https://api.brevo.com/v3/contacts/lists/${BREVO_LIST_ID}/contacts/add`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'api-key': BREVO_API_KEY,
-            accept: 'application/json',
-          },
-          body: JSON.stringify({ emails: [email.trim()] }),
-        }
-      );
-
-      if (r.status >= 400) {
-        const j = await r.json().catch(() => ({}));
-        // Brevo returns 400 with code "invalid_parameter" when the contact is already in the
-        // list. Treat this as success — the user is already subscribed, which is the desired state.
-        if (j.code === 'invalid_parameter') {
-          return res.json({ ok: true });
-        }
-        // eslint-disable-next-line no-console
-        console.error('[brevo] add-to-list failed', {
-          status: r.status,
-          email: email.trim(),
-          body: j,
-        });
-        return res.status(400).json({ ok: false, error: 'brevo_add_to_list_failed' });
-      }
+    // 201 created / 204 updated are success. Any 4xx/5xx is a real failure — surface
+    // it (never mask), keeping the raw provider detail server-side only.
+    if (r.status >= 400) {
+      const j = await r.json().catch(() => ({}));
+      // eslint-disable-next-line no-console
+      console.error('[brevo] subscribe failed', { status: r.status, email: email.trim(), body: j });
+      return res.status(502).json({ ok: false, error: 'brevo_subscribe_failed' });
     }
 
     return res.json({ ok: true });
