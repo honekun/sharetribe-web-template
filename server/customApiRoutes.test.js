@@ -47,12 +47,16 @@ describe('custom API route protection', () => {
     const myBalanceIndex = stack.findIndex(layer =>
       layer.matchers?.some(matcher => matcher('/api/my-balance/summary'))
     );
+    const notificationsIndex = stack.findIndex(layer =>
+      layer.matchers?.some(matcher => matcher('/api/notifications/readiness'))
+    );
 
     expect(authIndex).toBeGreaterThanOrEqual(0);
     expect(brevoIndex).toBeGreaterThan(authIndex);
     expect(instagramIndex).toBeGreaterThan(authIndex);
     expect(bulkImportIndex).toBeGreaterThan(authIndex);
     expect(myBalanceIndex).toBeGreaterThan(authIndex);
+    expect(notificationsIndex).toBeGreaterThan(authIndex);
   });
 
   it('basic auth blocks unauthenticated custom API requests before a mounted route can run', () => {
