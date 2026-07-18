@@ -2,6 +2,11 @@
 
 const fetch = require('node-fetch');
 const { generateGettingStartedPDF } = require('./pdfGenerator');
+const {
+  localDeliveryFailure,
+  rejectedProviderRequest,
+  unknownProviderOutcome,
+} = require('./notificationProviderError');
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'hola@archivovintach.com';
@@ -26,11 +31,15 @@ function escapeHtml(str) {
  */
 async function sendWelcomeEmail({ email, firstName, lastName }) {
   if (!BREVO_API_KEY) {
-    console.warn('[welcomeEmailService] BREVO_API_KEY not set — skipping welcome email');
-    return;
+    throw localDeliveryFailure('BREVO_API_KEY is not configured');
   }
 
-  const pdfBuffer = await generateGettingStartedPDF({ firstName });
+  let pdfBuffer;
+  try {
+    pdfBuffer = await generateGettingStartedPDF({ firstName });
+  } catch (err) {
+    throw localDeliveryFailure('Welcome PDF generation failed', err);
+  }
   const pdfBase64 = pdfBuffer.toString('base64');
 
   const safeFirstName = escapeHtml(firstName || 'Usuario');
@@ -99,23 +108,33 @@ async function sendWelcomeEmail({ email, firstName, lastName }) {
     ],
   };
 
-  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'api-key': BREVO_API_KEY,
-      accept: 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  let response;
+  try {
+    response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': BREVO_API_KEY,
+        accept: 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    throw unknownProviderOutcome('Brevo request ended without a provider response', err);
+  }
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
     console.error('[welcomeEmailService] Brevo API error:', response.status, body);
-    throw new Error(`Brevo transactional email failed: ${response.status}`);
+    throw rejectedProviderRequest(
+      `Brevo transactional email failed: ${response.status}`,
+      response.status
+    );
   }
 
+  const body = await response.json().catch(() => ({}));
   console.log(`[welcomeEmailService] Welcome email sent to ${email}`);
+  return { providerMessageId: body.messageId || null };
 }
 
 module.exports = { sendWelcomeEmail };

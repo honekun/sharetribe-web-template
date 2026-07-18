@@ -8,6 +8,7 @@
  * @param {number}           [opts.attempts=2]   Total tries (initial + retries).
  * @param {number}           [opts.baseMs=500]   Base delay; backoff is base * 2^(i-1) + jitter.
  * @param {string}           [opts.label]        For log context.
+ * @param {(error: Error) => boolean} [opts.shouldRetry] Retry predicate.
  * @returns {Promise<T>}
  */
 async function withRetry(fn, opts = {}) {
@@ -21,7 +22,7 @@ async function withRetry(fn, opts = {}) {
       return await fn();
     } catch (err) {
       lastErr = err;
-      if (i === attempts) break;
+      if (i === attempts || (opts.shouldRetry && !opts.shouldRetry(err))) break;
       const jitter = Math.floor(Math.random() * 100);
       const delay = baseMs * Math.pow(2, i - 1) + jitter;
       console.warn(

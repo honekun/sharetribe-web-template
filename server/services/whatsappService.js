@@ -2,6 +2,11 @@
 
 const fetch = require('node-fetch');
 const { createTTLCache } = require('../api-util/cache');
+const {
+  localDeliveryFailure,
+  rejectedProviderRequest,
+  unknownProviderOutcome,
+} = require('./notificationProviderError');
 
 // User phones change rarely; 3 minutes hides repeat lookups during an event
 // burst without leaking stale data for long.
@@ -33,15 +38,13 @@ const API_URL = `https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`;
  */
 async function sendWhatsApp({ phone, templateName, params = [], languageCode = 'es_MX' }) {
   if (!ACCESS_TOKEN || !PHONE_NUMBER_ID) {
-    console.warn(
-      '[whatsappService] WHATSAPP_ACCESS_TOKEN or WHATSAPP_PHONE_NUMBER_ID not set — skipping'
+    throw localDeliveryFailure(
+      'WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID must be configured'
     );
-    return;
   }
 
   if (!phone) {
-    console.warn(`[whatsappService] No phone supplied for template ${templateName} — skipping`);
-    return;
+    throw localDeliveryFailure(`No phone supplied for template ${templateName}`);
   }
 
   const components =
@@ -65,14 +68,19 @@ async function sendWhatsApp({ phone, templateName, params = [], languageCode = '
     },
   };
 
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${ACCESS_TOKEN}`,
-    },
-    body: JSON.stringify(payload),
-  });
+  let response;
+  try {
+    response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    throw unknownProviderOutcome('WhatsApp request ended without a provider response', err);
+  }
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
@@ -81,10 +89,12 @@ async function sendWhatsApp({ phone, templateName, params = [], languageCode = '
       response.status,
       body
     );
-    throw new Error(`WhatsApp API failed: ${response.status}`);
+    throw rejectedProviderRequest(`WhatsApp API failed: ${response.status}`, response.status);
   }
 
+  const body = await response.json().catch(() => ({}));
   console.log(`[whatsappService] Sent template "${templateName}" to ${phone}`);
+  return { providerMessageId: body.messages?.[0]?.id || null };
 }
 
 // ─── Convenience helpers ──────────────────────────────────────────────────────
@@ -94,8 +104,7 @@ async function sendWhatsApp({ phone, templateName, params = [], languageCode = '
  */
 async function sendAdminAlert({ firstName, lastName, email }) {
   if (!ADMIN_PHONE) {
-    console.warn('[whatsappService] WHATSAPP_ADMIN_PHONE not set — skipping admin alert');
-    return;
+    throw localDeliveryFailure('WHATSAPP_ADMIN_PHONE is not configured');
   }
   return sendWhatsApp({
     phone: ADMIN_PHONE,
@@ -104,11 +113,17 @@ async function sendAdminAlert({ firstName, lastName, email }) {
   });
 }
 
+function getAdminPhone() {
+  return ADMIN_PHONE || null;
+}
+
 /**
- * Send a WhatsApp to a user (no-op if phone is falsy).
+ * Send a WhatsApp to a user.
  */
 async function sendUserWhatsApp({ phone, templateName, params = [] }) {
-  if (!phone) return;
+  if (!phone) {
+    throw localDeliveryFailure(`No phone supplied for template ${templateName}`);
+  }
   return sendWhatsApp({ phone, templateName, params });
 }
 
@@ -148,4 +163,5 @@ module.exports = {
   sendAdminAlert,
   sendUserWhatsApp,
   lookupUserPhone,
+  getAdminPhone,
 };
