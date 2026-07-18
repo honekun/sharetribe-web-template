@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: archivo_vintach
+      POSTGRES_USER: archivo_vintach
+      POSTGRES_PASSWORD: archivo_vintach_dev
+    ports:
+      - '5432:5432'
+    volumes:
+      - av_notification_postgres_data:/var/lib/postgresql/data
+      - ./server/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U archivo_vintach -d archivo_vintach']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+
+volumes:
+  av_notification_postgres_data:

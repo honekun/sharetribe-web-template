@@ -18,7 +18,7 @@ build
 AGENTS.override.md
 .superpowers/
 .playwright-mcp/
-docs/
+docs/*
 !docs/operator-guide.md
 npm-debug.log
 yarn-error.log
