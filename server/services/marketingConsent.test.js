@@ -63,6 +63,49 @@ describe('marketing consent store', () => {
     ).toBe(true);
   });
 
+  // A previously suppressed contact (unsubscribed / hard bounce via webhook) must
+  // not be silently re-enabled by an anonymous footer subscribe.
+  function mockSuppressedPool(returning = { email: 'p@e.com', enabled: false, suppressed: true }) {
+    const client = {
+      query: jest.fn(query => {
+        if (query.includes('FOR UPDATE')) return Promise.resolve({ rows: [{ suppressed: true }] });
+        if (query.includes('RETURNING email')) return Promise.resolve({ rows: [returning] });
+        return Promise.resolve({ rows: [], rowCount: 1 });
+      }),
+      release: jest.fn(),
+    };
+    return { pool: { connect: jest.fn().mockResolvedValue(client) }, client };
+  }
+  const upsertParams = client =>
+    client.query.mock.calls.find(([q]) => q.includes('INSERT INTO av_marketing_preferences'))[1];
+
+  test('keeps a suppressed contact suppressed on an unauthenticated re-subscribe', async () => {
+    const { pool, client } = mockSuppressedPool();
+    const store = new MarketingConsentStore(pool);
+    await store.setPreference({ email: 'p@e.com', enabled: true, source: 'footer_newsletter' });
+    const params = upsertParams(client);
+    expect(params[2]).toBe(false); // effective enabled
+    expect(params[3]).toBe(true); // effective suppressed
+  });
+
+  test('lets an authorized opt-in (allowUnsuppress) lift suppression', async () => {
+    const { pool, client } = mockSuppressedPool({
+      email: 'p@e.com',
+      enabled: true,
+      suppressed: false,
+    });
+    const store = new MarketingConsentStore(pool);
+    await store.setPreference({
+      email: 'p@e.com',
+      enabled: true,
+      source: 'account_details',
+      allowUnsuppress: true,
+    });
+    const params = upsertParams(client);
+    expect(params[2]).toBe(true); // effective enabled
+    expect(params[3]).toBe(false); // effective suppressed
+  });
+
   test('rolls back when persistence fails', async () => {
     const client = {
       query: jest

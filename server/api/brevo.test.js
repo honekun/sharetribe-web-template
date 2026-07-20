@@ -173,6 +173,17 @@ describe('POST /subscribe', () => {
     expect(res.body).toEqual({ ok: false, error: 'consent_record_failed' });
     expect(mockUpsertContact).not.toHaveBeenCalled();
   });
+
+  it('does not re-add a suppressed contact to Brevo (stored state wins)', async () => {
+    // The consent store kept the contact suppressed despite the subscribe request.
+    mockSetPreference.mockResolvedValue({ enabled: false, suppressed: true });
+    const res = createRes();
+    await handler(createReq({ email: 'suppressed@example.com' }), res);
+
+    expect(res.body).toEqual({ ok: true });
+    expect(mockUpsertContact).not.toHaveBeenCalled();
+    expect(mockRemoveContact).toHaveBeenCalledWith('suppressed@example.com');
+  });
 });
 
 describe('authenticated marketing preference', () => {
@@ -186,6 +197,22 @@ describe('authenticated marketing preference', () => {
       suppressed: false,
       email: 'person@example.com',
     });
+  });
+
+  it('reports a store outage as 503, not a masked 401', async () => {
+    mockGetPreference.mockRejectedValue(new Error('database unavailable'));
+    const res = createRes();
+    await routeHandler('/preference', 'get')(createReq(), res);
+    expect(res.statusCode).toBe(503);
+    expect(res.body).toEqual({ ok: false, error: 'preference_lookup_failed' });
+  });
+
+  it('lets the account owner lift suppression (allowUnsuppress)', async () => {
+    const res = createRes();
+    await routeHandler('/preference', 'put')(createReq({ enabled: true }), res);
+    expect(mockSetPreference).toHaveBeenCalledWith(
+      expect.objectContaining({ allowUnsuppress: true })
+    );
   });
 
   it('opts in and mirrors the preference to Brevo and Sharetribe protected data', async () => {
@@ -210,6 +237,8 @@ describe('authenticated marketing preference', () => {
   });
 
   it('opts out, removes list membership, and persists withdrawal', async () => {
+    // Brevo sync follows the STORED preference the store returns.
+    mockSetPreference.mockResolvedValue({ enabled: false, suppressed: false });
     const res = createRes();
     await routeHandler('/preference', 'put')(createReq({ enabled: false }), res);
 
@@ -281,6 +310,15 @@ describe('POST /webhook', () => {
     expect(res.statusCode).toBe(401);
   });
 
+  it('rejects a secret supplied via the query string (header only)', async () => {
+    const res = createRes();
+    await handler(
+      createReq({ event: 'delivered' }, { query: { secret: 'webhook-test-secret' } }),
+      res
+    );
+    expect(res.statusCode).toBe(401);
+  });
+
   it('records delivery events and suppresses future marketing after unsubscribe', async () => {
     const req = createReq(
       {
@@ -289,7 +327,7 @@ describe('POST /webhook', () => {
         'message-id': 'brevo-message-1',
         date: '2026-07-19T12:00:00.000Z',
       },
-      { query: { secret: 'webhook-test-secret' } }
+      { headers: { 'x-av-brevo-webhook-secret': 'webhook-test-secret' } }
     );
     const res = createRes();
     await handler(req, res);
@@ -315,7 +353,7 @@ describe('POST /webhook', () => {
         'message-id': 'brevo-message-2',
         ts_event: 1784452800,
       },
-      { query: { secret: 'webhook-test-secret' } }
+      { headers: { 'x-av-brevo-webhook-secret': 'webhook-test-secret' } }
     );
     const res = createRes();
     await handler(req, res);

@@ -1,7 +1,6 @@
 'use strict';
 
-const fetch = require('node-fetch');
-
+const { fetchWithTimeout } = require('../api-util/fetchWithTimeout');
 const { normalizeEmail } = require('./emailAddress');
 
 const BREVO_CONTACTS_URL = 'https://api.brevo.com/v3/contacts';
@@ -33,7 +32,7 @@ async function responseError(response, operation) {
 }
 
 async function upsertMarketingContact({ email, attributes = {} }) {
-  const response = await fetch(BREVO_CONTACTS_URL, {
+  const response = await fetchWithTimeout(BREVO_CONTACTS_URL, {
     method: 'POST',
     headers: brevoHeaders(),
     body: JSON.stringify({
@@ -48,7 +47,7 @@ async function upsertMarketingContact({ email, attributes = {} }) {
 
 async function removeMarketingContact(email) {
   const encodedEmail = encodeURIComponent(normalizeEmail(email));
-  const response = await fetch(`${BREVO_CONTACTS_URL}/${encodedEmail}`, {
+  const response = await fetchWithTimeout(`${BREVO_CONTACTS_URL}/${encodedEmail}`, {
     method: 'PUT',
     headers: brevoHeaders(),
     body: JSON.stringify({ unlinkListIds: [configuredListId()] }),

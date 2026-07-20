@@ -30,12 +30,12 @@ class MarketingConsentStore {
     sharetribeUserId = null,
     ip = null,
     suppressed = false,
+    allowUnsuppress = false,
     occurredAt = new Date().toISOString(),
   }) {
     const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail) throw new Error('marketingConsent.setPreference requires an email');
     const normalizedSource = normalizeSource(source);
-    const action = enabled ? 'granted' : suppressed ? 'suppressed' : 'withdrawn';
     const client = await this.pool.connect();
 
     try {
@@ -48,6 +48,25 @@ class MarketingConsentStore {
           [sharetribeUserId, normalizedEmail]
         );
       }
+
+      // A contact suppressed by Brevo (unsubscribe / hard bounce / spam) must not be
+      // silently re-enabled by an anonymous footer subscribe — that would re-mail
+      // hard bounces and re-subscribe people who never proved ownership. Only a
+      // webhook suppression event or an authorized opt-in (`allowUnsuppress`, e.g.
+      // the account owner's toggle) may change the suppressed flag. Locked with
+      // FOR UPDATE so a concurrent re-subscribe can't race past the check.
+      const existing = await client.query(
+        `SELECT suppressed FROM av_marketing_preferences WHERE email = $1 FOR UPDATE`,
+        [normalizedEmail]
+      );
+      const currentlySuppressed = existing.rows[0]?.suppressed === true;
+      const effectiveSuppressed = Boolean(suppressed) || (currentlySuppressed && !allowUnsuppress);
+      const effectiveEnabled = Boolean(enabled) && !effectiveSuppressed;
+      const action = effectiveSuppressed
+        ? 'suppressed'
+        : effectiveEnabled
+        ? 'granted'
+        : 'withdrawn';
       await client.query(
         `INSERT INTO av_newsletter_consent
            (email, consent_at, source, locale, policy_version, sharetribe_user_id, ip, action)
@@ -89,8 +108,8 @@ class MarketingConsentStore {
         [
           normalizedEmail,
           sharetribeUserId,
-          Boolean(enabled) && !suppressed,
-          Boolean(suppressed),
+          effectiveEnabled,
+          effectiveSuppressed,
           normalizedSource,
           locale || null,
           String(policyVersion),
@@ -98,7 +117,7 @@ class MarketingConsentStore {
         ]
       );
 
-      if (!enabled || suppressed) {
+      if (!effectiveEnabled) {
         await client.query(
           `UPDATE av_notification_jobs
            SET status = 'cancelled', cancelled_at = NOW(), updated_at = NOW()
