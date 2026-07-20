@@ -125,15 +125,6 @@ function applyBuyerMarkup(amountSubunits) {
   return Math.ceil(marked / roundUpToSubunits) * roundUpToSubunits;
 }
 
-// Map an eShip rate to a checkout bucket id. v1 uses eShip's tags; a
-// servicelevel.token map replaces this once real tokens are gathered.
-function bucketForRate(rate) {
-  const tags = (rate && rate.tags) || [];
-  if (tags.includes('FASTEST')) return 'nacionalExpress';
-  if (tags.includes('CHEAPEST')) return 'nacionalEstandar';
-  return null;
-}
-
 // @deprecated Replaced by live eShip quoting (see shippingQuoteService). Retained
 // as a reference/backstop and for existing tests; NOT used in the checkout or
 // line-items path.
@@ -167,5 +158,4 @@ module.exports = {
   eshipAmountIncludesIva,
   eshipBaseUrl,
   applyBuyerMarkup,
-  bucketForRate,
 };

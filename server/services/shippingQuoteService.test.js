@@ -119,11 +119,48 @@ describe('resolveParcel', () => {
 });
 
 describe('buildBuckets', () => {
-  it('buckets FASTEST→express and CHEAPEST→estándar with marked-up prices', () => {
-    const out = svc.buildBuckets([fastestRate, cheapestRate]);
-    expect(out.nacionalExpress.amountSubunits).toBe(svc.__toSubunitsWithMarkup(100));
-    expect(out.nacionalEstandar.amountSubunits).toBe(svc.__toSubunitsWithMarkup(80));
+  const rate = (rate_id, days, amount, tags = []) => ({
+    rate_id,
+    provider: 'C',
+    currency: 'MXN',
+    days,
+    amount,
+    servicelevel: { name: rate_id },
+    tags,
+  });
+
+  it('estándar = cheapest overall; express = fewest days then cheapest', () => {
+    const out = svc.buildBuckets([rate('a', 2, 100), rate('b', 5, 80)]);
+    expect(out.nacionalEstandar.amountSubunits).toBe(svc.__toSubunitsWithMarkup(80)); // cheapest
+    expect(out.nacionalExpress.amountSubunits).toBe(svc.__toSubunitsWithMarkup(100)); // fewest days
     expect(out.rawRates).toHaveLength(2);
+  });
+
+  it('express picks the cheapest among the rates sharing the fewest days', () => {
+    // days: a,b = 2 (fastest); c = 5. Express must be the cheaper of a/b (b=150).
+    const out = svc.buildBuckets([rate('a', 2, 200), rate('b', 2, 150), rate('c', 5, 80)]);
+    expect(out.nacionalExpress.amountSubunits).toBe(svc.__toSubunitsWithMarkup(150));
+    expect(out.nacionalEstandar.amountSubunits).toBe(svc.__toSubunitsWithMarkup(80));
+  });
+
+  it('fills BOTH buckets from a single rate when only one is returned', () => {
+    const out = svc.buildBuckets([rate('solo', 3, 120)]);
+    expect(out.nacionalExpress.amountSubunits).toBe(svc.__toSubunitsWithMarkup(120));
+    expect(out.nacionalEstandar.amountSubunits).toBe(svc.__toSubunitsWithMarkup(120));
+  });
+
+  it('selects on price/days, ignoring eShip FASTEST/CHEAPEST tags', () => {
+    // Tags deliberately contradict the numbers.
+    const out = svc.buildBuckets([rate('a', 2, 100, ['CHEAPEST']), rate('b', 5, 80, ['FASTEST'])]);
+    expect(out.nacionalEstandar.amountSubunits).toBe(svc.__toSubunitsWithMarkup(80)); // truly cheapest
+    expect(out.nacionalExpress.amountSubunits).toBe(svc.__toSubunitsWithMarkup(100)); // truly fastest
+  });
+
+  it('returns only rawRates when there are no rates', () => {
+    const out = svc.buildBuckets([]);
+    expect(out.rawRates).toEqual([]);
+    expect(out.nacionalExpress).toBeUndefined();
+    expect(out.nacionalEstandar).toBeUndefined();
   });
 });
 

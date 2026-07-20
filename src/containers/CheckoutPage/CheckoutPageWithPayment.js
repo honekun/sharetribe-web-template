@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import debounce from 'lodash/debounce';
 import { useSelector } from 'react-redux';
 
 // Import contexts and util modules
@@ -58,6 +59,10 @@ import { setInitialValues as setListingPageInitialValues } from '../ListingPage/
 // Stripe PaymentIntent statuses, where user actions are already completed
 // https://stripe.com/docs/payments/payment-intents/status
 const STRIPE_PI_USER_ACTIONS_DONE_STATUSES = ['processing', 'requires_capture', 'succeeded'];
+
+// AV: how long to wait after the last shipping-address edit before quoting eShip,
+// so typing an already-complete address doesn't fire one request per keystroke.
+const QUOTE_DEBOUNCE_MS = 600;
 
 // Payment charge options
 const ONETIME_PAYMENT = 'ONETIME_PAYMENT';
@@ -636,9 +641,25 @@ export const CheckoutPageWithPayment = props => {
   const buyerEmail = currentUser?.attributes?.email || null;
   const lastDestinationRef = useRef(null);
 
+  // Debounced quote dispatch. FormSpy fires handleShippingValuesChange on every
+  // keystroke, so while the buyer edits an already-complete address each change
+  // would otherwise hit the eShip API. Coalesce rapid edits into a single fetch
+  // once typing settles. Built once (stable dispatch + setState refs); the latest
+  // args win because lodash debounce invokes with the most recent call's args.
+  const debouncedQuoteRef = useRef(null);
+  if (debouncedQuoteRef.current === null) {
+    debouncedQuoteRef.current = debounce(args => {
+      dispatch(fetchShippingQuote(args));
+    }, QUOTE_DEBOUNCE_MS);
+  }
+  const debouncedQuote = debouncedQuoteRef.current;
+  // Cancel any pending quote if the buyer leaves checkout mid-type.
+  useEffect(() => () => debouncedQuote.cancel(), [debouncedQuote]);
+
   // Quote (or re-quote) whenever the buyer's destination address changes to a new
-  // complete value. Clears any prior delivery-type selection so the buyer re-picks
-  // against fresh prices. Driven by StripePaymentForm's FormSpy via onShippingValuesChange.
+  // complete value. Clears any prior delivery-type selection immediately (so a
+  // stale pick can't be paid mid-edit) and debounces the actual fetch. Driven by
+  // StripePaymentForm's FormSpy via onShippingValuesChange.
   const handleShippingValuesChange = useCallback(
     formValues => {
       if (!isAvShipping) return;
@@ -650,9 +671,9 @@ export const CheckoutPageWithPayment = props => {
       if (!key || key === prevKey) return;
       lastDestinationRef.current = destination;
       setSelectedShippingType(null);
-      dispatch(fetchShippingQuote({ listingId: listing?.id?.uuid, destination, buyerEmail }));
+      debouncedQuote({ listingId: listing?.id?.uuid, destination, buyerEmail });
     },
-    [isAvShipping, dispatch, listing, buyerEmail]
+    [isAvShipping, debouncedQuote, listing, buyerEmail]
   );
 
   const handleRetryQuote = () => {

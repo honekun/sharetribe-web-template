@@ -9,7 +9,6 @@ const {
   resolvePackageSize,
   isEspecialSize,
   applyBuyerMarkup,
-  bucketForRate,
 } = require('../../src/config/configAVShipping');
 
 // quoteToken -> { nacionalExpress?, nacionalEstandar?, rawRates, quot_id,
@@ -123,7 +122,39 @@ function quoteContextHash(listing, destination) {
     .digest('hex');
 }
 
-function rawRateView(rate) {
+// Numeric accessors that push missing/invalid values to the end of any pick.
+const rateAmount = r => (typeof r.amount === 'number' ? r.amount : Infinity);
+const rateDays = r => (typeof r.days === 'number' ? r.days : Infinity);
+
+// Estándar = the cheapest delivery, regardless of transit time. Tie-break on
+// fewer days, then keep the first seen (stable).
+function pickEstandarRate(rates) {
+  return rates.reduce((best, r) => {
+    if (!best) return r;
+    if (rateAmount(r) < rateAmount(best)) return r;
+    if (rateAmount(r) === rateAmount(best) && rateDays(r) < rateDays(best)) return r;
+    return best;
+  }, null);
+}
+
+// Express = the fastest delivery (fewest days); among rates that tie on days,
+// the cheapest. Tie-break otherwise keeps the first seen (stable).
+function pickExpressRate(rates) {
+  return rates.reduce((best, r) => {
+    if (!best) return r;
+    if (rateDays(r) < rateDays(best)) return r;
+    if (rateDays(r) === rateDays(best) && rateAmount(r) < rateAmount(best)) return r;
+    return best;
+  }, null);
+}
+
+function rawRateView(rate, expressRate, estandarRate) {
+  const bucket =
+    expressRate && rate.rate_id === expressRate.rate_id
+      ? 'nacionalExpress'
+      : estandarRate && rate.rate_id === estandarRate.rate_id
+      ? 'nacionalEstandar'
+      : null;
   return {
     rate_id: rate.rate_id,
     provider: rate.provider,
@@ -133,7 +164,7 @@ function rawRateView(rate) {
     currency: rate.currency,
     buyerAmountSubunits: __toSubunitsWithMarkup(rate.amount),
     tags: rate.tags || [],
-    bucket: bucketForRate(rate),
+    bucket,
   };
 }
 
@@ -148,12 +179,18 @@ function bucketFromRate(rate) {
   };
 }
 
+// Compute the two selectable buckets from the raw eShip rates. As long as at
+// least one rate is returned, BOTH Express and Estándar are filled (they can be
+// the same rate when only one is returned, or when the cheapest is also the
+// fastest). Selection is derived from price/days here — eShip's FASTEST/CHEAPEST
+// tags are surfaced in rawRates for transparency but are not trusted for picking.
 function buildBuckets(rates) {
-  const out = { rawRates: (rates || []).map(rawRateView) };
-  for (const rate of rates || []) {
-    const bucket = bucketForRate(rate);
-    if (bucket && !out[bucket]) out[bucket] = bucketFromRate(rate);
-  }
+  const list = rates || [];
+  const expressRate = pickExpressRate(list);
+  const estandarRate = pickEstandarRate(list);
+  const out = { rawRates: list.map(rate => rawRateView(rate, expressRate, estandarRate)) };
+  if (expressRate) out.nacionalExpress = bucketFromRate(expressRate);
+  if (estandarRate) out.nacionalEstandar = bucketFromRate(estandarRate);
   return out;
 }
 
