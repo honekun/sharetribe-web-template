@@ -137,11 +137,16 @@ async function runQuote({ listing, destination, buyerEmail }) {
   if (!parcel) throw new EspecialError();
   const origin = await resolveOrigin(listing);
   if (!origin) throw new NoOriginError();
-  const { quot_id, rates } = await eshipClient.quote({
+  const quoteRes = await eshipClient.quote({
     addressFrom: toEshipAddress(origin),
     addressTo: toEshipAddress(destination, buyerEmail),
     parcels: [parcel],
   });
+  // eShip's /quotation response identifies the quote via `object_id` (verified on
+  // apiqa; there is no `quot_id`). Captured for traceability — the /shipment call
+  // only needs the rate's `rate_id`, so this being absent never blocks a label.
+  const quot_id = quoteRes.object_id || quoteRes.quot_id || null;
+  const rates = quoteRes.rates;
   const buckets = buildBuckets(rates);
   return { quot_id, buckets };
 }

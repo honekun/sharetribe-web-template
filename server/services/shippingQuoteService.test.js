@@ -149,7 +149,7 @@ describe('quoteForCheckout', () => {
   });
   it('returns a token + buckets on success', async () => {
     mockOrigin(origin);
-    eship.quote.mockResolvedValue({ quot_id: 'q1', rates: [fastestRate] });
+    eship.quote.mockResolvedValue({ object_id: 'q1', rates: [fastestRate] });
     const res = await svc.quoteForCheckout({
       listing: listing({ avPackageSize: 'M' }),
       destination,
@@ -163,7 +163,7 @@ describe('quoteForCheckout', () => {
 describe('resolveBucketPrice', () => {
   it('returns the pinned amount from cache on a hit', async () => {
     mockOrigin(origin);
-    eship.quote.mockResolvedValue({ quot_id: 'q1', rates: [fastestRate] });
+    eship.quote.mockResolvedValue({ object_id: 'q1', rates: [fastestRate] });
     const { quoteToken, express } = await svc.quoteForCheckout({
       listing: listing({ avPackageSize: 'M' }),
       destination,
@@ -182,7 +182,7 @@ describe('resolveBucketPrice', () => {
   });
   it('re-quotes on a cache miss (unknown token)', async () => {
     mockOrigin(origin);
-    eship.quote.mockResolvedValue({ quot_id: 'q2', rates: [fastestRate] });
+    eship.quote.mockResolvedValue({ object_id: 'q2', rates: [fastestRate] });
     const fee = await svc.resolveBucketPrice({
       quoteToken: 'nope',
       avShippingType: 'nacionalExpress',

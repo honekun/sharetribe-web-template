@@ -29,8 +29,10 @@ const RATE = {
   currency: 'MXN',
 };
 
+// Real apiqa /shipment response shape: the id field is `object_id` (there is no
+// `shipment_id`); tracking_number + label_url match.
 const SHIPMENT = {
-  shipment_id: 'ship-abc',
+  object_id: 'ship-abc',
   tracking_number: 'TRK-777',
   label_url: 'https://eship/labels/abc.pdf',
 };
