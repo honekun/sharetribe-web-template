@@ -84,11 +84,11 @@ describe('eshipClient.createShipment', () => {
 
   it('POSTs the rate_id + quot_id to the shipment endpoint with a Bearer auth header', async () => {
     fetch.mockResolvedValue(
-      okResponse({ shipment_id: 's1', tracking_number: 'TRK1', label_url: 'https://l/1.pdf' })
+      okResponse({ object_id: 's1', tracking_number: 'TRK1', label_url: 'https://l/1.pdf' })
     );
     const res = await createShipment(args);
     expect(res).toEqual({
-      shipment_id: 's1',
+      object_id: 's1',
       tracking_number: 'TRK1',
       label_url: 'https://l/1.pdf',
     });

@@ -42,7 +42,9 @@ async function buyLabelForTransaction(sdk, tx, { force = false } = {}) {
     const shipment = await createShipment({ rateId: av.rate_id, quotId: av.quot_id });
     avLabel = {
       status: 'purchased',
-      shipmentId: shipment.shipment_id || null,
+      // eShip's /shipment response identifies the shipment via `object_id`
+      // (verified on apiqa; there is no `shipment_id`). Keep a legacy fallback.
+      shipmentId: shipment.object_id || shipment.shipment_id || null,
       trackingNumber: shipment.tracking_number || null,
       labelUrl: shipment.label_url || null,
       carrier: av.carrier || null,
