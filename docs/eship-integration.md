@@ -174,7 +174,7 @@ especial). Rendered provider-only via a `shippingLabelSlot` prop threaded throug
 | `server/services/shippingQuoteService.js` | Quote orchestration + 15-min cache |
 | `server/services/shipmentService.js` | Spec B label buy (idempotent core + poller hook) |
 | `server/services/shippingLabelStore.js` | Durable PostgreSQL purchase claims/outcomes |
-| `server/migrations/006_shipping_label_attempts.sql` | Label purchase ledger schema |
+| `server/migrations/007_shipping_label_attempts.sql` | Label purchase ledger schema |
 | `server/api-util/avShipping.js` | Persist chosen rate → `protectedData.avShipping` |
 | `server/api/shipping-quote/` | `POST /api/shipping/quote` |
 | `server/api/shipping-label/` | `POST /api/shipping/label` (+ `rateLimiter.js`) |
@@ -252,7 +252,7 @@ responses; there is no `quot_id` or `shipment_id`.**
   `lineItems.test.js`. Run `yarn test-server`.
 - Run `yarn db:migrate` before enabling automatic labels, then set
   `AV_SHIPPING_LABELS_ENABLED=true`. Readiness includes label-attempt counts by
-  status and fails when migration `006` is absent.
+  status and fails when migration `007` is absent.
 - **Live smoke** (real apiqa call): a standalone script that loads env like the
   server, then calls `eshipClient.quote` / a raw `/shipment` POST, printing the
   response so field names can be re-verified against prod later. Keep such scripts
