@@ -6,17 +6,12 @@
 // consent record written here before being added to the Brevo list.
 
 const { getPostgresPool } = require('./postgres');
+const { normalizeEmail } = require('./emailAddress');
 
 // Sources a caller may attribute consent to. Whitelisted so a client cannot write
 // arbitrary provenance values.
 const ALLOWED_SOURCES = new Set(['footer_newsletter']);
 const DEFAULT_SOURCE = 'footer_newsletter';
-
-function normalizeEmail(email) {
-  return String(email || '')
-    .trim()
-    .toLowerCase();
-}
 
 // Coerce a client-supplied source to a known value; unknown/missing falls back to
 // the default footer source rather than storing untrusted text.

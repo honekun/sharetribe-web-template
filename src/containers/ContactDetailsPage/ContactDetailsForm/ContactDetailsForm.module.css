@@ -39,6 +39,19 @@
   }
 }
 
+.marketingPreference {
+  margin-top: 30px;
+}
+
+.marketingPreferenceTitle {
+  margin: 0 0 12px;
+}
+
+.marketingPreferenceInfo {
+  composes: marketplaceModalHelperText from global;
+  margin: 12px 0 0;
+}
+
 .confirmChangesSection {
   flex-grow: 1;
   display: flex;

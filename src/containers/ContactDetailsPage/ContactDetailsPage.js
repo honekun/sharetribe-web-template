@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
 
@@ -22,6 +22,7 @@ import ContactDetailsForm from './ContactDetailsForm/ContactDetailsForm';
 import {
   saveContactDetails,
   saveContactDetailsClear,
+  fetchMarketingPreference,
   resetPassword,
 } from './ContactDetailsPage.duck';
 import css from './ContactDetailsPage.module.css';
@@ -50,6 +51,7 @@ export const ContactDetailsPageComponent = props => {
   const {
     saveEmailError,
     savePhoneNumberError,
+    saveMarketingPreferenceError,
     saveContactDetailsInProgress,
     currentUser,
     contactDetailsChanged,
@@ -62,6 +64,9 @@ export const ContactDetailsPageComponent = props => {
     onResetPassword,
     resetPasswordInProgress = false,
     resetPasswordError,
+    marketingPreference,
+    marketingPreferenceLoading,
+    onFetchMarketingPreference = () => Promise.resolve(),
   } = props;
   const { userTypes = [] } = config.user;
 
@@ -71,6 +76,9 @@ export const ContactDetailsPageComponent = props => {
   const userType = publicData?.userType;
   const protectedData = user.attributes.profile.protectedData || {};
   const currentPhoneNumber = protectedData.phoneNumber || '';
+  const protectedMarketingConsent = protectedData.marketingConsent === true;
+  const currentMarketingConsent =
+    typeof marketingPreference === 'boolean' ? marketingPreference : protectedMarketingConsent;
   const userTypeConfig = userType && userTypes.find(config => config.userType === userType);
   const isPhoneNumberIncluded = userTypeConfig?.defaultUserFields?.phoneNumber !== false;
   // ContactDetailsForm decides if it's allowed to show the input field.
@@ -79,15 +87,36 @@ export const ContactDetailsPageComponent = props => {
 
   const handleSubmit = values => {
     const phoneNumber = values.phoneNumber ? values.phoneNumber : null;
-    return onSubmitContactDetails({ ...values, phoneNumber, currentEmail, currentPhoneNumber });
+    return onSubmitContactDetails({
+      ...values,
+      phoneNumber,
+      currentEmail,
+      currentPhoneNumber,
+      currentMarketingConsent,
+    });
   };
+
+  useEffect(() => {
+    if (user.id) {
+      onFetchMarketingPreference().catch(() => {
+        // The protected-data value remains a safe fallback if the local
+        // preference service is temporarily unavailable.
+      });
+    }
+  }, [user.id, onFetchMarketingPreference]);
 
   const contactInfoForm = user.id ? (
     <ContactDetailsForm
       className={css.form}
-      initialValues={{ email: currentEmail, ...phoneNumberMaybe }}
+      keepDirtyOnReinitialize
+      initialValues={{
+        email: currentEmail,
+        marketingConsent: currentMarketingConsent,
+        ...phoneNumberMaybe,
+      }}
       saveEmailError={saveEmailError}
       savePhoneNumberError={savePhoneNumberError}
+      saveMarketingPreferenceError={saveMarketingPreferenceError}
       currentUser={currentUser}
       onResendVerificationEmail={onResendVerificationEmail}
       onResetPassword={onResetPassword}
@@ -100,6 +129,8 @@ export const ContactDetailsPageComponent = props => {
       resetPasswordInProgress={resetPasswordInProgress}
       resetPasswordError={resetPasswordError}
       userTypeConfig={userTypeConfig}
+      currentMarketingConsent={currentMarketingConsent}
+      marketingPreferenceLoading={marketingPreferenceLoading}
     />
   ) : null;
 
@@ -151,14 +182,18 @@ const mapStateToProps = state => {
   const {
     saveEmailError,
     savePhoneNumberError,
+    saveMarketingPreferenceError,
     saveContactDetailsInProgress,
     contactDetailsChanged,
     resetPasswordInProgress,
     resetPasswordError,
+    marketingPreference,
+    marketingPreferenceLoading,
   } = state.ContactDetailsPage;
   return {
     saveEmailError,
     savePhoneNumberError,
+    saveMarketingPreferenceError,
     saveContactDetailsInProgress,
     currentUser,
     contactDetailsChanged,
@@ -167,6 +202,8 @@ const mapStateToProps = state => {
     sendVerificationEmailError,
     resetPasswordInProgress,
     resetPasswordError,
+    marketingPreference,
+    marketingPreferenceLoading,
   };
 };
 
@@ -174,6 +211,7 @@ const mapDispatchToProps = dispatch => ({
   onChange: () => dispatch(saveContactDetailsClear()),
   onResendVerificationEmail: () => dispatch(sendVerificationEmail()),
   onSubmitContactDetails: values => dispatch(saveContactDetails(values)),
+  onFetchMarketingPreference: () => dispatch(fetchMarketingPreference()),
   onResetPassword: values => dispatch(resetPassword(values)),
 });
 

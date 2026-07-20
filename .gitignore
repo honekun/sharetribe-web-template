@@ -20,5 +20,8 @@ AGENTS.override.md
 .playwright-mcp/
 docs/*
 !docs/operator-guide.md
+!docs/brevo-integration-guide.md
+!docs/brevo-templates-es.md
+!docs/notification-postgres.md
 npm-debug.log
 yarn-error.log

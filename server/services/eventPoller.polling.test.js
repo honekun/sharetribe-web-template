@@ -11,6 +11,7 @@ jest.mock('./notificationDelivery', () => ({
   deliverNotification: jest.fn(),
 }));
 jest.mock('./notificationConfig', () => ({
+  isMarketingCampaignsEnabled: jest.fn(),
   isWelcomeEmailEnabled: jest.fn(),
   isWhatsAppEnabled: jest.fn(),
 }));
@@ -32,7 +33,11 @@ jest.mock('./eventPollerLeadership', () => ({
 const { getIntegrationSdk } = require('./integrationSdk');
 const { getAdminPhone } = require('./whatsappService');
 const { deliverNotification } = require('./notificationDelivery');
-const { isWelcomeEmailEnabled, isWhatsAppEnabled } = require('./notificationConfig');
+const {
+  isMarketingCampaignsEnabled,
+  isWelcomeEmailEnabled,
+  isWhatsAppEnabled,
+} = require('./notificationConfig');
 const { recordPollCompleted } = require('./notificationMetrics');
 const { claimOwnership, loadCursor, releaseOwnership, saveCursor } = require('./eventPollerCursor');
 const { getLeadership } = require('./eventPollerLeadership');
@@ -78,6 +83,7 @@ describe('event poller cursor queries', () => {
     deliverNotification.mockResolvedValue({ status: 'sent' });
     getAdminPhone.mockReturnValue('+525500000001');
     isWelcomeEmailEnabled.mockReturnValue(true);
+    isMarketingCampaignsEnabled.mockReturnValue(false);
     isWhatsAppEnabled.mockReturnValue(true);
     leadership.release.mockResolvedValue();
     leadership.tryAcquire.mockResolvedValue(true);
@@ -98,6 +104,7 @@ describe('event poller cursor queries', () => {
         profile: {
           firstName: 'Ada',
           lastName: 'Lovelace',
+          publicData: { userType: 'vendedor' },
         },
       },
     };
@@ -150,7 +157,7 @@ describe('event poller cursor queries', () => {
       expect.objectContaining({
         eventId: 'event-41',
         channel: 'brevo',
-        templateName: 'av_welcome_email',
+        templateName: 'seller_welcome',
         recipient: 'new-user@example.com',
       }),
       'test-owner:1:test-lease'
@@ -236,7 +243,11 @@ describe('event poller cursor queries', () => {
             resource: {
               attributes: {
                 email: 'database-failure@example.com',
-                profile: { firstName: 'Database', lastName: 'Failure' },
+                profile: {
+                  firstName: 'Database',
+                  lastName: 'Failure',
+                  publicData: { userType: 'vendedor' },
+                },
               },
             },
           }),
@@ -263,7 +274,11 @@ describe('event poller cursor queries', () => {
             resource: {
               attributes: {
                 email: 'provider-failure@example.com',
-                profile: { firstName: 'Provider', lastName: 'Failure' },
+                profile: {
+                  firstName: 'Provider',
+                  lastName: 'Failure',
+                  publicData: { userType: 'vendedor' },
+                },
               },
             },
           }),

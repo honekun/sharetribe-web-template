@@ -141,6 +141,7 @@ describe('ConfirmSignupForm', () => {
 
     // Test that sign up button is disabled at first
     expect(screen.getByRole('button', { name: 'ConfirmSignupForm.signUp' })).toBeDisabled();
+    expect(screen.getByLabelText('ConfirmSignupForm.marketingConsentLabel')).not.toBeChecked();
 
     // Check that auth info details are in the form already
     expect(screen.getByRole('textbox', { name: 'ConfirmSignupForm.emailLabel' })).toHaveValue(

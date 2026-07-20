@@ -7,6 +7,7 @@ import classNames from 'classnames';
 import { FormattedMessage } from '../../util/reactIntl';
 import { LISTING_STATE_CLOSED, propTypes } from '../../util/types';
 import { OFFER, REQUEST } from '../../transactions/transaction';
+import { useListingEngagement } from '../../extensions/notifications/useListingEngagement';
 
 // Global ducks (for Redux actions and thunks)
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
@@ -160,6 +161,11 @@ export const ListingPageComponent = props => {
     noIndexMaybe,
     hasInvalidListingData,
   } = derivedData;
+
+  useListingEngagement({
+    listingId: listingId?.uuid || listingId,
+    isOwnListing,
+  });
 
   const topbar = <TopbarContainer />;
 

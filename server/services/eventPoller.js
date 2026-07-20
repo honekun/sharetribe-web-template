@@ -5,7 +5,18 @@ const { getAdminPhone, lookupUserPhone } = require('./whatsappService');
 const { claimOwnership, loadCursor, releaseOwnership, saveCursor } = require('./eventPollerCursor');
 const { getLeadership } = require('./eventPollerLeadership');
 const { deliverNotification } = require('./notificationDelivery');
-const { isWelcomeEmailEnabled, isWhatsAppEnabled } = require('./notificationConfig');
+const {
+  isMarketingCampaignsEnabled,
+  isWelcomeEmailEnabled,
+  isWhatsAppEnabled,
+} = require('./notificationConfig');
+const {
+  handleListingCampaignEvent,
+  handleTransactionCampaignEvent,
+  handleUserCreatedCampaigns,
+  processDueNotificationJobs,
+} = require('./notificationCampaignService');
+const { buildSellerWelcomeEmail, isSellerUserType } = require('./marketingCampaigns');
 const {
   recordPollCompleted,
   recordPollError,
@@ -102,17 +113,19 @@ async function handleNewUser(eventId, resource, ownerId) {
   const firstName = profile.firstName || 'Usuario';
   const lastName = profile.lastName || '';
   const phone = profile.protectedData?.phoneNumber || null;
+  const userType = profile.publicData?.userType || null;
 
   console.log(`[eventPoller] New user: ${email}`);
 
   const tasks = [];
-  if (isWelcomeEmailEnabled()) {
+  if (isWelcomeEmailEnabled() && isSellerUserType(userType)) {
+    const welcomePayload = buildSellerWelcomeEmail({ email, firstName, lastName });
     tasks.push({
       eventId,
       channel: 'brevo',
-      templateName: 'av_welcome_email',
+      templateName: 'seller_welcome',
       recipient: email,
-      payload: { email, firstName, lastName },
+      payload: welcomePayload,
       label: 'welcome email',
     });
   }
@@ -149,6 +162,9 @@ async function handleNewUser(eventId, resource, ownerId) {
   }
 
   await runNotifications(tasks, ownerId);
+  if (isMarketingCampaignsEnabled()) {
+    await handleUserCreatedCampaigns(eventId, resource);
+  }
 }
 
 // Maps EXACT transition names → WhatsApp templates.
@@ -202,6 +218,9 @@ function matchTransitionRule(transition) {
 }
 
 async function handleTransactionEvent(eventId, resource, ownerId) {
+  if (isMarketingCampaignsEnabled()) {
+    await handleTransactionCampaignEvent(eventId, resource);
+  }
   if (!isWhatsAppEnabled()) return;
 
   const sdk = getIntegrationSdk();
@@ -244,6 +263,11 @@ async function handleTransactionEvent(eventId, resource, ownerId) {
     });
   }
   await runNotifications(tasks, ownerId);
+}
+
+async function handleListingEvent(eventId, resource) {
+  if (!isMarketingCampaignsEnabled()) return;
+  await handleListingCampaignEvent(eventId, resource);
 }
 
 async function handleMessageEvent(eventId, resource, ownerId) {
@@ -333,7 +357,9 @@ async function pollEvents(options = {}) {
       } catch (err) {
         console.error('[eventPoller] Integration API query failed:', err);
         recordPollError(err);
-        return;
+        // Delayed jobs are stored independently and can still be delivered
+        // while the event feed is temporarily unavailable.
+        break;
       }
 
       const events = res?.data?.data || [];
@@ -370,10 +396,15 @@ async function pollEvents(options = {}) {
 
           if (eventType === 'user/created') {
             await handleNewUser(eventId, resource, ownerId);
-          } else if (eventType === 'transaction/transitioned') {
+          } else if (
+            eventType === 'transaction/initiated' ||
+            eventType === 'transaction/transitioned'
+          ) {
             await handleTransactionEvent(eventId, resource, ownerId);
           } else if (eventType === 'message/created') {
             await handleMessageEvent(eventId, resource, ownerId);
+          } else if (eventType === 'listing/created' || eventType === 'listing/updated') {
+            await handleListingEvent(eventId, resource);
           }
 
           rememberEventId(eventId);
@@ -401,6 +432,13 @@ async function pollEvents(options = {}) {
       }
       if (pageDelayMs > 0) {
         await new Promise(resolve => setTimeout(resolve, pageDelayMs));
+      }
+    }
+
+    if (isMarketingCampaignsEnabled()) {
+      const jobsProcessed = await processDueNotificationJobs(ownerId);
+      if (jobsProcessed > 0) {
+        console.log(`[eventPoller] Processed due campaign jobs=${jobsProcessed}`);
       }
     }
 

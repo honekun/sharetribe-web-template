@@ -1,153 +1,294 @@
+'use strict';
+
+const { timingSafeEqual } = require('crypto');
 const express = require('express');
-const fetch = require('node-fetch');
-const { createSharedRateLimit } = require('../services/rateLimitStore');
-const { getNotificationConfigReadiness } = require('../services/notificationConfig');
-const { createNewsletterConsentStore } = require('../services/newsletterConsent');
+
 const { getSdk } = require('../api-util/sdk');
+const { createSharedRateLimit } = require('../services/rateLimitStore');
+const {
+  removeMarketingContact,
+  upsertMarketingContact,
+} = require('../services/brevoContactService');
+const { createBrevoWebhookStore } = require('../services/brevoWebhookStore');
+const {
+  DEFAULT_POLICY_VERSION,
+  createMarketingConsentStore,
+} = require('../services/marketingConsent');
+const {
+  recordListingEngagement,
+  userSnapshot,
+} = require('../services/notificationCampaignService');
+const { getNotificationConfigReadiness } = require('../services/notificationConfig');
+const { normalizeEmail } = require('../services/emailAddress');
 
 const router = express.Router();
-// Shared PostgreSQL-backed limiter (BR-07): consistent across web processes and
-// durable across restarts. Keyed on the derived client IP; fails open if the store
-// is unavailable.
+const BREVO_CONSENT_ATTRIBUTES_ENABLED = process.env.BREVO_CONSENT_ATTRIBUTES_ENABLED === 'true';
+
 const subscribeRateLimit = createSharedRateLimit({
   bucket: 'brevo_subscribe',
   windowMs: 60 * 1000,
   max: 20,
   message: { ok: false, error: 'rate_limited' },
 });
+const preferenceRateLimit = createSharedRateLimit({
+  bucket: 'brevo_preference',
+  windowMs: 60 * 1000,
+  max: 20,
+  message: { ok: false, error: 'rate_limited' },
+});
+const engagementRateLimit = createSharedRateLimit({
+  bucket: 'marketing_engagement',
+  windowMs: 60 * 1000,
+  max: 60,
+  message: { ok: false, error: 'rate_limited' },
+});
 
-const BREVO_API_KEY = process.env.BREVO_API_KEY;
-const BREVO_LIST_ID = process.env.BREVO_LIST_ID;
+const isEmail = value =>
+  typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 
-// Version of the marketing-consent copy the footer shows (NewsletterForm.disclaimerText).
-// The client sends the version it rendered; this is the server-side fallback. Bump
-// both when the consent notice changes so evidence stays traceable to the wording
-// the user actually agreed to (BR-03).
-const DEFAULT_CONSENT_POLICY_VERSION = '2026-07-17';
-
-// Mirror consent evidence into typed Brevo contact attributes. Off by default: the
-// attributes (CONSENT_AT, CONSENT_SOURCE, CONSENT_LOCALE, CONSENT_POLICY_VERSION,
-// SHARETRIBE_USER_ID) must first be created in Brevo, or the contact upsert would
-// fail. The authoritative record always lives in PostgreSQL regardless. See
-// docs/brevo-integration-guide.md.
-const BREVO_CONSENT_ATTRIBUTES_ENABLED = process.env.BREVO_CONSENT_ATTRIBUTES_ENABLED === 'true';
-
-if (!BREVO_API_KEY || !BREVO_LIST_ID) {
-  // Fail fast on boot if misconfigured.
-  // eslint-disable-next-line no-console
-  console.warn('Brevo env missing: BREVO_API_KEY and/or BREVO_LIST_ID');
-}
-
-// Basic email sanity check.
-const isEmail = str => typeof str === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str.trim());
-
-// Best-effort resolution of the signed-in Sharetribe user from the session cookie.
-// Most footer signups are anonymous; a lookup failure means "no user id", never a
-// subscription failure.
-const resolveSharetribeUserId = async (req, res) => {
-  try {
-    const sdk = getSdk(req, res);
-    const response = await sdk.currentUser.show();
-    return response?.data?.data?.id?.uuid || null;
-  } catch (e) {
-    return null;
-  }
-};
-
-// Consent-evidence attributes for Brevo (only sent when the account has them defined).
 const consentBrevoAttributes = evidence => ({
-  CONSENT_AT: evidence.consentAt,
+  CONSENT_AT: evidence.occurredAt,
   CONSENT_SOURCE: evidence.source,
   CONSENT_LOCALE: evidence.locale || '',
   CONSENT_POLICY_VERSION: evidence.policyVersion,
   ...(evidence.sharetribeUserId ? { SHARETRIBE_USER_ID: evidence.sharetribeUserId } : {}),
 });
 
+async function currentUser(req, res) {
+  const sdk = getSdk(req, res);
+  const response = await sdk.currentUser.show();
+  return { sdk, user: userSnapshot(response?.data?.data) };
+}
+
+async function syncBrevoPreference(evidence) {
+  if (evidence.enabled) {
+    await upsertMarketingContact({
+      email: evidence.email,
+      attributes: BREVO_CONSENT_ATTRIBUTES_ENABLED ? consentBrevoAttributes(evidence) : {},
+    });
+  } else {
+    await removeMarketingContact(evidence.email);
+  }
+}
+
 router.post('/subscribe', subscribeRateLimit, async (req, res) => {
   try {
     const { email, hp, source, locale, policyVersion } = req.body || {};
-
-    // Honeypot: if hp has a value, it’s a bot.
     if (hp) return res.status(200).json({ ok: true });
+    if (!isEmail(email)) return res.status(400).json({ ok: false, error: 'invalid_email' });
 
-    if (!isEmail(email)) {
-      return res.status(400).json({ ok: false, error: 'Invalid email' });
+    let sharetribeUserId = null;
+    try {
+      ({
+        user: { id: sharetribeUserId },
+      } = await currentUser(req, res));
+    } catch (err) {
+      // Footer subscriptions may be anonymous.
     }
-
-    // Capture single-opt-in consent evidence (BR-03). userId and IP are derived
-    // server-side (never trusted from the client); the client supplies the source,
-    // locale, and the version of the consent copy it displayed.
     const evidence = {
-      email: email.trim(),
-      consentAt: new Date().toISOString(),
-      source,
-      locale: typeof locale === 'string' ? locale.slice(0, 16) : null,
+      email: normalizeEmail(email),
+      enabled: true,
+      source: source === 'footer_newsletter' ? source : 'footer_newsletter',
+      locale: typeof locale === 'string' ? locale.slice(0, 16) : 'es',
       policyVersion:
         typeof policyVersion === 'string' && policyVersion.trim()
           ? policyVersion.trim().slice(0, 64)
-          : DEFAULT_CONSENT_POLICY_VERSION,
-      sharetribeUserId: await resolveSharetribeUserId(req, res),
+          : DEFAULT_POLICY_VERSION,
+      sharetribeUserId,
       ip: req.ip || null,
+      occurredAt: new Date().toISOString(),
     };
 
-    // Record the authoritative first-party consent evidence BEFORE the contact is
-    // added to the campaign list. If this fails we do not subscribe — a campaign
-    // contact must always have traceable consent (fail closed).
     try {
-      await createNewsletterConsentStore().record(evidence);
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('[brevo] consent record failed', { email: evidence.email, error: e.message });
+      await createMarketingConsentStore().setPreference(evidence);
+    } catch (err) {
+      console.error('[brevo] consent record failed:', err);
       return res.status(503).json({ ok: false, error: 'consent_record_failed' });
     }
-
-    // Create/update the contact AND add it to the list in one atomic call
-    // (BR-05/BR-06). `listIds` with `updateEnabled: true` makes membership
-    // idempotent via a supported API pattern: a new contact is created and listed,
-    // an existing contact is updated and listed, and an already-listed contact is a
-    // no-op. There is no separate add-to-list step to leave a partial-success window
-    // (BR-06) or to mask an unrelated error as "already subscribed" (BR-05).
-    const r = await fetch('https://api.brevo.com/v3/contacts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': BREVO_API_KEY,
-        accept: 'application/json',
-      },
-      body: JSON.stringify({
-        email: email.trim(),
-        updateEnabled: true,
-        listIds: [Number(BREVO_LIST_ID)],
-        ...(BREVO_CONSENT_ATTRIBUTES_ENABLED
-          ? { attributes: consentBrevoAttributes(evidence) }
-          : {}),
-      }),
-    });
-
-    // 201 created / 204 updated are success. Any 4xx/5xx is a real failure — surface
-    // it (never mask), keeping the raw provider detail server-side only.
-    if (r.status >= 400) {
-      const j = await r.json().catch(() => ({}));
-      // eslint-disable-next-line no-console
-      console.error('[brevo] subscribe failed', { status: r.status, email: email.trim(), body: j });
+    try {
+      await syncBrevoPreference(evidence);
+    } catch (err) {
+      console.error('[brevo] contact subscription failed:', err);
       return res.status(502).json({ ok: false, error: 'brevo_subscribe_failed' });
     }
-
     return res.json({ ok: true });
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('[brevo] unexpected error', e);
+  } catch (err) {
+    console.error('[brevo] unexpected subscription error:', err);
     return res.status(500).json({ ok: false, error: 'server_error' });
   }
 });
 
+router.get('/preference', async (req, res) => {
+  try {
+    const { user } = await currentUser(req, res);
+    if (!user.id) return res.status(401).json({ ok: false, error: 'authentication_required' });
+    const preference = await createMarketingConsentStore().getPreference({
+      email: user.email,
+      sharetribeUserId: user.id,
+    });
+    return res.json({
+      ok: true,
+      enabled: Boolean(preference?.enabled) && !preference?.suppressed,
+      suppressed: Boolean(preference?.suppressed),
+      email: user.email,
+    });
+  } catch (err) {
+    return res.status(401).json({ ok: false, error: 'authentication_required' });
+  }
+});
+
+router.put('/preference', preferenceRateLimit, async (req, res) => {
+  try {
+    const enabled = req.body?.enabled;
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({ ok: false, error: 'enabled_must_be_boolean' });
+    }
+    const { sdk, user } = await currentUser(req, res);
+    if (!user.id || !user.email) {
+      return res.status(401).json({ ok: false, error: 'authentication_required' });
+    }
+
+    const occurredAt = new Date().toISOString();
+    const evidence = {
+      email: user.email,
+      enabled,
+      source:
+        req.body?.source === 'signup_idp'
+          ? 'signup_idp'
+          : req.body?.source === 'signup_email'
+          ? 'signup_email'
+          : 'account_details',
+      locale: 'es',
+      policyVersion: DEFAULT_POLICY_VERSION,
+      sharetribeUserId: user.id,
+      ip: req.ip || null,
+      occurredAt,
+    };
+    await createMarketingConsentStore().setPreference(evidence);
+    await syncBrevoPreference(evidence);
+    await sdk.currentUser.updateProfile({
+      protectedData: {
+        marketingConsent: enabled,
+        marketingConsentAt: enabled ? occurredAt : null,
+        marketingConsentWithdrawnAt: enabled ? null : occurredAt,
+        marketingConsentSource: evidence.source,
+        marketingConsentLocale: 'es',
+        marketingConsentPolicyVersion: DEFAULT_POLICY_VERSION,
+      },
+    });
+
+    return res.json({ ok: true, enabled });
+  } catch (err) {
+    console.error('[brevo] preference update failed:', err);
+    return res.status(502).json({ ok: false, error: 'preference_update_failed' });
+  }
+});
+
+router.post('/engagement', engagementRateLimit, async (req, res) => {
+  try {
+    const { listingId, action } = req.body || {};
+    if (!listingId || !['view', 'favorite'].includes(action)) {
+      return res.status(400).json({ ok: false, error: 'invalid_engagement' });
+    }
+    let sdk;
+    let user = {};
+    try {
+      ({ sdk, user } = await currentUser(req, res));
+    } catch (err) {
+      sdk = getSdk(req, res);
+    }
+    if (action === 'favorite' && !user.id) {
+      return res.status(401).json({ ok: false, error: 'authentication_required' });
+    }
+    const listingResponse = await sdk.listings.show({
+      id: listingId,
+      include: ['images', 'author'],
+      'fields.image': ['variants.scaled-small', 'variants.landscape-crop'],
+    });
+    const result = await recordListingEngagement({
+      user,
+      listingResource: listingResponse?.data?.data,
+      included: listingResponse?.data?.included || [],
+      action,
+    });
+    return res.json({ ok: true, recorded: Boolean(result?.recorded) });
+  } catch (err) {
+    console.error('[brevo] engagement tracking failed:', err);
+    return res.status(502).json({ ok: false, error: 'engagement_tracking_failed' });
+  }
+});
+
+function validWebhookSecret(req) {
+  const configured = process.env.BREVO_WEBHOOK_SECRET || '';
+  const provided = req.get('x-av-brevo-webhook-secret') || req.query.secret || '';
+  const configuredBuffer = Buffer.from(configured);
+  const providedBuffer = Buffer.from(String(provided));
+  return (
+    configuredBuffer.length > 0 &&
+    configuredBuffer.length === providedBuffer.length &&
+    timingSafeEqual(configuredBuffer, providedBuffer)
+  );
+}
+
+router.post('/webhook', async (req, res) => {
+  if (!validWebhookSecret(req)) {
+    return res.status(401).json({ ok: false, error: 'invalid_webhook_secret' });
+  }
+  const event = req.body?.event;
+  const email = req.body?.email;
+  const providerMessageId = req.body?.['message-id'] || req.body?.messageId || null;
+  const eventTimestamp = Number(req.body?.ts_event);
+  const occurredAt = Number.isFinite(eventTimestamp)
+    ? new Date(eventTimestamp * 1000).toISOString()
+    : req.body?.date || new Date().toISOString();
+  if (typeof event !== 'string') return res.status(204).end();
+
+  try {
+    await createBrevoWebhookStore().record({
+      event,
+      email,
+      providerMessageId,
+      occurredAt,
+    });
+  } catch (err) {
+    console.error('[brevo] webhook delivery event failed:', err);
+    return res.status(503).json({ ok: false, error: 'webhook_event_failed' });
+  }
+
+  if (!isEmail(email)) return res.status(204).end();
+  const suppressionEvents = new Set([
+    'unsubscribed',
+    'spam',
+    'hard_bounce',
+    'hardBounce',
+    'blocked',
+  ]);
+  if (!suppressionEvents.has(event)) return res.status(204).end();
+
+  try {
+    await createMarketingConsentStore().setPreference({
+      email,
+      enabled: false,
+      suppressed: true,
+      source: 'brevo_webhook',
+      locale: 'es',
+      policyVersion: DEFAULT_POLICY_VERSION,
+    });
+    return res.status(204).end();
+  } catch (err) {
+    console.error('[brevo] webhook suppression failed:', err);
+    return res.status(503).json({ ok: false, error: 'suppression_failed' });
+  }
+});
+
 router.get('/health', (_req, res) => {
-  const { brevo, poller } = getNotificationConfigReadiness();
-  return res.status(brevo.ready ? 200 : 503).json({
-    ready: brevo.ready,
-    enabled: brevo.enabled,
+  const { brevo, campaigns, poller } = getNotificationConfigReadiness();
+  const ready = brevo.ready && campaigns.ready;
+  return res.status(ready ? 200 : 503).json({
+    ready,
+    enabled: brevo.enabled || campaigns.enabled,
     intentionallyDisabled: poller.configured && !poller.enabled,
-    missing: brevo.missing,
+    missing: [...brevo.missing, ...campaigns.missing],
   });
 });
 

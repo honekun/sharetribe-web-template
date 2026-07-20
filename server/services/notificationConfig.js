@@ -1,8 +1,11 @@
 'use strict';
 
+const { TEMPLATE_ENV } = require('./marketingCampaigns');
+
 const FLAG_NAMES = {
   poller: 'AV_NOTIFICATIONS_ENABLED',
   brevo: 'AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED',
+  campaigns: 'AV_BREVO_CAMPAIGNS_ENABLED',
   whatsapp: 'AV_WHATSAPP_NOTIFICATIONS_ENABLED',
 };
 
@@ -20,9 +23,16 @@ function missingVariables(names) {
   });
 }
 
+function missingTemplateIds(names) {
+  return names.filter(
+    name => !Number.isInteger(Number(process.env[name])) || Number(process.env[name]) <= 0
+  );
+}
+
 function getNotificationConfigReadiness() {
   const pollerFlag = readBooleanFlag(FLAG_NAMES.poller);
   const brevoFlag = readBooleanFlag(FLAG_NAMES.brevo);
+  const campaignsFlag = readBooleanFlag(FLAG_NAMES.campaigns);
   const whatsappFlag = readBooleanFlag(FLAG_NAMES.whatsapp);
 
   const pollerMissing = pollerFlag.enabled
@@ -33,15 +43,34 @@ function getNotificationConfigReadiness() {
       ])
     : [];
   const pollerReady = pollerFlag.configured && (!pollerFlag.enabled || pollerMissing.length === 0);
-
   const channelFlagRequired = pollerFlag.enabled;
+
   const brevoMissing =
     pollerFlag.enabled && brevoFlag.enabled
-      ? missingVariables(['BREVO_API_KEY', 'BREVO_SENDER_EMAIL', 'BREVO_SENDER_NAME'])
+      ? missingVariables(['BREVO_API_KEY', 'BREVO_SENDER_EMAIL', 'BREVO_SENDER_NAME']).concat(
+          missingTemplateIds([TEMPLATE_ENV.seller_welcome])
+        )
       : [];
   const brevoReady =
     !channelFlagRequired ||
     (brevoFlag.configured && (!brevoFlag.enabled || brevoMissing.length === 0));
+
+  const campaignTemplateVariables = Object.entries(TEMPLATE_ENV)
+    .filter(([key]) => key !== 'seller_welcome')
+    .map(([, value]) => value);
+  const campaignsMissing =
+    pollerFlag.enabled && campaignsFlag.enabled
+      ? missingVariables([
+          'BREVO_API_KEY',
+          'BREVO_SENDER_EMAIL',
+          'BREVO_SENDER_NAME',
+          'BREVO_LIST_ID',
+          'BREVO_WEBHOOK_SECRET',
+        ]).concat(missingTemplateIds(campaignTemplateVariables))
+      : [];
+  const campaignsReady =
+    !channelFlagRequired ||
+    (campaignsFlag.configured && (!campaignsFlag.enabled || campaignsMissing.length === 0));
 
   const whatsappMissing =
     pollerFlag.enabled && whatsappFlag.enabled
@@ -56,7 +85,7 @@ function getNotificationConfigReadiness() {
     (whatsappFlag.configured && (!whatsappFlag.enabled || whatsappMissing.length === 0));
 
   return {
-    ready: pollerReady && brevoReady && whatsappReady,
+    ready: pollerReady && brevoReady && campaignsReady && whatsappReady,
     poller: {
       configured: pollerFlag.configured,
       enabled: pollerFlag.enabled,
@@ -68,6 +97,15 @@ function getNotificationConfigReadiness() {
       enabled: pollerFlag.enabled && brevoFlag.enabled,
       ready: brevoReady,
       missing: channelFlagRequired && !brevoFlag.configured ? [FLAG_NAMES.brevo] : brevoMissing,
+    },
+    campaigns: {
+      configured: campaignsFlag.configured,
+      enabled: pollerFlag.enabled && campaignsFlag.enabled,
+      ready: campaignsReady,
+      missing:
+        channelFlagRequired && !campaignsFlag.configured
+          ? [FLAG_NAMES.campaigns]
+          : campaignsMissing,
     },
     whatsapp: {
       configured: whatsappFlag.configured,
@@ -85,6 +123,7 @@ function assertProductionNotificationConfig() {
     const missing = [
       ...readiness.poller.missing,
       ...readiness.brevo.missing,
+      ...readiness.campaigns.missing,
       ...readiness.whatsapp.missing,
     ];
     throw new Error(
@@ -102,6 +141,10 @@ function isWelcomeEmailEnabled() {
   return isNotificationPollerEnabled() && readBooleanFlag(FLAG_NAMES.brevo).enabled;
 }
 
+function isMarketingCampaignsEnabled() {
+  return isNotificationPollerEnabled() && readBooleanFlag(FLAG_NAMES.campaigns).enabled;
+}
+
 function isWhatsAppEnabled() {
   return isNotificationPollerEnabled() && readBooleanFlag(FLAG_NAMES.whatsapp).enabled;
 }
@@ -110,6 +153,7 @@ module.exports = {
   FLAG_NAMES,
   assertProductionNotificationConfig,
   getNotificationConfigReadiness,
+  isMarketingCampaignsEnabled,
   isNotificationPollerEnabled,
   isWelcomeEmailEnabled,
   isWhatsAppEnabled,

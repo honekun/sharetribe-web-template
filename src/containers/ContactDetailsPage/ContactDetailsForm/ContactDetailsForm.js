@@ -15,6 +15,7 @@ import {
 } from '../../../util/errors';
 
 import {
+  FieldCheckbox,
   FieldPhoneNumberInput,
   Form,
   PrimaryButton,
@@ -124,6 +125,7 @@ class ContactDetailsFormComponent extends Component {
             className,
             saveEmailError,
             savePhoneNumberError,
+            saveMarketingPreferenceError,
             currentUser,
             formId,
             handleSubmit,
@@ -135,8 +137,10 @@ class ContactDetailsFormComponent extends Component {
             resetPasswordInProgress = false,
             values,
             userTypeConfig,
+            currentMarketingConsent,
+            marketingPreferenceLoading,
           } = fieldRenderProps;
-          const { email, phoneNumber } = values;
+          const { email, phoneNumber, marketingConsent } = values;
 
           const user = ensureCurrentUser(currentUser);
 
@@ -255,6 +259,8 @@ class ContactDetailsFormComponent extends Component {
           const phoneNumberChanged =
             currentPhoneNumber !== phoneNumber &&
             !(typeof currentPhoneNumber === 'undefined' && phoneNumber === '');
+          const marketingConsentChanged =
+            Boolean(marketingConsent) !== Boolean(currentMarketingConsent);
 
           // password
           const passwordLabel = intl.formatMessage({
@@ -304,7 +310,13 @@ class ContactDetailsFormComponent extends Component {
 
           let genericError = null;
 
-          if (isGenericEmailError && savePhoneNumberError) {
+          if (saveMarketingPreferenceError) {
+            genericError = (
+              <span className={css.error}>
+                <FormattedMessage id="ContactDetailsForm.genericMarketingPreferenceFailure" />
+              </span>
+            );
+          } else if (isGenericEmailError && savePhoneNumberError) {
             genericError = (
               <span className={css.error}>
                 <FormattedMessage id="ContactDetailsForm.genericFailure" />
@@ -358,7 +370,8 @@ class ContactDetailsFormComponent extends Component {
             invalid ||
             pristineSinceLastSubmit ||
             inProgress ||
-            !(emailChanged || phoneNumberChanged);
+            marketingPreferenceLoading ||
+            !(emailChanged || phoneNumberChanged || marketingConsentChanged);
 
           return (
             <Form
@@ -367,7 +380,11 @@ class ContactDetailsFormComponent extends Component {
                 this.submittedValues = values;
                 handleSubmit(e).then(() => {
                   this.restartTimeoutId = setTimeout(() => {
-                    fieldRenderProps.form.restart({ email, phoneNumber });
+                    fieldRenderProps.form.restart({
+                      email,
+                      phoneNumber,
+                      marketingConsent: emailChanged ? false : Boolean(marketingConsent),
+                    });
                   }, 1000);
                 });
               }}
@@ -385,6 +402,23 @@ class ContactDetailsFormComponent extends Component {
                 {emailVerifiedInfo}
 
                 <PhoneNumberMaybe formId={formId} userTypeConfig={userTypeConfig} intl={intl} />
+
+                <div className={css.marketingPreference}>
+                  <H4 as="h3" className={css.marketingPreferenceTitle}>
+                    <FormattedMessage id="ContactDetailsForm.marketingPreferenceTitle" />
+                  </H4>
+                  <FieldCheckbox
+                    id={formId ? `${formId}.marketingConsent` : 'marketingConsent'}
+                    name="marketingConsent"
+                    label={<FormattedMessage id="ContactDetailsForm.marketingConsentLabel" />}
+                    disabled={marketingPreferenceLoading}
+                  />
+                  {emailChanged ? (
+                    <p className={css.marketingPreferenceInfo}>
+                      <FormattedMessage id="ContactDetailsForm.emailChangeConsentReset" />
+                    </p>
+                  ) : null}
+                </div>
               </div>
 
               <div className={confirmClasses} aria-hidden={!emailChanged}>

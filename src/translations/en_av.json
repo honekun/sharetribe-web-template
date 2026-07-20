@@ -281,6 +281,12 @@
   "EditListingDetailsPanel.photoLabel3": "Label or detail",
   "EditListingDetailsPanel.photoLabel4": "Selfie (optional)",
   "EditListingDetailsPanel.photosUploadInProgress": "Please wait for all photos to finish uploading.",
+  "SignupForm.marketingConsentLabel": "I want to receive news, personalized recommendations, and reminders from Archivo Vintach by email. I can unsubscribe at any time.",
+  "ConfirmSignupForm.marketingConsentLabel": "I want to receive news, personalized recommendations, and reminders from Archivo Vintach by email. I can unsubscribe at any time.",
+  "ContactDetailsForm.marketingPreferenceTitle": "Email preferences",
+  "ContactDetailsForm.marketingConsentLabel": "Send me news, personalized recommendations, and reminders from Archivo Vintach. I can unsubscribe at any time.",
+  "ContactDetailsForm.emailChangeConsentReset": "Marketing consent is tied to your current email. Changing your address will turn this preference off; you can opt in again after verifying the new address.",
+  "ContactDetailsForm.genericMarketingPreferenceFailure": "We couldn't update your email preference. Please try again.",
 
   "AVWelcomePopup.vendedor.imageUrl": "",
   "AVWelcomePopup.vendedor.eyebrow": "",

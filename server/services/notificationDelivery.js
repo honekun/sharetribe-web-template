@@ -2,6 +2,7 @@
 
 const { createHash, randomUUID } = require('crypto');
 
+const { sendBrevoEmail } = require('./brevoEmailService');
 const { sendWelcomeEmail } = require('./welcomeEmailService');
 const { sendUserWhatsApp } = require('./whatsappService');
 const { getPostgresPool } = require('./postgres');
@@ -118,7 +119,7 @@ class NotificationDeliveryStore {
     const result = await this.pool.query(
       `SELECT notification_key, event_id, channel, template_name, recipient_hint, status,
               attempt_count, claimed_by, claimed_at, finished_at, provider_message_id,
-              last_error, created_at, updated_at
+              provider_status, provider_status_at, last_error, created_at, updated_at
        FROM av_notification_deliveries
        WHERE ($1::text IS NULL OR status = $1)
        ORDER BY created_at DESC
@@ -179,7 +180,12 @@ function createDeliveryStore(pool = getPostgresPool()) {
 }
 
 async function sendPayload(channel, payload) {
-  if (channel === 'brevo') return sendWelcomeEmail(payload);
+  if (channel === 'brevo') {
+    // Rows created before generic template support contain the legacy welcome
+    // shape. Keep them operator-retryable while routing all new sends through
+    // the generic Brevo template client.
+    return payload.templateId ? sendBrevoEmail(payload) : sendWelcomeEmail(payload);
+  }
   if (channel === 'whatsapp') return sendUserWhatsApp(payload);
   throw localDeliveryFailure(`Unsupported notification channel: ${channel}`);
 }

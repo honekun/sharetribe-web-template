@@ -281,6 +281,12 @@
   "EditListingDetailsPanel.photoLabel3": "Etiqueta o detalle",
   "EditListingDetailsPanel.photoLabel4": "Selfie (si quieres)",
   "EditListingDetailsPanel.photosUploadInProgress": "Espera a que terminen de subir todas las fotos.",
+  "SignupForm.marketingConsentLabel": "Quiero recibir novedades, recomendaciones personalizadas y recordatorios de Archivo Vintach por correo electrónico. Puedo darme de baja en cualquier momento.",
+  "ConfirmSignupForm.marketingConsentLabel": "Quiero recibir novedades, recomendaciones personalizadas y recordatorios de Archivo Vintach por correo electrónico. Puedo darme de baja en cualquier momento.",
+  "ContactDetailsForm.marketingPreferenceTitle": "Preferencias de correo",
+  "ContactDetailsForm.marketingConsentLabel": "Quiero recibir novedades, recomendaciones personalizadas y recordatorios de Archivo Vintach por correo electrónico. Puedo darme de baja en cualquier momento.",
+  "ContactDetailsForm.emailChangeConsentReset": "El consentimiento está asociado a tu correo actual. Si cambias tu dirección, esta preferencia se desactivará; podrás activarla de nuevo después de verificar el correo nuevo.",
+  "ContactDetailsForm.genericMarketingPreferenceFailure": "No pudimos actualizar tu preferencia de correo. Inténtalo de nuevo.",
 
   "AVWelcomePopup.vendedor.imageUrl": "",
   "AVWelcomePopup.vendedor.eyebrow": "",

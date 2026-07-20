@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import { setCurrentUser } from './user.duck';
 import { denormalisedResponseEntities } from '../util/data';
 import * as log from '../util/log';
+import { trackMarketingEngagement } from '../util/api';
 
 // Max ids supported by sdk.listings.query({ ids }) in one call.
 const MAX_FAVORITES = 100;
@@ -45,6 +46,7 @@ export const syncFavoritesFromUser = currentUser => dispatch => {
 // Optimistic toggle: flip locally, persist, roll back on failure.
 export const toggleFavorite = listingId => (dispatch, getState, sdk) => {
   const previous = selectFavoriteIds(getState());
+  const addingFavorite = !previous.includes(listingId);
   dispatch(favoriteToggled(listingId));
   const next = selectFavoriteIds(getState());
 
@@ -56,7 +58,11 @@ export const toggleFavorite = listingId => (dispatch, getState, sdk) => {
       if (entities.length === 1) {
         dispatch(setCurrentUser(entities[0]));
       }
-      return response;
+      return addingFavorite
+        ? trackMarketingEngagement({ listingId, action: 'favorite' })
+            .catch(error => log.error(error, 'marketing-favorite-tracking-failed', { listingId }))
+            .then(() => response)
+        : response;
     })
     .catch(e => {
       dispatch(setFavorites(previous));

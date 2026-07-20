@@ -14,6 +14,7 @@ describe('notification readiness', () => {
       ...ORIGINAL_ENV,
       AV_NOTIFICATIONS_ENABLED: 'true',
       AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED: 'false',
+      AV_BREVO_CAMPAIGNS_ENABLED: 'false',
       AV_WHATSAPP_NOTIFICATIONS_ENABLED: 'false',
       SHARETRIBE_INTEGRATION_CLIENT_ID: 'integration-id',
       SHARETRIBE_INTEGRATION_CLIENT_SECRET: 'integration-secret',
@@ -44,6 +45,15 @@ describe('notification readiness', () => {
             { status: 'sent', count: 12 },
             { status: 'unknown', count: 1 },
           ],
+        })
+        .mockResolvedValueOnce({
+          rows: [
+            { status: 'pending', count: 3 },
+            { status: 'sent', count: 4 },
+          ],
+        })
+        .mockResolvedValueOnce({
+          rows: [{ count: 9 }],
         }),
     };
 
@@ -57,6 +67,8 @@ describe('notification readiness', () => {
         ownerActive: true,
         lastSequenceId: '987',
         deliveriesByStatus: { sent: 12, unknown: 1 },
+        jobsByStatus: { pending: 3, sent: 4 },
+        marketingPreferences: 9,
       })
     );
     expect(readiness.metrics).toEqual({ poller: { lastSequenceId: 321 } });
