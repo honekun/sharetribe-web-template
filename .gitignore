@@ -24,5 +24,6 @@ docs/*
 !docs/brevo-integration-guide.md
 !docs/brevo-templates-es.md
 !docs/notification-postgres.md
+!docs/eship-integration.md
 npm-debug.log
 yarn-error.log

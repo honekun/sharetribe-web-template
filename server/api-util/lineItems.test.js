@@ -360,7 +360,9 @@ describe('transactionLineItems', () => {
         code: 'line-item/shipping-fee',
         unitPrice: new Money(11800, 'EUR'),
         quantity: 1,
-        includeFor: ['customer', 'provider'],
+        // AV: shipping is retained by the platform (AV buys the eShip label
+        // centrally), so it is NOT paid out to the provider. See eship-integration.md.
+        includeFor: ['customer'],
       });
     });
 
