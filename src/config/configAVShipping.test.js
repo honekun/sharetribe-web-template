@@ -125,22 +125,9 @@ describe('applyBuyerMarkup', () => {
   });
 });
 
-describe('bucketForRate', () => {
-  const { bucketForRate } = require('./configAVShipping');
-
-  test('maps a FASTEST-tagged rate to nacionalExpress', () => {
-    expect(bucketForRate({ tags: ['FASTEST'] })).toBe('nacionalExpress');
-  });
-
-  test('maps a CHEAPEST-tagged rate to nacionalEstandar', () => {
-    expect(bucketForRate({ tags: ['CHEAPEST'] })).toBe('nacionalEstandar');
-  });
-
-  test('returns null for an untagged rate', () => {
-    expect(bucketForRate({ tags: ['BESTVALUE'] })).toBe(null);
-    expect(bucketForRate({})).toBe(null);
-  });
-});
+// Note: bucket selection (Express/Estándar) is computed from price/days in
+// server/services/shippingQuoteService.js (pickExpressRate/pickEstandarRate),
+// not from eShip tags — see shippingQuoteService.test.js `buildBuckets`.
 
 describe('resolvePackageSize(publicData)', () => {
   const { resolvePackageSize } = require('./configAVShipping');
