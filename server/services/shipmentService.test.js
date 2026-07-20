@@ -300,12 +300,19 @@ describe('validateShipment', () => {
 });
 
 describe('maybeBuyLabelForEvent', () => {
+  const ORIGINAL_AUTOBUY = process.env.ESHIP_LABEL_AUTOBUY;
+  afterEach(() => {
+    if (ORIGINAL_AUTOBUY === undefined) delete process.env.ESHIP_LABEL_AUTOBUY;
+    else process.env.ESHIP_LABEL_AUTOBUY = ORIGINAL_AUTOBUY;
+  });
+
   const resource = lastTransition => ({
     id: { uuid: 'tx-1' },
     attributes: { lastTransition },
   });
 
   it('is disabled independently of notification delivery', async () => {
+    process.env.ESHIP_LABEL_AUTOBUY = 'true';
     isShippingLabelsEnabled.mockReturnValue(false);
     const sdk = { transactions: { show: jest.fn() } };
 
@@ -315,7 +322,29 @@ describe('maybeBuyLabelForEvent', () => {
     expect(sdk.transactions.show).not.toHaveBeenCalled();
   });
 
-  it('loads and buys on confirm-payment when shipping labels are enabled', async () => {
+  it('does NOT auto-buy when ESHIP_LABEL_AUTOBUY is unset (manual button only)', async () => {
+    delete process.env.ESHIP_LABEL_AUTOBUY;
+    const sdk = { transactions: { show: jest.fn() } };
+
+    await expect(
+      maybeBuyLabelForEvent(sdk, resource('transition/confirm-payment'))
+    ).resolves.toBeNull();
+    expect(sdk.transactions.show).not.toHaveBeenCalled();
+    expect(eship.createShipment).not.toHaveBeenCalled();
+  });
+
+  it('does NOT auto-buy when ESHIP_LABEL_AUTOBUY is "false"', async () => {
+    process.env.ESHIP_LABEL_AUTOBUY = 'false';
+    const sdk = { transactions: { show: jest.fn() } };
+
+    await expect(
+      maybeBuyLabelForEvent(sdk, resource('transition/confirm-payment'))
+    ).resolves.toBeNull();
+    expect(sdk.transactions.show).not.toHaveBeenCalled();
+  });
+
+  it('auto-buys on confirm-payment when labels are enabled AND ESHIP_LABEL_AUTOBUY is "true"', async () => {
+    process.env.ESHIP_LABEL_AUTOBUY = 'true';
     const store = makeStore();
     createShippingLabelStore.mockReturnValue(store);
     eship.createShipment.mockResolvedValue(SHIPMENT);
