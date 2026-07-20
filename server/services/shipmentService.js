@@ -17,6 +17,14 @@ const { isShippingLabelsEnabled } = require('./notificationConfig');
 
 const LABEL_BUY_TRANSITIONS = new Set(['transition/confirm-payment']);
 
+// Auto-buy the label on the event-poller path ONLY when explicitly opted in with
+// ESHIP_LABEL_AUTOBUY=true. Default (unset or anything other than 'true') means
+// the label is bought only when the seller clicks "Generar guía" (the manual
+// POST /api/shipping/label endpoint) — never automatically after payment.
+function isLabelAutobuyEnabled() {
+  return String(process.env.ESHIP_LABEL_AUTOBUY).toLowerCase() === 'true';
+}
+
 class LabelNotAllowedError extends Error {
   constructor() {
     super('Shipping labels can only be purchased after payment and before cancellation');
@@ -178,6 +186,8 @@ async function buyLabelForTransaction(
 
 async function maybeBuyLabelForEvent(sdk, resource) {
   if (!isShippingLabelsEnabled()) return null;
+  // Manual-only unless auto-buy is explicitly enabled.
+  if (!isLabelAutobuyEnabled()) return null;
   const transition = resource?.attributes?.lastTransition || '';
   if (!LABEL_BUY_TRANSITIONS.has(transition)) return null;
   const txId = resource?.id;
@@ -200,6 +210,7 @@ module.exports = {
   LabelNotAllowedError,
   LabelPurchaseUnknownError,
   buyLabelForTransaction,
+  isLabelAutobuyEnabled,
   isLabelPurchaseAllowed,
   maybeBuyLabelForEvent,
   validateShipment,

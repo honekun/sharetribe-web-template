@@ -54,6 +54,7 @@ carrier cost**, not the seller. That single fact drives the payout decision in
 | `ESHIP_API_DEBUG` | no | `false` | `true` echoes the carrier's error text in the API response (`{ code, detail }`). Leave off in prod. |
 | `AV_SHIPPING_LABELS_ENABLED` | yes (explicit) | `false` | Enables automatic post-payment label buying through the shared Integration API event poller. Independent of notification delivery. |
 | `SHIPPING_LABEL_OPERATOR_EMAILS` | no | — | Comma-separated emails allowed to retry **any** seller's label. Sellers can always retry their own. |
+| `ESHIP_LABEL_AUTOBUY` | no | `false` | `true` → buy the label automatically on `confirm-payment` (poller). Unset/`false` → manual only: the seller buys it via the **Generar guía** button. Requires `AV_SHIPPING_LABELS_ENABLED=true`. |
 | `DATABASE_URL` | yes (auto labels) | — | Shared durable PostgreSQL ledger used to claim a label purchase before eShip is called. |
 | `AV_SHIPPING_LABEL_STALE_CLAIM_MINUTES` | no | `15` | Age at which an interrupted purchase becomes `unknown`; it is never retried automatically. |
 | `SHARETRIBE_INTEGRATION_CLIENT_ID` / `_SECRET` | yes | — | Integration SDK — reads the seller's origin address and writes `metadata.avLabel`. |
@@ -130,11 +131,13 @@ No origin / `especial` size / carrier error → buyer sees **Contactar AV**.
 
 ### 5.2 Label purchase — "Spec B"
 
-**Auto path.** When `AV_SHIPPING_LABELS_ENABLED=true`, the shared `eventPoller`
-calls `shipmentService.maybeBuyLabelForEvent` on
-`transaction/confirm-payment` (independent of `AV_NOTIFICATIONS_ENABLED`) →
-`eshipClient.createShipment({ rateId })` (`POST /shipment`) → writes
-`metadata.avLabel`:
+**Auto path (opt-in).** Off by default. Only when **`ESHIP_LABEL_AUTOBUY=true`**
+(and `AV_SHIPPING_LABELS_ENABLED=true`) does the shared `eventPoller` call
+`shipmentService.maybeBuyLabelForEvent` on `transaction/confirm-payment`
+(independent of `AV_NOTIFICATIONS_ENABLED`) → `eshipClient.createShipment({ rateId })`
+(`POST /shipment`) → writes `metadata.avLabel`. With `ESHIP_LABEL_AUTOBUY` unset or
+`false`, the poller never buys a label automatically — the seller buys it via the
+manual button below.
 
 ```
 { status: 'purchased', shipmentId, trackingNumber, labelUrl, carrier, servicelevel, purchasedAt }
