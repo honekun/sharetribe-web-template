@@ -1,7 +1,11 @@
 const sharetribeSdk = require('sharetribe-flex-sdk');
 const { transactionLineItems } = require('../api-util/lineItems');
 const { resolveBucketPrice } = require('../services/shippingQuoteService');
-const { buildAvShippingProtectedData } = require('../api-util/avShipping');
+const {
+  authoritativeShippingDestination,
+  buildAvShippingProtectedData,
+  ShippingQuoteRequiredError,
+} = require('../api-util/avShipping');
 const { isIntentionToMakeOffer } = require('../api-util/negotiation');
 const {
   getSdk,
@@ -13,7 +17,9 @@ const {
 
 const { Money } = sharetribeSdk.types;
 
-const listingPromise = (sdk, id) => sdk.listings.show({ id });
+// Author relationship is part of the server-side quote binding and is required
+// for a safe cache-miss re-quote.
+const listingPromise = (sdk, id) => sdk.listings.show({ id, include: ['author'] });
 
 const getFullOrderData = (orderData, bodyParams, currency) => {
   const { offerInSubunits } = orderData || {};
@@ -69,22 +75,35 @@ module.exports = (req, res) => {
         commissionAsset?.type === 'jsonAsset' ? commissionAsset.attributes.data : {};
 
       const fullOrderData = getFullOrderData(orderData, bodyParams, currency);
+      const isShipping = fullOrderData.deliveryMethod === 'shipping';
+      const destination = isShipping
+        ? authoritativeShippingDestination(fullOrderData, isSpeculative)
+        : null;
+      const resolvedRate =
+        isShipping && fullOrderData.avShippingType
+          ? await resolveBucketPrice({
+              quoteToken: fullOrderData.avQuoteToken,
+              avShippingType: fullOrderData.avShippingType,
+              listing,
+              destination,
+              buyerEmail: fullOrderData.buyerEmail,
+            })
+          : null;
+
+      if (!isSpeculative && isShipping && (!destination || !resolvedRate)) {
+        throw new ShippingQuoteRequiredError();
+      }
+
       lineItems = await transactionLineItems(
         listing,
         fullOrderData,
         providerCommission,
-        customerCommission
+        customerCommission,
+        { resolvedShippingRate: resolvedRate }
       );
       metadataMaybe = getMetadata(orderData, transitionName);
 
-      if (fullOrderData.deliveryMethod === 'shipping') {
-        const resolvedRate = await resolveBucketPrice({
-          quoteToken: fullOrderData.avQuoteToken,
-          avShippingType: fullOrderData.avShippingType,
-          listing,
-          destination: fullOrderData.avDestination,
-          buyerEmail: fullOrderData.buyerEmail,
-        });
+      if (isShipping) {
         avShippingProtectedData = buildAvShippingProtectedData(fullOrderData, resolvedRate);
       }
 

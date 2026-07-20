@@ -16,24 +16,33 @@ const initialState = {
   estandar: null,
   rawRates: [],
   errorCode: null,
+  activeRequestId: null,
 };
 
 export default function reducer(state = initialState, action = {}) {
   const { type, payload } = action;
   switch (type) {
     case QUOTE_REQUEST:
-      return { ...initialState, status: 'quoting' };
+      return { ...initialState, status: 'quoting', activeRequestId: payload.requestId };
     case QUOTE_SUCCESS:
+      if (state.activeRequestId !== payload.requestId) return state;
       return {
         status: 'quoted',
-        quoteToken: payload.quoteToken,
-        express: payload.express || null,
-        estandar: payload.estandar || null,
-        rawRates: payload.rawRates || [],
+        quoteToken: payload.quote.quoteToken,
+        express: payload.quote.express || null,
+        estandar: payload.quote.estandar || null,
+        rawRates: payload.quote.rawRates || [],
         errorCode: null,
+        activeRequestId: null,
       };
     case QUOTE_ERROR:
-      return { ...initialState, status: 'error', errorCode: payload };
+      if (state.activeRequestId !== payload.requestId) return state;
+      return {
+        ...initialState,
+        status: 'error',
+        errorCode: payload.code,
+        activeRequestId: null,
+      };
     case QUOTE_RESET:
       return initialState;
     default:
@@ -43,17 +52,26 @@ export default function reducer(state = initialState, action = {}) {
 
 // ================ Action creators ================ //
 
-export const shippingQuoteRequest = () => ({ type: QUOTE_REQUEST });
-export const shippingQuoteSuccess = payload => ({ type: QUOTE_SUCCESS, payload });
-export const shippingQuoteError = code => ({ type: QUOTE_ERROR, payload: code });
+export const shippingQuoteRequest = requestId => ({ type: QUOTE_REQUEST, payload: { requestId } });
+export const shippingQuoteSuccess = (requestId, quote) => ({
+  type: QUOTE_SUCCESS,
+  payload: { requestId, quote },
+});
+export const shippingQuoteError = (requestId, code) => ({
+  type: QUOTE_ERROR,
+  payload: { requestId, code },
+});
 export const shippingQuoteReset = () => ({ type: QUOTE_RESET });
 
 // ================ Thunks ================ //
 
 // Quote eShip via the server. Sends JSON (the route uses express.json()), so we
 // fetch directly rather than through util/api's transit-serializing helper.
+let requestSequence = 0;
+
 export const fetchShippingQuote = ({ listingId, destination, buyerEmail }) => dispatch => {
-  dispatch(shippingQuoteRequest());
+  const requestId = ++requestSequence;
+  dispatch(shippingQuoteRequest(requestId));
   return window
     .fetch(`${apiBaseUrl()}/api/shipping/quote`, {
       method: 'POST',
@@ -65,15 +83,15 @@ export const fetchShippingQuote = ({ listingId, destination, buyerEmail }) => di
       res.json().then(data => {
         if (!res.ok) {
           const code = data?.code || 'ESHIP_ERROR';
-          dispatch(shippingQuoteError(code));
+          dispatch(shippingQuoteError(requestId, code));
           return null;
         }
-        dispatch(shippingQuoteSuccess(data));
+        dispatch(shippingQuoteSuccess(requestId, data));
         return data;
       })
     )
     .catch(() => {
-      dispatch(shippingQuoteError('ESHIP_ERROR'));
+      dispatch(shippingQuoteError(requestId, 'ESHIP_ERROR'));
       return null;
     });
 };

@@ -49,7 +49,7 @@ const { getSDKProxy } = require('./api-util/sdkCacheProxy');
 const { mountCustomApiRoutes } = require('./customApiRoutes');
 const {
   assertProductionNotificationConfig,
-  isNotificationPollerEnabled,
+  isEventPollerEnabled,
 } = require('./services/notificationConfig');
 
 const buildPath = path.resolve(__dirname, '..', 'build');
@@ -360,11 +360,13 @@ const server = app.listen(PORT, () => {
     console.log(`Open http://localhost:${PORT}/ and start hacking!\n`); // eslint-disable-line no-console
   }
 
-  // AV-noti: start Integration API event poller (welcome email + WhatsApp notifications)
-  if (isNotificationPollerEnabled() && notificationConfigReadiness.ready) {
+  // AV: one Integration API poller coordinates notification delivery and
+  // automatic post-payment shipping-label purchases. Each capability has its
+  // own feature flag.
+  if (isEventPollerEnabled() && notificationConfigReadiness.ready) {
     const { startPoller } = require('./services/eventPoller');
     startPoller();
-  } else if (isNotificationPollerEnabled()) {
+  } else if (isEventPollerEnabled()) {
     console.error(
       '[notificationAlert] Notification poller is enabled but its configuration is incomplete'
     );

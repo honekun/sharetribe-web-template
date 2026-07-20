@@ -91,10 +91,10 @@ async function quote({ addressFrom, addressTo, parcels }) {
   return eshipPost('quotation', { address_from: addressFrom, address_to: addressTo, parcels });
 }
 
-// POST {base}/shipment. Buys the label for a previously-quoted rate. Returns the
-// parsed shipment object ({ shipment_id, tracking_number, label_url, ... }).
-async function createShipment({ rateId, quotId }) {
-  return eshipPost('shipment', { rate_id: rateId, quot_id: quotId });
+// POST {base}/shipment. eShip documents rate_id as the shipment purchase input;
+// quot_id is quotation trace data and is intentionally not sent.
+async function createShipment({ rateId }) {
+  return eshipPost('shipment', { rate_id: rateId });
 }
 
 module.exports = { quote, createShipment, EshipApiError, EshipTimeoutError, describeEshipError };

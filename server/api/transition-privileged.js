@@ -1,7 +1,11 @@
 const sharetribeSdk = require('sharetribe-flex-sdk');
 const { transactionLineItems } = require('../api-util/lineItems');
 const { resolveBucketPrice } = require('../services/shippingQuoteService');
-const { buildAvShippingProtectedData } = require('../api-util/avShipping');
+const {
+  authoritativeShippingDestination,
+  buildAvShippingProtectedData,
+  ShippingQuoteRequiredError,
+} = require('../api-util/avShipping');
 const {
   addOfferToMetadata,
   getAmountFromPreviousOffer,
@@ -21,7 +25,8 @@ const {
 
 const { Money } = sharetribeSdk.types;
 
-const transactionPromise = (sdk, id) => sdk.transactions.show({ id, include: ['listing'] });
+const transactionPromise = (sdk, id) =>
+  sdk.transactions.show({ id, include: ['listing', 'listing.author'] });
 const getListingRelationShip = transactionShowAPIData => {
   const { data, included } = transactionShowAPIData;
   const { relationships } = data;
@@ -147,23 +152,36 @@ module.exports = (req, res) => {
         commissionAsset?.type === 'jsonAsset' ? commissionAsset.attributes.data : {};
 
       const fullOrderData = getFullOrderData(orderData, bodyParams, currency, existingOffers);
+      const isShipping = fullOrderData.deliveryMethod === 'shipping';
+      const destination = isShipping
+        ? authoritativeShippingDestination(fullOrderData, isSpeculative)
+        : null;
+      const resolvedRate =
+        isShipping && fullOrderData.avShippingType
+          ? await resolveBucketPrice({
+              quoteToken: fullOrderData.avQuoteToken,
+              avShippingType: fullOrderData.avShippingType,
+              listing,
+              destination,
+              buyerEmail: fullOrderData.buyerEmail,
+            })
+          : null;
+
+      if (!isSpeculative && isShipping && (!destination || !resolvedRate)) {
+        throw new ShippingQuoteRequiredError();
+      }
+
       lineItems = await transactionLineItems(
         listing,
         fullOrderData,
         providerCommission,
-        customerCommission
+        customerCommission,
+        { resolvedShippingRate: resolvedRate }
       );
 
       metadataMaybe = getUpdatedMetadata(orderData, transitionName, existingMetadata);
 
-      if (fullOrderData.deliveryMethod === 'shipping') {
-        const resolvedRate = await resolveBucketPrice({
-          quoteToken: fullOrderData.avQuoteToken,
-          avShippingType: fullOrderData.avShippingType,
-          listing,
-          destination: fullOrderData.avDestination,
-          buyerEmail: fullOrderData.buyerEmail,
-        });
+      if (isShipping) {
         avShippingProtectedData = buildAvShippingProtectedData(fullOrderData, resolvedRate);
       }
 

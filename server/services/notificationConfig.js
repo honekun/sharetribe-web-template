@@ -4,6 +4,7 @@ const { TEMPLATE_ENV } = require('./marketingCampaigns');
 
 const FLAG_NAMES = {
   poller: 'AV_NOTIFICATIONS_ENABLED',
+  shippingLabels: 'AV_SHIPPING_LABELS_ENABLED',
   brevo: 'AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED',
   campaigns: 'AV_BREVO_CAMPAIGNS_ENABLED',
   whatsapp: 'AV_WHATSAPP_NOTIFICATIONS_ENABLED',
@@ -31,19 +32,32 @@ function missingTemplateIds(names) {
 
 function getNotificationConfigReadiness() {
   const pollerFlag = readBooleanFlag(FLAG_NAMES.poller);
+  const shippingLabelsFlag = readBooleanFlag(FLAG_NAMES.shippingLabels);
   const brevoFlag = readBooleanFlag(FLAG_NAMES.brevo);
   const campaignsFlag = readBooleanFlag(FLAG_NAMES.campaigns);
   const whatsappFlag = readBooleanFlag(FLAG_NAMES.whatsapp);
 
-  const pollerMissing = pollerFlag.enabled
+  const eventPollerEnabled = pollerFlag.enabled || shippingLabelsFlag.enabled;
+  const pollerMissing = eventPollerEnabled
     ? missingVariables([
         'SHARETRIBE_INTEGRATION_CLIENT_ID',
         'SHARETRIBE_INTEGRATION_CLIENT_SECRET',
         'DATABASE_URL',
       ])
     : [];
-  const pollerReady = pollerFlag.configured && (!pollerFlag.enabled || pollerMissing.length === 0);
+  const missingPollerFlags = [
+    ...(pollerFlag.configured ? [] : [FLAG_NAMES.poller]),
+    ...(shippingLabelsFlag.configured ? [] : [FLAG_NAMES.shippingLabels]),
+  ];
+  const pollerReady =
+    missingPollerFlags.length === 0 && (!eventPollerEnabled || pollerMissing.length === 0);
   const channelFlagRequired = pollerFlag.enabled;
+  const shippingLabelsMissing = shippingLabelsFlag.enabled
+    ? missingVariables(['ESHIP_API_KEY', 'ESHIP_BASE_URL'])
+    : [];
+  const shippingLabelsReady =
+    shippingLabelsFlag.configured &&
+    (!shippingLabelsFlag.enabled || shippingLabelsMissing.length === 0);
 
   const brevoMissing =
     pollerFlag.enabled && brevoFlag.enabled
@@ -85,12 +99,18 @@ function getNotificationConfigReadiness() {
     (whatsappFlag.configured && (!whatsappFlag.enabled || whatsappMissing.length === 0));
 
   return {
-    ready: pollerReady && brevoReady && campaignsReady && whatsappReady,
+    ready: pollerReady && shippingLabelsReady && brevoReady && campaignsReady && whatsappReady,
     poller: {
-      configured: pollerFlag.configured,
-      enabled: pollerFlag.enabled,
+      configured: missingPollerFlags.length === 0,
+      enabled: eventPollerEnabled,
       ready: pollerReady,
-      missing: pollerFlag.configured ? pollerMissing : [FLAG_NAMES.poller],
+      missing: [...missingPollerFlags, ...pollerMissing],
+    },
+    shippingLabels: {
+      configured: shippingLabelsFlag.configured,
+      enabled: shippingLabelsFlag.enabled,
+      ready: shippingLabelsReady,
+      missing: shippingLabelsFlag.configured ? shippingLabelsMissing : [FLAG_NAMES.shippingLabels],
     },
     brevo: {
       configured: brevoFlag.configured,
@@ -122,6 +142,7 @@ function assertProductionNotificationConfig() {
   if (process.env.NODE_ENV === 'production' && !readiness.ready) {
     const missing = [
       ...readiness.poller.missing,
+      ...readiness.shippingLabels.missing,
       ...readiness.brevo.missing,
       ...readiness.campaigns.missing,
       ...readiness.whatsapp.missing,
@@ -135,6 +156,14 @@ function assertProductionNotificationConfig() {
 
 function isNotificationPollerEnabled() {
   return readBooleanFlag(FLAG_NAMES.poller).enabled;
+}
+
+function isShippingLabelsEnabled() {
+  return readBooleanFlag(FLAG_NAMES.shippingLabels).enabled;
+}
+
+function isEventPollerEnabled() {
+  return isNotificationPollerEnabled() || isShippingLabelsEnabled();
 }
 
 function isWelcomeEmailEnabled() {
@@ -153,8 +182,10 @@ module.exports = {
   FLAG_NAMES,
   assertProductionNotificationConfig,
   getNotificationConfigReadiness,
+  isEventPollerEnabled,
   isMarketingCampaignsEnabled,
   isNotificationPollerEnabled,
+  isShippingLabelsEnabled,
   isWelcomeEmailEnabled,
   isWhatsAppEnabled,
   readBooleanFlag,

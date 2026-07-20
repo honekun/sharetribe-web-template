@@ -75,14 +75,14 @@ describe('eshipClient.quote', () => {
 });
 
 describe('eshipClient.createShipment', () => {
-  const args = { rateId: 'rate-123', quotId: 'quot-9' };
+  const args = { rateId: 'rate-123' };
 
   beforeEach(() => {
     fetch.mockReset();
     process.env.ESHIP_API_KEY = 'test-key';
   });
 
-  it('POSTs the rate_id + quot_id to the shipment endpoint with a Bearer auth header', async () => {
+  it('POSTs only the documented rate_id to the shipment endpoint', async () => {
     fetch.mockResolvedValue(
       okResponse({ object_id: 's1', tracking_number: 'TRK1', label_url: 'https://l/1.pdf' })
     );
@@ -96,7 +96,7 @@ describe('eshipClient.createShipment', () => {
     expect(url).toMatch(/\/shipment$/);
     expect(opts.method).toBe('POST');
     expect(opts.headers.Authorization).toBe('Bearer test-key');
-    expect(JSON.parse(opts.body)).toEqual({ rate_id: 'rate-123', quot_id: 'quot-9' });
+    expect(JSON.parse(opts.body)).toEqual({ rate_id: 'rate-123' });
   });
 
   it('throws EshipApiError (401) when ESHIP_API_KEY is missing', async () => {

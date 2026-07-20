@@ -180,6 +180,48 @@ describe('resolveBucketPrice', () => {
     expect(fee.amountSubunits).toBe(express.amountSubunits);
     expect(eship.quote).not.toHaveBeenCalled(); // cache hit, no re-quote
   });
+  it('does not accept a token created for a different listing', async () => {
+    mockOrigin(origin);
+    eship.quote.mockResolvedValue({ object_id: 'q1', rates: [fastestRate] });
+    const { quoteToken } = await svc.quoteForCheckout({
+      listing: listing({ avPackageSize: 'M' }),
+      destination,
+      buyerEmail: 'b@x.com',
+    });
+    eship.quote.mockClear();
+    eship.quote.mockResolvedValue({ object_id: 'q2', rates: [fastestRate] });
+
+    await svc.resolveBucketPrice({
+      quoteToken,
+      avShippingType: 'nacionalExpress',
+      listing: { ...listing({ avPackageSize: 'M' }), id: { uuid: 'l2' } },
+      destination,
+      buyerEmail: 'b@x.com',
+    });
+
+    expect(eship.quote).toHaveBeenCalledTimes(1);
+  });
+  it('does not accept a token created for a different destination', async () => {
+    mockOrigin(origin);
+    eship.quote.mockResolvedValue({ object_id: 'q1', rates: [fastestRate] });
+    const { quoteToken } = await svc.quoteForCheckout({
+      listing: listing({ avPackageSize: 'M' }),
+      destination,
+      buyerEmail: 'b@x.com',
+    });
+    eship.quote.mockClear();
+    eship.quote.mockResolvedValue({ object_id: 'q2', rates: [fastestRate] });
+
+    await svc.resolveBucketPrice({
+      quoteToken,
+      avShippingType: 'nacionalExpress',
+      listing: listing({ avPackageSize: 'M' }),
+      destination: { ...destination, zip: '44100', state: 'JAL' },
+      buyerEmail: 'b@x.com',
+    });
+
+    expect(eship.quote).toHaveBeenCalledTimes(1);
+  });
   it('re-quotes on a cache miss (unknown token)', async () => {
     mockOrigin(origin);
     eship.quote.mockResolvedValue({ object_id: 'q2', rates: [fastestRate] });

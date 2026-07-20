@@ -366,6 +366,25 @@ describe('transactionLineItems', () => {
       });
     });
 
+    it('uses a pre-resolved quote without calling eShip a second time', async () => {
+      const resolvedShippingRate = { amountSubunits: 11800, currency: 'EUR' };
+      const orderData = {
+        stockReservationQuantity: 1,
+        deliveryMethod: 'shipping',
+        avShippingType: 'nacionalExpress',
+        currency: 'EUR',
+      };
+
+      const result = await transactionLineItems(itemListing, orderData, null, null, {
+        resolvedShippingRate,
+      });
+
+      expect(result.find(li => li.code === 'line-item/shipping-fee')?.unitPrice).toEqual(
+        new Money(11800, 'EUR')
+      );
+      expect(quoteSvc.resolveBucketPrice).not.toHaveBeenCalled();
+    });
+
     it('does not attempt to quote on the initial speculate (no delivery type chosen yet)', async () => {
       // On checkout load the tx is speculated with deliveryMethod 'shipping' but no
       // avShippingType / token / destination. We must NOT call the quote service then

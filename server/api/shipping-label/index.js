@@ -35,9 +35,9 @@ const isOperator = email => {
   return getOperatorEmails().has(email.toLowerCase());
 };
 
-// POST /api/shipping/label  { transactionId }
+// POST /api/shipping/label  { transactionId, confirmUnknown? }
 router.post('/label', express.json(), async (req, res) => {
-  const { transactionId } = req.body || {};
+  const { transactionId, confirmUnknown = false } = req.body || {};
   if (!transactionId) {
     return res.status(400).json({ code: 'BAD_REQUEST', message: 'transactionId is required' });
   }
@@ -62,17 +62,25 @@ router.post('/label', express.json(), async (req, res) => {
     return res.status(429).json({ code: 'RATE_LIMITED', message: 'Demasiados intentos, espera.' });
   }
 
-  // 3. Load the tx through the caller's SDK — enforces they may see it — and
-  //    authorize: only the provider (or an operator) may buy the label.
-  let providerId;
-  try {
-    const txRes = await sdk.transactions.show({ id: transactionId, include: ['provider'] });
-    providerId = txRes?.data?.data?.relationships?.provider?.data?.id?.uuid;
-  } catch (e) {
-    return res.status(404).json({ code: 'NOT_FOUND' });
-  }
-  if (userId !== providerId && !isOperator(email)) {
+  const operator = isOperator(email);
+  if (confirmUnknown && !operator) {
     return res.status(403).json({ code: 'FORBIDDEN' });
+  }
+
+  // 3. Providers prove access through their own Marketplace SDK. Operators are
+  // allowlisted specifically so they can act on transactions they are not a
+  // party to; they use the Integration SDK instead of failing this caller read.
+  if (!operator) {
+    let providerId;
+    try {
+      const txRes = await sdk.transactions.show({ id: transactionId, include: ['provider'] });
+      providerId = txRes?.data?.data?.relationships?.provider?.data?.id?.uuid;
+    } catch (e) {
+      return res.status(404).json({ code: 'NOT_FOUND' });
+    }
+    if (userId !== providerId) {
+      return res.status(403).json({ code: 'FORBIDDEN' });
+    }
   }
 
   // 4. Buy the label with the authoritative (Integration SDK) transaction.
@@ -80,9 +88,20 @@ router.post('/label', express.json(), async (req, res) => {
     const integrationSdk = getIntegrationSdk();
     const fullRes = await integrationSdk.transactions.show({ id: transactionId });
     const fullTx = fullRes?.data?.data;
-    const avLabel = await buyLabelForTransaction(integrationSdk, fullTx, { force: true });
+    if (!fullTx) return res.status(404).json({ code: 'NOT_FOUND' });
+    const avLabel = await buyLabelForTransaction(integrationSdk, fullTx, {
+      force: true,
+      confirmUnknown: Boolean(confirmUnknown),
+      claimedBy: userId,
+    });
 
     if (!avLabel) return res.status(422).json({ code: 'ESPECIAL' });
+    if (avLabel.status === 'processing') {
+      return res.status(409).json({ code: 'LABEL_PROCESSING', avLabel });
+    }
+    if (avLabel.status === 'unknown') {
+      return res.status(409).json({ code: 'LABEL_UNKNOWN', avLabel });
+    }
     if (avLabel.status === 'failed') {
       const debug = String(process.env.ESHIP_API_DEBUG).toLowerCase() === 'true';
       return res
@@ -91,6 +110,12 @@ router.post('/label', express.json(), async (req, res) => {
     }
     return res.status(200).json({ avLabel });
   } catch (e) {
+    if (e?.code === 'LABEL_NOT_ALLOWED') {
+      return res.status(409).json({ code: 'LABEL_NOT_ALLOWED' });
+    }
+    if (e?.code === 'LABEL_UNKNOWN') {
+      return res.status(409).json({ code: 'LABEL_UNKNOWN' });
+    }
     console.error('[shipping/label]', describeEshipError(e));
     return res.status(502).json({ code: 'LABEL_FAILED' });
   }

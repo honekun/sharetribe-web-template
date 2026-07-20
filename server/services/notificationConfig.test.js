@@ -12,6 +12,7 @@ describe('notification configuration readiness', () => {
     process.env = { ...ORIGINAL_ENV };
     [
       'AV_NOTIFICATIONS_ENABLED',
+      'AV_SHIPPING_LABELS_ENABLED',
       'AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED',
       'AV_BREVO_CAMPAIGNS_ENABLED',
       'AV_WHATSAPP_NOTIFICATIONS_ENABLED',
@@ -43,6 +44,7 @@ describe('notification configuration readiness', () => {
 
   test('accepts explicit global disablement without provider secrets', () => {
     process.env.AV_NOTIFICATIONS_ENABLED = 'false';
+    process.env.AV_SHIPPING_LABELS_ENABLED = 'false';
 
     const readiness = getNotificationConfigReadiness();
 
@@ -54,6 +56,7 @@ describe('notification configuration readiness', () => {
 
   test('identifies each incomplete enabled channel independently', () => {
     process.env.AV_NOTIFICATIONS_ENABLED = 'true';
+    process.env.AV_SHIPPING_LABELS_ENABLED = 'false';
     process.env.AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED = 'true';
     process.env.AV_BREVO_CAMPAIGNS_ENABLED = 'true';
     process.env.AV_WHATSAPP_NOTIFICATIONS_ENABLED = 'true';
@@ -75,6 +78,7 @@ describe('notification configuration readiness', () => {
   test('is ready when enabled services have complete configuration', () => {
     Object.assign(process.env, {
       AV_NOTIFICATIONS_ENABLED: 'true',
+      AV_SHIPPING_LABELS_ENABLED: 'false',
       AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED: 'true',
       AV_BREVO_CAMPAIGNS_ENABLED: 'false',
       AV_WHATSAPP_NOTIFICATIONS_ENABLED: 'false',
@@ -99,6 +103,7 @@ describe('notification configuration readiness', () => {
   test('requires all campaign templates, list, and webhook configuration when campaigns are on', () => {
     Object.assign(process.env, {
       AV_NOTIFICATIONS_ENABLED: 'true',
+      AV_SHIPPING_LABELS_ENABLED: 'false',
       AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED: 'false',
       AV_BREVO_CAMPAIGNS_ENABLED: 'true',
       AV_WHATSAPP_NOTIFICATIONS_ENABLED: 'false',
@@ -142,6 +147,7 @@ describe('notification configuration readiness', () => {
 
   test('treats whitespace-only secrets as missing', () => {
     process.env.AV_NOTIFICATIONS_ENABLED = 'true';
+    process.env.AV_SHIPPING_LABELS_ENABLED = 'false';
     process.env.AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED = 'false';
     process.env.AV_BREVO_CAMPAIGNS_ENABLED = 'false';
     process.env.AV_WHATSAPP_NOTIFICATIONS_ENABLED = 'false';
@@ -151,6 +157,41 @@ describe('notification configuration readiness', () => {
 
     expect(getNotificationConfigReadiness().poller.missing).toContain(
       'SHARETRIBE_INTEGRATION_CLIENT_SECRET'
+    );
+  });
+
+  test('can enable automatic shipping labels without enabling notifications', () => {
+    Object.assign(process.env, {
+      AV_NOTIFICATIONS_ENABLED: 'false',
+      AV_SHIPPING_LABELS_ENABLED: 'true',
+      SHARETRIBE_INTEGRATION_CLIENT_ID: 'integration-id',
+      SHARETRIBE_INTEGRATION_CLIENT_SECRET: 'integration-secret',
+      DATABASE_URL: 'postgresql://localhost/database',
+      ESHIP_API_KEY: 'eship-key',
+      ESHIP_BASE_URL: 'https://api.myeship.co/rest',
+    });
+
+    const readiness = getNotificationConfigReadiness();
+
+    expect(readiness.ready).toBe(true);
+    expect(readiness.poller).toEqual(expect.objectContaining({ enabled: true, ready: true }));
+    expect(readiness.shippingLabels).toEqual(
+      expect.objectContaining({ enabled: true, ready: true })
+    );
+    expect(readiness.brevo.enabled).toBe(false);
+  });
+
+  test('requires eShip settings only when automatic labels are enabled', () => {
+    Object.assign(process.env, {
+      AV_NOTIFICATIONS_ENABLED: 'false',
+      AV_SHIPPING_LABELS_ENABLED: 'true',
+      SHARETRIBE_INTEGRATION_CLIENT_ID: 'integration-id',
+      SHARETRIBE_INTEGRATION_CLIENT_SECRET: 'integration-secret',
+      DATABASE_URL: 'postgresql://localhost/database',
+    });
+
+    expect(getNotificationConfigReadiness().shippingLabels.missing).toEqual(
+      expect.arrayContaining(['ESHIP_API_KEY', 'ESHIP_BASE_URL'])
     );
   });
 });

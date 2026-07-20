@@ -52,7 +52,10 @@ carrier cost**, not the seller. That single fact drives the payout decision in
 | `ESHIP_BASE_URL` | yes | **none** (must be set per env) | `…/rest` base. QA `https://apiqa.myeship.co/rest`; prod `https://api.myeship.co/rest`. |
 | `ESHIP_MARKUP_PCT` | no | `0.18` | Buyer markup over raw carrier cost (see §7). |
 | `ESHIP_API_DEBUG` | no | `false` | `true` echoes the carrier's error text in the API response (`{ code, detail }`). Leave off in prod. |
+| `AV_SHIPPING_LABELS_ENABLED` | yes (explicit) | `false` | Enables automatic post-payment label buying through the shared Integration API event poller. Independent of notification delivery. |
 | `SHIPPING_LABEL_OPERATOR_EMAILS` | no | — | Comma-separated emails allowed to retry **any** seller's label. Sellers can always retry their own. |
+| `DATABASE_URL` | yes (auto labels) | — | Shared durable PostgreSQL ledger used to claim a label purchase before eShip is called. |
+| `AV_SHIPPING_LABEL_STALE_CLAIM_MINUTES` | no | `15` | Age at which an interrupted purchase becomes `unknown`; it is never retried automatically. |
 | `SHARETRIBE_INTEGRATION_CLIENT_ID` / `_SECRET` | yes | — | Integration SDK — reads the seller's origin address and writes `metadata.avLabel`. |
 
 `ESHIP_BASE_URL`, `ESHIP_MARKUP_PCT`, and `ESHIP_API_DEBUG` are **server-only** (no
@@ -97,21 +100,27 @@ NODE_ENV=development node -e "require('./server/env').configureEnv(); \
 
 ### 5.1 Quote (checkout)
 
-1. Buyer enters a MX destination in the payment form → client `POST /api/shipping/quote`.
+1. An authenticated buyer enters a MX destination in the payment form → client
+   `POST /api/shipping/quote` (per-user rate limited).
 2. Server resolves the **seller's origin** (`integrationSdk.users.show` →
    `profile.protectedData.shippingOrigin`) and the **parcel**
    (`packageSizes[resolvePackageSize(listing)]`).
 3. `POST {base}/quotation` (one call → `rates[]`).
 4. Bucket the rates: **`FASTEST` → Express (`nacionalExpress`)**,
    **`CHEAPEST` → Estándar (`nacionalEstandar`)** (`bucketForRate`), apply
-   `applyBuyerMarkup`, cache under a `quoteToken` (15-min TTL), return buckets.
+   `applyBuyerMarkup`, cache under a `quoteToken` (15-min TTL, 1,000-entry process
+   cap), return buckets. The token is cryptographically bound to the listing,
+   seller, parcel, and normalized destination.
 5. Buyer picks a bucket → `avShippingType` / `avQuoteToken` / `avDestination` /
    `buyerEmail` flow through `getOrderParams` into `orderData`.
 
-The **authoritative** price is re-derived server-side in `transactionLineItems`
-(async) via `shippingQuoteService.resolveBucketPrice` (cache hit → pinned; miss →
-re-quote). The client price is never trusted. The chosen rate is persisted to
-transaction `protectedData.avShipping`:
+The **authoritative** price is resolved exactly once server-side, then passed to
+`transactionLineItems` and persisted. A valid bound token is pinned; an expired,
+unknown, or context-mismatched token is re-quoted. For a real payment, the
+destination is rebuilt from `protectedData.shippingDetails`, not trusted from
+the duplicate client `avDestination`. A shipping transaction without a valid
+rate and destination is rejected. Out-of-order browser quote responses are
+ignored. The chosen rate is persisted to transaction `protectedData.avShipping`:
 
 ```
 { bucket, quot_id, rate_id, carrier, servicelevel, amountSubunits, currency }
@@ -121,24 +130,35 @@ No origin / `especial` size / carrier error → buyer sees **Contactar AV**.
 
 ### 5.2 Label purchase — "Spec B"
 
-**Auto path.** The `eventPoller` calls `shipmentService.maybeBuyLabelForEvent` on
-`transaction/confirm-payment` (independent of the WhatsApp gate) →
-`eshipClient.createShipment({ rateId, quotId })` (`POST /shipment`) → writes
+**Auto path.** When `AV_SHIPPING_LABELS_ENABLED=true`, the shared `eventPoller`
+calls `shipmentService.maybeBuyLabelForEvent` on
+`transaction/confirm-payment` (independent of `AV_NOTIFICATIONS_ENABLED`) →
+`eshipClient.createShipment({ rateId })` (`POST /shipment`) → writes
 `metadata.avLabel`:
 
 ```
 { status: 'purchased', shipmentId, trackingNumber, labelUrl, carrier, servicelevel, purchasedAt }
 { status: 'failed',    error, rate_id, failedAt }
+{ status: 'unknown',   error, rate_id, unknownAt }
 ```
 
-Buying is **idempotent**: `buyLabelForTransaction` short-circuits on
-`status:'purchased'` (never re-buys); the auto path also skips `failed` markers.
+Before any carrier call, PostgreSQL atomically inserts a `processing` claim in
+`av_shipping_label_attempts`. Concurrent processes cannot acquire the same
+transaction. The durable row is finalized before Sharetribe metadata is synced,
+so a metadata-write failure cannot cause a second carrier purchase.
+
+Only paid, non-cancelled transactions are eligible. A carrier 4xx response is
+`failed`; a timeout, network/5xx response, malformed 2xx success, or interrupted
+process is `unknown`. `processing` and `unknown` attempts fail closed and are
+never retried automatically because eShip may already have charged the account.
 
 **Manual retry.** Provider-only `POST /api/shipping/label { transactionId }`.
-Authorizes by reading the tx through the caller's own SDK (provider, or an email
-in `SHIPPING_LABEL_OPERATOR_EMAILS`), per-user hourly rate limit, then
-`buyLabelForTransaction(..., { force:true })` — retries a `failed` marker but the
-`purchased` short-circuit still prevents a double-buy.
+Providers authorize through their own SDK; allowlisted operators use the
+Integration SDK so they can act even when they are not a transaction party. The
+route is per-user rate limited. `force:true` can retry a definitive `failed`
+attempt. After checking the eShip dashboard and confirming no shipment exists,
+only an allowlisted operator may send
+`{ transactionId, "confirmUnknown": true }` to release an `unknown` attempt.
 
 **UI.** `TransactionPage/AVShippingLabelMaybe/` — `AVShippingLabelSection`
 (local-state wrapper that POSTs and prefers the returned `avLabel`) +
@@ -153,6 +173,8 @@ especial). Rendered provider-only via a `shippingLabelSlot` prop threaded throug
 | `server/api-util/eshipClient.js` | HTTP: `quote` + `createShipment` (shared `eshipPost`) |
 | `server/services/shippingQuoteService.js` | Quote orchestration + 15-min cache |
 | `server/services/shipmentService.js` | Spec B label buy (idempotent core + poller hook) |
+| `server/services/shippingLabelStore.js` | Durable PostgreSQL purchase claims/outcomes |
+| `server/migrations/006_shipping_label_attempts.sql` | Label purchase ledger schema |
 | `server/api-util/avShipping.js` | Persist chosen rate → `protectedData.avShipping` |
 | `server/api/shipping-quote/` | `POST /api/shipping/quote` |
 | `server/api/shipping-label/` | `POST /api/shipping/label` (+ `rateLimiter.js`) |
@@ -209,7 +231,7 @@ responses; there is no `quot_id` or `shipment_id`.**
 → `shippingQuoteService` captures `object_id` as `quot_id`; `bucketForRate` reads
 `tags` (`FASTEST`/`CHEAPEST`).
 
-**`/shipment`** (needs **only** `rate_id`; `quot_id` is optional/traceability):
+**`/shipment`** request sends **only** `rate_id`:
 
 ```json
 { "object_id": "6a5dd216…", "status": "SUCCESS", "substatus": "label_created",
@@ -226,7 +248,11 @@ responses; there is no `quot_id` or `shipment_id`.**
 
 - **Unit/integration** (mocked `node-fetch` + SDK): `eshipClient.test.js`,
   `shipmentService.test.js`, `shippingQuoteService.test.js`,
-  `shipping-label/index.test.js`, `lineItems.test.js`. Run `yarn test-server`.
+  `shippingLabelStore.test.js`, `shipping-label/index.test.js`,
+  `lineItems.test.js`. Run `yarn test-server`.
+- Run `yarn db:migrate` before enabling automatic labels, then set
+  `AV_SHIPPING_LABELS_ENABLED=true`. Readiness includes label-attempt counts by
+  status and fails when migration `006` is absent.
 - **Live smoke** (real apiqa call): a standalone script that loads env like the
   server, then calls `eshipClient.quote` / a raw `/shipment` POST, printing the
   response so field names can be re-verified against prod later. Keep such scripts

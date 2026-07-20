@@ -4,6 +4,7 @@ const express = require('express');
 const { getSdk } = require('../../api-util/sdk');
 const svc = require('../../services/shippingQuoteService');
 const { describeEshipError } = require('../../api-util/eshipClient');
+const { checkAndRecord } = require('./rateLimiter');
 
 const router = express.Router();
 
@@ -15,14 +16,28 @@ router.post('/quote', express.json(), async (req, res) => {
       .status(400)
       .json({ code: 'BAD_REQUEST', message: 'listingId and destination are required' });
   }
+
+  const sdk = getSdk(req, res);
+  let currentUser;
   try {
-    const sdk = getSdk(req, res);
+    const currentUserRes = await sdk.currentUser.show();
+    currentUser = currentUserRes?.data?.data;
+  } catch (_) {
+    currentUser = null;
+  }
+  const userId = currentUser?.id?.uuid;
+  if (!userId) return res.status(401).json({ code: 'UNAUTHORIZED' });
+  if (!checkAndRecord(userId)) {
+    return res.status(429).json({ code: 'RATE_LIMITED' });
+  }
+
+  try {
     // include:['author'] is required — without it the Marketplace API omits the
     // `relationships` object entirely, so the seller's author id (needed to resolve
     // their shipping origin) is unavailable and every quote falsely returns NO_ORIGIN.
     const showRes = await sdk.listings.show({ id: listingId, include: ['author'] });
     const listing = showRes?.data?.data;
-    const buyerEmail = req.body.buyerEmail || destination.email;
+    const buyerEmail = currentUser?.attributes?.email || destination.email;
     const quote = await svc.quoteForCheckout({ listing, destination, buyerEmail });
     return res.status(200).json(quote);
   } catch (e) {

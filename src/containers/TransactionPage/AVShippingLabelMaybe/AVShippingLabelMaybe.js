@@ -19,15 +19,18 @@ import css from './AVShippingLabelMaybe.module.css';
  * @param {Object|null} props.avLabel    - transaction.metadata.avLabel (the label marker)
  * @param {Function} props.onGenerate    - trigger a manual label purchase
  * @param {boolean} props.inProgress     - a generation request is in flight
+ * @param {boolean} props.canGenerate    - payment is confirmed and transaction is active
  * @param {string} [props.error]         - error code from the last generation attempt
  */
 const AVShippingLabelMaybe = props => {
-  const { avShipping, avLabel, onGenerate, inProgress = false, error } = props;
+  const { avShipping, avLabel, onGenerate, inProgress = false, canGenerate = true, error } = props;
 
   // Nothing to ship through eShip (especial / non-shipping / Contactar AV).
   if (!avShipping?.rate_id) return null;
 
   const isPurchased = avLabel?.status === 'purchased' && avLabel?.labelUrl;
+  const hasUncertainAttempt = ['processing', 'unknown'].includes(avLabel?.status);
+  if (!isPurchased && !canGenerate && !hasUncertainAttempt) return null;
 
   return (
     <div className={css.root}>
@@ -39,6 +42,10 @@ const AVShippingLabelMaybe = props => {
         <ExternalLink href={avLabel.labelUrl} className={css.downloadLink}>
           <FormattedMessage id="AVShippingLabel.download" />
         </ExternalLink>
+      ) : hasUncertainAttempt ? (
+        <p className={css.error}>
+          <FormattedMessage id="AVShippingLabel.error" />
+        </p>
       ) : (
         <>
           <PrimaryButton
