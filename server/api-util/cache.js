@@ -8,8 +8,8 @@ const MAX_PURGE_EXPIRED_PROPERTIES = 10; // on [[set]]
  * This creates simple (proxied) memory cache.
  * If ttl is not explicitly given, it's set to 1 minute.
  *
- * Note: this does not have an eviction policy yet. Therefore, you should only use this with data
- * that can be cached whole time the app is running (e.g. robots.txt)
+ * By default this cache has no capacity limit. Callers that cache user-supplied
+ * keys should set maxEntries so one process cannot grow without bound.
  *
  * @example
  * ```
@@ -19,10 +19,20 @@ const MAX_PURGE_EXPIRED_PROPERTIES = 10; // on [[set]]
  * ```
  *
  * @param {Number} ttl time-to-live in seconds
+ * @param {Object} options
+ * @param {Number} [options.maxEntries] maximum live entries before oldest-first eviction
  * @returns Proxy instance
  */
-exports.createTTLCache = (ttl = 60) => {
+exports.createTTLCache = (ttl = 60, { maxEntries = Infinity } = {}) => {
   const cache = {};
+
+  const purgeExpired = () => {
+    const now = Date.now();
+    Object.keys(cache).forEach(key => {
+      if (cache[key]?.expiresAt <= now) delete cache[key];
+    });
+  };
+
   return new Proxy(cache, {
     get(target, property, receiver) {
       const cachedData = target[property];
@@ -31,12 +41,19 @@ exports.createTTLCache = (ttl = 60) => {
         if (Date.now() < cachedData.expiresAt) {
           return cachedData;
         }
+        delete target[property];
       }
       const timestamp = cachedData?.timestamp || Date.now();
       const expiresAt = cachedData?.expiresAt || Date.now();
       return { data: null, timestamp, expiresAt };
     },
     set(target, property, value, receiver) {
+      purgeExpired();
+      if (!Object.prototype.hasOwnProperty.call(target, property)) {
+        while (Object.keys(target).length >= maxEntries) {
+          delete target[Object.keys(target)[0]];
+        }
+      }
       const timestamp = Date.now();
       const expiresAt = timestamp + ttl * 1000;
       target[property] = { data: value, timestamp, expiresAt };

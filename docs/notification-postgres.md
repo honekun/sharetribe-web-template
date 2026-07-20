@@ -131,9 +131,11 @@ The same acknowledgement can recover a `processing` claim only after it is older
 `GET /api/notifications/readiness` returns HTTP `200` when the explicit configuration and
 notification database are ready, or `503` otherwise. It distinguishes:
 
-- global poller, seller welcome, Brevo campaign, and WhatsApp flags and missing variable names;
+- shared event poller, automatic shipping-label, seller welcome, Brevo campaign,
+  and WhatsApp flags and missing variable names;
 - database migration, active ownership, heartbeat, and current sequence ID;
-- delivery ledger and delayed-job counts by outcome, plus the marketing-preference count; and
+- notification delivery, delayed-job, and shipping-label attempt counts by
+  outcome, plus the marketing-preference count; and
 - pages/events processed, sequence lag in remaining events, oldest observed event age, page-bound
   state, and repeated-error counters.
 
@@ -148,9 +150,12 @@ production alerting system.
 1. Provision a durable managed PostgreSQL database.
 2. Set its server-only `DATABASE_URL` on every web process. All processes must use the same
    database.
-3. Set `AV_NOTIFICATIONS_ENABLED` explicitly. When it is `true`, explicitly set seller welcome,
-   Brevo campaign, and WhatsApp flags, then supply credentials/template IDs for each enabled
-   channel. Incomplete production configuration prevents startup.
+3. Set both `AV_NOTIFICATIONS_ENABLED` and `AV_SHIPPING_LABELS_ENABLED`
+   explicitly. Either enabled capability starts the shared event poller. When
+   notifications are enabled, explicitly set seller welcome, Brevo campaign,
+   and WhatsApp flags. When automatic labels are enabled, supply eShip and
+   Integration API credentials. Incomplete production configuration prevents
+   startup.
 4. Add the provider's required TLS parameters to the connection URL, such as `sslmode=require`,
    according to that provider's certificate guidance.
 5. Run `yarn db:migrate` as a release/pre-deploy command before the new application version starts.

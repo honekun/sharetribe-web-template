@@ -93,6 +93,8 @@ it('buys the label (force) and returns 200 + avLabel when the provider retries',
 
   expect(shipmentService.buyLabelForTransaction).toHaveBeenCalledWith(expect.anything(), fullTx, {
     force: true,
+    confirmUnknown: false,
+    claimedBy: PROVIDER_ID,
   });
   expect(res.statusCode).toBe(200);
   expect(res.body).toEqual({ avLabel });
@@ -114,6 +116,80 @@ it('returns 502 LABEL_FAILED when the carrier rejects the retry', async () => {
   expect(res.statusCode).toBe(502);
   expect(res.body.code).toBe('LABEL_FAILED');
   expect(res.body.avLabel.status).toBe('failed');
+});
+
+it('returns 409 when a purchase is already processing or has an unknown outcome', async () => {
+  shipmentService.buyLabelForTransaction.mockResolvedValueOnce({ status: 'processing' });
+  const processing = await run({ transactionId: 'tx-1' });
+  expect(processing.statusCode).toBe(409);
+  expect(processing.body.code).toBe('LABEL_PROCESSING');
+
+  shipmentService.buyLabelForTransaction.mockResolvedValueOnce({ status: 'unknown' });
+  const unknown = await run({ transactionId: 'tx-1' });
+  expect(unknown.statusCode).toBe(409);
+  expect(unknown.body.code).toBe('LABEL_UNKNOWN');
+});
+
+it('lets an allowlisted operator act without caller transaction visibility', async () => {
+  const original = process.env.SHIPPING_LABEL_OPERATOR_EMAILS;
+  process.env.SHIPPING_LABEL_OPERATOR_EMAILS = 'operator@x.com';
+  try {
+    callerSdk.currentUser.show.mockResolvedValue(currentUser('operator-1', 'operator@x.com'));
+    callerSdk.transactions.show.mockRejectedValue(new Error('not a party'));
+    shipmentService.buyLabelForTransaction.mockResolvedValue({
+      status: 'purchased',
+      labelUrl: 'https://l/1.pdf',
+    });
+
+    const res = await run({ transactionId: 'tx-1' });
+
+    expect(res.statusCode).toBe(200);
+    expect(callerSdk.transactions.show).not.toHaveBeenCalled();
+  } finally {
+    if (original === undefined) delete process.env.SHIPPING_LABEL_OPERATOR_EMAILS;
+    else process.env.SHIPPING_LABEL_OPERATOR_EMAILS = original;
+  }
+});
+
+it('allows only an operator to confirm reconciliation of an unknown attempt', async () => {
+  let res = await run({ transactionId: 'tx-1', confirmUnknown: true });
+  expect(res.statusCode).toBe(403);
+  expect(shipmentService.buyLabelForTransaction).not.toHaveBeenCalled();
+
+  const original = process.env.SHIPPING_LABEL_OPERATOR_EMAILS;
+  process.env.SHIPPING_LABEL_OPERATOR_EMAILS = 'operator@x.com';
+  try {
+    callerSdk.currentUser.show.mockResolvedValue(currentUser('operator-1', 'operator@x.com'));
+    shipmentService.buyLabelForTransaction.mockResolvedValue({
+      status: 'purchased',
+      labelUrl: 'https://l/1.pdf',
+    });
+
+    res = await run({ transactionId: 'tx-1', confirmUnknown: true });
+
+    expect(res.statusCode).toBe(200);
+    expect(shipmentService.buyLabelForTransaction).toHaveBeenCalledWith(
+      expect.anything(),
+      fullTx,
+      expect.objectContaining({
+        force: true,
+        confirmUnknown: true,
+        claimedBy: 'operator-1',
+      })
+    );
+  } finally {
+    if (original === undefined) delete process.env.SHIPPING_LABEL_OPERATOR_EMAILS;
+    else process.env.SHIPPING_LABEL_OPERATOR_EMAILS = original;
+  }
+});
+
+it('maps transaction-state rejection to 409 LABEL_NOT_ALLOWED', async () => {
+  shipmentService.buyLabelForTransaction.mockRejectedValue(
+    Object.assign(new Error('not paid'), { code: 'LABEL_NOT_ALLOWED' })
+  );
+  const res = await run({ transactionId: 'tx-1' });
+  expect(res.statusCode).toBe(409);
+  expect(res.body.code).toBe('LABEL_NOT_ALLOWED');
 });
 
 it('rate-limits repeated retries per user with 429', async () => {

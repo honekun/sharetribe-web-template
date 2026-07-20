@@ -1,78 +1,183 @@
 'use strict';
 
-// Spec B — buy the eShip shipping label after a purchase is paid.
-//
-// The chosen rate is persisted at checkout to `protectedData.avShipping`
-// (see server/api-util/avShipping.js). Once payment is confirmed, this service
-// exchanges that rate for an actual label via `POST /rest/shipment` and records
-// the result on the transaction's `metadata.avLabel`:
-//
-//   { status: 'purchased', shipmentId, trackingNumber, labelUrl, carrier,
-//     servicelevel, purchasedAt }
-//   { status: 'failed', error, rate_id, failedAt }
-//
-// Buying a label is money-moving and NOT idempotent on eShip's side, so this is
-// the single guarded entry point shared by both the auto path (event poller,
-// force=false) and the manual retry endpoint (force=true):
-//   - already `purchased`  -> return existing, never re-buy (both paths)
-//   - already `failed`     -> auto path skips; force path retries
-//   - no rate to buy       -> return null (especial / Contactar AV)
+// Buy an eShip label only after payment, under a durable PostgreSQL claim.
+// eShip does not expose an idempotency key for this operation, so processing
+// and unknown claims fail closed until an operator reconciles the carrier
+// dashboard. This prevents double charges across concurrent requests, dyno
+// restarts, timeouts and metadata-write failures.
 
-const { createShipment, describeEshipError } = require('../api-util/eshipClient');
+const {
+  createShipment,
+  describeEshipError,
+  EshipApiError,
+  EshipTimeoutError,
+} = require('../api-util/eshipClient');
+const { createShippingLabelStore } = require('./shippingLabelStore');
+const { isShippingLabelsEnabled } = require('./notificationConfig');
 
-// The single transition that means "payment captured, arrange shipping" in
-// default-purchase (the inquiry path funnels through it too). A Set so booking/
-// negotiation processes can add their equivalent later without touching callers.
 const LABEL_BUY_TRANSITIONS = new Set(['transition/confirm-payment']);
 
-async function buyLabelForTransaction(sdk, tx, { force = false } = {}) {
+class LabelNotAllowedError extends Error {
+  constructor() {
+    super('Shipping labels can only be purchased after payment and before cancellation');
+    this.name = 'LabelNotAllowedError';
+    this.code = 'LABEL_NOT_ALLOWED';
+  }
+}
+
+class LabelPurchaseUnknownError extends Error {
+  constructor(message) {
+    super(message || 'The carrier purchase outcome is unknown');
+    this.name = 'LabelPurchaseUnknownError';
+    this.code = 'LABEL_UNKNOWN';
+  }
+}
+
+const transitionNames = tx => {
+  const attrs = tx?.attributes || {};
+  const history = (attrs.transitions || []).map(item => item?.transition || item).filter(Boolean);
+  return attrs.lastTransition ? [...history, attrs.lastTransition] : history;
+};
+
+function isLabelPurchaseAllowed(tx) {
+  const transitions = transitionNames(tx);
+  const hasPaid = transitions.some(name => LABEL_BUY_TRANSITIONS.has(name));
+  const hasCancellation = transitions.some(name => /(^|\/)(?:auto-|operator-)?cancel/.test(name));
+  return hasPaid && !hasCancellation;
+}
+
+function validateShipment(shipment) {
+  const isSuccess = String(shipment?.status || '').toUpperCase() === 'SUCCESS';
+  const shipmentId = shipment?.object_id || shipment?.shipment_id;
+  if (!isSuccess || !shipmentId || !shipment?.label_url) {
+    throw new LabelPurchaseUnknownError('eShip returned an incomplete shipment success response');
+  }
+  return shipmentId;
+}
+
+function isUnknownCarrierOutcome(error) {
+  if (error instanceof LabelPurchaseUnknownError || error instanceof EshipTimeoutError) return true;
+  if (error instanceof EshipApiError) {
+    return error.status >= 500 || [408, 425, 429].includes(error.status);
+  }
+  // A network error can happen after the carrier accepted the request.
+  return true;
+}
+
+const transactionIdOf = tx => tx?.id?.uuid || tx?.id;
+
+const labelFromStoreRow = (row, av) => {
+  if (!row) return null;
+  if (row.status === 'purchased' && row.shipment_data) return row.shipment_data;
+  const timestamp = row.finished_at || row.updated_at || new Date().toISOString();
+  return {
+    status: row.status,
+    error: row.last_error || null,
+    rate_id: row.rate_id || av?.rate_id || null,
+    ...(row.status === 'failed' ? { failedAt: timestamp } : {}),
+    ...(row.status === 'unknown' ? { unknownAt: timestamp } : {}),
+  };
+};
+
+async function syncLabelMetadata(sdk, tx, avLabel) {
+  try {
+    await sdk.transactions.updateMetadata({ id: tx.id, metadata: { avLabel } });
+  } catch (error) {
+    console.error('[shipmentService] label metadata sync failed:', error?.message || error);
+  }
+}
+
+async function buyLabelForTransaction(
+  sdk,
+  tx,
+  { force = false, confirmUnknown = false, claimedBy = 'event-poller', store = null } = {}
+) {
   const attrs = tx?.attributes || {};
   const existing = attrs.metadata?.avLabel;
 
-  // Idempotent short-circuit: a bought label is never re-bought, on any path.
   if (existing?.status === 'purchased') return existing;
-  // Auto path leaves a failed marker alone; only an explicit retry re-attempts.
   if (existing?.status === 'failed' && !force) return existing;
+  if (existing?.status === 'unknown' && !confirmUnknown) return existing;
 
   const av = attrs.protectedData?.avShipping;
-  if (!av?.rate_id) return null; // especial / Contactar AV: nothing to buy.
+  if (!av?.rate_id) return null;
+  if (!isLabelPurchaseAllowed(tx)) throw new LabelNotAllowedError();
 
-  let avLabel;
-  try {
-    const shipment = await createShipment({ rateId: av.rate_id, quotId: av.quot_id });
-    avLabel = {
-      status: 'purchased',
-      // eShip's /shipment response identifies the shipment via `object_id`
-      // (verified on apiqa; there is no `shipment_id`). Keep a legacy fallback.
-      shipmentId: shipment.object_id || shipment.shipment_id || null,
-      trackingNumber: shipment.tracking_number || null,
-      labelUrl: shipment.label_url || null,
-      carrier: av.carrier || null,
-      servicelevel: av.servicelevel || null,
-      purchasedAt: new Date().toISOString(),
-    };
-  } catch (e) {
-    // A carrier failure must not wedge the transaction; record it so the seller
-    // sees a "Generar guía" retry and an operator can investigate.
-    avLabel = {
-      status: 'failed',
-      error: describeEshipError(e),
-      rate_id: av.rate_id,
-      failedAt: new Date().toISOString(),
-    };
+  const transactionId = transactionIdOf(tx);
+  const labelStore = store || createShippingLabelStore();
+  const claim = await labelStore.claim({
+    transactionId,
+    rateId: av.rate_id,
+    claimedBy,
+    force,
+    confirmUnknown,
+  });
+
+  if (!claim) {
+    const row = await labelStore.get(transactionId);
+    const label = labelFromStoreRow(row, av) || existing;
+    if (label?.status === 'purchased' && existing?.status !== 'purchased') {
+      await syncLabelMetadata(sdk, tx, label);
+    }
+    return label;
   }
 
-  await sdk.transactions.updateMetadata({ id: tx.id, metadata: { avLabel } });
+  let shipment;
+  let shipmentId;
+  try {
+    shipment = await createShipment({ rateId: av.rate_id });
+    shipmentId = validateShipment(shipment);
+  } catch (error) {
+    const unknown = isUnknownCarrierOutcome(error);
+    const status = unknown ? 'unknown' : 'failed';
+    const message = describeEshipError(error);
+    const timestamp = new Date().toISOString();
+    const avLabel = {
+      status,
+      error: message,
+      rate_id: av.rate_id,
+      ...(unknown ? { unknownAt: timestamp } : { failedAt: timestamp }),
+    };
+
+    try {
+      await labelStore.finish(transactionId, claim.claim_token, { status, error: message });
+    } catch (_) {
+      throw new LabelPurchaseUnknownError(
+        'The eShip outcome could not be finalized; verify the carrier before retrying'
+      );
+    }
+    await syncLabelMetadata(sdk, tx, avLabel);
+    return avLabel;
+  }
+
+  const avLabel = {
+    status: 'purchased',
+    shipmentId,
+    trackingNumber: shipment.tracking_number || null,
+    labelUrl: shipment.label_url,
+    carrier: av.carrier || null,
+    servicelevel: av.servicelevel || null,
+    purchasedAt: new Date().toISOString(),
+  };
+
+  // The durable outcome is committed before best-effort Sharetribe metadata.
+  // If metadata fails, the next request reads this row and syncs without buying.
+  try {
+    await labelStore.finish(transactionId, claim.claim_token, {
+      status: 'purchased',
+      shipmentData: avLabel,
+    });
+  } catch (_) {
+    throw new LabelPurchaseUnknownError(
+      'eShip accepted the label but its durable purchase record could not be finalized'
+    );
+  }
+  await syncLabelMetadata(sdk, tx, avLabel);
   return avLabel;
 }
 
-// Auto path: called from the event poller for every transaction event. Gates on
-// the confirm-payment transition, fetches the FRESH transaction (so the metadata
-// idempotency marker is authoritative across dyno restarts / replayed events),
-// and delegates. Resilient by design: a label failure is recorded inside
-// buyLabelForTransaction, and any infra error (SDK fetch/write) is logged and
-// swallowed so it never blocks the poll loop or cursor advancement.
 async function maybeBuyLabelForEvent(sdk, resource) {
+  if (!isShippingLabelsEnabled()) return null;
   const transition = resource?.attributes?.lastTransition || '';
   if (!LABEL_BUY_TRANSITIONS.has(transition)) return null;
   const txId = resource?.id;
@@ -81,11 +186,21 @@ async function maybeBuyLabelForEvent(sdk, resource) {
     const res = await sdk.transactions.show({ id: txId });
     const tx = res?.data?.data;
     if (!tx) return null;
-    return await buyLabelForTransaction(sdk, tx, { force: false });
-  } catch (e) {
-    console.error('[shipmentService] auto label buy failed:', e && (e.message || e));
+    return await buyLabelForTransaction(sdk, tx, {
+      force: false,
+      claimedBy: 'event-poller',
+    });
+  } catch (error) {
+    console.error('[shipmentService] auto label buy failed:', error?.message || error);
     return null;
   }
 }
 
-module.exports = { buyLabelForTransaction, maybeBuyLabelForEvent };
+module.exports = {
+  LabelNotAllowedError,
+  LabelPurchaseUnknownError,
+  buyLabelForTransaction,
+  isLabelPurchaseAllowed,
+  maybeBuyLabelForEvent,
+  validateShipment,
+};

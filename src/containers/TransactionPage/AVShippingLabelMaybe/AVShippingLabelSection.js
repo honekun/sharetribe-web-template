@@ -2,6 +2,19 @@ import React, { useState } from 'react';
 import { apiBaseUrl } from '../../../util/api';
 import AVShippingLabelMaybe from './AVShippingLabelMaybe';
 
+const LABEL_BUY_TRANSITION = 'transition/confirm-payment';
+
+export const canGenerateShippingLabel = transaction => {
+  const attributes = transaction?.attributes || {};
+  const transitions = (attributes.transitions || [])
+    .map(item => item?.transition || item)
+    .filter(Boolean);
+  if (attributes.lastTransition) transitions.push(attributes.lastTransition);
+  const paid = transitions.includes(LABEL_BUY_TRANSITION);
+  const canceled = transitions.some(name => /(^|\/)(?:auto-|operator-)?cancel/.test(name));
+  return paid && !canceled;
+};
+
 /**
  * Self-contained provider-side wrapper around AVShippingLabelMaybe.
  *
@@ -23,6 +36,8 @@ const AVShippingLabelSection = props => {
   const avShipping = transaction?.attributes?.protectedData?.avShipping || null;
   const avLabel = freshLabel || transaction?.attributes?.metadata?.avLabel || null;
   const transactionId = transaction?.id?.uuid;
+  const hasUncertainAttempt = ['processing', 'unknown'].includes(avLabel?.status);
+  const canGenerate = canGenerateShippingLabel(transaction) && !hasUncertainAttempt;
 
   const handleGenerate = () => {
     if (!transactionId) return;
@@ -52,6 +67,7 @@ const AVShippingLabelSection = props => {
     <AVShippingLabelMaybe
       avShipping={avShipping}
       avLabel={avLabel}
+      canGenerate={canGenerate}
       onGenerate={handleGenerate}
       inProgress={inProgress}
       error={error}

@@ -1,17 +1,44 @@
-// Mock devLogger to prevent issues during testing
+'use strict';
+
 jest.mock('../log.js', () => ({
   devLogger: jest.fn(),
 }));
 
-const { createLRUCache } = require('./cache');
+const { createLRUCache, createTTLCache } = require('./cache');
+
+describe('createTTLCache', () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('deletes an expired entry when it is read', () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-07-20T00:00:00.000Z'));
+    const cache = createTTLCache(1);
+    cache.token = 'value';
+
+    jest.advanceTimersByTime(1001);
+
+    expect(cache.token.data).toBeNull();
+    expect(Object.keys(cache)).not.toContain('token');
+  });
+
+  it('evicts the oldest entry when maxEntries is reached', () => {
+    const cache = createTTLCache(60, { maxEntries: 2 });
+    cache.first = 'a';
+    cache.second = 'b';
+    cache.third = 'c';
+
+    expect(cache.first.data).toBeNull();
+    expect(cache.second.data).toBe('b');
+    expect(cache.third.data).toBe('c');
+  });
+});
 
 describe('LRUcache', () => {
   it('Set and get', () => {
     const memoryStore = { cache: new Map(), totalBytes: 0 };
     const cache = createLRUCache({ memoryStore, maxBytes: 32, ttl: 60 });
-    // Set
     cache.xProp = 'x';
-    // Get
     expect(cache.xProp.data).toEqual('x');
     expect(cache.xProp.bytes).toEqual(1);
     expect(cache.xProp.expiresAt).toBeGreaterThan(Date.now());
@@ -28,7 +55,7 @@ describe('LRUcache', () => {
     const memoryStore = { cache: new Map(), totalBytes: 0 };
     const cache = createLRUCache({ memoryStore, maxBytes: 4, ttl: 60 });
     for (let i = 0; i < 10; i++) {
-      // Note: this cache implementation only counts the bytes of cached values - not the keys and metadata
+      // This cache implementation counts value bytes, not keys and metadata.
       cache[`x${i}`] = 'x';
     }
     expect([...memoryStore.cache.keys()]).toEqual(['x6', 'x7', 'x8', 'x9']);
@@ -37,7 +64,6 @@ describe('LRUcache', () => {
 
   it('cache does not return expired properties', () => {
     const prefilledCache = new Map();
-    // Add expired property
     prefilledCache.set('xProp', { data: 'x', bytes: 1, expiresAt: 1735827232551 });
 
     const memoryStore = { cache: prefilledCache, totalBytes: 1 };
@@ -46,7 +72,6 @@ describe('LRUcache', () => {
 
     expect(data).toBeNull();
     expect(bytes).toEqual(0);
-    // Expired property is deleted from the memory / Map when [[get]] trap is called
     expect(memoryStore.cache.get('xProp')).toBeUndefined();
   });
 
@@ -68,11 +93,10 @@ describe('LRUcache', () => {
     const memoryStore = { cache: new Map(), totalBytes: 0 };
     const cache = createLRUCache({ memoryStore, maxBytes: 4, ttl: 60 });
 
-    // create x0 - x9
     for (let i = 0; i < 10; i++) {
       cache[`x${i}`] = 'x';
     }
-    cache.x6; // x6 is accessed after x9
+    cache.x6;
     cache.x10 = 'x';
 
     expect([...memoryStore.cache.keys()]).toEqual(['x8', 'x9', 'x6', 'x10']);

@@ -628,6 +628,11 @@ export const CheckoutPageWithPayment = props => {
     effectiveDeliveryMethod === 'shipping' &&
     !isEspecialSize(avPackageSize) &&
     !hasTransactionPassedPendingPayment(existingTransaction, process);
+  const isManualShipping =
+    isPurchase &&
+    effectiveDeliveryMethod === 'shipping' &&
+    isEspecialSize(avPackageSize) &&
+    !hasTransactionPassedPendingPayment(existingTransaction, process);
   const buyerEmail = currentUser?.attributes?.email || null;
   const lastDestinationRef = useRef(null);
 
@@ -782,10 +787,22 @@ export const CheckoutPageWithPayment = props => {
                       onRetry={handleRetryQuote}
                       onContactSeller={handleContactSeller}
                     />
+                  ) : isManualShipping ? (
+                    <AVShippingSelector
+                      status="error"
+                      errorCode="ESPECIAL"
+                      express={null}
+                      estandar={null}
+                      rawRates={[]}
+                      selectedType={null}
+                      onSelect={() => {}}
+                      onRetry={() => {}}
+                      onContactSeller={handleContactSeller}
+                    />
                   ) : null
                 }
                 onShippingValuesChange={isAvShipping ? handleShippingValuesChange : undefined}
-                submitDisabledExtra={isAvShipping && !selectedShippingType}
+                submitDisabledExtra={isManualShipping || (isAvShipping && !selectedShippingType)}
                 className={css.paymentForm}
                 onSubmit={values =>
                   handleSubmit(values, process, props, stripe, submitting, setSubmitting)

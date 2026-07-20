@@ -13,6 +13,7 @@ describe('notification readiness', () => {
     process.env = {
       ...ORIGINAL_ENV,
       AV_NOTIFICATIONS_ENABLED: 'true',
+      AV_SHIPPING_LABELS_ENABLED: 'false',
       AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED: 'false',
       AV_BREVO_CAMPAIGNS_ENABLED: 'false',
       AV_WHATSAPP_NOTIFICATIONS_ENABLED: 'false',
@@ -54,6 +55,12 @@ describe('notification readiness', () => {
         })
         .mockResolvedValueOnce({
           rows: [{ count: 9 }],
+        })
+        .mockResolvedValueOnce({
+          rows: [
+            { status: 'purchased', count: 7 },
+            { status: 'unknown', count: 1 },
+          ],
         }),
     };
 
@@ -69,6 +76,7 @@ describe('notification readiness', () => {
         deliveriesByStatus: { sent: 12, unknown: 1 },
         jobsByStatus: { pending: 3, sent: 4 },
         marketingPreferences: 9,
+        shippingLabelsByStatus: { purchased: 7, unknown: 1 },
       })
     );
     expect(readiness.metrics).toEqual({ poller: { lastSequenceId: 321 } });

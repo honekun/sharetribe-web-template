@@ -10,6 +10,8 @@ const makeTx = ({ avShipping, avLabel } = {}) => ({
   attributes: {
     protectedData: avShipping ? { avShipping } : {},
     metadata: avLabel ? { avLabel } : {},
+    lastTransition: 'transition/confirm-payment',
+    transitions: [{ transition: 'transition/confirm-payment' }],
   },
 });
 
@@ -68,5 +70,25 @@ describe('AVShippingLabelSection', () => {
     await userEvent.click(screen.getByRole('button', { name: 'AVShippingLabel.generate' }));
 
     await waitFor(() => expect(screen.getByText('AVShippingLabel.error')).toBeInTheDocument());
+  });
+
+  it('does not offer to buy a label before payment', () => {
+    const transaction = makeTx({ avShipping: RATE });
+    transaction.attributes.lastTransition = 'transition/request-payment';
+    transaction.attributes.transitions = [{ transition: 'transition/request-payment' }];
+
+    const { container } = render(<AVShippingLabelSection transaction={transaction} />);
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('does not offer to buy a label after cancellation', () => {
+    const transaction = makeTx({ avShipping: RATE });
+    transaction.attributes.lastTransition = 'transition/cancel';
+    transaction.attributes.transitions.push({ transition: 'transition/cancel' });
+
+    const { container } = render(<AVShippingLabelSection transaction={transaction} />);
+
+    expect(container).toBeEmptyDOMElement();
   });
 });

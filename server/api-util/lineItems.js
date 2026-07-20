@@ -15,7 +15,13 @@ const { resolveBucketPrice } = require('../services/shippingQuoteService');
  * @param {*} publicData should contain shipping prices
  * @param {*} currency should point to the currency of listing's price.
  */
-const getItemQuantityAndLineItems = async (orderData, publicData, currency, listing) => {
+const getItemQuantityAndLineItems = async (
+  orderData,
+  publicData,
+  currency,
+  listing,
+  options = {}
+) => {
   // Check delivery method and shipping prices
   const quantity = orderData ? orderData.stockReservationQuantity : null;
   const deliveryMethod = orderData && orderData.deliveryMethod;
@@ -26,16 +32,18 @@ const getItemQuantityAndLineItems = async (orderData, publicData, currency, list
   // Only resolve once the buyer has actually chosen a delivery type — the initial
   // speculate (on checkout load) has no type/token/destination yet, and quoting
   // then would hit eShip with no address and fail the whole speculation.
-  const resolved =
-    isShipping && orderData?.avShippingType
-      ? await resolveBucketPrice({
-          quoteToken: orderData?.avQuoteToken,
-          avShippingType: orderData?.avShippingType,
-          listing,
-          destination: orderData?.avDestination,
-          buyerEmail: orderData?.buyerEmail,
-        })
-      : null;
+  const hasPreResolvedRate = Object.prototype.hasOwnProperty.call(options, 'resolvedShippingRate');
+  const resolved = hasPreResolvedRate
+    ? options.resolvedShippingRate
+    : isShipping && orderData?.avShippingType
+    ? await resolveBucketPrice({
+        quoteToken: orderData?.avQuoteToken,
+        avShippingType: orderData?.avShippingType,
+        listing,
+        destination: orderData?.avDestination,
+        buyerEmail: orderData?.buyerEmail,
+      })
+    : null;
 
   const shippingFee = !isShipping
     ? null
@@ -155,7 +163,8 @@ exports.transactionLineItems = async (
   listing,
   orderData,
   providerCommission,
-  customerCommission
+  customerCommission,
+  options = {}
 ) => {
   const publicData = listing.attributes.publicData;
   // Note: the unitType needs to be one of the following:
@@ -198,7 +207,7 @@ exports.transactionLineItems = async (
   // E.g. by default, "shipping-fee" is tied to 'item' aka buying products.
   const quantityAndExtraLineItems =
     unitType === 'item'
-      ? await getItemQuantityAndLineItems(orderData, publicData, currency, listing)
+      ? await getItemQuantityAndLineItems(orderData, publicData, currency, listing, options)
       : unitType === 'fixed'
       ? getFixedQuantityAndLineItems(orderData)
       : unitType === 'hour'

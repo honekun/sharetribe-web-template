@@ -47,4 +47,12 @@ describe('AVShippingLabelMaybe', () => {
     render(<AVShippingLabelMaybe avShipping={RATE} avLabel={null} inProgress={true} />);
     expect(screen.getByRole('button')).toBeDisabled();
   });
+
+  it('shows an uncertain attempt without offering another purchase', () => {
+    render(
+      <AVShippingLabelMaybe avShipping={RATE} avLabel={{ status: 'unknown' }} canGenerate={false} />
+    );
+    expect(screen.getByText('AVShippingLabel.error')).toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
 });

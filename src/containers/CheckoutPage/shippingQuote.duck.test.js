@@ -7,7 +7,9 @@ import reducer, {
 
 describe('shippingQuote reducer', () => {
   it('sets quoting on request', () => {
-    expect(reducer(undefined, { type: QUOTE_REQUEST }).status).toBe('quoting');
+    expect(reducer(undefined, { type: QUOTE_REQUEST, payload: { requestId: 1 } })).toEqual(
+      expect.objectContaining({ status: 'quoting', activeRequestId: 1 })
+    );
   });
 
   it('stores the payload on success', () => {
@@ -17,16 +19,44 @@ describe('shippingQuote reducer', () => {
       estandar: null,
       rawRates: [],
     };
-    const s = reducer(undefined, { type: QUOTE_SUCCESS, payload });
+    const requesting = reducer(undefined, { type: QUOTE_REQUEST, payload: { requestId: 1 } });
+    const s = reducer(requesting, {
+      type: QUOTE_SUCCESS,
+      payload: { requestId: 1, quote: payload },
+    });
     expect(s.status).toBe('quoted');
     expect(s.quoteToken).toBe('t');
     expect(s.express.amountSubunits).toBe(11800);
   });
 
   it('stores the error code on error', () => {
-    const s = reducer(undefined, { type: QUOTE_ERROR, payload: 'NO_ORIGIN' });
+    const requesting = reducer(undefined, { type: QUOTE_REQUEST, payload: { requestId: 1 } });
+    const s = reducer(requesting, {
+      type: QUOTE_ERROR,
+      payload: { requestId: 1, code: 'NO_ORIGIN' },
+    });
     expect(s.status).toBe('error');
     expect(s.errorCode).toBe('NO_ORIGIN');
+  });
+
+  it('ignores a stale response after a newer quote request starts', () => {
+    const first = reducer(undefined, {
+      type: QUOTE_REQUEST,
+      payload: { requestId: 1 },
+    });
+    const second = reducer(first, {
+      type: QUOTE_REQUEST,
+      payload: { requestId: 2 },
+    });
+    const stale = reducer(second, {
+      type: QUOTE_SUCCESS,
+      payload: {
+        requestId: 1,
+        quote: { quoteToken: 'stale', express: { amountSubunits: 1 } },
+      },
+    });
+    expect(stale).toBe(second);
+    expect(stale.activeRequestId).toBe(2);
   });
 });
 
@@ -60,7 +90,7 @@ describe('fetchShippingQuote thunk', () => {
     const dispatched = [];
     await fetchShippingQuote(args)(a => dispatched.push(a));
     expect(dispatched.map(a => a.type)).toEqual([QUOTE_REQUEST, QUOTE_ERROR]);
-    expect(dispatched[1].payload).toBe('NO_ORIGIN');
+    expect(dispatched[1].payload.code).toBe('NO_ORIGIN');
   });
 
   it('dispatches ESHIP_ERROR when fetch rejects', async () => {
@@ -68,6 +98,6 @@ describe('fetchShippingQuote thunk', () => {
     const dispatched = [];
     await fetchShippingQuote(args)(a => dispatched.push(a));
     expect(dispatched[1].type).toBe(QUOTE_ERROR);
-    expect(dispatched[1].payload).toBe('ESHIP_ERROR');
+    expect(dispatched[1].payload.code).toBe('ESHIP_ERROR');
   });
 });

@@ -12,10 +12,10 @@ const {
   bucketForRate,
 } = require('../../src/config/configAVShipping');
 
-// quoteToken -> { nacionalExpress?, nacionalEstandar?, rawRates, quot_id, ts }.
-// TTL 15 min. The TTL cache is a Proxy: read with `cache[key].data`, write with
-// `cache[key] = value` (same usage as server/api/my-balance.js summaryCache).
-const quoteCache = createTTLCache(15 * 60);
+// quoteToken -> { nacionalExpress?, nacionalEstandar?, rawRates, quot_id,
+// contextHash, ts }. Entries are short lived and bounded because every buyer
+// request creates a unique token.
+const quoteCache = createTTLCache(15 * 60, { maxEntries: 1000 });
 
 class NoOriginError extends Error {
   constructor() {
@@ -98,6 +98,31 @@ function toEshipAddress(addr, fallbackEmail) {
   };
 }
 
+const normalizedString = value => String(value || '').trim();
+
+// Bind a quote token to the listing, seller, parcel and destination it was
+// created for. Only these fixed fields are hashed, so extra client properties
+// cannot change the identity of an otherwise identical address.
+function quoteContextHash(listing, destination) {
+  const authorId =
+    listing?.author?.id?.uuid || listing?.relationships?.author?.data?.id?.uuid || '';
+  const normalizedDestination = toEshipAddress(destination || {});
+  delete normalizedDestination.email;
+  Object.keys(normalizedDestination).forEach(key => {
+    normalizedDestination[key] = normalizedString(normalizedDestination[key]);
+  });
+  const context = {
+    listingId: listing?.id?.uuid || '',
+    authorId,
+    parcel: resolveParcel(listing),
+    destination: normalizedDestination,
+  };
+  return crypto
+    .createHash('sha256')
+    .update(JSON.stringify(context))
+    .digest('hex');
+}
+
 function rawRateView(rate) {
   return {
     rate_id: rate.rate_id,
@@ -154,7 +179,12 @@ async function runQuote({ listing, destination, buyerEmail }) {
 async function quoteForCheckout({ listing, destination, buyerEmail }) {
   const { quot_id, buckets } = await runQuote({ listing, destination, buyerEmail });
   const quoteToken = crypto.randomUUID();
-  quoteCache[quoteToken] = { ...buckets, quot_id, ts: Date.now() };
+  quoteCache[quoteToken] = {
+    ...buckets,
+    quot_id,
+    contextHash: quoteContextHash(listing, destination),
+    ts: Date.now(),
+  };
   return {
     quoteToken,
     express: buckets.nacionalExpress || null,
@@ -175,11 +205,13 @@ async function resolveBucketPrice({
   if (!avShippingType) return null;
   if (isEspecialSize(resolvePackageSize(listing?.attributes?.publicData || {}))) return null;
   const { data: cached } = (quoteToken && quoteCache[quoteToken]) || {};
-  let bucket = cached ? cached[avShippingType] : null;
-  let quot_id = cached ? cached.quot_id : null;
+  const contextMatches =
+    cached && destination && cached.contextHash === quoteContextHash(listing, destination);
+  let bucket = contextMatches ? cached[avShippingType] : null;
+  let quot_id = contextMatches ? cached.quot_id : null;
   if (!bucket) {
-    // Cache miss (expired / different dyno / unknown token) -> re-quote. We can
-    // only re-quote with a destination; without one, there's nothing to resolve.
+    // Cache miss or mismatched listing/destination -> re-quote. We can only
+    // re-quote with an authoritative destination.
     if (!destination) return null;
     const requoted = await runQuote({ listing, destination, buyerEmail });
     bucket = requoted.buckets[avShippingType] || null;
@@ -195,6 +227,7 @@ module.exports = {
   resolveParcel,
   resolveOrigin,
   buildBuckets,
+  quoteContextHash,
   quoteForCheckout,
   resolveBucketPrice,
   NoOriginError,

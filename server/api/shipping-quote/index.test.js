@@ -4,6 +4,7 @@ jest.mock('../../api-util/sdk');
 jest.mock('../../services/shippingQuoteService');
 const { getSdk } = require('../../api-util/sdk');
 const svc = require('../../services/shippingQuoteService');
+const rateLimiter = require('./rateLimiter');
 const router = require('./index');
 
 // Pull the POST /quote handler off the router (mirrors server/api/brevo.test.js).
@@ -48,8 +49,18 @@ const body = {
 let showMock;
 beforeEach(() => {
   jest.clearAllMocks();
+  rateLimiter._test.store.clear();
   showMock = jest.fn(async () => listingShow());
-  getSdk.mockReturnValue({ listings: { show: showMock } });
+  getSdk.mockReturnValue({
+    currentUser: {
+      show: jest.fn().mockResolvedValue({
+        data: {
+          data: { id: { uuid: 'buyer-1' }, attributes: { email: 'signed-in@example.com' } },
+        },
+      }),
+    },
+    listings: { show: showMock },
+  });
 });
 
 it('fetches the listing with the author included (relationships need include)', async () => {
@@ -83,6 +94,47 @@ it('returns 400 when listingId or destination is missing', async () => {
   await getQuoteHandler()(createReq({ listingId: 'l1' }), res);
   expect(res.statusCode).toBe(400);
   expect(res.body.code).toBe('BAD_REQUEST');
+});
+
+it('returns 401 before quoting when the caller is not authenticated', async () => {
+  getSdk.mockReturnValue({
+    currentUser: { show: jest.fn().mockResolvedValue({ data: { data: null } }) },
+    listings: { show: showMock },
+  });
+  const res = createRes();
+  await getQuoteHandler()(createReq(body), res);
+  expect(res.statusCode).toBe(401);
+  expect(svc.quoteForCheckout).not.toHaveBeenCalled();
+});
+
+it('uses the signed-in user email instead of the client-supplied email', async () => {
+  svc.quoteForCheckout.mockResolvedValue({
+    quoteToken: 't',
+    express: null,
+    estandar: null,
+    rawRates: [],
+  });
+  await getQuoteHandler()(createReq({ ...body, buyerEmail: 'spoofed@example.com' }), createRes());
+  expect(svc.quoteForCheckout).toHaveBeenCalledWith(
+    expect.objectContaining({ buyerEmail: 'signed-in@example.com' })
+  );
+});
+
+it('rate-limits repeated quote requests per authenticated user', async () => {
+  svc.quoteForCheckout.mockResolvedValue({
+    quoteToken: 't',
+    express: null,
+    estandar: null,
+    rawRates: [],
+  });
+  let res;
+  for (let i = 0; i <= rateLimiter._test.MAX_PER_MINUTE; i++) {
+    res = createRes();
+    // eslint-disable-next-line no-await-in-loop
+    await getQuoteHandler()(createReq(body), res);
+  }
+  expect(res.statusCode).toBe(429);
+  expect(res.body.code).toBe('RATE_LIMITED');
 });
 
 it('maps NoOriginError to 409 NO_ORIGIN', async () => {

@@ -12,6 +12,7 @@ jest.mock('./notificationDelivery', () => ({
 }));
 jest.mock('./notificationConfig', () => ({
   isMarketingCampaignsEnabled: jest.fn(),
+  isShippingLabelsEnabled: jest.fn(),
   isWelcomeEmailEnabled: jest.fn(),
   isWhatsAppEnabled: jest.fn(),
 }));
@@ -35,6 +36,7 @@ const { getAdminPhone } = require('./whatsappService');
 const { deliverNotification } = require('./notificationDelivery');
 const {
   isMarketingCampaignsEnabled,
+  isShippingLabelsEnabled,
   isWelcomeEmailEnabled,
   isWhatsAppEnabled,
 } = require('./notificationConfig');
@@ -83,6 +85,7 @@ describe('event poller cursor queries', () => {
     deliverNotification.mockResolvedValue({ status: 'sent' });
     getAdminPhone.mockReturnValue('+525500000001');
     isWelcomeEmailEnabled.mockReturnValue(true);
+    isShippingLabelsEnabled.mockReturnValue(false);
     isMarketingCampaignsEnabled.mockReturnValue(false);
     isWhatsAppEnabled.mockReturnValue(true);
     leadership.release.mockResolvedValue();

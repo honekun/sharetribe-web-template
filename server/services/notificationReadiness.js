@@ -15,13 +15,20 @@ async function getNotificationReadiness({ pool = null } = {}) {
     heartbeatAt: null,
     deliveriesByStatus: {},
     jobsByStatus: {},
+    shippingLabelsByStatus: {},
     marketingPreferences: 0,
   };
 
   if (config.poller.enabled && process.env.DATABASE_URL) {
     try {
       const databasePool = pool || getPostgresPool();
-      const [stateResult, deliveryResult, jobsResult, preferencesResult] = await Promise.all([
+      const [
+        stateResult,
+        deliveryResult,
+        jobsResult,
+        preferencesResult,
+        shippingLabelsResult,
+      ] = await Promise.all([
         databasePool.query(
           `SELECT last_sequence_id, owner_id, heartbeat_at
            FROM av_notification_event_poller_state
@@ -41,6 +48,11 @@ async function getNotificationReadiness({ pool = null } = {}) {
           `SELECT COUNT(*)::integer AS count
            FROM av_marketing_preferences`
         ),
+        databasePool.query(
+          `SELECT status, COUNT(*)::integer AS count
+           FROM av_shipping_label_attempts
+           GROUP BY status`
+        ),
       ]);
       const pollerState = stateResult.rows[0] || {};
       database.ready = stateResult.rowCount === 1;
@@ -55,6 +67,9 @@ async function getNotificationReadiness({ pool = null } = {}) {
         jobsResult.rows.map(row => [row.status, row.count])
       );
       database.marketingPreferences = preferencesResult.rows[0]?.count || 0;
+      database.shippingLabelsByStatus = Object.fromEntries(
+        shippingLabelsResult.rows.map(row => [row.status, row.count])
+      );
     } catch (err) {
       database.ready = false;
       database.error = 'notification_database_unavailable_or_unmigrated';
