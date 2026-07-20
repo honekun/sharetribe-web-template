@@ -17,6 +17,7 @@ const instagramRouter = require('./api/instagram');
 const myBalanceRouter = require('./api/my-balance');
 const bulkImportRouter = require('./api/bulk-import');
 const shippingQuoteRouter = require('./api/shipping-quote');
+const shippingLabelRouter = require('./api/shipping-label');
 const notificationsRouter = require('./api/notifications');
 
 const mountCustomApiRoutes = app => {
@@ -25,6 +26,7 @@ const mountCustomApiRoutes = app => {
   app.use('/api/my-balance', myBalanceRouter);
   app.use('/api/bulk-import', bulkImportRouter);
   app.use('/api/shipping', shippingQuoteRouter);
+  app.use('/api/shipping', shippingLabelRouter);
   app.use('/api/notifications', notificationsRouter);
 };
 

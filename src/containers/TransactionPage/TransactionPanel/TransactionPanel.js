@@ -191,6 +191,7 @@ export class TransactionPanelComponent extends Component {
       config,
       hasViewingRights,
       transactionFieldsComponent,
+      shippingLabelSlot, // AV: provider-side eShip label control (Spec B)
     } = this.props;
 
     const hasTransitions = transitions.length > 0;
@@ -328,6 +329,8 @@ export class TransactionPanelComponent extends Component {
                   listing={listing}
                   showBookingLocation={showBookingLocation}
                 />
+                {/* AV: eShip shipping label — provider only (Spec B) */}
+                {shippingLabelSlot}
               </div>
             ) : null}
             <FeedSection

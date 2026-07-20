@@ -47,21 +47,23 @@ class EshipTimeoutError extends Error {
   }
 }
 
-// POST {base}/quotation. Returns the parsed quotation object ({ quot_id, rates }).
-async function quote({ addressFrom, addressTo, parcels }) {
+// POST {base}/{path} with a Bearer-authed JSON body. Returns the parsed JSON.
+// Shared by quote() and createShipment() so both handle auth, timeout, and the
+// non-JSON-error capture identically.
+async function eshipPost(path, payload) {
   const apiKey = process.env.ESHIP_API_KEY;
   if (!apiKey) throw new EshipApiError(401, { error: 'ESHIP_API_KEY missing' });
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
   try {
-    const response = await fetch(`${eshipBaseUrl}/quotation`, {
+    const response = await fetch(`${eshipBaseUrl}/${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({ address_from: addressFrom, address_to: addressTo, parcels }),
+      body: JSON.stringify(payload),
       signal: controller.signal,
     });
     if (!response.ok) {
@@ -84,4 +86,15 @@ async function quote({ addressFrom, addressTo, parcels }) {
   }
 }
 
-module.exports = { quote, EshipApiError, EshipTimeoutError, describeEshipError };
+// POST {base}/quotation. Returns the parsed quotation object ({ quot_id, rates }).
+async function quote({ addressFrom, addressTo, parcels }) {
+  return eshipPost('quotation', { address_from: addressFrom, address_to: addressTo, parcels });
+}
+
+// POST {base}/shipment. Buys the label for a previously-quoted rate. Returns the
+// parsed shipment object ({ shipment_id, tracking_number, label_url, ... }).
+async function createShipment({ rateId, quotId }) {
+  return eshipPost('shipment', { rate_id: rateId, quot_id: quotId });
+}
+
+module.exports = { quote, createShipment, EshipApiError, EshipTimeoutError, describeEshipError };

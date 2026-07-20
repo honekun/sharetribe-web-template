@@ -1,6 +1,7 @@
 'use strict';
 
 const { getIntegrationSdk } = require('./integrationSdk');
+const { maybeBuyLabelForEvent } = require('./shipmentService');
 const { getAdminPhone, lookupUserPhone } = require('./whatsappService');
 const { claimOwnership, loadCursor, releaseOwnership, saveCursor } = require('./eventPollerCursor');
 const { getLeadership } = require('./eventPollerLeadership');
@@ -401,6 +402,9 @@ async function pollEvents(options = {}) {
             eventType === 'transaction/transitioned'
           ) {
             await handleTransactionEvent(eventId, resource, ownerId);
+            // Spec B: buy the eShip label once payment is confirmed. Independent
+            // of the WhatsApp gate above; self-contained failure handling.
+            await maybeBuyLabelForEvent(getIntegrationSdk(), resource);
           } else if (eventType === 'message/created') {
             await handleMessageEvent(eventId, resource, ownerId);
           } else if (eventType === 'listing/created' || eventType === 'listing/updated') {

@@ -1,0 +1,26 @@
+.root {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--colorGrey100);
+}
+
+.heading {
+  composes: h4 from global;
+  margin: 0 0 12px 0;
+}
+
+.downloadLink {
+  display: inline-block;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--marketplaceColor);
+}
+
+.generateButton {
+  min-height: 48px;
+}
+
+.error {
+  composes: h5 from global;
+  margin: 12px 0 0 0;
+  color: var(--colorFail);
+}
