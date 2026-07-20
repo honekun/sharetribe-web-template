@@ -2,7 +2,7 @@
 
 const fs = require('fs/promises');
 const path = require('path');
-const fetch = require('node-fetch');
+const { fetchWithTimeout } = require('../api-util/fetchWithTimeout');
 
 const {
   localDeliveryFailure,
@@ -87,7 +87,7 @@ async function sendBrevoEmail({
 
   let response;
   try {
-    response = await fetch(BREVO_EMAIL_URL, {
+    response = await fetchWithTimeout(BREVO_EMAIL_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

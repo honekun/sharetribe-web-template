@@ -73,7 +73,7 @@ async function syncBrevoPreference(evidence) {
 
 router.post('/subscribe', subscribeRateLimit, async (req, res) => {
   try {
-    const { email, hp, source, locale, policyVersion } = req.body || {};
+    const { email, hp, locale, policyVersion } = req.body || {};
     if (hp) return res.status(200).json({ ok: true });
     if (!isEmail(email)) return res.status(400).json({ ok: false, error: 'invalid_email' });
 
@@ -88,7 +88,9 @@ router.post('/subscribe', subscribeRateLimit, async (req, res) => {
     const evidence = {
       email: normalizeEmail(email),
       enabled: true,
-      source: source === 'footer_newsletter' ? source : 'footer_newsletter',
+      // Anonymous footer subscribe: always this source, and it may NOT lift an
+      // existing suppression (allowUnsuppress stays false).
+      source: 'footer_newsletter',
       locale: typeof locale === 'string' ? locale.slice(0, 16) : 'es',
       policyVersion:
         typeof policyVersion === 'string' && policyVersion.trim()
@@ -99,14 +101,20 @@ router.post('/subscribe', subscribeRateLimit, async (req, res) => {
       occurredAt: new Date().toISOString(),
     };
 
+    let preference;
     try {
-      await createMarketingConsentStore().setPreference(evidence);
+      preference = await createMarketingConsentStore().setPreference(evidence);
     } catch (err) {
       console.error('[brevo] consent record failed:', err);
       return res.status(503).json({ ok: false, error: 'consent_record_failed' });
     }
     try {
-      await syncBrevoPreference(evidence);
+      // Sync Brevo against the STORED state, not the raw request: a suppressed
+      // contact who re-submits the footer form stays off the list.
+      await syncBrevoPreference({
+        ...evidence,
+        enabled: Boolean(preference?.enabled) && !preference?.suppressed,
+      });
     } catch (err) {
       console.error('[brevo] contact subscription failed:', err);
       return res.status(502).json({ ok: false, error: 'brevo_subscribe_failed' });
@@ -119,9 +127,14 @@ router.post('/subscribe', subscribeRateLimit, async (req, res) => {
 });
 
 router.get('/preference', async (req, res) => {
+  let user;
   try {
-    const { user } = await currentUser(req, res);
-    if (!user.id) return res.status(401).json({ ok: false, error: 'authentication_required' });
+    ({ user } = await currentUser(req, res));
+  } catch (err) {
+    return res.status(401).json({ ok: false, error: 'authentication_required' });
+  }
+  if (!user.id) return res.status(401).json({ ok: false, error: 'authentication_required' });
+  try {
     const preference = await createMarketingConsentStore().getPreference({
       email: user.email,
       sharetribeUserId: user.id,
@@ -133,7 +146,9 @@ router.get('/preference', async (req, res) => {
       email: user.email,
     });
   } catch (err) {
-    return res.status(401).json({ ok: false, error: 'authentication_required' });
+    // A store outage is a server error, not an auth failure — don't mask it as 401.
+    console.error('[brevo] preference lookup failed:', err);
+    return res.status(503).json({ ok: false, error: 'preference_lookup_failed' });
   }
 });
 
@@ -162,10 +177,16 @@ router.put('/preference', preferenceRateLimit, async (req, res) => {
       policyVersion: DEFAULT_POLICY_VERSION,
       sharetribeUserId: user.id,
       ip: req.ip || null,
+      // The account owner explicitly toggling their own preference is authorized
+      // to lift a prior suppression (single-opt-in re-consent).
+      allowUnsuppress: true,
       occurredAt,
     };
-    await createMarketingConsentStore().setPreference(evidence);
-    await syncBrevoPreference(evidence);
+    const preference = await createMarketingConsentStore().setPreference(evidence);
+    await syncBrevoPreference({
+      ...evidence,
+      enabled: Boolean(preference?.enabled) && !preference?.suppressed,
+    });
     await sdk.currentUser.updateProfile({
       protectedData: {
         marketingConsent: enabled,
@@ -220,7 +241,8 @@ router.post('/engagement', engagementRateLimit, async (req, res) => {
 
 function validWebhookSecret(req) {
   const configured = process.env.BREVO_WEBHOOK_SECRET || '';
-  const provided = req.get('x-av-brevo-webhook-secret') || req.query.secret || '';
+  // Header only — a secret in the query string leaks into access/proxy logs.
+  const provided = req.get('x-av-brevo-webhook-secret') || '';
   const configuredBuffer = Buffer.from(configured);
   const providedBuffer = Buffer.from(String(provided));
   return (

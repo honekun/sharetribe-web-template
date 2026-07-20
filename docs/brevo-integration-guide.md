@@ -19,7 +19,7 @@ operations are documented in [`docs/notification-postgres.md`](./notification-po
 - [x] Brevo contact-list upsert/removal and delivery/suppression webhook handling are implemented.
 - [x] The seller guide exists at `public/static/files/ArchivoVintach-how-to.pdf` and is attached to
       seller welcome messages.
-- [x] Migrations `001` through `005` apply successfully to the local PostgreSQL container.
+- [x] Migrations `001` through `006` apply successfully to the local PostgreSQL container.
 - [x] Database leadership, cursor restoration, atomic delivery deduplication, confirmed retry, and
       verification cleanup pass with `yarn db:verify`.
 - [x] Server tests, frontend tests, and production builds passed for the implementation.
@@ -153,7 +153,7 @@ channels.
 | `BREVO_LIST_ID`                          | Footer/account sync or campaigns enabled           | Positive numeric ID of the dedicated consented-marketing list. It is required for consent syncing even when campaign sending is still disabled.                                         |
 | `BREVO_SENDER_EMAIL`                     | Welcome or campaigns enabled                       | Exact registered sender address on the authenticated domain.                                                                                                                            |
 | `BREVO_SENDER_NAME`                      | Welcome or campaigns enabled                       | Visible sender name, normally `Archivo Vintach`.                                                                                                                                        |
-| `BREVO_WEBHOOK_SECRET`                   | Campaigns enabled; recommended for any Brevo email | High-entropy shared secret accepted in the custom header or webhook query string.                                                                                                       |
+| `BREVO_WEBHOOK_SECRET`                   | Campaigns enabled; recommended for any Brevo email | High-entropy shared secret accepted only in the `x-av-brevo-webhook-secret` header (not the URL).                                                                                        |
 | `BREVO_CONSENT_ATTRIBUTES_ENABLED`       | Optional                                           | Set `true` only after all five contact attributes below exist. Restart after changing it. PostgreSQL remains authoritative.                                                             |
 | `BREVO_TEMPLATE_*`                       | Corresponding channel enabled                      | Positive numeric ID of an **active** Brevo transactional template.                                                                                                                      |
 
@@ -304,6 +304,12 @@ It locally suppresses and cancels pending promotional jobs for `unsubscribed`, `
 `hard_bounce`/`hardBounce`, and `blocked`. Soft bounces and delivered events update audit/delivery
 status but do not suppress.
 
+Suppression is **sticky**: once a contact is suppressed, the anonymous footer subscribe form cannot
+silently re-enable them (it would re-mail hard bounces and re-subscribe people who never proved
+ownership). Only an authenticated account-owner opt-in (`PUT /api/brevo/preference`) or a future
+double-opt-in can lift suppression. Delivery webhooks are idempotent — a duplicate Brevo delivery of
+the same `(message-id, event)` is deduplicated (migration `006`).
+
 ### Preferred webhook authentication
 
 Generate a different random secret for each environment, for example with:
@@ -312,19 +318,16 @@ Generate a different random secret for each environment, for example with:
 openssl rand -hex 32
 ```
 
-Store it as `BREVO_WEBHOOK_SECRET`. When the Brevo webhook configuration supports custom headers,
-send:
+Store it as `BREVO_WEBHOOK_SECRET`. The webhook is authenticated by a **custom header only** — the
+secret is deliberately not accepted in the URL, so it can't leak into access/proxy logs:
 
 ```text
 x-av-brevo-webhook-secret: THE_SAME_SECRET
 ```
 
-This is preferred because it keeps the secret out of the URL. If configuring through a dashboard
-flow that cannot send the custom header, use the supported fallback:
-
-```text
-https://MARKETPLACE_HOST/api/brevo/webhook?secret=THE_SAME_URL_ENCODED_SECRET
-```
+Configure the Brevo webhook to send this header. If the webhook flow you're using cannot send a
+custom header, that configuration is unsupported (a `?secret=` query string will be rejected with
+`401`).
 
 Keep `batched=false`; the endpoint accepts one Brevo event object per request. A valid event returns
 HTTP `204`. An invalid or missing secret returns `401`. A database failure returns `503`, allowing
@@ -454,7 +457,7 @@ yarn notifications:retry NOTIFICATION_KEY --confirm-unknown
 | Template sends but placeholders are visible                                             | Confirm New Template Language and exact uppercase/lowercase `params` names.                                                                                |
 | Email links point to the wrong host                                                     | Correct `REACT_APP_MARKETPLACE_ROOT_URL` and restart/redeploy.                                                                                             |
 | Welcome arrives without PDF                                                             | Confirm the committed file exists in the deployed artifact and the template uses New Template Language.                                                    |
-| Webhook returns `401`                                                                   | Confirm the deployed secret exactly matches the custom header or URL-decoded query value.                                                                  |
+| Webhook returns `401`                                                                   | Confirm the deployed secret exactly matches the `x-av-brevo-webhook-secret` header value (a `?secret=` query string is not accepted).                       |
 | Webhook events never arrive                                                             | Confirm type `transactional`, channel `email`, public HTTPS URL, selected events, `batched=false`, and Brevo webhook test/log status.                      |
 | Unsubscribe does not suppress                                                           | Confirm the template uses Brevo's supported unsubscribe link and the resulting webhook payload event is `unsubscribed`.                                    |
 | No process owns the poller                                                              | Check global flag, Integration API credentials, shared PostgreSQL, migration state, pool size of at least two, and process logs.                           |
