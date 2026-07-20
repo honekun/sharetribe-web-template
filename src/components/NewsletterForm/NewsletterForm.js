@@ -2,11 +2,26 @@ import React, { useState } from 'react';
 import { useIntl } from '../../util/reactIntl';
 import css from './NewsletterForm.module.css';
 
-const NewsletterForm = ({ className, disclaimerText = '', okMsg, errorMsg }) => {
+// Version of the marketing-consent copy shown below (NewsletterForm.disclaimerText).
+// Sent with each signup so the captured consent evidence (BR-03) is traceable to the
+// exact wording the user agreed to. Bump this whenever that disclaimer text changes.
+export const NEWSLETTER_CONSENT_VERSION = '2026-07-17';
+
+const NewsletterForm = ({
+  className,
+  disclaimerText = '',
+  okMsg,
+  errorMsg,
+  source = 'footer_newsletter',
+}) => {
   const intl = useIntl();
   const resolvedOkMsg = okMsg || intl.formatMessage({ id: 'NewsletterForm.successMessage' });
   const resolvedErrorMsg = errorMsg || intl.formatMessage({ id: 'NewsletterForm.errorMessage' });
   const [email, setEmail] = useState('');
+  // Honeypot: bound to the hidden field below so a bot that fills it actually
+  // reaches the server, which then rejects the request without calling Brevo.
+  // A real user never sees or fills this, so it stays ''.
+  const [hp, setHp] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState(null);
 
@@ -34,7 +49,15 @@ const NewsletterForm = ({ className, disclaimerText = '', okMsg, errorMsg }) => 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email: val, hp: '' }),
+        // source/locale/policyVersion feed the server-side consent-evidence record
+        // (BR-03); the server derives the user id and IP itself.
+        body: JSON.stringify({
+          email: val,
+          hp,
+          source,
+          locale: intl.locale,
+          policyVersion: NEWSLETTER_CONSENT_VERSION,
+        }),
       });
       const j = await r.json();
 
@@ -60,7 +83,14 @@ const NewsletterForm = ({ className, disclaimerText = '', okMsg, errorMsg }) => 
       <div style={{ position: 'absolute', left: '-9999px' }} aria-hidden="true">
         <label>
           Leave this field empty:
-          <input type="text" name="hp" tabIndex={-1} autoComplete="off" />
+          <input
+            type="text"
+            name="hp"
+            tabIndex={-1}
+            autoComplete="off"
+            value={hp}
+            onChange={e => setHp(e.target.value)}
+          />
         </label>
       </div>
 

@@ -2,10 +2,20 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as log from '../util/log';
 import { storableError } from '../util/errors';
 import { clearCurrentUser, fetchCurrentUser } from './user.duck';
-import { createUserWithIdp } from '../util/api';
+import { createUserWithIdp, updateMarketingPreference } from '../util/api';
 
 const authenticated = authInfo => authInfo?.isAnonymous === false;
 const loggedInAs = authInfo => authInfo?.isLoggedInAs === true;
+
+const syncSignupMarketingPreference = (params, source) => {
+  if (params?.protectedData?.marketingConsent !== true) return Promise.resolve();
+  return updateMarketingPreference({ enabled: true, source }).catch(e => {
+    // Account creation has already succeeded. The user/created event carries
+    // the same consent evidence and lets the notification poller repair local
+    // state if this immediate Brevo synchronization fails.
+    log.error(e, 'signup-marketing-consent-sync-failed');
+  });
+};
 
 // ================ Initial State ================ //
 
@@ -110,6 +120,7 @@ const signupThunk = createAsyncThunk(
       .then(() =>
         dispatch(loginThunk({ username: params.email, password: params.password })).unwrap()
       )
+      .then(() => syncSignupMarketingPreference(params, 'signup_email'))
       .then(() => params)
       .catch(e => {
         log.error(e, 'signup-failed', {
@@ -136,6 +147,7 @@ const signupWithIdpThunk = createAsyncThunk(
     const { rejectWithValue, dispatch } = thunkAPI;
     return createUserWithIdp(params)
       .then(() => dispatch(fetchCurrentUser({ afterLogin: true })))
+      .then(() => syncSignupMarketingPreference(params, 'signup_idp'))
       .then(() => params)
       .catch(e => {
         log.error(e, 'create-user-with-idp-failed', { params });

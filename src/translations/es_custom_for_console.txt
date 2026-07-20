@@ -62,7 +62,7 @@
   "NewsletterForm.errorMessage": "Error en la suscripción. Inténtalo más tarde.",
   "NewsletterForm.invalidEmail": "Introduce un email válido.",
   "NewsletterForm.networkError": "Error de red. Inténtalo de nuevo.",
-  "NewsletterForm.successMessage": "¡Gracias! Revisa tu bandeja de entrada.",
+  "NewsletterForm.successMessage": "¡Listo! Te suscribiste a nuestro boletín.",
   "RequestQuotePage.defaultMessageLabel": "Describe tus requisitos",
   "RequestQuotePage.defaultMessagePlaceholder": "¿Qué necesitas?",
   "RequestQuotePage.defaultMessageRequired": "Debes describir tus requisitos",

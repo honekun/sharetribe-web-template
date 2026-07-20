@@ -2,9 +2,9 @@ import React from 'react';
 import '@testing-library/jest-dom';
 
 import { renderWithProviders as render, testingLibrary } from '../../util/testHelpers';
-import NewsletterForm from './NewsletterForm';
+import NewsletterForm, { NEWSLETTER_CONSENT_VERSION } from './NewsletterForm';
 
-const { screen, userEvent, waitFor } = testingLibrary;
+const { screen, userEvent, fireEvent, waitFor } = testingLibrary;
 
 const messages = {
   'NewsletterForm.emailPlaceholder': 'you@example.com',
@@ -53,6 +53,52 @@ describe('NewsletterForm', () => {
       );
     });
     expect(await screen.findByText('Yay')).toBeInTheDocument();
+  });
+
+  it('sends an empty honeypot for a normal submission', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ ok: true }),
+    });
+    const user = userEvent.setup();
+    render(<NewsletterForm />, { messages });
+    await user.type(screen.getByPlaceholderText('you@example.com'), 'a@b.co');
+    await user.click(screen.getByRole('button'));
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    // Empty honeypot + consent-evidence fields for the server-side record (BR-03).
+    expect(body).toEqual(
+      expect.objectContaining({
+        email: 'a@b.co',
+        hp: '',
+        source: 'footer_newsletter',
+        policyVersion: NEWSLETTER_CONSENT_VERSION,
+      })
+    );
+    expect(typeof body.locale).toBe('string');
+  });
+
+  it('captures a filled honeypot and forwards it to the server', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ ok: true }),
+    });
+    const user = userEvent.setup();
+    render(<NewsletterForm />, { messages });
+
+    // A bot fills the hidden honeypot field (it's off-screen, so use a direct
+    // change event). The bound value must now reach the request payload so the
+    // server can reject it without calling Brevo.
+    const honeypot = document.querySelector('input[name="hp"]');
+    fireEvent.change(honeypot, { target: { value: 'i-am-a-bot' } });
+
+    await user.type(screen.getByPlaceholderText('you@example.com'), 'a@b.co');
+    await user.click(screen.getByRole('button'));
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.hp).toBe('i-am-a-bot');
   });
 
   it('shows an error message when the API returns ok: false', async () => {

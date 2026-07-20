@@ -67,6 +67,7 @@ import ReviewModal from './ReviewModal/ReviewModal';
 import RequestChangesModal from './RequestChangesModal/RequestChangesModal';
 import MakeCounterOfferModal from './MakeCounterOfferModal/MakeCounterOfferModal';
 import TransactionPanel from './TransactionPanel/TransactionPanel';
+import AVShippingLabelSection from './AVShippingLabelMaybe/AVShippingLabelSection';
 
 import {
   makeTransition,
@@ -694,6 +695,9 @@ export const TransactionPageComponent = props => {
       onOpenDisputeModal={onOpenDisputeModal}
       stateData={stateData}
       transactionRole={transactionRole}
+      shippingLabelSlot={
+        isProviderRole ? <AVShippingLabelSection transaction={transaction} /> : null
+      }
       showBookingLocation={showBookingLocation}
       hasViewingRights={hasViewingRights}
       showListingImage={showListingImage}

@@ -47,6 +47,10 @@ const { generateCSPNonce, csp } = require('./csp');
 const sdkUtils = require('./api-util/sdk');
 const { getSDKProxy } = require('./api-util/sdkCacheProxy');
 const { mountCustomApiRoutes } = require('./customApiRoutes');
+const {
+  assertProductionNotificationConfig,
+  isNotificationPollerEnabled,
+} = require('./services/notificationConfig');
 
 const buildPath = path.resolve(__dirname, '..', 'build');
 const dev = process.env.REACT_APP_ENV === 'development';
@@ -77,6 +81,7 @@ const checkEnvVariables = variables => {
   }
 };
 checkEnvVariables(MANDATORY_ENV_VARIABLES);
+const notificationConfigReadiness = assertProductionNotificationConfig();
 
 const app = express();
 app.use(express.json());
@@ -356,19 +361,30 @@ const server = app.listen(PORT, () => {
   }
 
   // AV-noti: start Integration API event poller (welcome email + WhatsApp notifications)
-  if (process.env.SHARETRIBE_INTEGRATION_CLIENT_ID) {
+  if (isNotificationPollerEnabled() && notificationConfigReadiness.ready) {
     const { startPoller } = require('./services/eventPoller');
     startPoller();
+  } else if (isNotificationPollerEnabled()) {
+    console.error(
+      '[notificationAlert] Notification poller is enabled but its configuration is incomplete'
+    );
   }
 });
 
 // Graceful shutdown:
 // https://expressjs.com/en/advanced/healthcheck-graceful-shutdown.html
 ['SIGINT', 'SIGTERM'].forEach(signal => {
-  process.on(signal, () => {
+  process.on(signal, async () => {
     console.log('Shutting down...'); // eslint-disable-line no-console
+
+    const { stopPoller } = require('./services/eventPoller');
+    const { closePostgresPool } = require('./services/postgres');
+    await stopPoller();
+
     server.close(() => {
-      console.log('Server shut down.'); // eslint-disable-line no-console
+      closePostgresPool()
+        .catch(err => console.error('[postgres] Pool shutdown failed:', err))
+        .finally(() => console.log('Server shut down.')); // eslint-disable-line no-console
     });
   });
 });

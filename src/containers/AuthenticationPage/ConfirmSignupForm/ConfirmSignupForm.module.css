@@ -35,6 +35,14 @@
   composes: marketplaceModalPasswordMargins from global;
 }
 
+.marketingConsent {
+  margin-top: 24px;
+
+  @media (--viewportMedium) {
+    margin-top: 32px;
+  }
+}
+
 .bottomWrapper {
   composes: marketplaceModalBottomWrapper from global;
 }

@@ -8,7 +8,13 @@ import { propTypes } from '../../../util/types';
 import * as validators from '../../../util/validators';
 import { getPropsForCustomUserFieldInputs } from '../../../util/userHelpers';
 
-import { Form, PrimaryButton, FieldTextInput, CustomExtendedDataField } from '../../../components';
+import {
+  CustomExtendedDataField,
+  FieldCheckbox,
+  FieldTextInput,
+  Form,
+  PrimaryButton,
+} from '../../../components';
 
 import FieldSelectUserType from '../FieldSelectUserType';
 import UserFieldDisplayName from '../UserFieldDisplayName';
@@ -23,7 +29,10 @@ const ConfirmSignupFormComponent = props => (
   <FinalForm
     {...props}
     mutators={{ ...arrayMutators }}
-    initialValues={{ userType: props.preselectedUserType || getSoleUserTypeMaybe(props.userTypes) }}
+    initialValues={{
+      userType: props.preselectedUserType || getSoleUserTypeMaybe(props.userTypes),
+      marketingConsent: false,
+    }}
     render={formRenderProps => {
       const {
         rootClassName,
@@ -165,6 +174,13 @@ const ConfirmSignupFormComponent = props => (
               ))}
             </div>
           ) : null}
+
+          <FieldCheckbox
+            className={css.marketingConsent}
+            id={formId ? `${formId}.marketingConsent` : 'marketingConsent'}
+            name="marketingConsent"
+            label={<FormattedMessage id="ConfirmSignupForm.marketingConsentLabel" />}
+          />
 
           <div className={css.bottomWrapper}>
             {termsAndConditions}

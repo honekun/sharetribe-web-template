@@ -37,6 +37,8 @@ describe('ContactDetailsPageComponent', () => {
     const emailLabel = 'ContactDetailsForm.emailLabel';
     const emailInput = screen.getByText(emailLabel);
     expect(emailInput).toBeInTheDocument();
+    expect(screen.getByText('ContactDetailsForm.marketingPreferenceTitle')).toBeInTheDocument();
+    expect(screen.getByLabelText('ContactDetailsForm.marketingConsentLabel')).not.toBeChecked();
 
     // Save button is disabled
     expect(screen.getByRole('button', { name: 'ContactDetailsForm.saveChanges' })).toBeDisabled();

@@ -13,12 +13,16 @@ build
 .DS_Store
 .env
 .env.development
+.env*.local
 .claude/
 .codex/
 AGENTS.override.md
 .superpowers/
 .playwright-mcp/
-docs/
+docs/*
 !docs/operator-guide.md
+!docs/brevo-integration-guide.md
+!docs/brevo-templates-es.md
+!docs/notification-postgres.md
 npm-debug.log
 yarn-error.log

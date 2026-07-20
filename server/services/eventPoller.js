@@ -1,27 +1,63 @@
 'use strict';
 
 const { getIntegrationSdk } = require('./integrationSdk');
-const { sendWelcomeEmail } = require('./welcomeEmailService');
-const { sendAdminAlert, sendUserWhatsApp, lookupUserPhone } = require('./whatsappService');
-const { loadCursor, saveCursor } = require('./eventPollerCursor');
+const { maybeBuyLabelForEvent } = require('./shipmentService');
+const { getAdminPhone, lookupUserPhone } = require('./whatsappService');
+const { claimOwnership, loadCursor, releaseOwnership, saveCursor } = require('./eventPollerCursor');
+const { getLeadership } = require('./eventPollerLeadership');
+const { deliverNotification } = require('./notificationDelivery');
+const {
+  isMarketingCampaignsEnabled,
+  isWelcomeEmailEnabled,
+  isWhatsAppEnabled,
+} = require('./notificationConfig');
+const {
+  handleListingCampaignEvent,
+  handleTransactionCampaignEvent,
+  handleUserCreatedCampaigns,
+  processDueNotificationJobs,
+} = require('./notificationCampaignService');
+const { buildSellerWelcomeEmail, isSellerUserType } = require('./marketingCampaigns');
+const {
+  recordPollCompleted,
+  recordPollError,
+  recordPollStarted,
+} = require('./notificationMetrics');
 const { createTTLCache } = require('../api-util/cache');
-const { withRetry } = require('./retry');
 
-// Run notifications in parallel; log each rejection independently.
-async function runNotifications(tasks) {
-  const results = await Promise.allSettled(tasks.map(t => withRetry(t.fn, { label: t.label })));
+// Claim and run notifications in parallel; log each rejection independently.
+async function runNotifications(tasks, ownerId) {
+  const results = await Promise.allSettled(tasks.map(task => deliverNotification(task, ownerId)));
+  const unrecordedFailures = [];
   results.forEach((r, i) => {
     if (r.status === 'rejected') {
-      console.error(`[eventPoller] ${tasks[i].label} failed after retries:`, r.reason);
+      console.error(`[eventPoller] ${tasks[i].label} delivery failed:`, r.reason);
+      if (!r.reason?.notificationOutcomeRecorded) {
+        unrecordedFailures.push(r.reason || new Error('Notification delivery rejected'));
+      }
     }
   });
+  if (unrecordedFailures.length > 0) throw unrecordedFailures[0];
 }
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 // Defer the first poll so the dyno's listen() callback returns and the load
 // balancer can route a health check before the poller's I/O burst kicks in.
 const INITIAL_POLL_DELAY_MS = 5 * 1000;
+const LEADERSHIP_RETRY_MS = 30 * 1000;
 const RECENT_EVENT_IDS_CAP = 500;
+const EVENTS_PER_PAGE = 100;
+const DEFAULT_MAX_PAGES_PER_POLL = 10;
+const DEFAULT_PAGE_DELAY_MS = 250;
+const DEFAULT_LAG_ALERT_MS = 15 * 60 * 1000;
+
+function positiveIntegerEnv(name, fallback, { allowZero = false } = {}) {
+  const value = process.env[name];
+  if (value == null || value === '') return fallback;
+  const parsed = Number(value);
+  const minimum = allowZero ? 0 : 1;
+  return Number.isInteger(parsed) && parsed >= minimum ? parsed : fallback;
+}
 
 // Customer/provider relationships are immutable once a transaction exists, so
 // 3 minutes is safe and absorbs message bursts within a single thread.
@@ -69,7 +105,7 @@ function rememberEventId(eventId) {
 
 // ─── Event handlers ───────────────────────────────────────────────────────────
 
-async function handleNewUser(resource) {
+async function handleNewUser(eventId, resource, ownerId) {
   const attrs = resource?.attributes;
   if (!attrs) return;
 
@@ -78,26 +114,58 @@ async function handleNewUser(resource) {
   const firstName = profile.firstName || 'Usuario';
   const lastName = profile.lastName || '';
   const phone = profile.protectedData?.phoneNumber || null;
+  const userType = profile.publicData?.userType || null;
 
   console.log(`[eventPoller] New user: ${email}`);
 
-  const tasks = [
-    { label: 'welcome email', fn: () => sendWelcomeEmail({ email, firstName, lastName }) },
-    { label: 'admin WhatsApp alert', fn: () => sendAdminAlert({ firstName, lastName, email }) },
-  ];
-  if (phone) {
+  const tasks = [];
+  if (isWelcomeEmailEnabled() && isSellerUserType(userType)) {
+    const welcomePayload = buildSellerWelcomeEmail({ email, firstName, lastName });
     tasks.push({
+      eventId,
+      channel: 'brevo',
+      templateName: 'seller_welcome',
+      recipient: email,
+      payload: welcomePayload,
+      label: 'welcome email',
+    });
+  }
+  if (isWhatsAppEnabled()) {
+    const adminPhone = getAdminPhone();
+    if (adminPhone) {
+      tasks.push({
+        eventId,
+        channel: 'whatsapp',
+        templateName: 'av_admin_new_user',
+        recipient: adminPhone,
+        payload: {
+          phone: adminPhone,
+          templateName: 'av_admin_new_user',
+          params: [firstName, lastName, email],
+        },
+        label: 'admin WhatsApp alert',
+      });
+    }
+  }
+  if (isWhatsAppEnabled() && phone) {
+    tasks.push({
+      eventId,
+      channel: 'whatsapp',
+      templateName: 'av_welcome_user',
+      recipient: phone,
+      payload: {
+        phone,
+        templateName: 'av_welcome_user',
+        params: [firstName],
+      },
       label: 'user welcome WhatsApp',
-      fn: () =>
-        sendUserWhatsApp({
-          phone,
-          templateName: 'av_welcome_user',
-          params: [firstName],
-        }),
     });
   }
 
-  await runNotifications(tasks);
+  await runNotifications(tasks, ownerId);
+  if (isMarketingCampaignsEnabled()) {
+    await handleUserCreatedCampaigns(eventId, resource);
+  }
 }
 
 // Maps EXACT transition names → WhatsApp templates.
@@ -150,7 +218,12 @@ function matchTransitionRule(transition) {
   return TRANSITION_RULES.find(rule => rule.transitions.includes(transition)) || null;
 }
 
-async function handleTransactionEvent(resource) {
+async function handleTransactionEvent(eventId, resource, ownerId) {
+  if (isMarketingCampaignsEnabled()) {
+    await handleTransactionCampaignEvent(eventId, resource);
+  }
+  if (!isWhatsAppEnabled()) return;
+
   const sdk = getIntegrationSdk();
   const attrs = resource?.attributes || {};
   const transition = attrs.lastTransition || '';
@@ -172,20 +245,35 @@ async function handleTransactionEvent(resource) {
   const tasks = [];
   if (rule.buyerTemplate && customerPhone) {
     tasks.push({
+      eventId,
+      channel: 'whatsapp',
+      templateName: rule.buyerTemplate,
+      recipient: customerPhone,
+      payload: { phone: customerPhone, templateName: rule.buyerTemplate },
       label: 'buyer WhatsApp',
-      fn: () => sendUserWhatsApp({ phone: customerPhone, templateName: rule.buyerTemplate }),
     });
   }
   if (rule.sellerTemplate && providerPhone) {
     tasks.push({
+      eventId,
+      channel: 'whatsapp',
+      templateName: rule.sellerTemplate,
+      recipient: providerPhone,
+      payload: { phone: providerPhone, templateName: rule.sellerTemplate },
       label: 'seller WhatsApp',
-      fn: () => sendUserWhatsApp({ phone: providerPhone, templateName: rule.sellerTemplate }),
     });
   }
-  await runNotifications(tasks);
+  await runNotifications(tasks, ownerId);
 }
 
-async function handleMessageEvent(resource) {
+async function handleListingEvent(eventId, resource) {
+  if (!isMarketingCampaignsEnabled()) return;
+  await handleListingCampaignEvent(eventId, resource);
+}
+
+async function handleMessageEvent(eventId, resource, ownerId) {
+  if (!isWhatsAppEnabled()) return;
+
   const sdk = getIntegrationSdk();
   const relationships = resource?.relationships || {};
 
@@ -195,95 +283,199 @@ async function handleMessageEvent(resource) {
 
   if (!transactionId) return;
 
-  try {
-    const { customerId, providerId } = await loadTransactionRelationships(sdk, transactionId);
+  const { customerId, providerId } = await loadTransactionRelationships(sdk, transactionId);
 
-    // The recipient is whichever party is NOT the sender
-    const recipientId = senderId === customerId ? providerId : customerId;
-    if (!recipientId) return;
+  // The recipient is whichever party is NOT the sender
+  const recipientId = senderId === customerId ? providerId : customerId;
+  if (!recipientId) return;
 
-    const recipientPhone = await lookupUserPhone(sdk, recipientId);
-    if (recipientPhone) {
-      await runNotifications([
+  const recipientPhone = await lookupUserPhone(sdk, recipientId);
+  if (recipientPhone) {
+    await runNotifications(
+      [
         {
+          eventId,
+          channel: 'whatsapp',
+          templateName: 'av_new_message',
+          recipient: recipientPhone,
+          payload: { phone: recipientPhone, templateName: 'av_new_message' },
           label: 'message WhatsApp',
-          fn: () => sendUserWhatsApp({ phone: recipientPhone, templateName: 'av_new_message' }),
         },
-      ]);
-    }
-  } catch (err) {
-    console.error('[eventPoller] Message event handler failed:', err);
+      ],
+      ownerId
+    );
   }
 }
 
 // ─── Polling loop ─────────────────────────────────────────────────────────────
 
-async function pollEvents() {
+async function pollEvents(options = {}) {
+  const ownerId = activeOwnerId;
+  if (!ownerId) {
+    console.warn('[eventPoller] Poll skipped because this process is not the leader');
+    return;
+  }
   if (isPolling) {
     console.warn('[eventPoller] Previous poll still running — skipping this tick');
     return;
   }
   isPolling = true;
+  let completePoll;
+  currentPollCompletion = new Promise(resolve => {
+    completePoll = resolve;
+  });
+  const maxPages =
+    options.maxPages ||
+    positiveIntegerEnv('AV_EVENT_POLLER_MAX_PAGES_PER_POLL', DEFAULT_MAX_PAGES_PER_POLL);
+  const pageDelayMs =
+    options.pageDelayMs ??
+    positiveIntegerEnv('AV_EVENT_POLLER_PAGE_DELAY_MS', DEFAULT_PAGE_DELAY_MS, {
+      allowZero: true,
+    });
+  const lagAlertMs = positiveIntegerEnv('AV_EVENT_POLLER_LAG_ALERT_MS', DEFAULT_LAG_ALERT_MS);
+  let pagesProcessed = 0;
+  let eventsProcessed = 0;
+  let remainingEventCount = null;
+  let oldestObservedEventAgeMs = 0;
+  let backlogBoundHit = false;
+  recordPollStarted();
+
   try {
     const sdk = getIntegrationSdk();
 
-    // Cap each tick at 100 events; remainder is picked up on the next poll via lastSequenceId.
-    const params = lastSequenceId
-      ? { sequenceIdStart: lastSequenceId + 1, perPage: 100 }
-      : { createdAtStart: new Date(Date.now() - 10 * 60 * 1000).toISOString(), perPage: 100 };
+    while (pagesProcessed < maxPages) {
+      const params =
+        lastSequenceId != null
+          ? { startAfterSequenceId: lastSequenceId, perPage: EVENTS_PER_PAGE }
+          : {
+              createdAtStart: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+              perPage: EVENTS_PER_PAGE,
+            };
 
-    let res;
-    try {
-      res = await sdk.events.query(params);
-    } catch (err) {
-      console.error('[eventPoller] Integration API query failed:', err);
-      return;
-    }
-
-    const events = res?.data?.data || [];
-    if (events.length > 0) {
-      console.log(`[eventPoller] Processing ${events.length} event(s)`);
-    }
-
-    for (const event of events) {
-      const { eventType, resource, sequenceId } = event.attributes;
-      const eventId = event.id?.uuid || event.id;
-
-      // Skip events we've already processed in a previous (overlapping) poll.
-      if (eventId && recentEventIds.has(eventId)) {
-        lastSequenceId = sequenceId;
-        continue;
+      let res;
+      try {
+        res = await sdk.events.query(params);
+      } catch (err) {
+        console.error('[eventPoller] Integration API query failed:', err);
+        recordPollError(err);
+        // Delayed jobs are stored independently and can still be delivered
+        // while the event feed is temporarily unavailable.
+        break;
       }
 
-      // Collect all handlers for this event type, then fire them in parallel.
-      // Events are still processed in sequenceId order; only per-event handlers run concurrently.
-      const handlers = [];
-      if (eventType === 'user/created') handlers.push(() => handleNewUser(resource));
-      else if (eventType === 'transaction/transitioned')
-        handlers.push(() => handleTransactionEvent(resource));
-      else if (eventType === 'message/created') handlers.push(() => handleMessageEvent(resource));
+      const events = res?.data?.data || [];
+      pagesProcessed += 1;
+      eventsProcessed += events.length;
+      const totalItems = res?.data?.meta?.totalItems;
+      remainingEventCount =
+        typeof totalItems === 'number' ? Math.max(0, totalItems - events.length) : null;
 
-      if (handlers.length > 0) {
-        await Promise.allSettled(
-          handlers.map(h =>
-            h().catch(err =>
-              console.error(`[eventPoller] Handler error for event type "${eventType}":`, err)
-            )
-          )
+      if (events.length > 0) {
+        console.log(`[eventPoller] Processing page=${pagesProcessed} events=${events.length}`);
+        const oldestCreatedAt = events[0]?.attributes?.createdAt;
+        const oldestTimestamp = oldestCreatedAt ? Date.parse(oldestCreatedAt) : NaN;
+        if (Number.isFinite(oldestTimestamp)) {
+          oldestObservedEventAgeMs = Math.max(
+            oldestObservedEventAgeMs,
+            Date.now() - oldestTimestamp
+          );
+        }
+      }
+
+      const pageStartSequenceId = lastSequenceId;
+      const pageStartRecentEventIds = Array.from(recentEventIds);
+      try {
+        for (const event of events) {
+          const { eventType, resource, sequenceId } = event.attributes;
+          const eventId = event.id?.uuid || event.id;
+
+          // Skip events we've already processed in a previous (overlapping) poll.
+          if (eventId && recentEventIds.has(eventId)) {
+            lastSequenceId = sequenceId;
+            continue;
+          }
+
+          if (eventType === 'user/created') {
+            await handleNewUser(eventId, resource, ownerId);
+          } else if (
+            eventType === 'transaction/initiated' ||
+            eventType === 'transaction/transitioned'
+          ) {
+            await handleTransactionEvent(eventId, resource, ownerId);
+            // Spec B: buy the eShip label once payment is confirmed. Independent
+            // of the WhatsApp gate above; self-contained failure handling.
+            await maybeBuyLabelForEvent(getIntegrationSdk(), resource);
+          } else if (eventType === 'message/created') {
+            await handleMessageEvent(eventId, resource, ownerId);
+          } else if (eventType === 'listing/created' || eventType === 'listing/updated') {
+            await handleListingEvent(eventId, resource);
+          }
+
+          rememberEventId(eventId);
+          lastSequenceId = sequenceId;
+        }
+
+        await saveCursor(
+          {
+            lastSequenceId,
+            recentEventIds: Array.from(recentEventIds),
+          },
+          ownerId
         );
+      } catch (err) {
+        lastSequenceId = pageStartSequenceId;
+        recentEventIds.clear();
+        for (const id of pageStartRecentEventIds) rememberEventId(id);
+        throw err;
       }
 
-      rememberEventId(eventId);
-      lastSequenceId = sequenceId;
+      if (events.length < EVENTS_PER_PAGE) break;
+      if (pagesProcessed >= maxPages) {
+        backlogBoundHit = true;
+        break;
+      }
+      if (pageDelayMs > 0) {
+        await new Promise(resolve => setTimeout(resolve, pageDelayMs));
+      }
     }
-  } finally {
-    // Persist cursor + dedupe set after every poll. Failures are non-fatal
-    // (logged inside saveCursor) so a transient disk error never wedges polling.
-    await saveCursor({
+
+    if (isMarketingCampaignsEnabled()) {
+      const jobsProcessed = await processDueNotificationJobs(ownerId);
+      if (jobsProcessed > 0) {
+        console.log(`[eventPoller] Processed due campaign jobs=${jobsProcessed}`);
+      }
+    }
+
+    const pollMetrics = {
       lastSequenceId,
-      recentEventIds: Array.from(recentEventIds),
-    });
+      pagesProcessed,
+      eventsProcessed,
+      remainingEventCount,
+      sequenceLagEvents: remainingEventCount,
+      oldestObservedEventAgeMs,
+      backlogBoundHit,
+    };
+    recordPollCompleted(pollMetrics);
+    console.log(`[eventPoller] Poll metrics ${JSON.stringify(pollMetrics)}`);
+    if (backlogBoundHit || oldestObservedEventAgeMs >= lagAlertMs) {
+      console.error(
+        `[notificationAlert] event backlog ${JSON.stringify({
+          backlogBoundHit,
+          oldestObservedEventAgeMs,
+          remainingEventCount,
+          sequenceLagEvents: remainingEventCount,
+          lastSequenceId,
+        })}`
+      );
+    }
+  } catch (err) {
+    console.error('[eventPoller] Poll processing failed:', err);
+    recordPollError(err);
+    throw err;
+  } finally {
     isPolling = false;
+    currentPollCompletion = null;
+    completePoll();
   }
 }
 
@@ -291,28 +483,25 @@ async function pollEvents() {
  * Start the polling loop. Safe to call multiple times (idempotent via interval ID check).
  */
 let pollIntervalId = null;
+let initialTimer = null;
+let leadershipRetryId = null;
+let leadershipAttempt = null;
+let leadershipInstance = null;
+let leadershipLossUnsubscribe = null;
+let activeOwnerId = null;
+let isStarted = false;
+let currentPollCompletion = null;
 
-async function startPoller() {
-  if (pollIntervalId) return;
+function clearPollingTimers() {
+  if (initialTimer) clearTimeout(initialTimer);
+  if (pollIntervalId) clearInterval(pollIntervalId);
+  initialTimer = null;
+  pollIntervalId = null;
+}
 
-  console.log('[eventPoller] Starting Integration API event poller (interval: 5 min)');
-
-  // Seed cursor + dedupe set from persisted state. On a totally fresh boot
-  // this is a no-op and we fall back to the 10-minute lookback window.
-  try {
-    const seed = await loadCursor();
-    lastSequenceId = seed.lastSequenceId;
-    for (const id of seed.recentEventIds) recentEventIds.add(id);
-    console.log(
-      `[eventPoller] Loaded cursor: lastSequenceId=${lastSequenceId}, dedupe size=${recentEventIds.size}`
-    );
-  } catch (err) {
-    console.warn('[eventPoller] Cursor seed failed, starting fresh:', err);
-  }
-
-  // Defer the first poll so the dyno can finish warming up; subsequent polls
-  // run on the regular interval.
-  const initialTimer = setTimeout(() => {
+function startPollingTimers() {
+  initialTimer = setTimeout(() => {
+    initialTimer = null;
     pollEvents().catch(err => console.error('[eventPoller] Initial poll failed:', err));
   }, INITIAL_POLL_DELAY_MS);
   initialTimer.unref?.();
@@ -320,11 +509,123 @@ async function startPoller() {
   pollIntervalId = setInterval(() => {
     pollEvents().catch(err => console.error('[eventPoller] Poll failed:', err));
   }, POLL_INTERVAL_MS);
+  pollIntervalId.unref?.();
+}
 
-  // Allow process to exit normally even with active interval
-  if (pollIntervalId.unref) {
-    pollIntervalId.unref();
+function registerLeadershipLossHandler(leadership) {
+  if (leadershipLossUnsubscribe) return;
+
+  leadershipLossUnsubscribe = leadership.onLeadershipLost(() => {
+    const previousOwnerId = activeOwnerId;
+    activeOwnerId = null;
+    clearPollingTimers();
+    if (previousOwnerId) {
+      releaseOwnership(previousOwnerId).catch(err =>
+        console.error('[eventPoller] Failed to clear lost owner status:', err)
+      );
+    }
+  });
+}
+
+async function attemptLeadership() {
+  if (!isStarted || activeOwnerId || isPolling) return Boolean(activeOwnerId);
+  if (leadershipAttempt) return leadershipAttempt;
+
+  leadershipAttempt = (async () => {
+    const leadership = getLeadership();
+    leadershipInstance = leadership;
+    registerLeadershipLossHandler(leadership);
+
+    const acquired = await leadership.tryAcquire();
+    if (!acquired) return false;
+
+    const ownerId = leadership.leaseId;
+    try {
+      await claimOwnership(ownerId);
+      const seed = await loadCursor();
+      if (!isStarted) {
+        await Promise.allSettled([releaseOwnership(ownerId), leadership.release()]);
+        return false;
+      }
+
+      // Always refresh from shared state on leadership acquisition. This is
+      // what lets a replacement process continue from the previous leader.
+      lastSequenceId = seed.lastSequenceId;
+      recentEventIds.clear();
+      for (const id of seed.recentEventIds) rememberEventId(id);
+      activeOwnerId = ownerId;
+
+      console.log(
+        `[eventPoller] Active owner=${ownerId}; lastSequenceId=${lastSequenceId}, dedupe size=${recentEventIds.size}`
+      );
+      startPollingTimers();
+      return true;
+    } catch (err) {
+      await Promise.allSettled([releaseOwnership(ownerId), leadership.release()]);
+      throw err;
+    }
+  })();
+
+  try {
+    return await leadershipAttempt;
+  } finally {
+    leadershipAttempt = null;
   }
 }
 
-module.exports = { startPoller, matchTransitionRule };
+async function startPoller() {
+  if (isStarted) return;
+  isStarted = true;
+
+  console.log('[eventPoller] Starting Integration API event poller coordination (interval: 5 min)');
+
+  leadershipRetryId = setInterval(() => {
+    attemptLeadership().catch(err =>
+      console.error('[eventPoller] PostgreSQL leadership attempt failed:', err)
+    );
+  }, LEADERSHIP_RETRY_MS);
+  leadershipRetryId.unref?.();
+
+  try {
+    await attemptLeadership();
+  } catch (err) {
+    console.error(
+      '[eventPoller] Initial PostgreSQL leadership attempt failed; standby retry remains active:',
+      err
+    );
+  }
+}
+
+async function stopPoller() {
+  if (!isStarted && !leadershipInstance) return;
+
+  isStarted = false;
+  if (leadershipRetryId) clearInterval(leadershipRetryId);
+  leadershipRetryId = null;
+  clearPollingTimers();
+
+  if (leadershipLossUnsubscribe) leadershipLossUnsubscribe();
+  leadershipLossUnsubscribe = null;
+
+  if (leadershipAttempt) {
+    await leadershipAttempt.catch(() => {});
+  }
+  if (currentPollCompletion) {
+    await currentPollCompletion;
+  }
+
+  const ownerId = activeOwnerId;
+  activeOwnerId = null;
+  const tasks = [];
+  if (ownerId) tasks.push(releaseOwnership(ownerId));
+  if (leadershipInstance) tasks.push(leadershipInstance.release());
+  const results = await Promise.allSettled(tasks);
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      console.error('[eventPoller] Shutdown cleanup failed:', result.reason);
+    }
+  }
+  leadershipInstance = null;
+}
+
+module.exports = { startPoller, stopPoller, pollEvents, matchTransitionRule };

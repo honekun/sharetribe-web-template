@@ -160,3 +160,34 @@ export const topbarLocalDesignUsers = () => {
     },
   });
 };
+
+export const getMarketingPreference = () => {
+  return request('/api/brevo/preference', {
+    method: methods.GET,
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+};
+
+export const updateMarketingPreference = ({ enabled, source = 'account_details' }) => {
+  return request('/api/brevo/preference', {
+    method: methods.PUT,
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ enabled, source }),
+  });
+};
+
+export const trackMarketingEngagement = ({ listingId, action }) => {
+  return request('/api/brevo/engagement', {
+    method: methods.POST,
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ listingId, action }),
+  });
+};

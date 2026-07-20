@@ -2,7 +2,13 @@
 
 jest.mock('node-fetch');
 const fetch = require('node-fetch');
-const { quote, EshipApiError, EshipTimeoutError, describeEshipError } = require('./eshipClient');
+const {
+  quote,
+  createShipment,
+  EshipApiError,
+  EshipTimeoutError,
+  describeEshipError,
+} = require('./eshipClient');
 
 const okResponse = body => ({ ok: true, status: 200, json: async () => body });
 
@@ -65,6 +71,59 @@ describe('eshipClient.quote', () => {
   it('throws EshipTimeoutError when the request aborts', async () => {
     fetch.mockRejectedValue(Object.assign(new Error('aborted'), { name: 'AbortError' }));
     await expect(quote(args)).rejects.toBeInstanceOf(EshipTimeoutError);
+  });
+});
+
+describe('eshipClient.createShipment', () => {
+  const args = { rateId: 'rate-123', quotId: 'quot-9' };
+
+  beforeEach(() => {
+    fetch.mockReset();
+    process.env.ESHIP_API_KEY = 'test-key';
+  });
+
+  it('POSTs the rate_id + quot_id to the shipment endpoint with a Bearer auth header', async () => {
+    fetch.mockResolvedValue(
+      okResponse({ shipment_id: 's1', tracking_number: 'TRK1', label_url: 'https://l/1.pdf' })
+    );
+    const res = await createShipment(args);
+    expect(res).toEqual({
+      shipment_id: 's1',
+      tracking_number: 'TRK1',
+      label_url: 'https://l/1.pdf',
+    });
+    const [url, opts] = fetch.mock.calls[0];
+    expect(url).toMatch(/\/shipment$/);
+    expect(opts.method).toBe('POST');
+    expect(opts.headers.Authorization).toBe('Bearer test-key');
+    expect(JSON.parse(opts.body)).toEqual({ rate_id: 'rate-123', quot_id: 'quot-9' });
+  });
+
+  it('throws EshipApiError (401) when ESHIP_API_KEY is missing', async () => {
+    delete process.env.ESHIP_API_KEY;
+    await expect(createShipment(args)).rejects.toMatchObject({
+      name: 'EshipApiError',
+      status: 401,
+    });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('throws EshipApiError on a non-2xx response capturing status + detail', async () => {
+    fetch.mockResolvedValue({
+      ok: false,
+      status: 422,
+      text: async () => JSON.stringify({ message: 'rate expired' }),
+    });
+    await expect(createShipment(args)).rejects.toMatchObject({
+      name: 'EshipApiError',
+      status: 422,
+      detail: 'rate expired',
+    });
+  });
+
+  it('throws EshipTimeoutError when the request aborts', async () => {
+    fetch.mockRejectedValue(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+    await expect(createShipment(args)).rejects.toBeInstanceOf(EshipTimeoutError);
   });
 });
 

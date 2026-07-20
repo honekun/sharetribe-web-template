@@ -3,6 +3,8 @@ import Cookies from 'js-cookie';
 import { isEmpty } from '../../util/common';
 import { pickUserFieldsData, addScopePrefix } from '../../util/userHelpers';
 
+export const MARKETING_CONSENT_POLICY_VERSION = '2026-07-19';
+
 /**
  * Filters out configured user-field entries, returning only the remaining key/value pairs.
  *
@@ -68,8 +70,28 @@ export const getExtendedDataMaybe = (submitValues, userType, userFields) => {
  * @returns {(values: Object) => void}
  */
 export const getHandleSubmitSignup = ({ submitSignup, userFields }) => values => {
-  const { userType, email, password, fname, lname, displayName, ...rest } = values;
+  const {
+    userType,
+    email,
+    password,
+    fname,
+    lname,
+    displayName,
+    marketingConsent = false,
+    ...rest
+  } = values;
   const displayNameMaybe = displayName ? { displayName: displayName.trim() } : {};
+  const consentData = {
+    marketingConsent: Boolean(marketingConsent),
+    ...(marketingConsent
+      ? {
+          marketingConsentAt: new Date().toISOString(),
+          marketingConsentSource: 'signup_email',
+          marketingConsentLocale: 'es',
+          marketingConsentPolicyVersion: MARKETING_CONSENT_POLICY_VERSION,
+        }
+      : {}),
+  };
 
   const submitParams = {
     email,
@@ -77,7 +99,7 @@ export const getHandleSubmitSignup = ({ submitSignup, userFields }) => values =>
     firstName: fname.trim(),
     lastName: lname.trim(),
     ...displayNameMaybe,
-    ...getExtendedDataMaybe(rest, userType, userFields),
+    ...getExtendedDataMaybe({ ...rest, ...consentData }, userType, userFields),
   };
 
   submitSignup(submitParams);
@@ -102,6 +124,7 @@ export const getHandleSubmitConfirm = ({ authInfo, submitSingupWithIdp, userFiel
     firstName: newFirstName,
     lastName: newLastName,
     displayName,
+    marketingConsent = false,
     ...rest
   } = values;
 
@@ -116,7 +139,23 @@ export const getHandleSubmitConfirm = ({ authInfo, submitSingupWithIdp, userFiel
   };
 
   // Pass other values as extended data according to user field configuration
-  const extendedDataMaybe = getExtendedDataMaybe(rest, userType, userFields, true);
+  const consentData = {
+    marketingConsent: Boolean(marketingConsent),
+    ...(marketingConsent
+      ? {
+          marketingConsentAt: new Date().toISOString(),
+          marketingConsentSource: 'signup_idp',
+          marketingConsentLocale: 'es',
+          marketingConsentPolicyVersion: MARKETING_CONSENT_POLICY_VERSION,
+        }
+      : {}),
+  };
+  const extendedDataMaybe = getExtendedDataMaybe(
+    { ...rest, ...consentData },
+    userType,
+    userFields,
+    true
+  );
 
   submitSingupWithIdp({
     idpToken,

@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import merge from 'lodash/merge';
 import { denormalisedResponseEntities } from '../../util/data';
 import { storableError } from '../../util/errors';
+import { getMarketingPreference, updateMarketingPreference } from '../../util/api';
 import { fetchCurrentUser, setCurrentUser } from '../../ducks/user.duck';
 
 // ================ Async thunks ================ //
@@ -18,6 +19,22 @@ export const resetPasswordThunk = createAsyncThunk(
 export const resetPassword = email => dispatch => {
   return dispatch(resetPasswordThunk({ email })).unwrap();
 };
+
+export const fetchMarketingPreferenceThunk = createAsyncThunk(
+  'ContactDetailsPage/fetchMarketingPreference',
+  (_, { rejectWithValue }) => getMarketingPreference().catch(e => rejectWithValue(storableError(e)))
+);
+
+export const fetchMarketingPreference = () => dispatch =>
+  dispatch(fetchMarketingPreferenceThunk()).unwrap();
+
+export const saveMarketingPreferenceThunk = createAsyncThunk(
+  'ContactDetailsPage/saveMarketingPreference',
+  ({ enabled }, { rejectWithValue }) =>
+    updateMarketingPreference({ enabled, source: 'account_details' }).catch(e =>
+      rejectWithValue(storableError(e))
+    )
+);
 
 export const savePhoneNumberThunk = createAsyncThunk(
   'ContactDetailsPage/savePhoneNumber',
@@ -91,8 +108,8 @@ export const saveEmailAndPhoneNumberThunk = createAsyncThunk(
 
     return Promise.all(promises)
       .then(values => {
-        const saveEmailUser = values[0].payload;
-        const savePhoneNumberUser = values[1].payload;
+        const saveEmailUser = values[0];
+        const savePhoneNumberUser = values[1];
 
         const protectedData = savePhoneNumberUser.attributes.profile.protectedData;
         const phoneNumberMergeSource = { attributes: { profile: { protectedData } } };
@@ -119,27 +136,48 @@ export const saveEmailAndPhoneNumber = params => dispatch => {
 
 export const saveContactDetailsThunk = createAsyncThunk(
   'ContactDetailsPage/saveContactDetails',
-  (
-    { email, currentEmail, phoneNumber, currentPhoneNumber, currentPassword },
+  async (
+    {
+      email,
+      currentEmail,
+      phoneNumber,
+      currentPhoneNumber,
+      currentPassword,
+      marketingConsent,
+      currentMarketingConsent,
+    },
     { dispatch, rejectWithValue }
   ) => {
     const emailChanged = email !== currentEmail;
     const phoneNumberChanged = phoneNumber !== currentPhoneNumber;
+    const requestedMarketingConsent = Boolean(marketingConsent);
+    const marketingConsentChanged = requestedMarketingConsent !== Boolean(currentMarketingConsent);
 
-    if (emailChanged && phoneNumberChanged) {
-      return dispatch(saveEmailAndPhoneNumberThunk({ email, currentPassword, phoneNumber }))
-        .unwrap()
-        .catch(e => rejectWithValue(e));
-    } else if (emailChanged) {
-      return dispatch(saveEmailThunk({ email, currentPassword }))
-        .unwrap()
-        .catch(e => rejectWithValue(e));
-    } else if (phoneNumberChanged) {
-      return dispatch(savePhoneNumberThunk({ phoneNumber }))
-        .unwrap()
-        .catch(e => rejectWithValue(e));
+    try {
+      // Consent belongs to an email address. Revoke the old address before
+      // requesting an email change; the new address starts opted out and may
+      // be opted in after it has been verified.
+      if (emailChanged && currentMarketingConsent) {
+        await dispatch(saveMarketingPreferenceThunk({ enabled: false })).unwrap();
+      } else if (!emailChanged && marketingConsentChanged) {
+        await dispatch(
+          saveMarketingPreferenceThunk({ enabled: requestedMarketingConsent })
+        ).unwrap();
+      }
+
+      if (emailChanged && phoneNumberChanged) {
+        return await dispatch(
+          saveEmailAndPhoneNumberThunk({ email, currentPassword, phoneNumber })
+        ).unwrap();
+      } else if (emailChanged) {
+        return await dispatch(saveEmailThunk({ email, currentPassword })).unwrap();
+      } else if (phoneNumberChanged) {
+        return await dispatch(savePhoneNumberThunk({ phoneNumber })).unwrap();
+      }
+      return null;
+    } catch (e) {
+      return rejectWithValue(e);
     }
-    return Promise.resolve();
   }
 );
 // Backward compatible wrapper for the saveContactDetails thunk
@@ -154,8 +192,11 @@ const contactDetailsSlice = createSlice({
   initialState: {
     saveEmailError: null,
     savePhoneNumberError: null,
+    saveMarketingPreferenceError: null,
     saveContactDetailsInProgress: false,
     contactDetailsChanged: false,
+    marketingPreference: null,
+    marketingPreferenceLoading: false,
     resetPasswordInProgress: false,
     resetPasswordError: null,
   },
@@ -164,6 +205,7 @@ const contactDetailsSlice = createSlice({
       state.saveContactDetailsInProgress = false;
       state.saveEmailError = null;
       state.savePhoneNumberError = null;
+      state.saveMarketingPreferenceError = null;
       state.contactDetailsChanged = false;
     },
   },
@@ -192,11 +234,29 @@ const contactDetailsSlice = createSlice({
         state.saveContactDetailsInProgress = false;
         state.saveEmailError = action.payload;
       })
+      .addCase(fetchMarketingPreferenceThunk.pending, state => {
+        state.marketingPreferenceLoading = true;
+      })
+      .addCase(fetchMarketingPreferenceThunk.fulfilled, (state, action) => {
+        state.marketingPreferenceLoading = false;
+        state.marketingPreference = Boolean(action.payload?.enabled);
+      })
+      .addCase(fetchMarketingPreferenceThunk.rejected, state => {
+        state.marketingPreferenceLoading = false;
+      })
+      .addCase(saveMarketingPreferenceThunk.fulfilled, (state, action) => {
+        state.marketingPreference = Boolean(action.payload?.enabled);
+      })
+      .addCase(saveMarketingPreferenceThunk.rejected, (state, action) => {
+        state.saveContactDetailsInProgress = false;
+        state.saveMarketingPreferenceError = action.payload;
+      })
       // Save contact details
       .addCase(saveContactDetailsThunk.pending, state => {
         state.saveContactDetailsInProgress = true;
         state.saveEmailError = null;
         state.savePhoneNumberError = null;
+        state.saveMarketingPreferenceError = null;
         state.contactDetailsChanged = false;
       })
       .addCase(saveContactDetailsThunk.fulfilled, state => {
