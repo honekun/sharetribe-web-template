@@ -477,13 +477,16 @@ textarea {
   }
 }
 
-/* The account-settings / inbox side-nav links compose `.textSmall`
-   (letter-spacing: -0.1px, marketplaceDefaults.css), which overrides the body's
-   1px so the nav font renders tighter than everything else. Restore 1px inside
-   the sideNav aside. The double `[class*=]` selector is (0,3,0), so it beats
-   `.textSmall` (0,1,0) regardless of stylesheet injection order, and stays scoped
-   to this aside (TabNav links elsewhere are untouched). */
-:root [class*='LayoutSideNavigation_sideNav__'] [class*='TabNav_link__'] {
+/* Admin / side-nav pages (account settings, profile, inbox). The `.textSmall`
+   helper sets letter-spacing: -0.1px (marketplaceDefaults.css), which overrides
+   the 1px body default — so the side-nav tabs, the inbox tabs, and the inbox list
+   rows render tighter than the rest of the UI. Restore 1px across these pages.
+   Every element in the layout sits under `LayoutSideNavigation_sideNav__` (aside)
+   or `LayoutSideNavigation_main__` (content), both of which always carry their
+   scoped class, so this reaches both columns. `:root … .textSmall` is (0,3,0), so
+   it beats `.textSmall` (0,1,0) regardless of stylesheet injection order, and
+   stays scoped to these pages (textSmall elsewhere is untouched). */
+:root [class*='LayoutSideNavigation_'] .textSmall {
   letter-spacing: 1px;
 }
 
@@ -1056,36 +1059,11 @@ textarea {
 
 /* ================ ProfileSettingsPage restyles (AV) ================
    New topbar classes live in ProfileSettingsPageAV.module.css; these restyle
-   upstream classes. `.profileLink` upstream composes buttonSecondaryInline — the
-   (0,2,0) override replaces it with the AV blue pill. */
+   upstream classes. The "Ver tu perfil" pill (`.profileLink`) is now composed
+   from the canonical ctaButtonBlue in ProfileSettingsPageAV.module.css — the old
+   hand-rolled replica that lived here was removed. */
 :root [class*='ProfileSettingsPage_headingContainer__'] {
   align-items: center;
-}
-:root [class*='ProfileSettingsPage_profileLink__'] {
-  display: inline-block;
-  padding: 11px 22px;
-  margin: 0 0 0 auto;
-  float: right;
-  flex-shrink: 0;
-  background-color: var(--avBlue);
-  color: var(--avYellowLight);
-  border: none;
-  outline: 1px solid var(--avYellowLight);
-  outline-offset: 0;
-  border-radius: 26px;
-  font-size: 16px;
-  font-weight: 700;
-  font-family: var(--fontFamily);
-  line-height: 150%;
-  text-align: center;
-  text-decoration: none;
-  transition: var(--colorTransition);
-}
-:root [class*='ProfileSettingsPage_profileLink__']:hover {
-  background-color: var(--avBlueDark);
-  color: var(--avYellowLight);
-  outline-color: var(--avYellowLight);
-  text-decoration: none;
 }
 
 /* ================ AuthenticationPage restyles (AV) ================

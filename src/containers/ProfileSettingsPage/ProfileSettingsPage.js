@@ -38,14 +38,14 @@ const ViewProfileLink = props => {
   const { userUUID, isUnauthorizedUser } = props;
   return userUUID && isUnauthorizedUser ? (
     <NamedLink
-      className={css.profileLink}
+      className={avCss.profileLink}
       name="ProfilePageVariant"
       params={{ id: userUUID, variant: PROFILE_PAGE_PENDING_APPROVAL_VARIANT }}
     >
       <FormattedMessage id="ProfileSettingsPage.viewProfileLink" />
     </NamedLink>
   ) : userUUID ? (
-    <NamedLink className={css.profileLink} name="ProfilePage" params={{ id: userUUID }}>
+    <NamedLink className={avCss.profileLink} name="ProfilePage" params={{ id: userUUID }}>
       <FormattedMessage id="ProfileSettingsPage.viewProfileLink" />
     </NamedLink>
   ) : null;
