@@ -6,3 +6,19 @@
 .mobileTopbar {
   box-shadow: none;
 }
+
+/* "Ver tu perfil" — the AV blue pill. Composes the canonical ctaButtonBlue so it
+   self-syncs with every other AV blue button (radius, min-width, outline, hover)
+   instead of hand-replicating it. Replaces the old bespoke replica that lived in
+   avBrandOverrides.css. The self-chained (0,2,0) rule only pins page layout —
+   right-align in the heading row and zero the base `margin-top: 24px` — without
+   re-declaring the button look. See [[av-cta-button-system]]. */
+.profileLink {
+  composes: ctaButtonBlue from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+}
+.profileLink.profileLink {
+  margin: 0 0 0 auto;
+  float: right;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
