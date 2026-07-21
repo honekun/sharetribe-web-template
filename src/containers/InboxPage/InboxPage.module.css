@@ -281,7 +281,7 @@
   }
 }
 .itemTitle {
-  composes: marketplaceTinyFontStyles from global;
+  /* composes: marketplaceTinyFontStyles from global; */
   grid-area: item;
   color: var(--colorGrey700);
 
@@ -290,7 +290,7 @@
 }
 
 .itemDetails {
-  composes: marketplaceTinyFontStyles from global;
+  /* composes: marketplaceTinyFontStyles from global; */
   grid-area: details;
   color: var(--colorGrey700);
 
@@ -299,7 +299,7 @@
 }
 
 .itemSeats {
-  composes: marketplaceTinyFontStyles from global;
+  /*composes: marketplaceTinyFontStyles from global;*/
   grid-area: seats;
   color: var(--colorGrey700);
 
@@ -311,7 +311,7 @@
   grid-area: state;
 
   /* Font */
-  composes: marketplaceTinyFontStyles from global;
+  /* composes: marketplaceTinyFontStyles from global;*/
   line-height: 18px;
   font-weight: var(--fontWeightMedium);
   letter-spacing: normal;
