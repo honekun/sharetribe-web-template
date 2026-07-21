@@ -477,6 +477,16 @@ textarea {
   }
 }
 
+/* The account-settings / inbox side-nav links compose `.textSmall`
+   (letter-spacing: -0.1px, marketplaceDefaults.css), which overrides the body's
+   1px so the nav font renders tighter than everything else. Restore 1px inside
+   the sideNav aside. The double `[class*=]` selector is (0,3,0), so it beats
+   `.textSmall` (0,1,0) regardless of stylesheet injection order, and stays scoped
+   to this aside (TabNav links elsewhere are untouched). */
+:root [class*='LayoutSideNavigation_sideNav__'] [class*='TabNav_link__'] {
+  letter-spacing: 1px;
+}
+
 .buttonPrimary {
   letter-spacing: 1.5px;
 }
