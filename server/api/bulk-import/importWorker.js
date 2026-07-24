@@ -4,8 +4,10 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const { getIntegrationSdk } = require('../../services/integrationSdk');
 const { types } = require('sharetribe-flex-integration-sdk');
+
+const { getPackageSizeForCategory } = require('../../../src/config/configAVShipping');
+const { getIntegrationSdk } = require('../../services/integrationSdk');
 const { updateJob } = require('./jobStore');
 
 const { UUID, Money, LatLng } = types;
@@ -121,6 +123,14 @@ async function processRow(sdk, row, imageMap, config) {
     shippingEnabled: row.shippingEnabled,
     pickupEnabled: row.pickupEnabled,
     ...row.publicData,
+    // Bulk imports do not expose a package-size input. Derive and persist the
+    // authoritative value from the imported category path so checkout, quoting,
+    // and later listing edits all see the same value as the regular wizard.
+    avPackageSize: getPackageSizeForCategory(
+      row.publicData?.categoryLevel1,
+      row.publicData?.categoryLevel2,
+      row.publicData?.categoryLevel3
+    ),
   };
 
   // originalPrice must be stored as { amount (subunits), currency } to match

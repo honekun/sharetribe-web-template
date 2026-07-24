@@ -73,12 +73,8 @@ export const getStoreTypeTags = (author, config = {}) => {
 const avShipping = require('./configAVShipping');
 export const {
   packageSizes: shippingPackageSizes,
-  deliveryTypes: shippingDeliveryTypes,
-  priceGrid: shippingPriceGrid,
   defaultPackageSize,
   getPackageSizeForCategory,
   resolvePackageSize,
   isEspecialSize,
-  getShippingPrice,
-  getAvailableDeliveryTypes,
 } = avShipping;

@@ -79,7 +79,7 @@ async function loadTransactionRelationships(sdk, transactionId) {
   return value;
 }
 
-// Cursor — loaded from disk on startup; on a totally fresh boot we look back
+// Cursor — loaded from PostgreSQL on startup; on a totally fresh boot we look back
 // 10 minutes to avoid missing events during deployments.
 let lastSequenceId = null;
 

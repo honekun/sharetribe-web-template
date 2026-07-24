@@ -229,4 +229,57 @@ describe('OrderBreakdown', () => {
     const totalPayIn = within(providerTotal.parentNode.parentNode);
     expect(totalPayIn.getByText('$18.00')).toBeInTheDocument();
   });
+
+  it('combines percentage and fixed provider commissions into one row', () => {
+    render(
+      <OrderBreakdownComponent
+        userRole="provider"
+        currency="USD"
+        marketplaceName={marketplaceName}
+        transaction={exampleTransaction({
+          payinTotal: new Money(2000, 'USD'),
+          payoutTotal: new Money(1700, 'USD'),
+          lineItems: [
+            {
+              code: 'line-item/item',
+              includeFor: ['customer', 'provider'],
+              quantity: new Decimal(2),
+              lineTotal: new Money(2000, 'USD'),
+              unitPrice: new Money(1000, 'USD'),
+              reversal: false,
+            },
+            {
+              code: 'line-item/provider-commission',
+              includeFor: ['provider'],
+              lineTotal: new Money(-200, 'USD'),
+              unitPrice: new Money(-200, 'USD'),
+              reversal: false,
+            },
+            {
+              code: 'line-item/provider-commission-fixed',
+              includeFor: ['provider'],
+              lineTotal: new Money(-100, 'USD'),
+              unitPrice: new Money(-100, 'USD'),
+              reversal: false,
+            },
+          ],
+        })}
+        intl={fakeIntl}
+      />
+    );
+
+    const commissionRows = screen.getAllByText('OrderBreakdown.commission');
+    expect(commissionRows).toHaveLength(1);
+    const lineItemCommission = within(commissionRows[0].parentNode.parentNode);
+    expect(lineItemCommission.getByText('-$3.00')).toBeInTheDocument();
+    expect(screen.queryByText('OrderBreakdown.providerCommissionFixed')).not.toBeInTheDocument();
+
+    const subTotal = screen.getByText('OrderBreakdown.subTotal');
+    const lineItemSubTotal = within(subTotal.parentNode.parentNode);
+    expect(lineItemSubTotal.getByText('$20.00')).toBeInTheDocument();
+
+    const providerTotal = screen.getByText('OrderBreakdown.providerTotalDefault');
+    const totalPayIn = within(providerTotal.parentNode.parentNode);
+    expect(totalPayIn.getByText('$17.00')).toBeInTheDocument();
+  });
 });
