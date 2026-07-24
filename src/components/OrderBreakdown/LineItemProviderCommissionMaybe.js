@@ -3,7 +3,11 @@ import React from 'react';
 import { FormattedMessage, intlShape } from '../../util/reactIntl';
 import { types as sdkTypes } from '../../util/sdkLoader';
 import { formatMoney } from '../../util/currency';
-import { LINE_ITEM_PROVIDER_COMMISSION, propTypes } from '../../util/types';
+import {
+  LINE_ITEM_PROVIDER_COMMISSION,
+  LINE_ITEM_PROVIDER_COMMISSION_FIXED,
+  propTypes,
+} from '../../util/types';
 
 import css from './OrderBreakdown.module.css';
 
@@ -15,8 +19,19 @@ const isValidCommission = commissionLineItem => {
   return commissionLineItem.lineTotal instanceof Money && commissionLineItem.lineTotal.amount <= 0;
 };
 
+const getCombinedProviderCommission = commissionLineItems => {
+  const currencies = [...new Set(commissionLineItems.map(item => item.lineTotal.currency))];
+
+  if (currencies.length > 1) {
+    throw new Error('Provider commission line items must use the same currency');
+  }
+
+  const amount = commissionLineItems.reduce((total, item) => total + item.lineTotal.amount, 0);
+  return new Money(amount, currencies[0]);
+};
+
 /**
- * A component that renders the provider commission as a line item.
+ * A component that renders all provider commission charges as a single line item.
  *
  * @component
  * @param {Object} props
@@ -29,24 +44,30 @@ const isValidCommission = commissionLineItem => {
 const LineItemProviderCommissionMaybe = props => {
   const { lineItems, isProvider, marketplaceName, intl } = props;
 
-  const providerCommissionLineItem = lineItems.find(
-    item => item.code === LINE_ITEM_PROVIDER_COMMISSION && !item.reversal
+  const providerCommissionLineItems = lineItems.filter(
+    item =>
+      [LINE_ITEM_PROVIDER_COMMISSION, LINE_ITEM_PROVIDER_COMMISSION_FIXED].includes(item.code) &&
+      !item.reversal
   );
 
-  // If commission is passed it will be shown as a fee already reduces from the total price
+  // If commission is passed it will be shown as a fee that already reduces the total price.
   let commissionItem = null;
 
   // Sharetribe Web Template is using the default-booking and default-purchase transaction processes.
-  // They containt the provider commissions, so by default, the providerCommissionLineItem should exist.
-  // If you are not using provider commisison you might want to remove this whole component from OrderBreakdown.js file.
+  // They contain provider commissions, so by default, a provider commission line item should exist.
+  // If you are not using provider commission you might want to remove this whole component from OrderBreakdown.js.
   // https://www.sharetribe.com/docs/concepts/transaction-process/
-  if (isProvider && providerCommissionLineItem) {
-    if (!isValidCommission(providerCommissionLineItem)) {
-      console.error('invalid commission line item:', providerCommissionLineItem);
+  if (isProvider && providerCommissionLineItems.length > 0) {
+    const invalidCommissionLineItem = providerCommissionLineItems.find(
+      item => !isValidCommission(item)
+    );
+
+    if (invalidCommissionLineItem) {
+      console.error('invalid commission line item:', invalidCommissionLineItem);
       throw new Error('Commission should be present and the value should be zero or negative');
     }
 
-    const commission = providerCommissionLineItem.lineTotal;
+    const commission = getCombinedProviderCommission(providerCommissionLineItems);
     const formattedCommission = commission ? formatMoney(intl, commission) : null;
 
     commissionItem = (

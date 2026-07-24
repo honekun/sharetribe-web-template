@@ -485,8 +485,12 @@ textarea {
    or `LayoutSideNavigation_main__` (content), both of which always carry their
    scoped class, so this reaches both columns. `:root … .textSmall` is (0,3,0), so
    it beats `.textSmall` (0,1,0) regardless of stylesheet injection order, and
-   stays scoped to these pages (textSmall elsewhere is untouched). */
-:root [class*='LayoutSideNavigation_'] .textSmall {
+   stays scoped to these pages (textSmall elsewhere is untouched).
+   The inbox row's state cell (`.itemState`, InboxPage.module.css) explicitly sets
+   `letter-spacing: normal`, so its `.stateName` text also needs restoring to 1px;
+   the scoped-class selector is (0,3,0), beating the module's `.itemState` (0,1,0). */
+:root [class*='LayoutSideNavigation_'] .textSmall,
+:root [class*='LayoutSideNavigation_'] [class*='InboxPage_itemState__'] {
   letter-spacing: 1px;
 }
 

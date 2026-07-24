@@ -8,6 +8,7 @@ import {
   propTypes,
   LINE_ITEM_CUSTOMER_COMMISSION,
   LINE_ITEM_PROVIDER_COMMISSION,
+  LINE_ITEM_PROVIDER_COMMISSION_FIXED,
 } from '../../util/types';
 
 import css from './OrderBreakdown.module.css';
@@ -31,6 +32,7 @@ const lineItemsTotal = (lineItems, marketplaceCurrency) => {
 const isCommission = lineItem => {
   return (
     lineItem.code === LINE_ITEM_PROVIDER_COMMISSION ||
+    lineItem.code === LINE_ITEM_PROVIDER_COMMISSION_FIXED ||
     lineItem.code === LINE_ITEM_CUSTOMER_COMMISSION
   );
 };
@@ -51,7 +53,9 @@ const hasCommission = (lineItems, userRole) => {
   if (userRole === 'customer') {
     commissionLineItem = lineItems.find(item => item.code === LINE_ITEM_CUSTOMER_COMMISSION);
   } else if (userRole === 'provider') {
-    commissionLineItem = lineItems.find(item => item.code === LINE_ITEM_PROVIDER_COMMISSION);
+    commissionLineItem = lineItems.find(item =>
+      [LINE_ITEM_PROVIDER_COMMISSION, LINE_ITEM_PROVIDER_COMMISSION_FIXED].includes(item.code)
+    );
   }
   return !!commissionLineItem;
 };

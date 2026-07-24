@@ -1,23 +1,11 @@
 const {
   getPackageSizeForCategory,
-  getShippingPrice,
   isEspecialSize,
-  getAvailableDeliveryTypes,
   defaultPackageSize,
+  categoryPackageSizeMap,
 } = require('./configAVShipping');
 
 describe('configAVShipping helpers', () => {
-  const cfg = require('./configAVShipping');
-  let original;
-
-  beforeEach(() => {
-    original = JSON.parse(JSON.stringify(cfg.priceGrid));
-  });
-
-  afterEach(() => {
-    Object.assign(cfg.priceGrid, original);
-  });
-
   test('getPackageSizeForCategory falls back to default for unknown category', () => {
     expect(getPackageSizeForCategory('does-not-exist')).toBe(defaultPackageSize);
     expect(defaultPackageSize).toBe('M');
@@ -27,31 +15,30 @@ describe('configAVShipping helpers', () => {
     expect(isEspecialSize('especial')).toBe(true);
     expect(isEspecialSize('M')).toBe(false);
   });
-
-  test('getShippingPrice returns null for especial and unknown', () => {
-    expect(getShippingPrice('especial', 'nacionalEstandar')).toBeNull();
-    expect(getShippingPrice('M', 'no-such-type')).toBeNull();
-    expect(getShippingPrice('Z', 'nacionalEstandar')).toBeNull();
-  });
-
-  test('getAvailableDeliveryTypes returns both priced national types', () => {
-    cfg.priceGrid.M.nacionalEstandar = 12900;
-    cfg.priceGrid.M.nacionalExpress = 18900;
-    expect(getAvailableDeliveryTypes('M')).toEqual(['nacionalExpress', 'nacionalEstandar']);
-  });
-
-  test('getAvailableDeliveryTypes hides unpriced types', () => {
-    cfg.priceGrid.M.nacionalEstandar = 12900;
-    cfg.priceGrid.M.nacionalExpress = null;
-    expect(getAvailableDeliveryTypes('M')).toEqual(['nacionalEstandar']);
-  });
-
-  test('getAvailableDeliveryTypes returns [] for especial', () => {
-    expect(getAvailableDeliveryTypes('especial')).toEqual([]);
-  });
 });
 
 describe('getPackageSizeForCategory mapping (real Console category ids)', () => {
+  test('contains exactly the non-M exceptions from categoria-paquete.csv', () => {
+    expect(categoryPackageSizeMap).toEqual({
+      'ropa-sacos-chamarras': 'L',
+      'ropa-lenceria': 'S',
+      'ropa-de-bano': 'S',
+      'bolsas-clutch': 'S',
+      'bolsas-carteras': 'S',
+      'bolsas-totes': 'L',
+      'bolsas-mochilas_casuales': 'L',
+      'bolsas-mochilas_deporte': 'L',
+      'zapatos-tenis_casuales': 'L',
+      'zapatos-tenis_deportivos': 'L',
+      'zapatos-botas': 'L',
+      'zapatos-botas_vaqueras': 'L',
+      'zapatos-botas_tacon': 'L',
+      'zapatos-botas_montana': 'L',
+      'zapatos-botin': 'L',
+      'zapatos-botin_tacon': 'L',
+    });
+  });
+
   test('ropa sub-category exceptions; rest default to M', () => {
     expect(getPackageSizeForCategory('ropa', 'ropa-sacos-chamarras')).toBe('L');
     expect(getPackageSizeForCategory('ropa', 'ropa-lenceria')).toBe('S');
@@ -69,19 +56,17 @@ describe('getPackageSizeForCategory mapping (real Console category ids)', () => 
         'ropa-sacos-chamarras-chamarras-de-piel'
       )
     ).toBe('L');
-    // accesorios mapped at the family (level1) → applies to all descendants
-    expect(
-      getPackageSizeForCategory('accesorios', 'accesorios-joyerias', 'accesorios-joyerias-collares')
-    ).toBe('S');
   });
 
-  test('bolsas: small vs large vs mid-default', () => {
+  test('bolsas: CSV small and large groups vs M default', () => {
     expect(getPackageSizeForCategory('bolsas', 'bolsas-clutch')).toBe('S');
     expect(getPackageSizeForCategory('bolsas', 'bolsas-carteras')).toBe('S');
     expect(getPackageSizeForCategory('bolsas', 'bolsas-totes')).toBe('L');
     expect(getPackageSizeForCategory('bolsas', 'bolsas-mochilas_deporte')).toBe('L');
     expect(getPackageSizeForCategory('bolsas', 'bolsas-mano')).toBe('M');
     expect(getPackageSizeForCategory('bolsas', 'bolsas-cruzadas')).toBe('M');
+    expect(getPackageSizeForCategory('bolsas', 'bolsas-monederos')).toBe('M');
+    expect(getPackageSizeForCategory('bolsas', 'bolsas-rinoneras')).toBe('M');
   });
 
   test('zapatos: sneakers/boots L, flats/heels default M', () => {
@@ -92,11 +77,10 @@ describe('getPackageSizeForCategory mapping (real Console category ids)', () => 
     expect(getPackageSizeForCategory('zapatos', 'zapatos-zapatillas_flats')).toBe('M');
   });
 
-  test('accesorios family → S; home-antiques family → especial', () => {
-    expect(getPackageSizeForCategory('accesorios', 'accesorios-lentes')).toBe('S');
-    expect(getPackageSizeForCategory('home-antiques', 'home-antiques-antiguedades')).toBe(
-      'especial'
-    );
+  test('categories absent from the CSV use the M default', () => {
+    expect(getPackageSizeForCategory('accesorios', 'accesorios-lentes')).toBe('M');
+    expect(getPackageSizeForCategory('home-antiques', 'home-antiques-antiguedades')).toBe('M');
+    expect(getPackageSizeForCategory('hogar', 'hogar-textiles')).toBe('M');
   });
 
   test('unknown/empty inputs fall back to default', () => {
@@ -140,7 +124,7 @@ describe('resolvePackageSize(publicData)', () => {
     expect(
       resolvePackageSize({ categoryLevel1: 'ropa', categoryLevel2: 'ropa-sacos-chamarras' })
     ).toBe('L');
-    expect(resolvePackageSize({ categoryLevel1: 'accesorios' })).toBe('S');
+    expect(resolvePackageSize({ categoryLevel1: 'accesorios' })).toBe('M');
   });
 
   test('falls back to the default size for unmapped/empty publicData', () => {

@@ -54,7 +54,11 @@ function makeRow(overrides = {}) {
     lat: null,
     lng: null,
     imageSlots: {},
-    publicData: { color: 'blue' },
+    publicData: {
+      categoryLevel1: 'ropa',
+      categoryLevel2: 'ropa-vestidos',
+      color: 'blue',
+    },
     ...overrides,
   };
 }
@@ -114,6 +118,48 @@ describe('processImportJob', () => {
     expect(params.publicData.transactionProcessAlias).toBe('default-purchase/release-1');
     expect(params.publicData.unitType).toBe('item');
     expect(params.publicData.color).toBe('blue');
+    expect(params.publicData.avPackageSize).toBe('M');
+  });
+
+  it.each([
+    ['S', 'ropa', 'ropa-lenceria'],
+    ['M', 'ropa', 'ropa-vestidos'],
+    ['L', 'zapatos', 'zapatos-tenis_deportivos'],
+  ])(
+    'persists package size %s from the imported category path',
+    async (expectedSize, categoryLevel1, categoryLevel2) => {
+      const mockSdk = createMockSdk();
+      getIntegrationSdk.mockReturnValue(mockSdk);
+
+      const job = createJob(1);
+      const row = makeRow({
+        publicData: { categoryLevel1, categoryLevel2 },
+      });
+
+      await processImportJob(job.id, [row], new Map());
+
+      const params = mockSdk.listings.create.mock.calls[0][0];
+      expect(params.publicData.avPackageSize).toBe(expectedSize);
+    }
+  );
+
+  it('does not allow a CSV publicData value to override the category-derived package size', async () => {
+    const mockSdk = createMockSdk();
+    getIntegrationSdk.mockReturnValue(mockSdk);
+
+    const job = createJob(1);
+    const row = makeRow({
+      publicData: {
+        categoryLevel1: 'ropa',
+        categoryLevel2: 'ropa-lenceria',
+        avPackageSize: 'L',
+      },
+    });
+
+    await processImportJob(job.id, [row], new Map());
+
+    const params = mockSdk.listings.create.mock.calls[0][0];
+    expect(params.publicData.avPackageSize).toBe('S');
   });
 
   it('uploads images and maps to imageSlots', async () => {
