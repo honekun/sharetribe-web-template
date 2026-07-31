@@ -151,7 +151,8 @@ describe('OrderBreakdown', () => {
     // Commission
     const commission = screen.getByText('OrderBreakdown.commission');
     expect(commission).toBeInTheDocument();
-    const lineItemCommission = within(commission.parentNode.parentNode);
+    expect(commission.closest('a')).toHaveAttribute('href', '/p/faqs#vender--como-funciona');
+    const lineItemCommission = within(commission.closest('div'));
     expect(lineItemCommission.getByText('$2.00')).toBeInTheDocument();
 
     // Total
@@ -220,7 +221,8 @@ describe('OrderBreakdown', () => {
     // Commission
     const commission = screen.getByText('OrderBreakdown.commission');
     expect(commission).toBeInTheDocument();
-    const lineItemCommission = within(commission.parentNode.parentNode);
+    expect(commission.closest('a')).toHaveAttribute('href', '/p/faqs#vender--como-funciona');
+    const lineItemCommission = within(commission.closest('div'));
     expect(lineItemCommission.getByText('-$2.00')).toBeInTheDocument();
 
     // Total
@@ -270,7 +272,7 @@ describe('OrderBreakdown', () => {
 
     const commissionRows = screen.getAllByText('OrderBreakdown.commission');
     expect(commissionRows).toHaveLength(1);
-    const lineItemCommission = within(commissionRows[0].parentNode.parentNode);
+    const lineItemCommission = within(commissionRows[0].closest('div'));
     expect(lineItemCommission.getByText('-$3.00')).toBeInTheDocument();
     expect(screen.queryByText('OrderBreakdown.providerCommissionFixed')).not.toBeInTheDocument();
 

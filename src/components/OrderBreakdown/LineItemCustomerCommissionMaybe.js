@@ -4,6 +4,8 @@ import { formatMoney } from '../../util/currency';
 import { types as sdkTypes } from '../../util/sdkLoader';
 import { LINE_ITEM_CUSTOMER_COMMISSION, propTypes } from '../../util/types';
 
+import { NamedLink } from '../../components';
+
 import css from './OrderBreakdown.module.css';
 
 const { Money } = sdkTypes;
@@ -51,10 +53,12 @@ const LineItemCustomerCommissionMaybe = props => {
     commissionItem = (
       <div className={css.lineItem}>
         <span className={css.itemLabel}>
-          <FormattedMessage
-            id="OrderBreakdown.commission"
-            values={{ marketplaceName, role: 'customer' }}
-          />
+          <NamedLink name="CMSPage" params={{ pageId: 'faqs' }} to={{ hash: '#vender--como-funciona' }}>
+            <FormattedMessage
+              id="OrderBreakdown.commission"
+              values={{ marketplaceName, role: 'customer' }}
+            />
+          </NamedLink>
         </span>
         <span className={css.itemValue}>{formattedCommission}</span>
       </div>
