@@ -101,7 +101,7 @@
    :at
    {:fn/plus
     [{:fn/timepoint [:time/first-entered-state :state/purchased]}
-     {:fn/period ["P14D"]}]},
+     {:fn/period ["P7D"]}]},
    :actions
    [{:name :action/calculate-full-refund}
     {:name :action/stripe-refund-payment}
@@ -209,6 +209,14 @@
      {:fn/period ["P3D"]}]},
    :to :actor.role/provider,
    :template :purchase-shipping-reminder}
+  {:name :notification/shipping-reminder-final,
+   :on :transition/confirm-payment,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/purchased]}
+     {:fn/period ["P5D"]}]},
+   :to :actor.role/provider,
+   :template :purchase-shipping-reminder-final}
   {:name :notification/order-marked-as-delivered,
    :on :transition/mark-delivered,
    :to :actor.role/customer,
