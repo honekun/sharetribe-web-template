@@ -5,28 +5,20 @@ transactional-template API. The browser never receives the Brevo API key, contac
 configuration, template IDs, or webhook secret.
 
 The approved Spanish copy, subject lines, preview text, and content notes are in
-[`docs/brevo-templates-es.md`](./brevo-templates-es.md). PostgreSQL and notification-worker
-operations are documented in [`docs/notification-postgres.md`](./notification-postgres.md).
+[`brevo-templates-es.md`](brevo-templates-es.md). PostgreSQL and notification-worker operations are
+documented in [`notification-postgres.md`](notification-postgres.md).
 
-## Status and pending actions
+## Current implementation and deployment requirements
 
-### Implemented and locally verified
+The application implements seller welcome email plus five promotional campaign families. Seller
+welcome applies only to Sharetribe user types `vendedor` and `vendedor-tienda`; marketing delivery
+is consent- and suppression-gated. Footer, signup, identity-provider signup, and Contact Details
+flows maintain the preference, while Brevo contact and webhook services synchronize provider state.
+The seller welcome attaches `public/static/files/ArchivoVintach-how-to.pdf`.
 
-- [x] Seller welcome plus five promotional campaign families are implemented.
-- [x] Only Sharetribe user types `vendedor` and `vendedor-tienda` receive seller onboarding.
-- [x] Footer, signup, identity-provider signup, and Contact Details consent flows are implemented.
-- [x] Marketing sends fail closed against first-party consent and suppression state.
-- [x] Brevo contact-list upsert/removal and delivery/suppression webhook handling are implemented.
-- [x] The seller guide exists at `public/static/files/ArchivoVintach-how-to.pdf` and is attached to
-      seller welcome messages.
-- [x] Migrations `001` through `006` apply successfully to the local PostgreSQL container.
-- [x] Database leadership, cursor restoration, atomic delivery deduplication, confirmed retry, and
-      verification cleanup pass with `yarn db:verify`.
-- [x] Server tests, frontend tests, and production builds passed for the implementation.
-
-These checks validate the repository and local database only. They do not prove that a Brevo
-account, production DNS, hosted templates, deployment secrets, production PostgreSQL, or production
-webhook is configured.
+Repository support does not prove that a Brevo account, production DNS, hosted templates, deployment
+secrets, PostgreSQL schema, or production webhook is configured. Verify each deployment environment
+separately.
 
 ### Required per Brevo/deployment environment
 
@@ -153,7 +145,7 @@ channels.
 | `BREVO_LIST_ID`                          | Footer/account sync or campaigns enabled           | Positive numeric ID of the dedicated consented-marketing list. It is required for consent syncing even when campaign sending is still disabled.                                         |
 | `BREVO_SENDER_EMAIL`                     | Welcome or campaigns enabled                       | Exact registered sender address on the authenticated domain.                                                                                                                            |
 | `BREVO_SENDER_NAME`                      | Welcome or campaigns enabled                       | Visible sender name, normally `Archivo Vintach`.                                                                                                                                        |
-| `BREVO_WEBHOOK_SECRET`                   | Campaigns enabled; recommended for any Brevo email | High-entropy shared secret accepted only in the `x-av-brevo-webhook-secret` header (not the URL).                                                                                        |
+| `BREVO_WEBHOOK_SECRET`                   | Campaigns enabled; recommended for any Brevo email | High-entropy shared secret accepted only in the `x-av-brevo-webhook-secret` header (not the URL).                                                                                       |
 | `BREVO_CONSENT_ATTRIBUTES_ENABLED`       | Optional                                           | Set `true` only after all five contact attributes below exist. Restart after changing it. PostgreSQL remains authoritative.                                                             |
 | `BREVO_TEMPLATE_*`                       | Corresponding channel enabled                      | Positive numeric ID of an **active** Brevo transactional template.                                                                                                                      |
 
@@ -457,7 +449,7 @@ yarn notifications:retry NOTIFICATION_KEY --confirm-unknown
 | Template sends but placeholders are visible                                             | Confirm New Template Language and exact uppercase/lowercase `params` names.                                                                                |
 | Email links point to the wrong host                                                     | Correct `REACT_APP_MARKETPLACE_ROOT_URL` and restart/redeploy.                                                                                             |
 | Welcome arrives without PDF                                                             | Confirm the committed file exists in the deployed artifact and the template uses New Template Language.                                                    |
-| Webhook returns `401`                                                                   | Confirm the deployed secret exactly matches the `x-av-brevo-webhook-secret` header value (a `?secret=` query string is not accepted).                       |
+| Webhook returns `401`                                                                   | Confirm the deployed secret exactly matches the `x-av-brevo-webhook-secret` header value (a `?secret=` query string is not accepted).                      |
 | Webhook events never arrive                                                             | Confirm type `transactional`, channel `email`, public HTTPS URL, selected events, `batched=false`, and Brevo webhook test/log status.                      |
 | Unsubscribe does not suppress                                                           | Confirm the template uses Brevo's supported unsubscribe link and the resulting webhook payload event is `unsubscribed`.                                    |
 | No process owns the poller                                                              | Check global flag, Integration API credentials, shared PostgreSQL, migration state, pool size of at least two, and process logs.                           |

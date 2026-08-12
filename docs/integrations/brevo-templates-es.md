@@ -88,8 +88,7 @@ Cada pieza existe una sola vez en Archivo Vintach. Las que ves hoy, mañana pued
 
 CTA: `Ver todo lo que llegó →` → `{{ params.SEARCH_URL }}`
 
-— Archivo Vintach 🗂️<br>
-Circula lo bonito.
+— Archivo Vintach 🗂️<br> Circula lo bonito.
 
 ## `BREVO_TEMPLATE_MATCHING_LISTINGS_B`
 
@@ -109,8 +108,7 @@ prendas que ya tienen alma.
 
 CTA: `Ver todo el archivo →` → `{{ params.SEARCH_URL }}`
 
-— Archivo Vintach 🗂️<br>
-Moda circular hecha en México.
+— Archivo Vintach 🗂️<br> Moda circular hecha en México.
 
 ## `BREVO_TEMPLATE_SIGNUP_NO_LISTING`
 
@@ -154,9 +152,8 @@ CTA: `Publicar mi primera prenda` → `{{ params.CREATE_LISTING_URL }}`
 
 ¿Primera vez vendiendo? `Descarga la guía para vendedoras` → `{{ params.GUIDE_URL }}`
 
-Con mucho gusto de tenerte aquí,<br>
-Sofi, Fer y el equipo de Archivo Vintach<br>
-Moda circular hecha en México.
+Con mucho gusto de tenerte aquí,<br> Sofi, Fer y el equipo de Archivo Vintach<br> Moda circular
+hecha en México.
 
 The application also attaches `ArchivoVintach-how-to.pdf`.
 
@@ -182,5 +179,4 @@ CTA: `Editar mi prenda` → `{{ params.LISTING_URL }}`
 
 Tu prenda tiene valor. Solo necesita la vitrina correcta.
 
-— Archivo Vintach<br>
-Cada pieza merece encontrar su siguiente dueño.
+— Archivo Vintach<br> Cada pieza merece encontrar su siguiente dueño.

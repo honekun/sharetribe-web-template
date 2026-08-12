@@ -60,12 +60,12 @@ const getItemQuantityAndLineItems = async (
           unitPrice: shippingFee,
           quantity: 1,
           // AV: shipping is NOT paid out to the provider. AV buys the eShip label
-          // centrally (the "Segmail" account is billed directly — see Spec B in
+          // centrally (the "Segmail" account is billed directly; see
           // shipmentService.js), so the buyer's shipping payment is retained by
           // the platform to cover the carrier cost + keep the markup. Provider
           // commission is computed on [order] only, so this does not affect it
           // (lineItemHelpers.js getProviderCommissionMaybe). Rationale + payout
-          // reconciliation details: docs/eship-integration.md.
+          // reconciliation details: docs/integrations/eship.md.
           includeFor: ['customer'],
         },
       ]

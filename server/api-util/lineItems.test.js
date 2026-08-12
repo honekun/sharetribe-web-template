@@ -361,7 +361,7 @@ describe('transactionLineItems', () => {
         unitPrice: new Money(11800, 'EUR'),
         quantity: 1,
         // AV: shipping is retained by the platform (AV buys the eShip label
-        // centrally), so it is NOT paid out to the provider. See eship-integration.md.
+        // centrally), so it is NOT paid out to the provider. See docs/integrations/eship.md.
         includeFor: ['customer'],
       });
     });

@@ -4,7 +4,10 @@ Guidance for Claude Code working in this repository.
 
 ## Overview
 
-Customized marketplace ("Archivo Vintach") built on the [Sharetribe Web Template](https://github.com/sharetribe/web-template) (React + Express SSR). Fork of `sharetribe/web-template`, deployed to Heroku (production) and Render.com (staging). Stripe Connect payments via Sharetribe Marketplace API.
+Customized marketplace ("Archivo Vintach") built on the
+[Sharetribe Web Template](https://github.com/sharetribe/web-template) (React + Express SSR). Fork of
+`sharetribe/web-template`, deployed to Heroku (production) and Render.com (staging). Stripe Connect
+payments via Sharetribe Marketplace API.
 
 - GitHub: https://github.com/honekun/sharetribe-web-template
 - Upstream: https://github.com/sharetribe/web-template
@@ -39,34 +42,85 @@ yarn run translate                         # Translation management
 
 ## Architecture
 
-**Routing & data loading** — Routes in `src/routing/routeConfiguration.js`: each has `path`, `name` (for `NamedLink`/`NamedRedirect`), a `@loadable/component`, and an optional `loadData` thunk. `loadData` runs on both server (`server/dataLoader.js`, before render) and client (`RouteComponentRenderer` in `Routes.js`, on mount/nav). Each container exports `loadData` via `src/containers/pageDataLoadingAPI.js`.
+**Routing & data loading** — Routes in `src/routing/routeConfiguration.js`: each has `path`, `name`
+(for `NamedLink`/`NamedRedirect`), a `@loadable/component`, and an optional `loadData` thunk.
+`loadData` runs on both server (`server/dataLoader.js`, before render) and client
+(`RouteComponentRenderer` in `Routes.js`, on mount/nav). Each container exports `loadData` via
+`src/containers/pageDataLoadingAPI.js`.
 
-**Redux ducks** — Self-contained modules (`@reduxjs/toolkit` `createSlice`/`createAsyncThunk`). Global ducks in `src/ducks/` (`auth`, `user`, `ui`, `stripe`, `marketplaceData`, …); container ducks colocated. SDK injected as `thunkAPI.extra`. Entities normalized in `marketplaceData.duck.js` (containers hold IDs). Errors via `storableError()`.
+**Redux ducks** — Self-contained modules (`@reduxjs/toolkit` `createSlice`/`createAsyncThunk`).
+Global ducks in `src/ducks/` (`auth`, `user`, `ui`, `stripe`, `marketplaceData`, …); container ducks
+colocated. SDK injected as `thunkAPI.extra`. Entities normalized in `marketplaceData.duck.js`
+(containers hold IDs). Errors via `storableError()`.
 
-**SSR** — Express in `/server/`: `index.js` (middleware/CSP/routes/renderer), `renderer.js` (store + `StaticRouter` → HTML), `dataLoader.js`, `auth.js` (Passport social), `api-util/sdk.js` (cookie token store), `api-util/cache.js` (in-memory LRU, Heroku-safe), `csp.js`. **Guard all browser APIs (`window`/`document`/`localStorage`) behind `typeof window !== 'undefined'`.**
+**SSR** — Express in `/server/`: `index.js` (middleware/CSP/routes/renderer), `renderer.js` (store +
+`StaticRouter` → HTML), `dataLoader.js`, `auth.js` (Passport social), `api-util/sdk.js` (cookie
+token store), `api-util/cache.js` (in-memory LRU, Heroku-safe), `csp.js`. **Guard all browser APIs
+(`window`/`document`/`localStorage`) behind `typeof window !== 'undefined'`.**
 
-**Container/Page pattern** — `PageName.js` (component + `mapStateToProps` + `compose(connect(...))`), `PageName.duck.js` (state + `loadData`), `PageName.module.css`, optional sub-components.
+**Container/Page pattern** — `PageName.js` (component + `mapStateToProps` +
+`compose(connect(...))`), `PageName.duck.js` (state + `loadData`), `PageName.module.css`, optional
+sub-components.
 
-**PageBuilder** (`src/containers/PageBuilder/`) — Renders dynamic pages from Sharetribe hosted assets. `SectionBuilder.js` maps section configs → components (delegates token parsing to `extensions/pageBuilder/av/sectionStyles.js`); `AVSectionContainer.js` is the AV drop-in replacement for upstream `SectionContainer`, handling all display-option tokens. Section appearance encoded in `sectionName` via `- Token` flags (see Section Display-Option Tokens). Custom sections registered via `options.sectionComponents`.
+**PageBuilder** (`src/containers/PageBuilder/`) — Renders dynamic pages from Sharetribe hosted
+assets. `SectionBuilder.js` maps section configs → components (delegates token parsing to
+`extensions/pageBuilder/av/sectionStyles.js`); `AVSectionContainer.js` is the AV drop-in replacement
+for upstream `SectionContainer`, handling all display-option tokens. Section appearance encoded in
+`sectionName` via `- Token` flags (see Section Display-Option Tokens). Custom sections registered
+via `options.sectionComponents`.
 
-**Transaction processes** (`src/transactions/transaction.js`) — `default-purchase` (ITEM), `default-booking` (DAY/NIGHT/HOUR/FIXED), `default-inquiry` (INQUIRY), `default-negotiation` (OFFER/REQUEST). State machines in `transactionProcess*.js`. CheckoutPage → `CheckoutPageWithPayment` (Stripe) or `CheckoutPageWithInquiryProcess`. Timings live in `ext/transaction-processes/*/process.edn` (deployed via `flex-cli process push` + `process update-alias`; in-flight transactions keep their old version). AV `default-purchase`: seller shipping window **P7D** (`transition/auto-cancel`; reminders P3D + P5D `purchase-shipping-reminder[-final]`); buyer confirm window stays P14D (`auto-mark-received`).
+**Transaction processes** (`src/transactions/transaction.js`) — `default-purchase` (ITEM),
+`default-booking` (DAY/NIGHT/HOUR/FIXED), `default-inquiry` (INQUIRY), `default-negotiation`
+(OFFER/REQUEST). State machines in `transactionProcess*.js`. CheckoutPage →
+`CheckoutPageWithPayment` (Stripe) or `CheckoutPageWithInquiryProcess`. Timings live in
+`ext/transaction-processes/*/process.edn` (deployed via `flex-cli process push` +
+`process update-alias`; in-flight transactions keep their old version). AV `default-purchase`:
+seller shipping window **P7D** (`transition/auto-cancel`; reminders P3D + P5D
+`purchase-shipping-reminder[-final]`); buyer confirm window stays P14D (`auto-mark-received`).
 
-**SDK** — `sharetribe-flex-sdk`; client wrapper `src/util/sdkLoader.js`, server `server/api-util/sdk.js`. Tokens in HttpOnly cookies (auto-refresh). Hosted assets via `sdk.assets.search()`, cached 1hr server-side.
+**SDK** — `sharetribe-flex-sdk`; client wrapper `src/util/sdkLoader.js`, server
+`server/api-util/sdk.js`. Tokens in HttpOnly cookies (auto-refresh). Hosted assets via
+`sdk.assets.search()`, cached 1hr server-side.
 
-**Config** (`src/config/`) — Built-in config merged with hosted Sharetribe config at runtime via `util/configHelpers.js`; access via `useConfiguration()`. AV-specific:
-- `configListingDisplay.js` — client-only render override map swapping inputs for hosted listing fields (`all_sizes`→`groupedMultiSelect`, `color`→`colorGridPicker`, `brand`→`searchableSelect`). Read by `EditListingDetailsForm`; does NOT change backend search schema.
-- `configAV.js` — AV defaults kept out of upstream files: `defaultCountry` (Stripe payment/payout, `REACT_APP_AV_DEFAULT_COUNTRY`); `sellerUserTypes` + `canShowOriginalPrice()` (originalPrice gate); `storeSellerUserType`/`storeTypeFieldKey`/`getStoreTypeTags()` (StoreTypeTags gate/labels); `welcomePopupUserTypes`/`canShowWelcomePopup()`/`welcomePopupSuppressedPaths` (AVWelcomePopup gate). The three gates are intentionally separate.
+**Config** (`src/config/`) — Built-in config merged with hosted Sharetribe config at runtime via
+`util/configHelpers.js`; access via `useConfiguration()`. AV-specific:
 
-**Styling** — CSS Modules (`*.module.css`, `className={css.root}`). Globals in `src/styles/`: `marketplaceDefaults.css`, `avBrandOverrides.css`, `customMediaQueries.css`. Theme vars `--marketplaceColor[Dark|Light]`. Dark theme via `css.darkTheme` (section `textColor: 'white'`). **Topbar breakpoint:** desktop topbar shows at `--viewportLarge` (1024px); pages passing `mobileRootClassName={css.mobileTopbar}` must hide `.mobileTopbar` at `--viewportLarge` too (not `--viewportWide`/1600px) or both topbars render on tablet.
+- `configListingDisplay.js` — client-only render override map swapping inputs for hosted listing
+  fields (`all_sizes`→`groupedMultiSelect`, `color`→`colorGridPicker`, `brand`→`searchableSelect`).
+  Read by `EditListingDetailsForm`; does NOT change backend search schema.
+- `configAV.js` — AV defaults kept out of upstream files: `defaultCountry` (Stripe payment/payout,
+  `REACT_APP_AV_DEFAULT_COUNTRY`); `sellerUserTypes` + `canShowOriginalPrice()` (originalPrice
+  gate); `storeSellerUserType`/`storeTypeFieldKey`/`getStoreTypeTags()` (StoreTypeTags gate/labels);
+  `welcomePopupUserTypes`/`canShowWelcomePopup()`/`welcomePopupSuppressedPaths` (AVWelcomePopup
+  gate). The three gates are intentionally separate.
 
-**CSS placement (keep upstream files clean).** Never edit an upstream `*.module.css` just to restyle it. Instead:
-- **Restyle an existing upstream class/element** (color, spacing, font, layout) → add a global override to `src/styles/avBrandOverrides.css`. Reach scoped classes with `:root [class*='Component_localClass__'] { … }` — the `:root` raises specificity to (0,2,0) so it beats the module's own `.localClass` (0,1,0) regardless of source order (CSS Modules load after the globals). Brand vars (`--av*`) and global element rules also live here.
-- **Add a new component-specific class** consumed by JS → put it in a new co-located AV module (`<Component>.av.module.css`) imported by the (already-forked) component, not in the upstream `.module.css`. A global override can't apply a class the module never declares.
-- Pristine upstream baseline for diffing/reverting a file: `git diff a252774a -- <file>` (the `upstream/main` merge-base); empty diff = clean. The big forked files (TopbarDesktop/MobileMenu/SearchForm + CustomLinksMenu, SectionBuilder, BlockDefault, SectionFeatures/Footer, vendored `image-gallery.css`) are intentionally kept as-is.
+**Styling** — CSS Modules (`*.module.css`, `className={css.root}`). Globals in `src/styles/`:
+`marketplaceDefaults.css`, `avBrandOverrides.css`, `customMediaQueries.css`. Theme vars
+`--marketplaceColor[Dark|Light]`. Dark theme via `css.darkTheme` (section `textColor: 'white'`).
+**Topbar breakpoint:** desktop topbar shows at `--viewportLarge` (1024px); pages passing
+`mobileRootClassName={css.mobileTopbar}` must hide `.mobileTopbar` at `--viewportLarge` too (not
+`--viewportWide`/1600px) or both topbars render on tablet.
+
+**CSS placement (keep upstream files clean).** Never edit an upstream `*.module.css` just to restyle
+it. Instead:
+
+- **Restyle an existing upstream class/element** (color, spacing, font, layout) → add a global
+  override to `src/styles/avBrandOverrides.css`. Reach scoped classes with
+  `:root [class*='Component_localClass__'] { … }` — the `:root` raises specificity to (0,2,0) so it
+  beats the module's own `.localClass` (0,1,0) regardless of source order (CSS Modules load after
+  the globals). Brand vars (`--av*`) and global element rules also live here.
+- **Add a new component-specific class** consumed by JS → put it in a new co-located AV module
+  (`<Component>.av.module.css`) imported by the (already-forked) component, not in the upstream
+  `.module.css`. A global override can't apply a class the module never declares.
+- Pristine upstream baseline for diffing/reverting a file: `git diff a252774a -- <file>` (the
+  `upstream/main` merge-base); empty diff = clean. The big forked files
+  (TopbarDesktop/MobileMenu/SearchForm + CustomLinksMenu, SectionBuilder, BlockDefault,
+  SectionFeatures/Footer, vendored `image-gallery.css`) are intentionally kept as-is.
 
 ## Custom AV Components
 
 `src/components/`:
+
 - `AVListingCard/` — listing card; overlays `StoreTypeTags` for `vendedor-tienda` authors
 - `AVUserCard/` — profile card for `SectionSelectedUser`
 - `AVCategoryCard/` — category card for `SectionSelectedCat`; links to `/s?pub_categoryLevel1=<id>`
@@ -76,87 +130,210 @@ yarn run translate                         # Translation management
 - `FieldSearchableSelect/` — searchable single-select combobox (`brand`)
 - `NewsletterForm/` — Brevo subscribe; posts `/api/brevo/subscribe`
 - `PricingToggle/` — shared pricing card UI (BlockPriceSelector + SectionPriceSelector)
-- `StoreTypeTags/` — colored tag chips for `vendedor-tienda`; values from `tipoTienda` user field; gate/labels in `configAV.getStoreTypeTags()`; needs `profile.publicData.{userType,tipoTienda}` in `fields.user` (added to `SearchPage.duck.js` + `extensions/landingPage/av/listings.js`)
-- `AVWelcomePopup/` — one-time onboarding modal for new sellers, rendered by `TopbarContainer`; all content via `AVWelcomePopup.<userType>.*` translation keys (empty = hidden); dismissal persists `publicData.onboardingCompleted` via `markVendedorOnboarded`. See `memory/welcome-popup`.
+- `StoreTypeTags/` — colored tag chips for `vendedor-tienda`; values from `tipoTienda` user field;
+  gate/labels in `configAV.getStoreTypeTags()`; needs `profile.publicData.{userType,tipoTienda}` in
+  `fields.user` (added to `SearchPage.duck.js` + `extensions/landingPage/av/listings.js`)
+- `AVWelcomePopup/` — one-time onboarding modal for new sellers, rendered by `TopbarContainer`; all
+  content via `AVWelcomePopup.<userType>.*` translation keys (empty = hidden); dismissal persists
+  `publicData.onboardingCompleted` via `markVendedorOnboarded`. See `memory/welcome-popup`.
 - `IconChat/` — chat bubble SVG; the carousel's "Chat" button (OrderPanel `secondaryCtaButton`)
 - `BalanceSummary/`, `PayoutItem/`, `TransactionFilters/` — MyBalancePage UI
 
-**Shared field-controls pattern** (FieldGroupedMultiSelect, FieldColorDropdown, FieldSearchableSelect): clear (×) + toggle (▼/▲) in `.controls` flex group, 32×32px, `border-radius: 4px`. Required translation keys: `expand`/`collapse` (all three); `clearAll` (grouped + color); `clear` (searchable).
+**Shared field-controls pattern** (FieldGroupedMultiSelect, FieldColorDropdown,
+FieldSearchableSelect): clear (×) + toggle (▼/▲) in `.controls` flex group, 32×32px,
+`border-radius: 4px`. Required translation keys: `expand`/`collapse` (all three); `clearAll`
+(grouped + color); `clear` (searchable).
 
-`src/containers/ListingPage/AVListingDetails/` — curated attribute summary (brand/sizes/condition/colors/category/género) as `/s?pub_*` links + description excerpt with show more/less; rendered via OrderPanel `detailsSlot`.
+`src/containers/ListingPage/AVListingDetails/` — curated attribute summary
+(brand/sizes/condition/colors/category/género) as `/s?pub_*` links + description excerpt with show
+more/less; rendered via OrderPanel `detailsSlot`.
 
-**Custom pages:** `MakeOfferPage`, `RequestQuotePage`, `ManageAccountPage` (negotiation); `MyPurchasesPage`, `MySalesPage`, `MyBalancePage`; `BulkImportPage` (`/admin/bulk-import`, CSV+image import open to any signed-in user — listings author to the current user; `BULK_IMPORT_OPERATOR_EMAILS` flags "admin" users who may add a `user_id` column to author for others. Tiered limits + per-user hourly rate limit + magic-byte image sniffing; blue CTA on `/l/new`. See `docs/bulk-import.md`).
+**Custom pages:** `MakeOfferPage`, `RequestQuotePage`, `ManageAccountPage` (negotiation);
+`MyPurchasesPage`, `MySalesPage`, `MyBalancePage`; `BulkImportPage` (`/admin/bulk-import`, CSV+image
+import open to any signed-in user — listings author to the current user;
+`BULK_IMPORT_OPERATOR_EMAILS` flags "admin" users who may add a `user_id` column to author for
+others. Tiered limits + per-user hourly rate limit + magic-byte image sniffing; blue CTA on
+`/l/new`. See `docs/implementation/bulk-import.md`).
 
 ### Custom PageBuilder sections (`SectionBuilder/`)
 
-| Section | type / sectionId prefix | Notes |
-|---|---|---|
-| `SectionHeroCustom2` | `avHero2` / `av-hero2-*` | 2 CTAs, optional mobile bg + bgLink |
-| `SectionHeroCustom3` | `avHero3` / `av-hero3-*` | block-based; each block = image strip + overlay |
-| `SectionVideoSection` | `avVideo` / `av-video-*` | 50/50 video+text; URL from translation key |
-| `SectionPriceSelector` | — | data from `content/pricing-plans.json` |
-| `SectionSelectedListings` | `av-selections` | block `blockName` = listing UUID |
-| `SectionRecommendedListings` | `av-recommendeds` | block names = listing UUIDs |
-| `SectionTagCatListings` | `av-tag-listings` | first block `blockName` = `tag:<v>`/`cat:<v>`/plain |
-| `SectionSelectedCat` | `av-selected-cats` | AVCategoryCard; block = category id + title + media |
-| `SectionSelectedUser` | `avSelectedUsers` / `av-selected-users-*` | block names = user UUIDs |
-| `SectionInstaGrid` | `avInstaGrid` / `av-insta-grid-*` | 2–6 col image grid |
+| Section                      | type / sectionId prefix                   | Notes                                               |
+| ---------------------------- | ----------------------------------------- | --------------------------------------------------- |
+| `SectionHeroCustom2`         | `avHero2` / `av-hero2-*`                  | 2 CTAs, optional mobile bg + bgLink                 |
+| `SectionHeroCustom3`         | `avHero3` / `av-hero3-*`                  | block-based; each block = image strip + overlay     |
+| `SectionVideoSection`        | `avVideo` / `av-video-*`                  | 50/50 video+text; URL from translation key          |
+| `SectionPriceSelector`       | —                                         | data from `content/pricing-plans.json`              |
+| `SectionSelectedListings`    | `av-selections`                           | block `blockName` = listing UUID                    |
+| `SectionRecommendedListings` | `av-recommendeds`                         | block names = listing UUIDs                         |
+| `SectionTagCatListings`      | `av-tag-listings`                         | first block `blockName` = `tag:<v>`/`cat:<v>`/plain |
+| `SectionSelectedCat`         | `av-selected-cats`                        | AVCategoryCard; block = category id + title + media |
+| `SectionSelectedUser`        | `avSelectedUsers` / `av-selected-users-*` | block names = user UUIDs                            |
+| `SectionInstaGrid`           | `avInstaGrid` / `av-insta-grid-*`         | 2–6 col image grid                                  |
 
-**Custom blocks** (`BlockBuilder/`): `BlockPriceSelector`, `BlockDefault`. `BlockDefault` blockName tokens (parsed in `extensions/pageBuilder/av/blocks.js` `createBlockCustomProps`): `smallerTitles ::` (mirrors `- SmallerTitles`), `mediaTitle ::` (renders media between the title and the rest of the content: title → media → text/CTA), `blueTitle ::` (mirrors `- BlueTitle` but colors only that block's own title, not body-markdown headings); `fullLinks ::` (applies `word-break: keep-all` to links in the block's body `<p>` elements so a word/URL is never broken mid-character — a too-long link overflows at full size instead of splitting); `imgTop ::` (applies `object-position: top` to the block media img/video so cropped media anchors to the top instead of center).
+**Custom blocks** (`BlockBuilder/`): `BlockPriceSelector`, `BlockDefault`. `BlockDefault` blockName
+tokens (parsed in `extensions/pageBuilder/av/blocks.js` `createBlockCustomProps`):
+`smallerTitles ::` (mirrors `- SmallerTitles`), `mediaTitle ::` (renders media between the title and
+the rest of the content: title → media → text/CTA), `blueTitle ::` (mirrors `- BlueTitle` but colors
+only that block's own title, not body-markdown headings); `fullLinks ::` (applies
+`word-break: keep-all` to links in the block's body `<p>` elements so a word/URL is never broken
+mid-character — a too-long link overflows at full size instead of splitting); `imgTop ::` (applies
+`object-position: top` to the block media img/video so cropped media anchors to the top instead of
+center).
 
 ### ListingPage carousel layout (AVListingPageCarousel)
 
-`src/containers/ListingPage/AVListingPageCarousel.js` is active when `layoutConfig.listingPage?.variantType === 'carousel'`, else `ListingPageCoverPhoto`. (Unused non-AV `ListingPageCarousel.js` also exists.) OrderPanel becomes a fixed bottom-bar modal below 1024px, so the order column is desktop-only. **Sticky-gallery gotcha:** `.reviewsBlock` is kept a sibling *outside* `.galleryColumn` (full-width grid row 2) so it can't inflate the sticky gallery's containing block. OrderPanel accepts `detailsSlot`/`footerSlot`/`hideAuthor`/`secondaryCtaButton` props to restructure without forking. Full detail: `memory/listing-page-carousel-layout`.
+`src/containers/ListingPage/AVListingPageCarousel.js` is active when
+`layoutConfig.listingPage?.variantType === 'carousel'`, else `ListingPageCoverPhoto`. (Unused non-AV
+`ListingPageCarousel.js` also exists.) OrderPanel becomes a fixed bottom-bar modal below 1024px, so
+the order column is desktop-only. **Sticky-gallery gotcha:** `.reviewsBlock` is kept a sibling
+_outside_ `.galleryColumn` (full-width grid row 2) so it can't inflate the sticky gallery's
+containing block. OrderPanel accepts `detailsSlot`/`footerSlot`/`hideAuthor`/`secondaryCtaButton`
+props to restructure without forking. Full detail: `memory/listing-page-carousel-layout`.
 
 ### My Purchases / Sales / Balance
 
-`/my-purchases` + `/my-sales` reuse `InboxItem` + `getStateData` from InboxPage; ducks hard-code `only: 'order'` / `only: 'sale'`. `/my-balance` is a seller financial dashboard: **no direct Stripe balance API** — totals computed client-side from transaction `payoutTotal` via `Promise.all` of paginated + 3 summary `sdk.transactions.query()` calls. Shared util `src/transactions/transactionHelpers.js`: `getStatusFromLastTransition`, `getCompletedTransitions`, `getRefundedTransitions`, `buildFilteredQueryParams`. All three registered in `routeConfiguration.js`/`pageDataLoadingAPI.js`/`reducers.js`; linked from TopbarDesktop, TopbarMobileMenu, UserNav.
+`/my-purchases` + `/my-sales` reuse `InboxItem` + `getStateData` from InboxPage; ducks hard-code
+`only: 'order'` / `only: 'sale'`. `/my-balance` is a seller financial dashboard: **no direct Stripe
+balance API** — totals computed client-side from transaction `payoutTotal` via `Promise.all` of
+paginated + 3 summary `sdk.transactions.query()` calls. Shared util
+`src/transactions/transactionHelpers.js`: `getStatusFromLastTransition`, `getCompletedTransitions`,
+`getRefundedTransitions`, `buildFilteredQueryParams`. All three registered in
+`routeConfiguration.js`/`pageDataLoadingAPI.js`/`reducers.js`; linked from TopbarDesktop,
+TopbarMobileMenu, UserNav.
 
 ## Extensions
 
-AV keeps upstream files unmodified via extension architecture in `src/extensions/`. Hooks: `loadDataExtension`, `selectExtensionProps`, `getPageBuilderOptions`, `transformPageData`.
+AV keeps upstream files unmodified via extension architecture in `src/extensions/`. Hooks:
+`loadDataExtension`, `selectExtensionProps`, `getPageBuilderOptions`, `transformPageData`.
 
-- `landingPage/av/` — `constants.js`, `sections.js`, `listings.js` (`queryListingsByIds`/`queryListingsByFilter`/`parseFilterFromBlockName`), `transform.js`, `index.js` (registers AV sections + wires hooks). `LandingPage.js`/`LandingPage.duck.js` contain **only the extension wiring** (the `mapStateToProps`/`loadData` seam) — add features via the registry, never inline.
-- `pageBuilder/av/` — registers `avHero2`/`avHero3`/`avVideo`/`price-columns` for CMSPage; `sectionStyles.js` (`parseSectionCustomOptions`, `parseSectionCtaClass`); `constants.js`; `transform.js`.
+- `landingPage/av/` — `constants.js`, `sections.js`, `listings.js`
+  (`queryListingsByIds`/`queryListingsByFilter`/`parseFilterFromBlockName`), `transform.js`,
+  `index.js` (registers AV sections + wires hooks). `LandingPage.js`/`LandingPage.duck.js` contain
+  **only the extension wiring** (the `mapStateToProps`/`loadData` seam) — add features via the
+  registry, never inline.
+- `pageBuilder/av/` — registers `avHero2`/`avHero3`/`avVideo`/`price-columns` for CMSPage;
+  `sectionStyles.js` (`parseSectionCustomOptions`, `parseSectionCtaClass`); `constants.js`;
+  `transform.js`.
 - `accountNav/` (`getAccountSettingsTabs()`), `topbar/` (custom link config), `searchFilters/`.
-- Redux: `src/ducks/avExtension.duck.js` — `avLandingExtension` slice (`tagListingIds`), SSR-safe, registered in `ducks/index.js`.
+- Redux: `src/ducks/avExtension.duck.js` — `avLandingExtension` slice (`tagListingIds`), SSR-safe,
+  registered in `ducks/index.js`.
 
 ## AV-noti: Notifications (Welcome Email + WhatsApp)
 
-Server-side in `server/services/`. `eventPoller.js` polls the Integration API every 5 min (started in `server/index.js`, guarded by `SHARETRIBE_INTEGRATION_CLIENT_ID`; in-memory cursor resets on restart → first boot polls last 10 min). `welcomeEmailService.js` (Brevo email + PDF), `pdfGenerator.js` (PDFKit → `Promise<Buffer>`), `whatsappService.js` (Meta Cloud API, all sends via `sendWhatsApp({phone,templateName,params})`, no-ops if phone/env missing).
+Server-side in `server/services/`. `eventPoller.js` polls the Integration API every 5 min when
+`AV_NOTIFICATIONS_ENABLED=true` or `AV_SHIPPING_LABELS_ENABLED=true` and readiness passes. Its
+PostgreSQL cursor survives restarts; the 10-minute lookback only seeds an environment with no saved
+cursor. `welcomeEmailService.js` handles Brevo email + PDF, `pdfGenerator.js` returns a PDFKit
+`Promise<Buffer>`, and `whatsappService.js` sends Meta Cloud API templates. Enabled channels reject
+incomplete production configuration instead of silently disabling sends.
 
-Events: `user/created` → welcome email + admin & user WhatsApp; `transaction/transitioned` → buyer/seller WhatsApp by transition; `message/created` → other party. **Never import `server/services/*` in client code.**
+Events: `user/created` → welcome email + admin & user WhatsApp; `transaction/transitioned` →
+buyer/seller WhatsApp by transition; `message/created` → other party. **Never import
+`server/services/*` in client code.**
 
-Env vars: `SHARETRIBE_INTEGRATION_CLIENT_ID`, `SHARETRIBE_INTEGRATION_CLIENT_SECRET`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ADMIN_PHONE` (E.164), `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`.
+Env vars: `SHARETRIBE_INTEGRATION_CLIENT_ID`, `SHARETRIBE_INTEGRATION_CLIENT_SECRET`,
+`WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ADMIN_PHONE` (E.164),
+`BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`.
 
-WhatsApp templates (need Meta approval): `av_welcome_user`, `av_admin_new_user`, `av_purchase_confirmed`, `av_sale_received`, `av_delivered`, `av_cancelled`, `av_booking_accepted`, `av_booking_declined`, `av_new_message`.
+WhatsApp templates (need Meta approval): `av_welcome_user`, `av_admin_new_user`,
+`av_purchase_confirmed`, `av_sale_received`, `av_delivered`, `av_cancelled`, `av_booking_accepted`,
+`av_booking_declined`, `av_new_message`.
 
 ## Live Shipping Quotes (eShip / myeship.co)
 
-Buyer shipping price is **quoted live at checkout** from the eShip carrier API (account "Segmail") — the old static `priceGrid` in `configAVShipping.js` is **deprecated** (kept, not used at checkout). Flow: buyer enters MX destination in the payment form → client `POST /api/shipping/quote` → server resolves the seller's stored origin (`integrationSdk.users.show` → `profile.protectedData.shippingOrigin`) + the parcel (`packageSizes[resolvePackageSize(listing)]`) → eShip `POST /rest/quotation` (one call → `rates[]`) → bucket **FASTEST→Express (`nacionalExpress`)** / **CHEAPEST→Estándar (`nacionalEstandar`)**, apply `applyBuyerMarkup` (markup + round up) → cache under a `quoteToken` (15-min TTL) → return buckets + raw rates. Buyer picks a bucket → `avShippingType`/`avQuoteToken`/`avDestination`/`buyerEmail` flow through `getOrderParams` into `orderData`.
+Buyer shipping price is **quoted live at checkout** from the eShip carrier API (account "Segmail");
+there is no static shipping-price table or fallback. Flow: buyer enters MX destination in the
+payment form → client `POST /api/shipping/quote` → server resolves the seller's stored origin
+(`integrationSdk.users.show` → `profile.protectedData.shippingOrigin`) + the parcel
+(`packageSizes[resolvePackageSize(listing)]`) → eShip `POST /rest/quotation` (one call → `rates[]`)
+→ bucket **FASTEST→Express (`nacionalExpress`)** / **CHEAPEST→Estándar (`nacionalEstandar`)**, apply
+`applyBuyerMarkup` (markup + round up) → cache under a `quoteToken` (15-min TTL) → return buckets +
+raw rates. Buyer picks a bucket → `avShippingType`/`avQuoteToken`/`avDestination`/`buyerEmail` flow
+through `getOrderParams` into `orderData`.
 
-Authoritative price is server-derived in **`transactionLineItems` (now `async`)** via `shippingQuoteService.resolveBucketPrice` (cache hit → pinned; **miss → re-quote**); the client price is never trusted. The 3 callers (`transaction-line-items.js`, `initiate-privileged.js`, `transition-privileged.js`) now `await` it. Chosen rate persisted to transaction `protectedData.avShipping` (for Spec B labels + payout). No static-grid fallback: no origin / `especial` / carrier error → buyer sees **Contactar AV** (retry on transient). **Payout:** the `line-item/shipping-fee` is `includeFor: ['customer']` only (`server/api-util/lineItems.js`) — AV buys the label centrally so the platform (not the seller) retains the shipping fee; provider commission is on `[order]` only so it's unaffected. Rationale + refund/IVA open items in `docs/eship-integration.md` appendix.
+Authoritative price is server-derived in **`transactionLineItems` (now `async`)** via
+`shippingQuoteService.resolveBucketPrice` (cache hit → pinned; **miss → re-quote**); the client
+price is never trusted. The 3 callers (`transaction-line-items.js`, `initiate-privileged.js`,
+`transition-privileged.js`) now `await` it. Chosen rate persisted to transaction
+`protectedData.avShipping` (for labels + payout). No static-grid fallback: no origin / `especial` /
+carrier error → buyer sees **Contactar AV** (retry on transient). **Payout:** the
+`line-item/shipping-fee` is `includeFor: ['customer']` only (`server/api-util/lineItems.js`) — AV
+buys the label centrally so the platform (not the seller) retains the shipping fee; provider
+commission is on `[order]` only so it's unaffected. Current rationale is in
+`docs/integrations/eship.md`; open refund/IVA policy is in `docs/pending/eship.md`.
 
-### Spec B — label purchase (post-payment)
+### Label purchase (post-payment)
 
-Once a purchase is paid, the chosen rate is exchanged for a real eShip label. **Auto path (opt-in — `ESHIP_LABEL_AUTOBUY=true`, off by default):** the `eventPoller` calls `shipmentService.maybeBuyLabelForEvent` on `transaction/confirm-payment` (independent of the WhatsApp gate; gated by `ESHIP_LABEL_AUTOBUY` — unset/false means the seller buys the label via the manual button instead) → `eshipClient.createShipment({ rateId, quotId })` (`POST /rest/shipment`) → result written to transaction `metadata.avLabel` (`{ status:'purchased', shipmentId, trackingNumber, labelUrl, carrier, servicelevel, purchasedAt }` or `{ status:'failed', error, rate_id, failedAt }`). Buying is **idempotent** (`buyLabelForTransaction` short-circuits on `status:'purchased'`, never re-buys; auto path also skips `failed`). **Manual retry:** provider-only `POST /api/shipping/label { transactionId }` (`server/api/shipping-label/`) — authorizes via the caller's SDK (provider or `SHIPPING_LABEL_OPERATOR_EMAILS`), per-user hourly rate limit, then `buyLabelForTransaction(..., { force:true })` (retries a `failed` marker, still can't double-buy). Client: `TransactionPage/AVShippingLabelMaybe/` — `AVShippingLabelSection` (local-state wrapper, POSTs + prefers the returned `avLabel`) + `AVShippingLabelMaybe` (3-state: Descargar guía / Generar guía / hidden for especial); rendered provider-only via a `shippingLabelSlot` prop threaded through `TransactionPanel`. **Verified on apiqa** (2026-07-20): `/quotation` and `/shipment` both identify their object via **`object_id`** (there is **no** `quot_id`/`shipment_id`) — `shippingQuoteService` captures the quotation `object_id` as `quot_id`, `shipmentService` maps the shipment `object_id` to `shipmentId`. `/shipment` needs only the rate's `rate_id` (the `quot_id` is traceability-only). `tracking_number`/`label_url` are as named. QA returns test rates tagged `TESTRATE` with `TEST…` rate_ids and a "Test Label - Do not print" label.
+Once a purchase is paid, the chosen rate is exchanged for a real eShip label. **Auto path (opt-in —
+`ESHIP_LABEL_AUTOBUY=true`, off by default):** the `eventPoller` calls
+`shipmentService.maybeBuyLabelForEvent` on `transaction/confirm-payment` (independent of the
+WhatsApp gate; gated by `ESHIP_LABEL_AUTOBUY` — unset/false means the seller buys the label via the
+manual button instead) → `eshipClient.createShipment({ rateId, quotId })` (`POST /rest/shipment`) →
+result written to transaction `metadata.avLabel`
+(`{ status:'purchased', shipmentId, trackingNumber, labelUrl, carrier, servicelevel, purchasedAt }`
+or `{ status:'failed', error, rate_id, failedAt }`). Buying is **idempotent**
+(`buyLabelForTransaction` short-circuits on `status:'purchased'`, never re-buys; auto path also
+skips `failed`). **Manual retry:** provider-only `POST /api/shipping/label { transactionId }`
+(`server/api/shipping-label/`) — authorizes via the caller's SDK (provider or
+`SHIPPING_LABEL_OPERATOR_EMAILS`), per-user hourly rate limit, then
+`buyLabelForTransaction(..., { force:true })` (retries a `failed` marker, still can't double-buy).
+Client: `TransactionPage/AVShippingLabelMaybe/` — `AVShippingLabelSection` (local-state wrapper,
+POSTs + prefers the returned `avLabel`) + `AVShippingLabelMaybe` (3-state: Descargar guía / Generar
+guía / hidden for especial); rendered provider-only via a `shippingLabelSlot` prop threaded through
+`TransactionPanel`. **Verified on apiqa** (2026-07-20): `/quotation` and `/shipment` both identify
+their object via **`object_id`** (there is **no** `quot_id`/`shipment_id`) — `shippingQuoteService`
+captures the quotation `object_id` as `quot_id`, `shipmentService` maps the shipment `object_id` to
+`shipmentId`. `/shipment` needs only the rate's `rate_id` (the `quot_id` is traceability-only).
+`tracking_number`/`label_url` are as named. QA returns test rates tagged `TESTRATE` with `TEST…`
+rate_ids and a "Test Label - Do not print" label.
 
-Modules: `server/api-util/eshipClient.js` (HTTP: `quote` + `createShipment`), `server/services/shippingQuoteService.js` (orchestration + cache), `server/services/shipmentService.js` (Spec B label buy), `server/api/shipping-quote/` (`/api/shipping/quote`) + `server/api/shipping-label/` (`/api/shipping/label`, both AV-owned in `customApiRoutes.js`), `server/api-util/avShipping.js` (persist helper). Client: `CheckoutPage/shippingQuote.duck.js` (global reducer), `CheckoutPage/AVShippingSelector/` (buckets + raw list + retry/Contactar AV), `ShippingOriginPage` (`/account/shipping-origin`, seller origin in `protectedData.shippingOrigin`), `ManageListingsPage/ShippingOriginBanner/` (missing-origin nudge), `util/shippingOrigin.js` (`hasCompleteShippingOrigin`). **Watchlist:** `StripePaymentForm.js` now hosts the selector slot + surfaces address values via `FormSpy` + gates the Pay button (`submitDisabledExtra`); `transactionLineItems` is async.
+Modules: `server/api-util/eshipClient.js` (HTTP: `quote` + `createShipment`),
+`server/services/shippingQuoteService.js` (orchestration + cache),
+`server/services/shipmentService.js` (label purchase), `server/api/shipping-quote/`
+(`/api/shipping/quote`) + `server/api/shipping-label/` (`/api/shipping/label`, both AV-owned in
+`customApiRoutes.js`), `server/api-util/avShipping.js` (persist helper). Client:
+`CheckoutPage/shippingQuote.duck.js` (global reducer), `CheckoutPage/AVShippingSelector/` (buckets +
+raw list + retry/Contactar AV), `ShippingOriginPage` (`/account/shipping-origin`, seller origin in
+`protectedData.shippingOrigin`), `ManageListingsPage/ShippingOriginBanner/` (missing-origin nudge),
+`util/shippingOrigin.js` (`hasCompleteShippingOrigin`). **Watchlist:** `StripePaymentForm.js` now
+hosts the selector slot + surfaces address values via `FormSpy` + gates the Pay button
+(`submitDisabledExtra`); `transactionLineItems` is async.
 
-Env vars: `ESHIP_API_KEY` (server secret, required to quote), `ESHIP_BASE_URL` (required; no hardcoded default — set per env: QA `https://apiqa.myeship.co/rest` on test, production `https://api.myeship.co/rest` live), `ESHIP_MARKUP_PCT` (optional, default `0.18`), `ESHIP_API_DEBUG` (optional; `true` echoes the carrier error text in the `/api/shipping/quote` response as `{ code: 'ESHIP_ERROR', detail }` — default/false keeps the opaque live response), `SHIPPING_LABEL_OPERATOR_EMAILS` (optional; comma-separated emails allowed to retry any seller's label — sellers can always retry their own), `ESHIP_LABEL_AUTOBUY` (optional, default `false`; `true` auto-buys the label on `confirm-payment`, otherwise the seller buys it via the Generar guía button). Quoting also needs the AV-noti Integration creds (`SHARETRIBE_INTEGRATION_CLIENT_ID/SECRET`) to read seller origin; the Spec B label buy needs them too (writes `metadata.avLabel` via the Integration SDK).
+Env vars: `ESHIP_API_KEY` (server secret, required to quote), `ESHIP_BASE_URL` (required; no
+hardcoded default — set per env: QA `https://apiqa.myeship.co/rest` on test, production
+`https://api.myeship.co/rest` live), `ESHIP_MARKUP_PCT` (optional, default `0.18`),
+`ESHIP_API_DEBUG` (optional; `true` echoes the carrier error text in the `/api/shipping/quote`
+response as `{ code: 'ESHIP_ERROR', detail }` — default/false keeps the opaque live response),
+`SHIPPING_LABEL_OPERATOR_EMAILS` (optional; comma-separated emails allowed to retry any seller's
+label — sellers can always retry their own), `ESHIP_LABEL_AUTOBUY` (optional, default `false`;
+`true` auto-buys the label on `confirm-payment`, otherwise the seller buys it via the Generar guía
+button). Quoting and label purchase also need the Integration credentials
+(`SHARETRIBE_INTEGRATION_CLIENT_ID/SECRET`) to read seller origin and write `metadata.avLabel`.
 
 ## Listing Form Customizations (Edit Listing Wizard)
 
-- **Two-column grid** — Details/Delivery/Location panels use `.fieldsGrid` (1fr 1fr at `--viewportMedium`); full-width fields use `.fullWidth`.
-- **Photos in Details** — when `requireListingImage(listingTypeConfig)`, the Photos step is hidden and a `PhotoGallerySection` (free-form, max 10, drag-reorder via `@dnd-kit`; merge logic in `reconcileOrderedImages.js`) goes in Details. Otherwise standalone `EditListingPhotosPanel` + `ImageSlot` (4 labeled slots → `publicData.imageSlots`, captions rendered by `ListingImageGallery.js`).
-- **Original price** — `publicData.originalPrice` `{amount,currency}`, must exceed `price`; renders as strike-through "was" in OrderPanel + cards.
-- **EarningsEstimator** — fee breakdown below price input (simple price only). Fees from `config.earningsEstimate` (`configDefault.js`), env overrides `REACT_APP_PROVIDER_COMMISSION_PERCENTAGE` (10), `REACT_APP_STRIPE_FEE_PERCENTAGE` (2.9), `REACT_APP_STRIPE_FEE_FIXED_AMOUNT` (30¢).
+- **Two-column grid** — Details/Delivery/Location panels use `.fieldsGrid` (1fr 1fr at
+  `--viewportMedium`); full-width fields use `.fullWidth`.
+- **Photos in Details** — when `requireListingImage(listingTypeConfig)`, the Photos step is hidden
+  and a `PhotoGallerySection` (free-form, max 10, drag-reorder via `@dnd-kit`; merge logic in
+  `reconcileOrderedImages.js`) goes in Details. Otherwise standalone `EditListingPhotosPanel` +
+  `ImageSlot` (4 labeled slots → `publicData.imageSlots`, captions rendered by
+  `ListingImageGallery.js`).
+- **Original price** — `publicData.originalPrice` `{amount,currency}`, must exceed `price`; renders
+  as strike-through "was" in OrderPanel + cards.
+- **EarningsEstimator** — fee breakdown below price input (simple price only). Fees from
+  `config.earningsEstimate` (`configDefault.js`), env overrides
+  `REACT_APP_PROVIDER_COMMISSION_PERCENTAGE` (10), `REACT_APP_STRIPE_FEE_PERCENTAGE` (2.9),
+  `REACT_APP_STRIPE_FEE_FIXED_AMOUNT` (30¢).
 
-**CMSPage pricing asset:** `CMSPage.duck.js` fetches `content/pricing-plans.json` → `state.CMSPage.pricingPlansData` (intl fallback). Schema in `docs/ai_notes.md` §4.
+**CMSPage pricing asset:** `CMSPage.duck.js` fetches `content/pricing-plans.json` →
+`state.CMSPage.pricingPlansData` (intl fallback). Schema and remaining cleanup in
+`docs/pending/pricing-plans.md`.
 
 ## Testing Conventions
 
-Every new AV component/page ships a co-located `.test.js`. Use `renderWithProviders` from `src/util/testHelpers` (RTL + Redux store + router).
+Every new AV component/page ships a co-located `.test.js`. Use `renderWithProviders` from
+`src/util/testHelpers` (RTL + Redux store + router).
 
 ```js
 import { renderWithProviders as render, testingLibrary } from '../../util/testHelpers';
@@ -164,43 +341,58 @@ import '@testing-library/jest-dom';
 const { screen } = testingLibrary;
 ```
 
-Minimum: `AV*` components → render + props + snapshot; `*Page/` containers → smoke + snapshot; `util/*.js` → unit tests per export; `extensions/*` → registry/detection tests. Ducks/utils → pure unit tests. Always run `yarn test -- --watchAll=false` before declaring done.
+Minimum: `AV*` components → render + props + snapshot; `*Page/` containers → smoke + snapshot;
+`util/*.js` → unit tests per export; `extensions/*` → registry/detection tests. Ducks/utils → pure
+unit tests. Always run `yarn test -- --watchAll=false` before declaring done.
 
 **Gotchas (upstream v11.x merges):**
-- `formatMoney(intl, money)` (`util/currency.js`) uses `new Intl.NumberFormat('en-US')` directly — ignores `intl`. Assert formatted strings (`'$20.00'`; negatives `-$2.00`).
-- `currencyDisplay: 'narrowSymbol'` → MXN renders as `$` (not `MX$`) in en-US. Regenerate old snapshots (`yarn test -u`).
-- `validSchemaOptions` needs `enumOptions[].option` to be a **string** — `{ option: '29', label: '29' }`, not numeric (silently dropped + warns).
-- `ResponsiveImage` builds `srcset`, not `src`. Assert `'srcset'`; mocked variant keys must match the consumer's `variants` prop.
-- `ProfileSettingsForm` renders `bioHeadingVendedor`/`bioHeadingTienda` per-userType (no single `bioHeading`, no `bioLabel` — textarea uses a placeholder).
-- `Unsupported listing extended data configurations detected` warning (`configHelpers.js:874`) is upstream signal, not noise — fires when narrow test listingTypes don't intersect default fixtures. Don't broaden fixtures.
+
+- `formatMoney(intl, money)` (`util/currency.js`) uses `new Intl.NumberFormat('en-US')` directly —
+  ignores `intl`. Assert formatted strings (`'$20.00'`; negatives `-$2.00`).
+- `currencyDisplay: 'narrowSymbol'` → MXN renders as `$` (not `MX$`) in en-US. Regenerate old
+  snapshots (`yarn test -u`).
+- `validSchemaOptions` needs `enumOptions[].option` to be a **string** —
+  `{ option: '29', label: '29' }`, not numeric (silently dropped + warns).
+- `ResponsiveImage` builds `srcset`, not `src`. Assert `'srcset'`; mocked variant keys must match
+  the consumer's `variants` prop.
+- `ProfileSettingsForm` renders `bioHeadingVendedor`/`bioHeadingTienda` per-userType (no single
+  `bioHeading`, no `bioLabel` — textarea uses a placeholder).
+- `Unsupported listing extended data configurations detected` warning (`configHelpers.js:874`) is
+  upstream signal, not noise — fires when narrow test listingTypes don't intersect default fixtures.
+  Don't broaden fixtures.
 
 ## Section Display-Option Tokens
 
-Encode in `sectionName` as `- Token` suffixes (space-dash-space). Parsed by `parseSectionCustomOptions()` in `extensions/pageBuilder/av/sectionStyles.js` — **never read `sectionName` directly in section components.**
+Encode in `sectionName` as `- Token` suffixes (space-dash-space). Parsed by
+`parseSectionCustomOptions()` in `extensions/pageBuilder/av/sectionStyles.js` — **never read
+`sectionName` directly in section components.**
 
 Operator-facing reference for the full set lives in `docs/operator-guide.md` §5.1.
 
-| Token | Property | Effect |
-|-------|----------|--------|
-| `- Large` | `isLarge` | Wider content area (max 1370px) |
-| `- FullW` | `isFullW` | Full width, edge to edge |
-| `- FullWHeader` | `isFullWHeader` | Header children span full width |
-| `- ShortHero` | `isShortHero` | Reduced hero height (avHero2; consumed in SectionHeroCustom2) |
-| `- 2/3 cols` | `isTwoThirdsCols` | One-third/two-thirds split (SectionColumns) |
-| `- AvFeature` / `- ReverseFeature` | `isAvFeature` / `isReverseFeature` | Feature layout (SectionFeatures); AvFeature also sets full-bleed in AVSectionContainer |
-| `- BlueTitle` / `- WhiteTitle` | `isBlueTitle` / `isWhiteTitle` | Title color |
-| `- CenterTitleText` / `- CenterDescText` | `isCenterTitleText` / `isCenterDescText` | Center title / description |
-| `- LargeDesc` | `isLargeDesc` | Wider description max-width |
-| `- SmallerTitles` | `isSmallerTitles` | All headings down one level (H1→30/H2→20/H3→18/H4→16/H5→14px) |
-| `- NoPaddings` | `hasNoPaddings` | Remove all paddings |
-| `- SmallGapCols` | `hasSmallGapCols` | Column/grid sections: 8px column gap (sets `--avSectionColGap`) |
-| `- SmallGapRows` | `hasSmallGapRows` | Column/grid sections: 8px row gap (sets `--avSectionRowGap`) |
-| `- NoGapCols` | `hasNoGapCols` | Column/grid sections: 0 column gap (sets `--avSectionColGap`) |
-| `- NoGapRows` | `hasNoGapRows` | Column/grid sections: 0 row gap (sets `--avSectionRowGap`) |
+| Token                                    | Property                                 | Effect                                                                                 |
+| ---------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------- |
+| `- Large`                                | `isLarge`                                | Wider content area (max 1370px)                                                        |
+| `- FullW`                                | `isFullW`                                | Full width, edge to edge                                                               |
+| `- FullWHeader`                          | `isFullWHeader`                          | Header children span full width                                                        |
+| `- ShortHero`                            | `isShortHero`                            | Reduced hero height (avHero2; consumed in SectionHeroCustom2)                          |
+| `- 2/3 cols`                             | `isTwoThirdsCols`                        | One-third/two-thirds split (SectionColumns)                                            |
+| `- AvFeature` / `- ReverseFeature`       | `isAvFeature` / `isReverseFeature`       | Feature layout (SectionFeatures); AvFeature also sets full-bleed in AVSectionContainer |
+| `- BlueTitle` / `- WhiteTitle`           | `isBlueTitle` / `isWhiteTitle`           | Title color                                                                            |
+| `- CenterTitleText` / `- CenterDescText` | `isCenterTitleText` / `isCenterDescText` | Center title / description                                                             |
+| `- LargeDesc`                            | `isLargeDesc`                            | Wider description max-width                                                            |
+| `- SmallerTitles`                        | `isSmallerTitles`                        | All headings down one level (H1→30/H2→20/H3→18/H4→16/H5→14px)                          |
+| `- NoPaddings`                           | `hasNoPaddings`                          | Remove all paddings                                                                    |
+| `- SmallGapCols`                         | `hasSmallGapCols`                        | Column/grid sections: 8px column gap (sets `--avSectionColGap`)                        |
+| `- SmallGapRows`                         | `hasSmallGapRows`                        | Column/grid sections: 8px row gap (sets `--avSectionRowGap`)                           |
+| `- NoGapCols`                            | `hasNoGapCols`                           | Column/grid sections: 0 column gap (sets `--avSectionColGap`)                          |
+| `- NoGapRows`                            | `hasNoGapRows`                           | Column/grid sections: 0 row gap (sets `--avSectionRowGap`)                             |
 
-**CTA tokens** (`parseSectionCtaClass`): `- SectionCtaBtn{Blue,LightBlue,Purple,Pink,Yellow}`. **Modifiers:** `- RoundedFull`, `- Rounded`, `- Square`, `- Dashed`, `- Solid`, `- NoOutline`, `- HeadingFont`, `- BodyFont`, `- AccentFont`, `- CtaBtnCenter`.
+**CTA tokens** (`parseSectionCtaClass`): `- SectionCtaBtn{Blue,LightBlue,Purple,Pink,Yellow}`.
+**Modifiers:** `- RoundedFull`, `- Rounded`, `- Square`, `- Dashed`, `- Solid`, `- NoOutline`,
+`- HeadingFont`, `- BodyFont`, `- AccentFont`, `- CtaBtnCenter`.
 
-To add a token: add `hasToken(sectionName, 'MyToken')` in `parseSectionCustomOptions()` + a CSS class in `AVSectionContainer` (and document it in operator-guide §5.1).
+To add a token: add `hasToken(sectionName, 'MyToken')` in `parseSectionCustomOptions()` + a CSS
+class in `AVSectionContainer` (and document it in operator-guide §5.1).
 
 ## Coding Conventions
 
@@ -212,51 +404,70 @@ To add a token: add `hasToken(sectionName, 'MyToken')` in `parseSectionCustomOpt
 
 ## Upstream File Policy
 
-**Do not modify upstream Sharetribe files unless there is no alternative.** First ask: can this be a custom component, config file, extension hook, or CSS override instead? Only touch upstream files when genuinely required (new route, nav link). Keep changes minimal — add, don't rewrite.
+**Do not modify upstream Sharetribe files unless there is no alternative.** First ask: can this be a
+custom component, config file, extension hook, or CSS override instead? Only touch upstream files
+when genuinely required (new route, nav link). Keep changes minimal — add, don't rewrite.
 
 ### Watchlist — high merge-conflict risk
 
-| File | Why touched |
-|---|---|
-| `components/CustomExtendedDataField/CustomExtendedDataField.js` | `groupedMultiSelect` + `colorGridPicker` branches |
-| `components/FieldCurrencyInput/FieldCurrencyInput.js` | Price inputs forced to `en-US` (`$1,325.00`) to match `formatMoney` display — was locale-dependent `1.325,00 $` |
-| `util/configHelpers.js` | Listing field merge (code wins over Console) |
-| `containers/SearchPage/FilterComponent.js` | Custom filter type branches (delegates to `searchFilters/avFilters`) |
-| `containers/SearchPage/SearchPageWithGrid.js` | Grouped-sizes filter injection (`injectAvFilters`) |
-| `PageBuilder/BlockBuilder/{BlockBuilder,BlockDefault}.js` | Custom block registration |
-| `PageBuilder/SectionBuilder/SectionBuilder.js` | Custom section registration |
-| `translations/en.json` | AV keys mixed with upstream |
-| `TopbarContainer/Topbar/TopbarDesktop/CustomLinksMenu/*` | AV user/category dropdowns (~480 LOC) |
-| `CheckoutPage/CheckoutPageWithPayment.js` | Default Stripe country (`configAV.defaultCountry`) |
-| `EditListingWizard/EditListingWizard.js` | Default Stripe Connect payout country; blue "Bulk import" CTA (`NamedLink`) on new-listing flow |
-| `EditListingWizard/EditListingWizardTab.js` | `currentUser` prop drilling for pricing |
-| `EditListingWizard/EditListingDetailsPanel/EditListingDetailsForm.js` | Two-column grid + `PhotoGallerySection` |
-| `EditListingWizard/EditListingPricingPanel/EditListingPricing{Panel,Form}.js` | `originalPrice` field (gated by `configAV`) |
-| `ManageListingsPage/ManageListingsPage.js` | "Create listing" `NamedLink` heading |
-| `components/UserNav/UserNav.js` | Active-state expanded to all account pages |
-| `containers/ProfilePage/ProfilePage.js` | `ListingCard` → `AVListingCard` swap |
-| `containers/AuthenticationPage/UserFieldDisplayName.js` | Per-userType display-name label (store sellers) |
-| `containers/ListingPage/SectionHero.js` | `StoreTypeTags` overlay on the gallery hero |
-| `containers/ListingPage/CustomListingFields.js` | Force-show the hosted-hidden `tags` field |
-| `PageBuilder/SectionBuilder/SectionColumns/SectionColumns.js` | `AVSectionContainer` + `2/3 cols` token |
-| `PageBuilder/SectionBuilder/SectionCarousel/SectionCarousel.js` | `AVSectionContainer` + `useDebouncedWindowResize` |
-| `components/CustomExtendedDataSection/CustomExtendedDataSection.js` | Custom `color`/`all_sizes` display dispatch (key→component map) |
-| `components/LayoutComposer/LayoutSideNavigation/LayoutWrapperAccountSettingsSideNav.js` | Account tabs from `getAccountSettingsTabs()` extension |
+| File                                                                                    | Why touched                                                                                                     |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `components/CustomExtendedDataField/CustomExtendedDataField.js`                         | `groupedMultiSelect` + `colorGridPicker` branches                                                               |
+| `components/FieldCurrencyInput/FieldCurrencyInput.js`                                   | Price inputs forced to `en-US` (`$1,325.00`) to match `formatMoney` display — was locale-dependent `1.325,00 $` |
+| `util/configHelpers.js`                                                                 | Listing field merge (code wins over Console)                                                                    |
+| `containers/SearchPage/FilterComponent.js`                                              | Custom filter type branches (delegates to `searchFilters/avFilters`)                                            |
+| `containers/SearchPage/SearchPageWithGrid.js`                                           | Grouped-sizes filter injection (`injectAvFilters`)                                                              |
+| `PageBuilder/BlockBuilder/{BlockBuilder,BlockDefault}.js`                               | Custom block registration                                                                                       |
+| `PageBuilder/SectionBuilder/SectionBuilder.js`                                          | Custom section registration                                                                                     |
+| `translations/en.json`                                                                  | AV keys mixed with upstream                                                                                     |
+| `TopbarContainer/Topbar/TopbarDesktop/CustomLinksMenu/*`                                | AV user/category dropdowns (~480 LOC)                                                                           |
+| `CheckoutPage/CheckoutPageWithPayment.js`                                               | Default Stripe country (`configAV.defaultCountry`)                                                              |
+| `EditListingWizard/EditListingWizard.js`                                                | Default Stripe Connect payout country; blue "Bulk import" CTA (`NamedLink`) on new-listing flow                 |
+| `EditListingWizard/EditListingWizardTab.js`                                             | `currentUser` prop drilling for pricing                                                                         |
+| `EditListingWizard/EditListingDetailsPanel/EditListingDetailsForm.js`                   | Two-column grid + `PhotoGallerySection`                                                                         |
+| `EditListingWizard/EditListingPricingPanel/EditListingPricing{Panel,Form}.js`           | `originalPrice` field (gated by `configAV`)                                                                     |
+| `ManageListingsPage/ManageListingsPage.js`                                              | "Create listing" `NamedLink` heading                                                                            |
+| `components/UserNav/UserNav.js`                                                         | Active-state expanded to all account pages                                                                      |
+| `containers/ProfilePage/ProfilePage.js`                                                 | `ListingCard` → `AVListingCard` swap                                                                            |
+| `containers/AuthenticationPage/UserFieldDisplayName.js`                                 | Per-userType display-name label (store sellers)                                                                 |
+| `containers/ListingPage/SectionHero.js`                                                 | `StoreTypeTags` overlay on the gallery hero                                                                     |
+| `containers/ListingPage/CustomListingFields.js`                                         | Force-show the hosted-hidden `tags` field                                                                       |
+| `PageBuilder/SectionBuilder/SectionColumns/SectionColumns.js`                           | `AVSectionContainer` + `2/3 cols` token                                                                         |
+| `PageBuilder/SectionBuilder/SectionCarousel/SectionCarousel.js`                         | `AVSectionContainer` + `useDebouncedWindowResize`                                                               |
+| `components/CustomExtendedDataSection/CustomExtendedDataSection.js`                     | Custom `color`/`all_sizes` display dispatch (key→component map)                                                 |
+| `components/LayoutComposer/LayoutSideNavigation/LayoutWrapperAccountSettingsSideNav.js` | Account tabs from `getAccountSettingsTabs()` extension                                                          |
 
-Also high-conflict on sync: `SearchResultsPanel.js` (AVListingCard swap), `CMSPage.js` (section injection), `TopbarDesktop.js`/`TopbarMobileMenu.js`/`UserNav.js` (nav links), `EditListingPhotosPanel/`, `EditListing{Delivery,Location}Form.js` (grid wrappers), `EditListingPricingAndStockPanel.js` (EarningsEstimator + originalPrice), `SectionGallery.js`/`ListingImageGallery.js` (imageSlots captions), `OrderBreakdown.js` (`LineItemProviderCommissionFixedMaybe`), `OrderPanel.js` (originalPrice), `configDefault.js` (earningsEstimate), `CheckoutPage/ShippingDetails/ShippingDetails.js` (MX-only address layout: Calle/Número Exterior+Interior/Colonia/C.P.+Ciudad/Estado-select/Teléfono; AV `ShippingDetails.mx*` keys; states from `config/configMxStates.js`), `CheckoutPage/CheckoutPageTransactionHelpers.js` (`getShippingDetailsMaybe` composes MX fields into `line1`/`line2` + structured keys, hardcodes country 'MX'), `CheckoutPage/StripePaymentForm/StripePaymentForm.js` (shipping→billing copy maps colonia→line2, country→'MX'), `TransactionPage/TransactionPage.js` + `TransactionPanel/TransactionPanel.js` (provider-only `shippingLabelSlot` for the Spec B eShip label control). Small CSS-module forks (restyles kept inline due to scoped-class/var coupling — see the `AV:` comments in each): `SectionContainer.module.css`, `SectionListings.module.css`, `FilterPlain.module.css`.
+Also high-conflict on sync: `SearchResultsPanel.js` (AVListingCard swap), `CMSPage.js` (section
+injection), `TopbarDesktop.js`/`TopbarMobileMenu.js`/`UserNav.js` (nav links),
+`EditListingPhotosPanel/`, `EditListing{Delivery,Location}Form.js` (grid wrappers),
+`EditListingPricingAndStockPanel.js` (EarningsEstimator + originalPrice),
+`SectionGallery.js`/`ListingImageGallery.js` (imageSlots captions), `OrderBreakdown.js`
+(`LineItemProviderCommissionFixedMaybe`), `OrderPanel.js` (originalPrice), `configDefault.js`
+(earningsEstimate), `CheckoutPage/ShippingDetails/ShippingDetails.js` (MX-only address layout:
+Calle/Número Exterior+Interior/Colonia/C.P.+Ciudad/Estado-select/Teléfono; AV `ShippingDetails.mx*`
+keys; states from `config/configMxStates.js`), `CheckoutPage/CheckoutPageTransactionHelpers.js`
+(`getShippingDetailsMaybe` composes MX fields into `line1`/`line2` + structured keys, hardcodes
+country 'MX'), `CheckoutPage/StripePaymentForm/StripePaymentForm.js` (shipping→billing copy maps
+colonia→line2, country→'MX'), `TransactionPage/TransactionPage.js` +
+`TransactionPanel/TransactionPanel.js` (provider-only `shippingLabelSlot` for the Spec B eShip label
+control). Small CSS-module forks (restyles kept inline due to scoped-class/var coupling — see the
+`AV:` comments in each): `SectionContainer.module.css`, `SectionListings.module.css`,
+`FilterPlain.module.css`.
 
-Brand colors and the `TabNavHorizontal` `darkSkin` reskin were consolidated into `avBrandOverrides.css` (commit `c3bfa1b06`), so `marketplaceDefaults.css` and `TabNavHorizontal.module.css` are now upstream-clean — do not re-add AV CSS to them.
+Brand colors and the `TabNavHorizontal` `darkSkin` reskin were consolidated into
+`avBrandOverrides.css` (commit `c3bfa1b06`), so `marketplaceDefaults.css` and
+`TabNavHorizontal.module.css` are now upstream-clean — do not re-add AV CSS to them.
 
 ### Unavoidable upstream files — append AV additions at the bottom
 
-| File | AV addition |
-|---|---|
-| `routing/routeConfiguration.js` | Custom page routes |
-| `containers/pageDataLoadingAPI.js` | `loadData` exports |
-| `containers/reducers.js` | Custom page reducers |
-| `ducks/index.js` | `avExtension` duck |
-| `server/index.js` | AV-noti poller + `mountCustomApiRoutes(app)` (before `app.use('/api', apiRouter)`) |
-| `server/customApiRoutes.js` | AV-owned: `/api/brevo`, `/api/instagram`, `/api/my-balance`, `/api/bulk-import`, `/api/shipping` |
+| File                               | AV addition                                                                                      |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `routing/routeConfiguration.js`    | Custom page routes                                                                               |
+| `containers/pageDataLoadingAPI.js` | `loadData` exports                                                                               |
+| `containers/reducers.js`           | Custom page reducers                                                                             |
+| `ducks/index.js`                   | `avExtension` duck                                                                               |
+| `server/index.js`                  | AV-noti poller + `mountCustomApiRoutes(app)` (before `app.use('/api', apiRouter)`)               |
+| `server/customApiRoutes.js`        | AV-owned: `/api/brevo`, `/api/instagram`, `/api/my-balance`, `/api/bulk-import`, `/api/shipping` |
 
 ## Deployment
 
@@ -270,10 +481,11 @@ git remote add upstream https://github.com/sharetribe/web-template.git
 git fetch upstream && git merge upstream/main
 ```
 
-Resolve conflicts reviewing customized areas first: `src/config`, `src/components`, customized containers, `src/extensions/`. See the Watchlist above for the highest-risk files.
+Resolve conflicts reviewing customized areas first: `src/config`, `src/components`, customized
+containers, `src/extensions/`. See the Watchlist above for the highest-risk files.
 
 ## Documentation
 
-`docs/` (read before changing the related subsystem): `bulk-import.md`, `listing-custom-fields-setup.md`, `console-customization-guide.md`, `test-account-setup.md`, `bidding-research.md`, `ai_notes.md`, `HEROKU-CHECKS.md` (in-memory state & multi-dyno safety — read before scaling `web` past 1), `eship-integration.md` (eShip setup/config, env-file loading, verified API shapes, and the shipping-payout/`object_id`/refund decisions — read before touching the shipping line item, label flow, or price math).
-
-Implementation plans (written 2026-06-12, **not yet implemented** — execute task-by-task per plan headers): `plan-favorites-page.md`, `plan-shopping-bag.md`. (`plan-bulk-import-all-users.md` has been implemented as a narrower variant — see `docs/bulk-import.md`.)
+Start with `docs/README.md`. The canonical operator source remains `docs/operator-guide.md`; current
+technical guides are grouped by purpose, and unresolved work is under `docs/pending/`. Implemented
+plans and resolved audit histories do not remain under `docs/`; use Git history when needed.

@@ -2,7 +2,7 @@
 
 // AV shipping config — CommonJS so BOTH the ESM client (via webpack interop)
 // and the plain-Node server (`require`) share one source of truth.
-// Historical source: docs/__old/AV Configuracion Envios Jun 2026.docx.md.
+// Current behavior and reconciliation boundaries: docs/integrations/eship.md.
 
 const defaultPackageSize = 'M';
 

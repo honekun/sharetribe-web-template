@@ -20,10 +20,28 @@ AGENTS.override.md
 .superpowers/
 .playwright-mcp/
 docs/*
-!docs/operator-guide.md
-!docs/brevo-integration-guide.md
-!docs/brevo-templates-es.md
-!docs/notification-postgres.md
-!docs/eship-integration.md
+
+# Keep current documentation and generated shareable guides in version control.
+!docs/*.md
+!docs/operations/
+!docs/operations/*.md
+!docs/implementation/
+!docs/implementation/*.md
+!docs/integrations/
+!docs/integrations/*.md
+!docs/reference/
+!docs/reference/*.md
+!docs/shareable/
+
+# Pending work is documentation, not disposable local output.
+!docs/pending/
+docs/pending/*
+!docs/pending/*.md
+
+# Current operator and implementation references.
+!docs/data/
+docs/data/*
+!docs/data/brand.csv
+!docs/data/categoria-paquete.csv
 npm-debug.log
 yarn-error.log

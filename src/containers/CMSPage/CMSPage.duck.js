@@ -6,7 +6,7 @@ export const avPriceSelectorSecionId = 'av-price-selector';
 
 // Asset path for pricing plans JSON in Sharetribe hosted assets.
 // Create this asset in Console > Content > Assets.
-// See README.md for the expected JSON schema.
+// See docs/pending/pricing-plans.md for the expected JSON schema and rollout state.
 const PRICING_PLANS_ASSET_PATH = 'content/pricing-plans.json';
 
 // ================ Slice ================ //

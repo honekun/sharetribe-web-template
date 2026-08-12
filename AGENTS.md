@@ -164,17 +164,22 @@ run Prettier on touched files or `yarn run format`.
 
 ## Documentation
 
-Read relevant docs before changing their subsystem:
+Start with `docs/README.md`, then read the relevant current guide before changing its subsystem:
 
-- `docs/bulk-import.md`
-- `docs/listing-custom-fields-setup.md`
-- `docs/console-customization-guide.md`
-- `docs/test-account-setup.md`
-- `docs/bidding-research.md`
-- `docs/ai_notes.md`
+- `docs/operator-guide.md`
+- `docs/operations/`
+- `docs/implementation/`
+- `docs/integrations/`
+- `docs/reference/`
 
-Implementation plans (not yet implemented):
+Unresolved research and actions live under `docs/pending/`:
 
-- `docs/plan-bulk-import-all-users.md`
-- `docs/plan-favorites-page.md`
-- `docs/plan-shopping-bag.md`
+- `docs/pending/README.md`
+- `docs/pending/notifications.md`
+- `docs/pending/pricing-plans.md`
+- `docs/pending/bidding.md`
+- `docs/pending/eship.md`
+- `docs/pending/scaling.md`
+- `docs/pending/heroku-deployment.md`
+
+Do not keep implemented plans or resolved audit histories in `docs/`; Git history is the archive.

@@ -131,11 +131,11 @@ The same acknowledgement can recover a `processing` claim only after it is older
 `GET /api/notifications/readiness` returns HTTP `200` when the explicit configuration and
 notification database are ready, or `503` otherwise. It distinguishes:
 
-- shared event poller, automatic shipping-label, seller welcome, Brevo campaign,
-  and WhatsApp flags and missing variable names;
+- shared event poller, shipping-label capability, seller welcome, Brevo campaign, and WhatsApp flags
+  and missing variable names;
 - database migration, active ownership, heartbeat, and current sequence ID;
-- notification delivery, delayed-job, and shipping-label attempt counts by
-  outcome, plus the marketing-preference count; and
+- notification delivery, delayed-job, and shipping-label attempt counts by outcome, plus the
+  marketing-preference count; and
 - pages/events processed, sequence lag in remaining events, oldest observed event age, page-bound
   state, and repeated-error counters.
 
@@ -150,12 +150,11 @@ production alerting system.
 1. Provision a durable managed PostgreSQL database.
 2. Set its server-only `DATABASE_URL` on every web process. All processes must use the same
    database.
-3. Set both `AV_NOTIFICATIONS_ENABLED` and `AV_SHIPPING_LABELS_ENABLED`
-   explicitly. Either enabled capability starts the shared event poller. When
-   notifications are enabled, explicitly set seller welcome, Brevo campaign,
-   and WhatsApp flags. When automatic labels are enabled, supply eShip and
-   Integration API credentials. Incomplete production configuration prevents
-   startup.
+3. Set both `AV_NOTIFICATIONS_ENABLED` and `AV_SHIPPING_LABELS_ENABLED` explicitly. Either enabled
+   capability starts the shared event poller. When notifications are enabled, explicitly set seller
+   welcome, Brevo campaign, and WhatsApp flags. When shipping labels are enabled, supply eShip and
+   Integration API credentials. Automatic purchase remains separately controlled by
+   `ESHIP_LABEL_AUTOBUY`. Incomplete production configuration prevents startup.
 4. Add the provider's required TLS parameters to the connection URL, such as `sslmode=require`,
    according to that provider's certificate guidance.
 5. Run `yarn db:migrate` as a release/pre-deploy command before the new application version starts.
@@ -176,16 +175,19 @@ and the [Docker Official PostgreSQL image documentation](https://hub.docker.com/
 
 ## 5. Failure behavior
 
-- If `DATABASE_URL` or the migrated table is missing, the poller does not run without coordination.
-  It logs the failed leadership attempt and retries.
+- In production, enabling notifications or shipping labels without `DATABASE_URL` prevents the
+  application from starting. A configured but unmigrated database causes readiness and poller
+  failures until `yarn db:migrate` completes.
+- In non-production, a temporary database or leadership failure may be logged and retried, but the
+  poller never runs without PostgreSQL coordination.
 - If the leader's dedicated PostgreSQL connection fails, its polling timers stop. PostgreSQL
   releases the session lock and a standby can take over.
 - Cursor updates include the current owner ID. A stale process cannot overwrite the new leader's
   cursor after ownership changes.
 - A definite provider rejection is stored as `failed`; selected retryable responses receive one
   bounded automatic retry.
-- Marketing withdrawal/provider suppression cancels pending promotional jobs. Claimed marketing
-  jobs recheck consent, email identity, the weekly cap, and live campaign/resource state before send.
+- Marketing withdrawal/provider suppression cancels pending promotional jobs. Claimed marketing jobs
+  recheck consent, email identity, the weekly cap, and live campaign/resource state before send.
 - Campaign jobs left in `processing` by a worker restart are reclaimed after
   `AV_NOTIFICATION_STALE_CLAIM_MINUTES`; the delivery ledger then deduplicates any provider send
   that completed before the interruption.
