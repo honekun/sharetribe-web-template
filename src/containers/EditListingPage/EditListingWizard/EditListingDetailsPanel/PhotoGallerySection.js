@@ -28,6 +28,22 @@ const MIN_SLOTS = 4;
 
 const imageKey = img => img.id?.uuid || img.id;
 
+/**
+ * The image list with the dragged image moved to the position it was dropped on.
+ * Returns the list unchanged when either id is not in it.
+ *
+ * @param {Array} images - current images, in display order
+ * @param {string} activeId - key of the dragged image
+ * @param {string} overId - key of the image it was dropped on
+ * @returns {Array} the reordered images
+ */
+export const getReorderedImages = (images, activeId, overId) => {
+  const keys = images.map(imageKey);
+  const oldIndex = keys.indexOf(activeId);
+  const newIndex = keys.indexOf(overId);
+  return oldIndex === -1 || newIndex === -1 ? images : arrayMove(images, oldIndex, newIndex);
+};
+
 const SortableImageItem = props => {
   const {
     image,
@@ -134,6 +150,8 @@ const PhotoGallerySection = props => {
   const fileInputRef = useRef(null);
   const dragCounterRef = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
+  // How many of the last selection's images did not fit under MAX_IMAGES.
+  const [skippedCount, setSkippedCount] = useState(0);
 
   const { aspectWidth = 1, aspectHeight = 1, variantPrefix = 'listing-card' } =
     listingImageConfig || {};
@@ -149,25 +167,33 @@ const PhotoGallerySection = props => {
 
   const handleSortEnd = ({ active, over }) => {
     if (!over || active.id === over.id) return;
-    const oldIndex = imageIds.indexOf(active.id);
-    const newIndex = imageIds.indexOf(over.id);
-    if (oldIndex !== -1 && newIndex !== -1) {
-      onReorderImages(arrayMove(images, oldIndex, newIndex));
+    const reordered = getReorderedImages(images, active.id, over.id);
+    if (reordered !== images) {
+      onReorderImages(reordered);
     }
   };
 
   const uploadFiles = files => {
-    if (isMaxReached) return;
+    const remainingSlots = MAX_IMAGES - images.length;
+    if (remainingSlots <= 0) {
+      setSkippedCount(0);
+      return;
+    }
+
+    const imageFiles = Array.from(files).filter(f => f.type?.startsWith('image/'));
+    // A selection (or drop) can hold more files than there is room for, so take
+    // only what fits and tell the user about the rest.
+    const accepted = imageFiles.slice(0, remainingSlots);
+    setSkippedCount(imageFiles.length - accepted.length);
+
     const ts = Date.now();
-    Array.from(files)
-      .filter(f => f.type.startsWith('image/'))
-      .reduce((chain, file, index) => {
-        return chain.then(() =>
-          Promise.resolve(
-            onImageUpload({ id: `${file.name}_${ts}_${index}`, file }, listingImageConfig)
-          ).catch(() => {})
-        );
-      }, Promise.resolve());
+    accepted.reduce((chain, file, index) => {
+      return chain.then(() =>
+        Promise.resolve(
+          onImageUpload({ id: `${file.name}_${ts}_${index}`, file }, listingImageConfig)
+        ).catch(() => {})
+      );
+    }, Promise.resolve());
   };
 
   const handleFileChange = e => {
@@ -302,6 +328,15 @@ const PhotoGallerySection = props => {
       {uploadImageError && !photoError && (
         <p className={css.error}>
           <FormattedMessage id="EditListingPhotosForm.imageUploadFailed.uploadFailed" />
+        </p>
+      )}
+
+      {skippedCount > 0 && (
+        <p className={css.error}>
+          <FormattedMessage
+            id="EditListingDetailsPanel.photosLimitSkipped"
+            values={{ count: skippedCount, max: MAX_IMAGES }}
+          />
         </p>
       )}
 

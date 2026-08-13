@@ -282,6 +282,7 @@
   "EditListingDetailsPanel.photosMinRequired": "Add at least 3 photos to continue.",
   "EditListingDetailsPanel.photosAddTip": "You can add up to 10 photos.",
   "EditListingDetailsPanel.photosMaxReached": "Maximum of 10 photos reached.",
+  "EditListingDetailsPanel.photosLimitSkipped": "{count, plural, one {# photo was} other {# photos were}} not added: a listing can have at most {max}.",
   "EditListingDetailsPanel.photoLabel1": "Front photo",
   "EditListingDetailsPanel.photoLabel2": "Back photo",
   "EditListingDetailsPanel.photoLabel3": "Label or detail",

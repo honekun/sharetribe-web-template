@@ -282,6 +282,7 @@
   "EditListingDetailsPanel.photosMinRequired": "Agrega al menos 3 fotos para continuar.",
   "EditListingDetailsPanel.photosAddTip": "Puedes agregar hasta 10 fotos.",
   "EditListingDetailsPanel.photosMaxReached": "Has alcanzado el máximo de 10 fotos.",
+  "EditListingDetailsPanel.photosLimitSkipped": "No {count, plural, one {se agregó # foto} other {se agregaron # fotos}}: un anuncio puede tener como máximo {max}.",
   "EditListingDetailsPanel.photoLabel1": "Foto frontal",
   "EditListingDetailsPanel.photoLabel2": "Foto posterior",
   "EditListingDetailsPanel.photoLabel3": "Etiqueta o detalle",
