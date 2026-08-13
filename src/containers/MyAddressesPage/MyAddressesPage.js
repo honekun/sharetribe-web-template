@@ -126,8 +126,11 @@ const mapDispatchToProps = dispatch => ({
   onChange: () => dispatch(saveAddressClear()),
 });
 
-const MyAddressesPage = compose(connect(mapStateToProps, mapDispatchToProps))(
-  MyAddressesPageComponent
-);
+const MyAddressesPage = compose(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )
+)(MyAddressesPageComponent);
 
 export default MyAddressesPage;

@@ -14,10 +14,7 @@ const groups = [
   {
     key: 'standard',
     label: 'Standard',
-    options: [
-      { option: 's', label: 'Small' },
-      { option: 'm', label: 'Medium' },
-    ],
+    options: [{ option: 's', label: 'Small' }, { option: 'm', label: 'Medium' }],
   },
   {
     key: 'us',

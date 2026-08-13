@@ -43,10 +43,7 @@ describe('FavoritesPage', () => {
 
     const stateWithFavorites = favoriteListingIds => ({
       FavoritesPage: {
-        listingRefs: [
-          { id: listingA.id, type: 'listing' },
-          { id: listingB.id, type: 'listing' },
-        ],
+        listingRefs: [{ id: listingA.id, type: 'listing' }, { id: listingB.id, type: 'listing' }],
         queryInProgress: false,
         queryError: null,
       },

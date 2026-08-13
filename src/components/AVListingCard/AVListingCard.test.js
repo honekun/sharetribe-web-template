@@ -20,10 +20,7 @@ const config = {
         key: 'all_sizes',
         scope: 'public',
         schemaType: 'multi-enum',
-        enumOptions: [
-          { option: 's', label: 'Small' },
-          { option: 'm', label: 'Medium' },
-        ],
+        enumOptions: [{ option: 's', label: 'Small' }, { option: 'm', label: 'Medium' }],
       },
     ],
   },

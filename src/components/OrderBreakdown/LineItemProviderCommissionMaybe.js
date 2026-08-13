@@ -75,7 +75,11 @@ const LineItemProviderCommissionMaybe = props => {
     commissionItem = (
       <div className={css.lineItem}>
         <span className={css.itemLabel}>
-          <NamedLink name="CMSPage" params={{ pageId: 'faqs' }} to={{ hash: '#vender--como-funciona' }}>
+          <NamedLink
+            name="CMSPage"
+            params={{ pageId: 'faqs' }}
+            to={{ hash: '#vender--como-funciona' }}
+          >
             <FormattedMessage
               id="OrderBreakdown.commission"
               values={{ marketplaceName, role: 'provider' }}

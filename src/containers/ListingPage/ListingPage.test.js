@@ -96,10 +96,7 @@ const listingFields = [
       categoryIds: ['cats'],
     },
     schemaType: 'enum',
-    enumOptions: [
-      { option: 'cat_1', label: 'Cat 1' },
-      { option: 'cat_2', label: 'Cat 2' },
-    ],
+    enumOptions: [{ option: 'cat_1', label: 'Cat 1' }, { option: 'cat_2', label: 'Cat 2' }],
     filterConfig: {
       showFilter: true,
     },

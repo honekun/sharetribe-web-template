@@ -42,25 +42,16 @@ describe('notification readiness', () => {
           ],
         })
         .mockResolvedValueOnce({
-          rows: [
-            { status: 'sent', count: 12 },
-            { status: 'unknown', count: 1 },
-          ],
+          rows: [{ status: 'sent', count: 12 }, { status: 'unknown', count: 1 }],
         })
         .mockResolvedValueOnce({
-          rows: [
-            { status: 'pending', count: 3 },
-            { status: 'sent', count: 4 },
-          ],
+          rows: [{ status: 'pending', count: 3 }, { status: 'sent', count: 4 }],
         })
         .mockResolvedValueOnce({
           rows: [{ count: 9 }],
         })
         .mockResolvedValueOnce({
-          rows: [
-            { status: 'purchased', count: 7 },
-            { status: 'unknown', count: 1 },
-          ],
+          rows: [{ status: 'purchased', count: 7 }, { status: 'unknown', count: 1 }],
         }),
     };
 

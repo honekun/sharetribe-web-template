@@ -325,8 +325,11 @@ const mapDispatchToProps = dispatch => ({
     dispatch(manageDisableScrolling(componentId, disableScrolling)),
 });
 
-const ManageListingsPage = compose(connect(mapStateToProps, mapDispatchToProps))(
-  ManageListingsPageComponent
-);
+const ManageListingsPage = compose(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )
+)(ManageListingsPageComponent);
 
 export default ManageListingsPage;
