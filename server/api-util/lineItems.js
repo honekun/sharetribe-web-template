@@ -79,6 +79,14 @@ const getOfferQuantityAndLineItems = orderData => {
 };
 
 /**
+ * Get quantity for digital items. The quantity is always 1, you can't have multiples of digital files.
+ * @param {Object} orderData
+ */
+const getDigitalItemQuantityAndLineItems = orderData => {
+  return { quantity: 1, extraLineItems: [] };
+};
+
+/**
  * Get quantity for fixed bookings with seats.
  * @param {Object} orderData
  * @param {number} [orderData.seats]
@@ -208,6 +216,8 @@ exports.transactionLineItems = async (
   const quantityAndExtraLineItems =
     unitType === 'item'
       ? await getItemQuantityAndLineItems(orderData, publicData, currency, listing, options)
+      : unitType === 'file'
+      ? getDigitalItemQuantityAndLineItems(orderData)
       : unitType === 'fixed'
       ? getFixedQuantityAndLineItems(orderData)
       : unitType === 'hour'

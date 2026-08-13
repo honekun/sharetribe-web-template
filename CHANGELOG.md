@@ -14,10 +14,145 @@ way to update this template, but currently, we follow a pattern:
 
 ## Upcoming version 2026-XX-XX
 
+- [change] Listing images can now be re-ordered while editing/creating a listing. Default behaviour
+  uses a handle for drag-and-drop functionality, and there is also keyboard support for
+  accessibility. [#889](https://github.com/sharetribe/web-template/pull/889)
+- [fix] the default-download process was not taking into use the 1 day expiration time marked on the
+  process. [#902](https://github.com/sharetribe/web-template/pull/902)
+- [change] When access token expires, we have not shared the token store between sdk.listings.show
+  and sdk.exchangeToken calls. This has caused unnecessary retries against those API endpoints.
+  [#901](https://github.com/sharetribe/web-template/pull/901)
+- [fix] EditListingAvailabilityPlanForm: add screenreader text for delete button and make it a
+  semantic button. [#899](https://github.com/sharetribe/web-template/pull/899)
+- [change] Update moment-timezone: 0.6.2. > 0.6.3 (also dependabot were earlier updating lodash and
+  tmp) [#900](https://github.com/sharetribe/web-template/pull/900)
+- [fix] InboxSortForm does not have submit button so we warn the user about immediate change of
+  content after sort input has been changed.
+  [#892](https://github.com/sharetribe/web-template/pull/892)
+- [fix] EditListingPricingPanel: initialValues.price was not there with priceVariants.
+  [#892](https://github.com/sharetribe/web-template/pull/893)
+- [change] Update CircleCI config to v2.1.
+  [#894](https://github.com/sharetribe/web-template/pull/894)
+- [change] PaginationLinks: turn the container into a list to improve accessibility.
+  [#891](https://github.com/sharetribe/web-template/pull/891)
+- [change] Topbar/PriorityLinks: turn the container into a list to improve accessibility.
+  [#888](https://github.com/sharetribe/web-template/pull/888)
+- [fix] Harden Mapbox loading [#890](https://github.com/sharetribe/web-template/pull/890)
+
+## [v12.1.0] 2026-07-27
+
+- [change] Remove locales used by Moment.js. Those files were originally used by react-dates
+  dependency library, which is no longer used.
+  [#879](https://github.com/sharetribe/web-template/pull/879)
+- [change] Update sharetribe-flex-sdk to v1.24.1.
+  [#886](https://github.com/sharetribe/web-template/pull/886)
+- [add] Add currently available translations for DE, ES, FR.
+  [#885](https://github.com/sharetribe/web-template/pull/885)
+- [add] Add manual download link option to files.
+  [#883](https://github.com/sharetribe/web-template/pull/883)
+- [change] server/log.js: omit not-found listings from Sentry errors
+  [#881](https://github.com/sharetribe/web-template/pull/881)
+- [fix] Catch auth thunk rejections to avoid React development overlay.
+  [#882](https://github.com/sharetribe/web-template/pull/882)
+- [fix] Fix negotiation email templates [#878](https://github.com/sharetribe/web-template/pull/878)
+- [fix] Fix typo in a default-download email template
+  [#877](https://github.com/sharetribe/web-template/pull/877)
+
+  [v12.1.0]: https://github.com/sharetribe/web-template/compare/v12.0.0...v12.1.0
+
+## [v12.0.0] 2026-07-14
+
+This major release prepares the template for the default-download process. This process is used to
+purchase digital files. The gist is that provider can attach files to a listing and those are
+visible to the customer after the purchase.
+
+- [add] Add support of purchasing digital files (prepare template for default-download process).
+  [#845](https://github.com/sharetribe/web-template/pull/845)
+- [fix] CreateUserWithIdp: harden data handling of st-authinfo cookie.
+  [#874](https://github.com/sharetribe/web-template/pull/874)
+- [change] Update several dependencies. [#875](https://github.com/sharetribe/web-template/pull/875)
+- [fix] login-as feature: harden error handling.
+  [#873](https://github.com/sharetribe/web-template/pull/873)
+- [change] CustomLinksMenu: refactor rendering order to improve hydration behavior.
+  [#872](https://github.com/sharetribe/web-template/pull/872)
+- [change] Update Stripe Connect account requirements for Netherlands. Individual accounts are
+  supported now for users without access to the Stripe dashboard.
+  [#871](https://github.com/sharetribe/web-template/pull/871)
+
+  [v12.0.0]: https://github.com/sharetribe/web-template/compare/v11.2.2...v12.0.0
+
+## [v11.2.2] 2026-06-26
+
+- [fix] Fix open redirect vulnerabilities that could be abused for phishing attacks.
+  [#869](https://github.com/sharetribe/web-template/pull/869)
+
+  [v11.2.2]: https://github.com/sharetribe/web-template/compare/v11.2.1...v11.2.2
+
+## [v11.2.1] 2026-06-25
+
+- [add] Add currently available translations for ES.
+  [#866](https://github.com/sharetribe/web-template/pull/866)
+- [add] Add currently available translations for FR.
+  [#865](https://github.com/sharetribe/web-template/pull/865)
+- [fix] Fix a text in EN language [#864](https://github.com/sharetribe/web-template/pull/864)
+- [fix] Fix some texts in EN language [#863](https://github.com/sharetribe/web-template/pull/863)
+- [fix] Fix file storage domain default value
+  [#862](https://github.com/sharetribe/web-template/pull/862)
+- [fix] Fix scrollToMessage and streamline file download behavior
+  [#861](https://github.com/sharetribe/web-template/pull/861)
+- [add] Add currently available translations for DE, ES, FR.
+  [#859](https://github.com/sharetribe/web-template/pull/859)
+
+  [v11.2.1]: https://github.com/sharetribe/web-template/compare/v11.2.0...v11.2.1
+
+## [v11.2.0] 2026-06-04
+
+- [add] Attach file to message
+
+  This PR adds capabilities to upload and download digital files to Sharetribe. This feature is
+  enabled for marketplaces by default, and operators can disable the functionality for the entire
+  marketplace in Console Access control.
+
+  As the first use case for file uploads and downloads, we're adding the capability to attach up to
+  10 files to a transaction message. This functionality is enabled per listing type, and it is
+  disabled for existing listing types by default.
+
+  [#830](https://github.com/sharetribe/web-template/pull/830)
+
+- [change] Stripe.js: load conditionally and defer loading.
+  [#847](https://github.com/sharetribe/web-template/pull/847)
+- [fix] configHelpers.js: Only validate numberConfig for schemaType long
+  [#852](https://github.com/sharetribe/web-template/pull/852)
+
+## [v11.1.0] 2026-05-18
+
+- [fix] SearchPage.duck.js: fix integer filter preparation (configs were mixed)
+  [#848](https://github.com/sharetribe/web-template/pull/848)
+- [fix] ContactDetailsPage.duck.js: fix an 'undefined' bug with saveEmailAndPhoneNumberThunk.
+  [#846](https://github.com/sharetribe/web-template/pull/846)
+- [add] Adds codebase support for saving referral ID to user private data on sign-up.
+  [#826](https://github.com/sharetribe/web-template/pull/826)
+
+  [v11.1.0]: https://github.com/sharetribe/web-template/compare/v11.0.2...v11.1.0
+
+## [v11.0.2] 2026-04-29
+
+- [fix] User fields: fix a bug with numberConfig validation (min and max values were missing).
+  [#840](https://github.com/sharetribe/web-template/pull/840)
+- [fix] Fix a layout bug with InboxSortBy component.
+  [#839](https://github.com/sharetribe/web-template/pull/839)
+- [fix] Fix a bug with UserCard showMore button.
+  [#838](https://github.com/sharetribe/web-template/pull/838)
+- [fix] Fixes a bug where listing metadata fields were not shown in the sort dropdown if the default
+  sorting config is missing [#835](https://github.com/sharetribe/web-template/pull/835)
+- [fix] Fix an error in a negotiation email template
+  [#837](https://github.com/sharetribe/web-template/pull/837)
 - [change] Update README.md to mention the NODE_ENV environment variable.
   [#836](https://github.com/sharetribe/web-template/pull/836)
 - [add] Add currently available translations for DE, ES, FR.
   [#834](https://github.com/sharetribe/web-template/pull/834)
+
+  [v11.0.2]: https://github.com/sharetribe/web-template/compare/v11.0.1...v11.0.2
 
 ## [v11.0.1] 2026-04-17
 

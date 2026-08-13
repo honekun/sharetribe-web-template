@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 import appSettings from '../../config/settings';
 import { isEmpty, pickBy } from '../../util/common';
-import { types as sdkTypes, createImageVariantConfig } from '../../util/sdkLoader';
+import { types as sdkTypes, file as sdkFile, createImageVariantConfig } from '../../util/sdkLoader';
 import {
   bookingTimeUnits,
   findNextBoundary,
@@ -24,6 +24,7 @@ import {
   isBookingProcess,
   isNegotiationProcess,
 } from '../../transactions/transaction';
+import { messageHasPendingFiles, executeFileUpload } from '../../util/fileHelpers';
 
 import { addMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { fetchCurrentUserNotifications } from '../../ducks/user.duck';
@@ -33,6 +34,8 @@ const { UUID } = sdkTypes;
 const MESSAGES_PAGE_SIZE = 100;
 const REVIEW_TX_INCLUDES = ['reviews', 'reviews.author', 'reviews.subject'];
 const MINUTE_IN_MS = 1000 * 60;
+const POLL_MAX_ATTEMPTS = 30;
+const POLL_INTERVAL_MS = 1000;
 
 // Day-based time slots queries are cached for 1 minute.
 const removeOutdatedDateData = timeSlotsForDate => {
@@ -85,6 +88,10 @@ const refreshTransactionEntity = (sdk, txId, dispatch) => {
       // refresh failed, but we don't act upon it.
       console.log('error', e); // eslint-disable-line no-console
     });
+};
+
+const getNextPollingDelay = delayMs => {
+  return delayMs * 2 > MINUTE_IN_MS ? MINUTE_IN_MS : delayMs * 2;
 };
 
 // ================ Async Thunks ================ //
@@ -257,6 +264,8 @@ const fetchTransactionPayloadCreator = (
           'reviews',
           'reviews.author',
           'reviews.subject',
+          'protectedFileAttachments',
+          'protectedFileAttachments.file',
         ],
         ...getImageVariants(config.layout.listingImage),
       },
@@ -419,7 +428,12 @@ const fetchMessagesPayloadCreator = (
   return sdk.messages
     .query({
       transaction_id: txId,
-      include: ['sender', 'sender.profileImage'],
+      include: [
+        'sender',
+        'sender.profileImage',
+        'publicFileAttachments',
+        'publicFileAttachments.file',
+      ],
       ...getImageVariants(config.layout.listingImage),
       ...paging,
     })
@@ -438,6 +452,11 @@ const fetchMessagesPayloadCreator = (
           // Background update, no need to to do anything atm.
         });
       }
+
+      const messagesWithPendingFiles = messages.filter(messageHasPendingFiles);
+      messagesWithPendingFiles.forEach(m =>
+        dispatch(pollForMessageFileVerification(m.id.uuid, txId))
+      );
 
       return { messages, pagination };
     })
@@ -467,15 +486,204 @@ export const fetchMoreMessages = (txId, config) => (dispatch, getState, sdk) => 
   return dispatch(fetchMessagesThunk({ txId, page: nextPage, config }));
 };
 
+////////////////////////////////
+// Poll For File Verification //
+////////////////////////////////
+
+const pollForFileVerificationPayloadCreator = (
+  { fileId, tempId },
+  { dispatch, rejectWithValue, extra: sdk, getState }
+) => {
+  const poll = (attempt, delayMs) => {
+    const fileExists = getState().TransactionPage.fileUploads[tempId];
+
+    if (!fileExists) {
+      return { tempId, sent: true };
+    }
+
+    return sdk.ownFiles.show({ id: fileId }).then(resp => {
+      const fileState = resp?.data?.data?.attributes?.state;
+      dispatch(setVerificationStatus({ tempId, verificationStatus: fileState }));
+
+      if (fileState === 'available') {
+        const [fileUpload] = denormalisedResponseEntities(resp);
+        return { fileUpload, tempId };
+      }
+
+      if (fileState === 'verificationFailed') {
+        const [fileUpload] = denormalisedResponseEntities(resp);
+        return rejectWithValue({ tempId, message: 'verificationFailed', fileUpload });
+      }
+
+      if (attempt >= POLL_MAX_ATTEMPTS - 1) {
+        return rejectWithValue({ tempId, message: 'timeout' });
+      }
+
+      return delay(delayMs).then(() => poll(attempt + 1, getNextPollingDelay(delayMs)));
+    });
+  };
+
+  // Wrap poll in a promise to ensure an error is always
+  // thrown asynchronously
+  return Promise.resolve()
+    .then(() => poll(0, POLL_INTERVAL_MS))
+    .catch(e => rejectWithValue({ tempId, error: storableError(e) }));
+};
+
+export const pollForFileVerificationThunk = createAsyncThunk(
+  'TransactionPage/pollForFileVerification',
+  pollForFileVerificationPayloadCreator
+);
+
+export const pollForFileVerification = (fileId, tempId) => dispatch => {
+  return dispatch(pollForFileVerificationThunk({ fileId, tempId }));
+};
+
+////////////////////
+// Upload File    //
+////////////////////
+
+const uploadFilePayloadCreator = (
+  { file, tempId },
+  { dispatch, rejectWithValue, extra: sdk, getState }
+) => {
+  return executeFileUpload({
+    file,
+    tempId,
+    sdk,
+    fileUploadCount: Object.keys(getState().TransactionPage.fileUploads).length,
+    onProgress: progress => dispatch(setUploadProgress({ tempId, progress })),
+  })
+    .then(resp => {
+      dispatch(pollForFileVerificationThunk({ fileId: resp.fileId, tempId }));
+      return resp;
+    })
+    .catch(e => rejectWithValue({ tempId, error: storableError(e) }));
+};
+
+export const uploadFileThunk = createAsyncThunk(
+  'TransactionPage/uploadFile',
+  uploadFilePayloadCreator
+);
+
+// Backward-compatible wrapper
+export const uploadFile = (file, tempId) => dispatch => {
+  return dispatch(uploadFileThunk({ file, tempId }));
+};
+
+///////////////////////////////////////////
+// Poll For Message File Verification   //
+///////////////////////////////////////////
+
+const pollForMessageFileVerificationPayloadCreator = (
+  { messageId, txId },
+  { dispatch, rejectWithValue, extra: sdk }
+) => {
+  const poll = (attempt, delayMs) => {
+    if (document.hidden) {
+      // If the user is on another browser tab or window,
+      // skip the SDK poll and don't increment the delay
+      return delay(delayMs).then(() => poll(attempt + 1, delayMs));
+    }
+    return sdk.messages
+      .query({
+        transactionId: txId,
+        ids: [messageId],
+        include: ['publicFileAttachments', 'publicFileAttachments.file'],
+      })
+      .then(resp => {
+        const message = denormalisedResponseEntities(resp)[0];
+        if (!message) {
+          return rejectWithValue({ messageId, reason: 'messageNotFound' });
+        }
+
+        const hasPendingFiles = messageHasPendingFiles(message);
+
+        dispatch(setMessageFileVerificationStatus({ message }));
+
+        if (!hasPendingFiles) {
+          return { messageId };
+        }
+
+        if (attempt >= POLL_MAX_ATTEMPTS - 1) {
+          return rejectWithValue({ messageId, reason: 'timeout' });
+        }
+
+        return delay(delayMs).then(() => poll(attempt + 1, getNextPollingDelay(delayMs)));
+      });
+  };
+
+  return Promise.resolve()
+    .then(() => poll(0, POLL_INTERVAL_MS))
+    .catch(e => rejectWithValue({ messageId, error: storableError(e) }));
+};
+
+export const pollForMessageFileVerificationThunk = createAsyncThunk(
+  'TransactionPage/pollForMessageFileVerification',
+  pollForMessageFileVerificationPayloadCreator,
+  {
+    condition: ({ messageId }, { getState }) =>
+      !getState().TransactionPage.messageFilePolling[messageId]?.inProgress,
+  }
+);
+
+export const pollForMessageFileVerification = (messageId, txId) => dispatch => {
+  return dispatch(pollForMessageFileVerificationThunk({ messageId, txId }));
+};
+
+////////////////////
+// downloadFile   //
+////////////////////
+const downloadFilePayloadCreator = (
+  { fileAttachmentId: fileId, isOwnFile },
+  { rejectWithValue, extra: sdk }
+) => {
+  if (!fileId) {
+    return Promise.resolve(
+      rejectWithValue({
+        fileAttachmentId: fileId,
+        error: storableError(new Error('Missing fileAttachmentId, cannot initiate download.')),
+      })
+    );
+  }
+  // Request a temporary download URL from the SDK
+  const downLoadFn = isOwnFile
+    ? sdk.ownFileDownloads.create({ fileId: fileId })
+    : sdk.fileDownloads.create({ fileAttachmentId: fileId });
+  return downLoadFn
+    .then(downloadResp => {
+      // Trigger a browser file download
+      const { url } = downloadResp?.data?.data?.attributes || {};
+      if (!url) {
+        throw new Error('Missing download URL, cannot trigger file download.');
+      }
+
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return { fileAttachmentId: fileId, downloadUrl: url };
+    })
+    .catch(e => {
+      return rejectWithValue({ fileAttachmentId: fileId, error: storableError(e) });
+    });
+};
+
+export const downloadFileThunk = createAsyncThunk(
+  'TransactionPage/downloadFile',
+  downloadFilePayloadCreator
+);
+
+// Backward-compatible wrapper — mirrors uploadFile pattern
+export const downloadFile = (fileAttachmentId, isOwnFile = false) => dispatch => {
+  return dispatch(downloadFileThunk({ fileAttachmentId, isOwnFile })).unwrap();
+};
 /////////////////
 // sendMessage //
 /////////////////
 const sendMessagePayloadCreator = (
-  { txId, message, config },
+  { txId, message, config, fileIds },
   { dispatch, rejectWithValue, extra: sdk }
 ) => {
   return sdk.messages
-    .send({ transactionId: txId, content: message })
+    .send({ transactionId: txId, content: message, publicFileAttachments: fileIds })
     .then(response => {
       const messageId = response.data.data.id;
 
@@ -496,8 +704,8 @@ export const sendMessageThunk = createAsyncThunk(
 );
 
 // Backward compatible wrapper for sendMessage
-export const sendMessage = (txId, message, config) => dispatch => {
-  return dispatch(sendMessageThunk({ txId, message, config }));
+export const sendMessage = (txId, message, config, fileIds = null) => dispatch => {
+  return dispatch(sendMessageThunk({ txId, message, config, fileIds }));
 };
 
 ////////////////
@@ -651,6 +859,29 @@ const initialState = {
   lineItems: null,
   fetchLineItemsInProgress: false,
   fetchLineItemsError: null,
+  fileUploads: {
+    // [tempId]: {
+    // uploadInProgress: bool,
+    // verificationInProgress: bool,
+    // error: null | storable-error,
+    // file: null | SKD file,
+    // sourceFile: null | File
+    // progress: null | number,
+    // verificationStatus: null | string,
+    // tempId,
+    // }
+  },
+  // This is configured by default in Access control. If a marketplace
+  // operator disables file uploads when a user is uploading a file,
+  // store the information in state and use it to view the necessary information
+  // if the configuration still has old access details.
+  fileUploadsDisabled: false,
+  fileDownloads: {
+    // [fileId.uuid]: { inProgress: bool, error: null | storable-error, downloadUrl: null | string }
+  },
+  messageFilePolling: {
+    // [messageId]: { inProgress: bool, error: null | storable-error }
+  },
 };
 
 // Merge entity arrays using ids, so that conflicting items in newer array (b) overwrite old values (a).
@@ -668,6 +899,33 @@ const transactionPageSlice = createSlice({
   reducers: {
     setInitialValues: (state, action) => {
       return { ...initialState, ...action.payload };
+    },
+    clearUploadedFiles: (state, action) => {
+      action.payload.forEach(tempId => {
+        delete state.fileUploads[tempId];
+      });
+    },
+    setUploadProgress: (state, action) => {
+      const { tempId, progress } = action.payload;
+      if (state.fileUploads[tempId]) {
+        state.fileUploads[tempId].progress = progress;
+      }
+    },
+    setVerificationStatus: (state, action) => {
+      const { tempId, verificationStatus } = action.payload;
+      if (state.fileUploads[tempId]) {
+        state.fileUploads[tempId].verificationStatus = verificationStatus;
+        state.fileUploads[tempId].uploadInProgress = verificationStatus === 'pendingUpload';
+        state.fileUploads[tempId].verificationInProgress =
+          verificationStatus === 'pendingVerification';
+      }
+    },
+    setMessageFileVerificationStatus: (state, action) => {
+      const { message } = action.payload;
+      const stateMessage = state.messages.find(m => m.id.uuid === message.id.uuid);
+      if (stateMessage && stateMessage.publicFileAttachments) {
+        stateMessage.publicFileAttachments = message.publicFileAttachments;
+      }
     },
   },
   extraReducers: builder => {
@@ -769,6 +1027,122 @@ const transactionPageSlice = createSlice({
         state.fetchLineItemsInProgress = false;
         state.fetchLineItemsError = action.payload;
       })
+      // uploadFile cases
+      .addCase(uploadFileThunk.pending, (state, action) => {
+        const { tempId, file } = action.meta.arg;
+        state.fileUploads[tempId] = {
+          uploadInProgress: true,
+          error: null,
+          file: null,
+          sourceFile: file, // Set source file so that other components can get the file name
+          progress: null,
+          verificationStatus: null,
+          tempId,
+        };
+      })
+      .addCase(uploadFileThunk.fulfilled, (state, action) => {
+        const { fileUpload, tempId } = action.payload;
+        if (state.fileUploads[tempId]) {
+          state.fileUploads[tempId].file = fileUpload;
+          state.fileUploads[tempId].sourceFile = null;
+        }
+      })
+      .addCase(uploadFileThunk.rejected, (state, action) => {
+        const { tempId, error } = action.payload;
+        const { file } = action.meta.arg;
+        const isFileUploadDisabledError =
+          error.status === 403 && error.apiErrors.some(ae => ae.code === 'file-upload-disabled');
+        if (isFileUploadDisabledError) {
+          state.fileUploadsDisabled = true;
+          state.fileUploads = {};
+        } else {
+          state.fileUploads[tempId] = {
+            uploadInProgress: false,
+            error,
+            file: null,
+            sourceFile: file,
+            tempId,
+          };
+        }
+      })
+      // pollForFileVerification cases
+      .addCase(pollForFileVerificationThunk.pending, (state, action) => {
+        const { tempId } = action.meta.arg;
+        if (state.fileUploads[tempId]) {
+          state.fileUploads[tempId].verificationInProgress = true;
+        }
+      })
+      .addCase(pollForFileVerificationThunk.fulfilled, (state, action) => {
+        const { tempId, fileUpload } = action?.payload;
+        if (state.fileUploads[tempId]) {
+          state.fileUploads[tempId].verificationInProgress = false;
+          state.fileUploads[tempId].file = fileUpload;
+        }
+      })
+      .addCase(pollForFileVerificationThunk.rejected, (state, action) => {
+        if (!action.payload) {
+          return;
+        }
+
+        const { tempId, message, fileUpload } = action.payload;
+        if (state.fileUploads[tempId]) {
+          state.fileUploads[tempId].verificationInProgress = false;
+          state.fileUploads[tempId].error = { message };
+          if (fileUpload) {
+            state.fileUploads[tempId].file = fileUpload;
+          }
+        }
+      })
+      // downloadFile cases
+      .addCase(downloadFileThunk.pending, (state, action) => {
+        const { fileAttachmentId } = action.meta.arg;
+        if (fileAttachmentId) {
+          state.fileDownloads[fileAttachmentId.uuid] = {
+            inProgress: true,
+            error: null,
+            downloadUrl: null,
+          };
+        }
+      })
+      .addCase(downloadFileThunk.fulfilled, (state, action) => {
+        const { fileAttachmentId, downloadUrl } = action.payload || {};
+        if (fileAttachmentId) {
+          state.fileDownloads[fileAttachmentId.uuid] = {
+            inProgress: false,
+            error: null,
+            downloadUrl,
+          };
+        }
+      })
+      .addCase(downloadFileThunk.rejected, (state, action) => {
+        if (!action.payload) {
+          return;
+        }
+        const { fileAttachmentId, error } = action.payload;
+        if (fileAttachmentId) {
+          state.fileDownloads[fileAttachmentId.uuid] = {
+            inProgress: false,
+            error,
+            downloadUrl: null,
+          };
+        }
+      })
+      // pollForMessageFileVerification cases
+      .addCase(pollForMessageFileVerificationThunk.pending, (state, action) => {
+        const { messageId } = action.meta.arg;
+        state.messageFilePolling[messageId] = { inProgress: true, error: null };
+      })
+      .addCase(pollForMessageFileVerificationThunk.fulfilled, (state, action) => {
+        const { messageId } = action.payload;
+        state.messageFilePolling[messageId] = { inProgress: false, error: null };
+      })
+      .addCase(pollForMessageFileVerificationThunk.rejected, (state, action) => {
+        if (!action.payload) {
+          return;
+        }
+        const { messageId, reason, error } = action.payload;
+        state.messageFilePolling[messageId] = { inProgress: false, error: error || { reason } };
+      })
       // fetchTimeSlots cases
       .addCase(fetchTimeSlotsThunk.pending, (state, action) => {
         const { timeZone, options } = action.meta.arg;
@@ -833,7 +1207,18 @@ const transactionPageSlice = createSlice({
   },
 });
 
-export const { setInitialValues } = transactionPageSlice.actions;
+export const {
+  setInitialValues,
+  clearUploadedFiles,
+  setUploadProgress,
+  setVerificationStatus,
+  setMessageFileVerificationStatus,
+} = transactionPageSlice.actions;
+
+// ================ Selectors ================ //
+
+// Returns the fileUploads entries as an array, one item per selected file.
+export const selectFileUploads = state => Object.values(state.TransactionPage.fileUploads);
 
 export default transactionPageSlice.reducer;
 

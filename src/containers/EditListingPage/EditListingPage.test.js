@@ -341,6 +341,9 @@ describe('EditListingPage', () => {
       updateInProgress: false,
       payoutDetailsSaveInProgress: false,
       payoutDetailsSaved: false,
+      fileUploads: {},
+      fileUploadsDisabled: false,
+      fileDownloads: {},
     },
     marketplaceData: {
       entities: {
@@ -2828,6 +2831,13 @@ describe('EditListingPageComponent', () => {
         onRemoveListingImage={noop}
         onPayoutDetailsChange={noop}
         onPayoutDetailsSubmit={noop}
+        fileUploads={[]}
+        fileUploadsDisabled={false}
+        hasPendingFileUploads={false}
+        allFilesUploadedAndVerified={false}
+        onUploadFile={noop}
+        onClearUploadedFiles={noop}
+        onDownloadFile={noop}
         page={{
           uploadedImagesOrder: [],
           images: {},

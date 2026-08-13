@@ -2,6 +2,14 @@ import Cookies from 'js-cookie';
 
 import { isEmpty } from '../../util/common';
 import { pickUserFieldsData, addScopePrefix } from '../../util/userHelpers';
+import { pickReferralData } from '../../util/webStorageHelpers';
+
+// Returns full userType config based on selected userType
+const getUserTypeConfig = (userType, userTypes) => {
+  return userTypes.find(config => {
+    return config.userType === userType;
+  });
+};
 
 export const MARKETING_CONSENT_POLICY_VERSION = '2026-07-19';
 
@@ -41,17 +49,22 @@ export const getNonUserFieldParams = (values, userFieldConfigs) => {
  * @param {Array} userFields - User field configurations
  * @returns {{ publicData: Object, privateData: Object, protectedData: Object } | {}}
  */
-export const getExtendedDataMaybe = (submitValues, userType, userFields) => {
+export const getExtendedDataMaybe = (submitValues, userType, userFields, extraData) => {
+  const { publicData, privateData, protectedData } = extraData;
+
   return !isEmpty(submitValues)
     ? {
         publicData: {
+          ...publicData,
           userType,
           ...pickUserFieldsData(submitValues, 'public', userType, userFields),
         },
         privateData: {
+          ...privateData,
           ...pickUserFieldsData(submitValues, 'private', userType, userFields),
         },
         protectedData: {
+          ...protectedData,
           ...pickUserFieldsData(submitValues, 'protected', userType, userFields),
           // If the form has any additional values, pass them forward as user's protected data
           ...getNonUserFieldParams(submitValues, userFields),
@@ -69,7 +82,7 @@ export const getExtendedDataMaybe = (submitValues, userType, userFields) => {
  * @param {Array} params.userFields
  * @returns {(values: Object) => void}
  */
-export const getHandleSubmitSignup = ({ submitSignup, userFields }) => values => {
+export const getHandleSubmitSignup = ({ submitSignup, userFields, userTypes }) => values => {
   const {
     userType,
     email,
@@ -93,13 +106,19 @@ export const getHandleSubmitSignup = ({ submitSignup, userFields }) => values =>
       : {}),
   };
 
+  // Set referral to user private data if it exists and is valid
+  const userTypeConfig = getUserTypeConfig(userType, userTypes);
+  const extraPrivateData = pickReferralData(userTypeConfig);
+
   const submitParams = {
     email,
     password,
     firstName: fname.trim(),
     lastName: lname.trim(),
     ...displayNameMaybe,
-    ...getExtendedDataMaybe({ ...rest, ...consentData }, userType, userFields),
+    ...getExtendedDataMaybe({ ...rest, ...consentData }, userType, userFields, {
+      privateData: extraPrivateData,
+    }),
   };
 
   submitSignup(submitParams);
@@ -115,8 +134,13 @@ export const getHandleSubmitSignup = ({ submitSignup, userFields }) => values =>
  * @param {Array} params.userFields
  * @returns {(values: Object) => void}
  */
-export const getHandleSubmitConfirm = ({ authInfo, submitSingupWithIdp, userFields }) => values => {
-  const { idpToken, email, firstName, lastName, idpId } = authInfo;
+export const getHandleSubmitConfirm = ({
+  authInfo,
+  submitSingupWithIdp,
+  userFields,
+  userTypes,
+}) => values => {
+  const { email, firstName, lastName } = authInfo;
 
   const {
     userType,
@@ -138,6 +162,10 @@ export const getHandleSubmitConfirm = ({ authInfo, submitSingupWithIdp, userFiel
     ...(newLastName !== lastName && { lastName: newLastName }),
   };
 
+  // Set referral to user private data if it exists and is valid
+  const userTypeConfig = getUserTypeConfig(userType, userTypes);
+  const extraPrivateData = pickReferralData(userTypeConfig);
+
   // Pass other values as extended data according to user field configuration
   const consentData = {
     marketingConsent: Boolean(marketingConsent),
@@ -154,12 +182,12 @@ export const getHandleSubmitConfirm = ({ authInfo, submitSingupWithIdp, userFiel
     { ...rest, ...consentData },
     userType,
     userFields,
-    true
+    {
+      privateData: extraPrivateData,
+    }
   );
 
   submitSingupWithIdp({
-    idpToken,
-    idpId,
     ...authParams,
     ...displayNameMaybe,
     ...extendedDataMaybe,

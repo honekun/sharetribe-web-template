@@ -89,7 +89,10 @@ const hasClashWithBuiltInPublicDataKey = listingFields => {
 const validAccessControl = accessControlConfig => {
   const accessControl = accessControlConfig || {};
   const marketplace = accessControl?.marketplace || {};
-  return { ...accessControl, marketplace: { private: false, ...marketplace } };
+  return {
+    ...accessControl,
+    marketplace: { private: false, fileUploadAndDownloadDisabled: false, ...marketplace },
+  };
 };
 
 /////////////////////////
@@ -698,7 +701,16 @@ const validShowConfig = config => {
 };
 
 // numberConfig is passed along with listing fields that use the schema type `long`
-const validNumberConfig = config => {
+const validNumberConfig = (config, schemaType) => {
+  const shouldHaveNumberConfig = schemaType === 'long';
+
+  if (!shouldHaveNumberConfig) {
+    // A field might have an obsolete numberConfig that no longer
+    // matches the field's schema type. If that is the case, return
+    // a valid result and remove the obsolete number config
+    return [true, {}];
+  }
+
   const { minimum, maximum } = config;
   const integerConfig = { minimum, maximum, step: 1 };
 
@@ -850,7 +862,7 @@ const validListingFields = (listingFields, listingTypesInUse, categoriesInUse) =
             : name === 'scope'
             ? validEnumString('scope', value, scopeOptions, 'public')
             : name === 'numberConfig'
-            ? validNumberConfig(value)
+            ? validNumberConfig(value, schemaType)
             : name === 'includeForListingTypes'
             ? validListingTypesForBuiltInSetup(value, listingTypesInUse)
             : name === 'listingTypeConfig'
@@ -911,7 +923,7 @@ const validTransactionFields = transactionFields => {
             : name === 'scope'
             ? validEnumString('scope', value, scopeOptions, 'protected')
             : name === 'numberConfig'
-            ? validNumberConfig(value)
+            ? validNumberConfig(value, schemaType)
             : name === 'schemaType'
             ? validEnumString('schemaType', value, EXTENDED_DATA_SCHEMA_TYPES)
             : name === 'enumOptions'
@@ -977,6 +989,8 @@ const validUserFields = (userFields, userTypesInUse) => {
             ? validEnumString('schemaType', value, EXTENDED_DATA_SCHEMA_TYPES)
             : name === 'enumOptions'
             ? validSchemaOptions(value, schemaType)
+            : name === 'numberConfig'
+            ? validNumberConfig(value, schemaType)
             : name === 'showConfig'
             ? validUserShowConfig(value)
             : name === 'userTypeConfig'
@@ -1050,7 +1064,7 @@ const validListingTypes = listingTypes => {
           },
           ...validTransactionFieldsMaybe,
           ...priceVariationTypeMaybe,
-          // e.g. stockType, availabilityType,...
+          // e.g. stockType, availabilityType, messagingOptions...
           ...restOfListingType,
         },
       ];
@@ -1080,6 +1094,13 @@ export const displayDeliveryPickup = listingTypeConfig => {
 
 export const displayDeliveryShipping = listingTypeConfig => {
   return listingTypeConfig?.defaultListingFields?.shipping !== false;
+};
+
+export const requireListingFiles = listingTypeConfig => {
+  // Unlike other require helpers, this uses a === true check instead of !== false because files are
+  // opt-in. An undefined value indicates that files are not required and in general, new configs for
+  // established listing types are undefined by default
+  return listingTypeConfig?.defaultListingFields?.files === true;
 };
 
 export const requireListingImage = listingTypeConfig => {
@@ -1553,14 +1574,6 @@ const validSortConfig = config => {
 };
 
 const mergeSortConfig = (hostedSortConfig, defaultSortConfig, omitRelevance, listingFields) => {
-  if (hostedSortConfig == null) {
-    return {
-      ...defaultSortConfig,
-      // Disable SortBy component if there are less than 2 options
-      active: defaultSortConfig.options.length > 1,
-    };
-  }
-
   // Flag filters to remove if the default sorting option is toggled off in Console
   const removeByKey = {
     createdAt: !hostedSortConfig?.newest,
@@ -1575,7 +1588,12 @@ const mergeSortConfig = (hostedSortConfig, defaultSortConfig, omitRelevance, lis
   // and returns primaryOptions and secondaryOptions. primaryOptions are prepended to the
   // sort options and secondaryOptions are appended.
   const { primaryOptions, secondaryOptions } = getSortOptionsFromListingFields(listingFields);
-  const filteredDefaults = defaultSortConfig.options.filter(option => !removeByKey[option.key]);
+  // hostedSortConfig can be undefined if listing search settings have not been updated in Console,
+  // in which case there's no need to filter out any options
+  const filteredDefaults =
+    hostedSortConfig == null
+      ? defaultSortConfig.options
+      : defaultSortConfig.options.filter(option => !removeByKey[option.key]);
   const options = [...primaryOptions, ...filteredDefaults, ...secondaryOptions];
 
   return {

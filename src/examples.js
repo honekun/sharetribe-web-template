@@ -18,6 +18,7 @@ import * as Avatar from './components/Avatar/Avatar.example';
 import * as Button from './components/Button/Button.example';
 import * as ExpandingTextarea from './components/ExpandingTextarea/ExpandingTextarea.example';
 import * as EstimatedCustomerBreakdownMaybe from './components/OrderPanel/EstimatedCustomerBreakdownMaybe.example';
+import * as FileUpload from './components/FileUpload/FileUpload.example';
 import * as DatePicker from './components/DatePicker/DatePickers/DatePicker.example';
 import * as FieldBoolean from './components/FieldBoolean/FieldBoolean.example';
 import * as FieldCheckbox from './components/FieldCheckbox/FieldCheckbox.example';
@@ -36,6 +37,7 @@ import * as FieldSelectTree from './components/FieldSelectTree/FieldSelectTree.e
 import * as FieldTextInput from './components/FieldTextInput/FieldTextInput.example';
 import * as IconAdd from './components/IconAdd/IconAdd.example';
 import * as IconAlert from './components/IconAlert/IconAlert.example';
+import * as IconArrow from './components/IconArrow/IconArrow.example';
 import * as IconArrowHead from './components/IconArrowHead/IconArrowHead.example';
 import * as IconBannedUser from './components/IconBannedUser/IconBannedUser.example';
 import * as IconChat from './components/IconChat/IconChat.example';
@@ -159,6 +161,7 @@ export {
   InquiryForm,
   EstimatedCustomerBreakdownMaybe,
   ExpandingTextarea,
+  FileUpload,
   FieldBoolean,
   FieldCheckbox,
   FieldCheckboxGroup,
@@ -181,6 +184,7 @@ export {
   FilterPopup,
   IconAdd,
   IconAlert,
+  IconArrow,
   IconArrowHead,
   IconBannedUser,
   IconChat,

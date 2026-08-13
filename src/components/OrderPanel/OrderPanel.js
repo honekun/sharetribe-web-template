@@ -34,6 +34,7 @@ import {
   isNegotiationProcess,
   isInquiryProcess,
   isPurchaseProcess,
+  isDownloadProcess,
   resolveLatestProcessName,
 } from '../../transactions/transaction';
 
@@ -64,6 +65,10 @@ const InquiryWithoutPaymentForm = loadable(() =>
 );
 const ProductOrderForm = loadable(() =>
   import(/* webpackChunkName: "ProductOrderForm" */ './ProductOrderForm/ProductOrderForm')
+);
+
+const DigitalDownloadForm = loadable(() =>
+  import(/* webpackChunkName: "DigitalDownloadForm" */ './DigitalDownloadForm/DigitalDownloadForm')
 );
 
 const NegotiationForm = loadable(() =>
@@ -341,6 +346,8 @@ const OrderPanel = props => {
     fetchLineItemsError,
     payoutDetailsWarning,
     showListingImage,
+    hideAuthorInfo,
+    hidePrice,
   } = props;
 
   const publicData = listing?.attributes?.publicData || {};
@@ -355,7 +362,8 @@ const OrderPanel = props => {
   const isBooking = isBookingProcess(processName);
   const isPurchase = isPurchaseProcess(processName);
   const isNegotiation = isNegotiationProcess(processName);
-  const isPaymentProcess = isBooking || isPurchase || isNegotiation;
+  const isDownload = isDownloadProcess(processName);
+  const isPaymentProcess = isBooking || isPurchase || isNegotiation || isDownload;
 
   const showPriceMissing = isPaymentProcess && !isNegotiation && !price;
   const showInvalidCurrency =
@@ -386,6 +394,7 @@ const OrderPanel = props => {
   const showProductOrderForm =
     mounted && shouldHavePurchase && !isClosed && typeof currentStock === 'number';
 
+  const showDownloadForm = mounted && !isClosed && isDownload;
   const showInquiryForm = mounted && !isClosed && isInquiry;
   // if listing is a request, we show the negotiation form (reverse negotiation). User (provider) needs to make an offer first.
   const showNegotiationForm = mounted && !isClosed && isNegotiation && unitType === REQUEST;
@@ -486,18 +495,19 @@ const OrderPanel = props => {
             {subTitleText ? <div className={css.orderHelp}>{subTitleText}</div> : null}
           </div>
         )}
-
-        <PriceMaybe
-          price={price}
-          publicData={publicData}
-          validListingTypes={validListingTypes}
-          intl={intl}
-          marketplaceCurrency={marketplaceCurrency}
-        />
+        {!hidePrice && (
+          <PriceMaybe
+            price={price}
+            publicData={publicData}
+            validListingTypes={validListingTypes}
+            intl={intl}
+            marketplaceCurrency={marketplaceCurrency}
+          />
+        )}
 
         {detailsSlot}
 
-        {hideAuthor ? null : (
+        {hideAuthor || hideAuthorInfo ? null : (
           <div className={css.author}>
             <AvatarSmall user={author} className={css.providerAvatar} />
             <span className={css.providerNameLinked}>
@@ -572,6 +582,13 @@ const OrderPanel = props => {
             secondaryCtaButton={secondaryCtaButton}
             {...sharedProps}
           />
+        ) : showDownloadForm ? (
+          <DigitalDownloadForm
+            formId="OrderPanelDigitalDownloadForm"
+            finePrintComponent={SubmitFinePrint}
+            isOwnListing={isOwnListing}
+            {...sharedProps}
+          />
         ) : showInquiryForm ? (
           <InquiryWithoutPaymentForm
             formId="OrderPanelInquiryForm"
@@ -640,6 +657,8 @@ const OrderPanel = props => {
               <FormattedMessage id="OrderPanel.ctaButtonMessageMakeOffer" />
             ) : showRequestQuoteForm ? (
               <FormattedMessage id="OrderPanel.ctaButtonMessageRequestAQuote" />
+            ) : showDownloadForm ? (
+              <FormattedMessage id="OrderPanel.ctaButtonMessageDownload" />
             ) : (
               <FormattedMessage id="OrderPanel.ctaButtonMessageInquiry" />
             )}

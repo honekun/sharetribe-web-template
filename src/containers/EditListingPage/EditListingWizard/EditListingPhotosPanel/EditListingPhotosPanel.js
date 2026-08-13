@@ -83,6 +83,9 @@ const EditListingPhotosPanel = props => {
     updatePageTitle: UpdatePageTitle,
     intl,
     photoMode = 'gallery',
+    allFilesUploadedAndVerified,
+    filesTabParams,
+    filesRequired,
   } = props;
 
   const isSlotMode = photoMode === 'slots';
@@ -151,6 +154,9 @@ const EditListingPhotosPanel = props => {
         updated={panelUpdated}
         updateInProgress={updateInProgress}
         listingImageConfig={listingImageConfig}
+        allFilesUploadedAndVerified={allFilesUploadedAndVerified}
+        filesTabParams={filesTabParams}
+        filesRequired={filesRequired}
       />
     </main>
   );

@@ -8,6 +8,7 @@ const {
 } = require('../api-util/avShipping');
 const { isIntentionToMakeOffer } = require('../api-util/negotiation');
 const {
+  createCookieTokenStore,
   getSdk,
   getTrustedSdk,
   handleError,
@@ -59,7 +60,9 @@ const getMetadata = (orderData, transition) => {
 module.exports = (req, res) => {
   const { isSpeculative, orderData, bodyParams, queryParams } = req.body || {};
   const transitionName = bodyParams.transition;
-  const sdk = getSdk(req, res);
+  // Share one cookie token store so a refresh during listings.show is reused for exchangeToken.
+  const tokenStore = createCookieTokenStore(req, res);
+  const sdk = getSdk(req, res, tokenStore);
   let lineItems = null;
   let metadataMaybe = {};
   // AV: persist the chosen eShip rate so the label step + payout logic can read it.
@@ -107,7 +110,7 @@ module.exports = (req, res) => {
         avShippingProtectedData = buildAvShippingProtectedData(fullOrderData, resolvedRate);
       }
 
-      return getTrustedSdk(req);
+      return getTrustedSdk(req, res, tokenStore);
     })
     .then(trustedSdk => {
       const { params } = bodyParams;

@@ -12,10 +12,12 @@ import {
 import { propTypes } from '../../util/types';
 import { ensureTransaction } from '../../util/data';
 import { createSlug } from '../../util/urlHelpers';
-import { isTransactionInitiateListingNotFoundError } from '../../util/errors';
+import {
+  isTransactionInitiateListingNotFoundError,
+  isTransactionsTransitionInvalidTransition,
+} from '../../util/errors';
 import {
   getProcess,
-  isBookingProcessAlias,
   resolveLatestProcessName,
   BOOKING_PROCESS_NAME,
   NEGOTIATION_PROCESS_NAME,
@@ -24,6 +26,9 @@ import {
 
 // Import shared components
 import { H3, H4, NamedLink, OrderBreakdown, Page, TopbarSimplified } from '../../components';
+
+// Session helpers file needs to be imported before other CheckoutPage modules that use it
+import { clearData } from './CheckoutPageSessionHelpers';
 
 import {
   bookingDatesMaybe,
@@ -304,10 +309,12 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
     onConfirmCardPayment,
     onConfirmPayment,
     onSavePaymentMethod,
+    onFetchTransaction,
     onSubmitCallback,
     pageData,
     setPageData,
     sessionStorageKey,
+    transaction: reduxTransaction,
     transactionFieldConfigs = [],
   } = props;
   const { card, message, paymentMethod: selectedPaymentMethod, formValues } = values;
@@ -393,6 +400,36 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
     .catch(err => {
       console.error(err);
       setSubmitting(false);
+
+      // After process expiry (or if payment was already confirmed), confirm/initiate can fail with
+      // invalid transition while checkout still holds a stale pending-payment transaction.
+      if (!isTransactionsTransitionInvalidTransition(err)) {
+        return;
+      }
+
+      const txId = pageData?.transaction?.id || reduxTransaction?.id;
+      if (!txId || !onFetchTransaction) {
+        return;
+      }
+
+      onFetchTransaction(txId)
+        .then(tx => {
+          if (process.getState(tx) === process.states.PAYMENT_EXPIRED) {
+            setPageData({ ...pageData, transaction: tx });
+            clearData(sessionStorageKey);
+          } else if (process.hasPassedState(process.states.PENDING_PAYMENT, tx)) {
+            // Confirm already succeeded earlier (e.g. network drop after Marketplace confirm).
+            const orderDetailsPath = pathByRouteName('OrderDetailsPage', routeConfiguration, {
+              id: tx.id.uuid,
+            });
+            setOrderPageInitialValues({}, routeConfiguration, dispatch);
+            onSubmitCallback();
+            history.push(orderDetailsPath);
+          }
+        })
+        .catch(() => {
+          // Keep the generic confirm/initiate error UI from Redux.
+        });
     });
 };
 
@@ -425,7 +462,6 @@ const onStripeInitialized = (stripe, process, props) => {
  * @param {boolean} props.scrollingDisabled - Whether the page should scroll
  * @param {string} props.speculateTransactionError - The error message for the speculate transaction
  * @param {propTypes.transaction} props.speculatedTransaction - The speculated transaction
- * @param {boolean} props.isClockInSync - Whether the clock is in sync
  * @param {string} props.initiateOrderError - The error message for the initiate order
  * @param {string} props.confirmPaymentError - The error message for the confirm payment
  * @param {intlShape} props.intl - The intl object
@@ -444,6 +480,7 @@ const onStripeInitialized = (stripe, process, props) => {
  * @param {Function} props.onInitiateOrder - The function to initiate the order
  * @param {Function} props.onConfirmCardPayment - The function to confirm the card payment
  * @param {Function} props.onConfirmPayment - The function to confirm the payment after Stripe call is made
+ * @param {Function} props.onFetchTransaction - The function to fetch an up-to-date transaction entity
  * @param {Function} props.onSavePaymentMethod - The function to save the payment method for later use
  * @param {Function} props.onSubmitCallback - The function to submit the callback
  * @param {propTypes.error} props.initiateOrderError - The error message for the initiate order
@@ -467,7 +504,6 @@ export const CheckoutPageWithPayment = props => {
     speculateTransactionError,
     speculateTransactionInProgress,
     speculatedTransaction: speculatedTransactionMaybe,
-    isClockInSync,
     initiateOrderError,
     confirmPaymentError,
     intl,
@@ -545,7 +581,7 @@ export const CheckoutPageWithPayment = props => {
 
   const process = processName ? getProcess(processName) : null;
   const transitions = process.transitions;
-  const isPaymentExpired = hasPaymentExpired(existingTransaction, process, isClockInSync);
+  const isPaymentExpired = hasPaymentExpired(existingTransaction, process);
 
   // Allow showing page when currentUser is still being downloaded,
   // but show payment form only when user info is loaded.
@@ -856,7 +892,7 @@ export const CheckoutPageWithPayment = props => {
                 locale={config.localization.locale}
                 stripePublishableKey={config.stripe.publishableKey}
                 marketplaceName={config.marketplaceName}
-                isBooking={isBookingProcessAlias(transactionProcessAlias)}
+                processName={processName}
                 isFuzzyLocation={config.maps.fuzzy.enabled}
                 transactionFieldConfigs={transactionFieldConfigs}
                 showTransactionFields={showTransactionFields}

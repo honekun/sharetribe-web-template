@@ -4,15 +4,12 @@ import classNames from 'classnames';
 import { FormattedMessage, injectIntl, intlShape } from '../../../util/reactIntl';
 import { propTypes } from '../../../util/types';
 import { userDisplayNameAsString } from '../../../util/data';
-import { isMobileSafari } from '../../../util/userAgent';
 import { createSlug } from '../../../util/urlHelpers';
 import { displayPrice } from '../../../util/configHelpers';
 
 import { AvatarLarge, NamedLink, UserDisplayName } from '../../../components';
 
 import { stateDataShape } from '../TransactionPage.stateData';
-import SendMessageForm from '../SendMessageForm/SendMessageForm';
-
 // These are internal components that make this file more readable.
 import BreakdownMaybe from './BreakdownMaybe';
 import DetailCardHeadingsMaybe from './DetailCardHeadingsMaybe';
@@ -86,10 +83,8 @@ const allowShowingExtraInfo = (showExtraInfo, transactionPartyInfo) => {
  * @param {Array<propTypes.message>)} props.messages - The messages
  * @param {boolean} props.savePaymentMethodFailed - Whether the save payment method failed
  * @param {propTypes.error} props.fetchMessagesError - The fetch messages error
- * @param {boolean} props.sendMessageInProgress - Whether the send message is in progress
- * @param {propTypes.error} props.sendMessageError - The send message error
  * @param {Function} props.onOpenDisputeModal - The on open dispute modal function
- * @param {Function} props.onSendMessage - The on send message function
+ * @param {React.ReactNode} props.sendMessageForm - Pre-rendered SendMessageForm (or null when messaging is not allowed)
  * @param {stateDataShape} props.stateData - The state data
  * @param {boolean} props.showBookingLocation - Whether the booking location is shown
  * @param {React.ReactNode} props.activityFeed - The activity feed
@@ -101,64 +96,6 @@ const allowShowingExtraInfo = (showExtraInfo, transactionPartyInfo) => {
  * @returns {JSX.Element} The TransactionPanel component
  */
 export class TransactionPanelComponent extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      sendMessageFormFocused: false,
-    };
-    this.isMobSaf = false;
-    this.sendMessageFormName = 'TransactionPanel.SendMessageForm';
-
-    this.onSendMessageFormFocus = this.onSendMessageFormFocus.bind(this);
-    this.onSendMessageFormBlur = this.onSendMessageFormBlur.bind(this);
-    this.onMessageSubmit = this.onMessageSubmit.bind(this);
-    this.scrollToMessage = this.scrollToMessage.bind(this);
-  }
-
-  componentDidMount() {
-    this.isMobSaf = isMobileSafari();
-  }
-
-  onSendMessageFormFocus() {
-    this.setState({ sendMessageFormFocused: true });
-    if (this.isMobSaf) {
-      // Scroll to bottom
-      window.scroll({ top: document.body.scrollHeight, left: 0, behavior: 'smooth' });
-    }
-  }
-
-  onSendMessageFormBlur() {
-    this.setState({ sendMessageFormFocused: false });
-  }
-
-  onMessageSubmit(values, form) {
-    const message = values.message ? values.message.trim() : null;
-    const { transactionId, onSendMessage, config } = this.props;
-
-    if (!message) {
-      return;
-    }
-    onSendMessage(transactionId, message, config)
-      .then(messageId => {
-        form.reset();
-        this.scrollToMessage(messageId);
-      })
-      .catch(e => {
-        // Ignore, Redux handles the error
-      });
-  }
-
-  scrollToMessage(messageId) {
-    const selector = `#msg-${messageId.uuid}`;
-    const el = document.querySelector(selector);
-    if (el) {
-      el.scrollIntoView({
-        block: 'start',
-        behavior: 'smooth',
-      });
-    }
-  }
-
   render() {
     const {
       rootClassName,
@@ -171,18 +108,19 @@ export class TransactionPanelComponent extends Component {
       transitions,
       processName,
       protectedData,
+      marketplaceName,
       messages,
       savePaymentMethodFailed = false,
       fetchMessagesError,
-      sendMessageInProgress,
-      sendMessageError,
       onOpenDisputeModal,
+      onOpenReportModal,
       showListingImage,
       intl,
       stateData = {},
       showBookingLocation = false,
       requestQuote,
       offer,
+      fileAttachments,
       activityFeed,
       actionButtons,
       isInquiryProcess,
@@ -192,6 +130,7 @@ export class TransactionPanelComponent extends Component {
       hasViewingRights,
       transactionFieldsComponent,
       shippingLabelSlot, // AV: provider-side eShip label control (Spec B)
+      sendMessageForm,
     } = this.props;
 
     const hasTransitions = transitions.length > 0;
@@ -233,9 +172,6 @@ export class TransactionPanelComponent extends Component {
     const showPrice = isInquiryProcess && displayPrice(listingTypeConfig);
     const showBreakDown = stateData.showBreakDown !== false; // NOTE: undefined defaults to true due to historical reasons.
 
-    const showSendMessageForm =
-      !isCustomerBanned && !isCustomerDeleted && !isProviderBanned && !isProviderDeleted;
-
     // Only show order panel for users who have listing viewing rights, otherwise
     // show the detail card heading.
     const showOrderPanel = stateData.showOrderPanel && hasViewingRights;
@@ -245,6 +181,14 @@ export class TransactionPanelComponent extends Component {
     const priceVariantName = protectedData?.priceVariantName;
 
     const classes = classNames(rootClassName || css.root, className);
+
+    const showDiminishedButton = stateData.showDispute || stateData.showReport;
+    const onOpenDiminishedModal = stateData.showReport ? onOpenReportModal : onOpenDisputeModal;
+    const diminishedButtonMessage = stateData.showReport ? (
+      <FormattedMessage id="TransactionPanel.reportOrder" />
+    ) : (
+      <FormattedMessage id="TransactionPanel.disputeOrder" />
+    );
 
     return (
       <div className={classes}>
@@ -278,6 +222,7 @@ export class TransactionPanelComponent extends Component {
               transactionRole={transactionRole}
               providerName={authorDisplayName}
               customerName={customerDisplayName}
+              marketplaceName={marketplaceName}
               listingId={listing?.id?.uuid}
               listingTitle={listingTitle}
               listingDeleted={listingDeleted}
@@ -286,6 +231,7 @@ export class TransactionPanelComponent extends Component {
             {requestQuote}
             {offer}
             {transactionFieldsComponent}
+            {fileAttachments}
 
             {!isInquiryProcess ? (
               <div className={css.orderDetails}>
@@ -299,8 +245,9 @@ export class TransactionPanelComponent extends Component {
                   ) : null}
                   <DiminishedActionButtonMaybe
                     id="mobile_disputeOrderButton"
-                    showDispute={stateData.showDispute}
-                    onOpenDisputeModal={onOpenDisputeModal}
+                    showButton={showDiminishedButton}
+                    onOpenModal={onOpenDiminishedModal}
+                    buttonMessage={diminishedButtonMessage}
                   />
                 </div>
 
@@ -341,21 +288,7 @@ export class TransactionPanelComponent extends Component {
               activityFeed={activityFeed}
               isConversation={isInquiryProcess}
             />
-            {showSendMessageForm ? (
-              <SendMessageForm
-                formId={this.sendMessageFormName}
-                rootClassName={css.sendMessageForm}
-                messagePlaceholder={intl.formatMessage(
-                  { id: 'TransactionPanel.sendMessagePlaceholder' },
-                  { name: otherUserDisplayNameString }
-                )}
-                inProgress={sendMessageInProgress}
-                sendMessageError={sendMessageError}
-                onFocus={this.onSendMessageFormFocus}
-                onBlur={this.onSendMessageFormBlur}
-                onSubmit={this.onMessageSubmit}
-              />
-            ) : (
+            {sendMessageForm || (
               <div className={css.sendingMessageNotAllowed}>
                 <FormattedMessage id="TransactionPanel.sendingMessageNotAllowed" />
               </div>
@@ -419,8 +352,9 @@ export class TransactionPanelComponent extends Component {
               </div>
               <DiminishedActionButtonMaybe
                 id="desktop_disputeOrderButton"
-                showDispute={stateData.showDispute}
-                onOpenDisputeModal={onOpenDisputeModal}
+                showButton={showDiminishedButton}
+                onOpenModal={onOpenDiminishedModal}
+                buttonMessage={diminishedButtonMessage}
               />
             </div>
           </div>
