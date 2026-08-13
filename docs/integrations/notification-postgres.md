@@ -147,6 +147,12 @@ production alerting system.
 
 ## 4. Production setup
 
+For the approved initial Heroku cutover, the existing PostgreSQL add-on is reused only after its
+Test contents are backed up and fully reset. This prevents Test poller cursors, delivery claims,
+campaign jobs, consent records, and shipping-label attempts from entering Live. Follow the
+[Heroku deployment runbook](../operations/heroku-deployment.md); do not truncate selected tables or
+attach the same populated database to Test and Live simultaneously.
+
 1. Provision a durable managed PostgreSQL database.
 2. Set its server-only `DATABASE_URL` on every web process. All processes must use the same
    database.

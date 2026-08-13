@@ -317,4 +317,7 @@ before go-live.
 
 Unresolved cancellation/refund ownership and IVA reconciliation are intentionally separated from
 this current-state guide. See [pending eShip policy](../pending/eship.md). Until those decisions are
-approved, keep `ESHIP_LABEL_AUTOBUY=false` and reconcile purchased labels manually.
+approved, keep `ESHIP_LABEL_AUTOBUY=false` and reconcile purchased labels manually. eShip's public
+guidance says an unused label can be canceled and its balance normally returns to the eShip wallet
+within one to three business days, but the current application does not call the cancellation
+endpoint or track that credit.
