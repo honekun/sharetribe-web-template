@@ -80,8 +80,9 @@ production.
 - [ ] Confirm all notification/channel flags are explicitly `true` or `false` and readiness is
       complete for every enabled feature.
 - [ ] Keep `AV_BREVO_CAMPAIGNS_ENABLED=false` until Live campaign triggers are smoke-tested.
-- [ ] Keep `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false` until [WA-01–03](../pending/notifications.md)
-      are resolved.
+- [ ] Confirm `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false`; WhatsApp is code-level release-locked out
+      of the first release. Do not remove the lock until [WA-01–03](../pending/notifications.md) are
+      resolved.
 - [ ] Keep `ESHIP_LABEL_AUTOBUY=false` until the purchased-label cancellation/refund policy is
       approved.
 

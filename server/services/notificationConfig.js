@@ -10,6 +10,10 @@ const FLAG_NAMES = {
   whatsapp: 'AV_WHATSAPP_NOTIFICATIONS_ENABLED',
 };
 
+// WhatsApp notifications are intentionally excluded from the first release.
+// Keep the dormant configuration and sender code in place for a later reviewed rollout.
+const WHATSAPP_NOTIFICATIONS_RELEASED = false;
+
 function readBooleanFlag(name) {
   const raw = process.env[name];
   if (raw === 'true') return { configured: true, enabled: true };
@@ -129,7 +133,8 @@ function getNotificationConfigReadiness() {
     },
     whatsapp: {
       configured: whatsappFlag.configured,
-      enabled: pollerFlag.enabled && whatsappFlag.enabled,
+      enabled: WHATSAPP_NOTIFICATIONS_RELEASED && pollerFlag.enabled && whatsappFlag.enabled,
+      releaseLocked: !WHATSAPP_NOTIFICATIONS_RELEASED,
       ready: whatsappReady,
       missing:
         channelFlagRequired && !whatsappFlag.configured ? [FLAG_NAMES.whatsapp] : whatsappMissing,
@@ -175,11 +180,16 @@ function isMarketingCampaignsEnabled() {
 }
 
 function isWhatsAppEnabled() {
-  return isNotificationPollerEnabled() && readBooleanFlag(FLAG_NAMES.whatsapp).enabled;
+  return (
+    WHATSAPP_NOTIFICATIONS_RELEASED &&
+    isNotificationPollerEnabled() &&
+    readBooleanFlag(FLAG_NAMES.whatsapp).enabled
+  );
 }
 
 module.exports = {
   FLAG_NAMES,
+  WHATSAPP_NOTIFICATIONS_RELEASED,
   assertProductionNotificationConfig,
   getNotificationConfigReadiness,
   isEventPollerEnabled,

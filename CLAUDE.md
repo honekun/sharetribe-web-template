@@ -223,12 +223,14 @@ Server-side in `server/services/`. `eventPoller.js` polls the Integration API ev
 `AV_NOTIFICATIONS_ENABLED=true` or `AV_SHIPPING_LABELS_ENABLED=true` and readiness passes. Its
 PostgreSQL cursor survives restarts; the 10-minute lookback only seeds an environment with no saved
 cursor. `welcomeEmailService.js` handles Brevo email + PDF, `pdfGenerator.js` returns a PDFKit
-`Promise<Buffer>`, and `whatsappService.js` sends Meta Cloud API templates. Enabled channels reject
-incomplete production configuration instead of silently disabling sends.
+`Promise<Buffer>`, and `whatsappService.js` contains the retained Meta Cloud API template sender.
+WhatsApp is release-locked off in `notificationConfig.js` for the first release, and delivery also
+blocks operator retries. Enabled email channels reject incomplete production configuration instead
+of silently disabling sends.
 
-Events: `user/created` → welcome email + admin & user WhatsApp; `transaction/transitioned` →
-buyer/seller WhatsApp by transition; `message/created` → other party. **Never import
-`server/services/*` in client code.**
+The dormant WhatsApp mapping is: `user/created` → admin & user; `transaction/transitioned` →
+buyer/seller by transition; `message/created` → other party. Signup phone component imports/usages
+are commented for the first release. **Never import `server/services/*` in client code.**
 
 Env vars: `SHARETRIBE_INTEGRATION_CLIENT_ID`, `SHARETRIBE_INTEGRATION_CLIENT_SECRET`,
 `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ADMIN_PHONE` (E.164),

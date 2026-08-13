@@ -5,6 +5,7 @@ const { createHash, randomUUID } = require('crypto');
 const { sendBrevoEmail } = require('./brevoEmailService');
 const { sendWelcomeEmail } = require('./welcomeEmailService');
 const { sendUserWhatsApp } = require('./whatsappService');
+const { isWhatsAppEnabled } = require('./notificationConfig');
 const { getPostgresPool } = require('./postgres');
 const { recordDelivery } = require('./notificationMetrics');
 const { localDeliveryFailure } = require('./notificationProviderError');
@@ -186,7 +187,12 @@ async function sendPayload(channel, payload) {
     // the generic Brevo template client.
     return payload.templateId ? sendBrevoEmail(payload) : sendWelcomeEmail(payload);
   }
-  if (channel === 'whatsapp') return sendUserWhatsApp(payload);
+  if (channel === 'whatsapp') {
+    if (!isWhatsAppEnabled()) {
+      throw localDeliveryFailure('WhatsApp notifications are disabled for the first release');
+    }
+    return sendUserWhatsApp(payload);
+  }
   throw localDeliveryFailure(`Unsupported notification channel: ${channel}`);
 }
 

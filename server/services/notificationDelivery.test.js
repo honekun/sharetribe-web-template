@@ -122,7 +122,7 @@ describe('notification delivery idempotency', () => {
     );
   });
 
-  test('an operator can retry a stored failed WhatsApp notification', async () => {
+  test('the first-release lock prevents retrying a stored WhatsApp notification', async () => {
     const whatsappDelivery = {
       eventId: 'event-2',
       channel: 'whatsapp',
@@ -146,18 +146,18 @@ describe('notification delivery idempotency', () => {
       claim: jest.fn().mockResolvedValue(claimedDelivery(whatsappDelivery)),
       finish: jest.fn().mockResolvedValue(),
     };
-    sendUserWhatsApp.mockResolvedValue({ providerMessageId: 'meta-1' });
-
-    const result = await retryNotification(
-      notificationKey(whatsappDelivery),
-      { claimedBy: 'operator:test' },
-      store
-    );
+    await expect(
+      retryNotification(notificationKey(whatsappDelivery), { claimedBy: 'operator:test' }, store)
+    ).rejects.toThrow('WhatsApp notifications are disabled for the first release');
 
     expect(store.prepareRetry).toHaveBeenCalledWith(notificationKey(whatsappDelivery), {
       confirmUnknown: false,
     });
-    expect(sendUserWhatsApp).toHaveBeenCalledWith(whatsappDelivery.payload);
-    expect(result).toEqual({ status: 'sent' });
+    expect(sendUserWhatsApp).not.toHaveBeenCalled();
+    expect(store.finish).toHaveBeenCalledWith(
+      notificationKey(whatsappDelivery),
+      expect.any(String),
+      expect.objectContaining({ status: 'failed' })
+    );
   });
 });

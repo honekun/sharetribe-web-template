@@ -4,9 +4,12 @@ This guide documents the WhatsApp notification implementation that currently exi
 Vintach and the configuration required in the application, Sharetribe Console, and Meta. It is
 intended for Test and Live environment setup, release verification, and troubleshooting.
 
-> **Current launch posture:** keep `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false` in production until
-> WA-01 through WA-03 in [`pending/notifications.md`](../pending/notifications.md) are resolved.
-> This guide documents the implemented integration; it is not approval to enable it.
+> **First-release posture:** WhatsApp notifications are not part of the release. The implementation
+> is retained, but `notificationConfig.js` release-locks the channel off and
+> `notificationDelivery.js` blocks operator retries. The signup phone-field component is retained
+> with its imports/usages commented out. Keep `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false`; setting it
+> to `true` cannot override the code lock. A later rollout also requires WA-01 through WA-03 in
+> [`pending/notifications.md`](../pending/notifications.md) to be resolved.
 
 ## 1. Scope and architecture
 
@@ -168,7 +171,7 @@ All variables are server-only. Set them in the deployment environment; never add
 | Variable                               | Required            | Purpose                                                                                        |
 | -------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------- |
 | `AV_NOTIFICATIONS_ENABLED`             | Yes (explicit flag) | Enables notification polling; set `false` to keep all notification channels off                |
-| `AV_WHATSAPP_NOTIFICATIONS_ENABLED`    | Yes (explicit flag) | Enables WhatsApp only when notification polling is also enabled                                |
+| `AV_WHATSAPP_NOTIFICATIONS_ENABLED`    | Yes (explicit flag) | Must be `false` for the first release; a code lock also prevents activation                    |
 | `SHARETRIBE_INTEGRATION_CLIENT_ID`     | Yes when enabled    | Authenticates Integration API reads                                                            |
 | `SHARETRIBE_INTEGRATION_CLIENT_SECRET` | Yes when enabled    | Integration API secret paired with the client ID                                               |
 | `WHATSAPP_ACCESS_TOKEN`                | Yes when enabled    | Meta system-user access token used as a Bearer token                                           |
@@ -191,9 +194,9 @@ heroku config:set \
   --app HEROKU_APP
 ```
 
-The example deliberately keeps the channel off. Set it to `true` only in a controlled Test
-environment after WA-01 through WA-03 are resolved for the reviewed code/configuration; production
-remains off until the release gate passes.
+The example deliberately keeps the channel off. A later controlled Test rollout requires WA-01
+through WA-03 to be resolved and a reviewed code change that removes the release lock before this
+flag may be set to `true`; production remains off until the later release gate passes.
 
 Restart the process after changing any variable. The WhatsApp service reads its settings when the
 module is loaded.
@@ -206,8 +209,9 @@ module is loaded.
 - The app removes spaces, punctuation, and other non-digits before sending.
 - A value without the correct country code can normalize successfully but still target the wrong or
   nonexistent WhatsApp account.
-- The signup/contact-details form does not fully validate international dialling correctness; the
-  operator must configure clear labels/placeholders and test the saved value.
+- The first-release signup forms do not render the retained phone component. The contact-details
+  form does not fully validate international dialling correctness; a later rollout must configure
+  clear labels/placeholders and test the saved value before restoring signup collection.
 
 ### Runtime requirements
 
@@ -377,8 +381,9 @@ Expected startup log:
 [eventPoller] Starting Integration API event poller (interval: 5 min)
 ```
 
-When WhatsApp is enabled, incomplete configuration makes production startup/readiness fail and logs
-the missing settings. It is not treated as a silent channel skip. Confirm:
+For a later release, requesting WhatsApp through the environment flag while its credentials are
+incomplete makes production startup/readiness fail and logs the missing settings. The current code
+lock still reports the channel as disabled. After the reviewed rollout change, confirm:
 
 ```text
 GET /api/notifications/readiness → HTTP 200

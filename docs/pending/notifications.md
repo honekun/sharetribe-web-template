@@ -6,8 +6,14 @@ Brevo error handling are implemented and documented in the current
 [notification](../integrations/notification-postgres.md), [Brevo](../integrations/brevo.md), and
 [WhatsApp](../integrations/whatsapp.md) guides.
 
-Keep `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false` in production until the three blocking items below
-are resolved and verified against the hosted transaction processes and Meta configuration.
+WhatsApp notifications are explicitly out of scope for the first release. The sender, templates, and
+phone-field component remain in the repository, but a code-level release lock prevents event
+delivery and operator retries. The signup and SSO signup imports/usages are commented out. Keep
+`AV_WHATSAPP_NOTIFICATIONS_ENABLED=false`; setting it to `true` cannot override the lock.
+
+For a later release, resolve and verify the three blocking items below against the hosted
+transaction processes and Meta configuration, then remove the release lock and restore the commented
+signup imports/usages through a reviewed change.
 
 ## Blocking before production WhatsApp
 
@@ -97,7 +103,7 @@ break sends without an application release.
       the backlog without duplicate sends.
 - [ ] Verify age/page-bound alerts and readiness metrics under sustained lag.
 - [ ] Run recipient-direction, consent, phone validation, and Meta webhook tests before changing the
-      production WhatsApp flag.
+      production WhatsApp flag or removing the code release lock.
 
 Implementation sources: `server/services/eventPoller.js`, `server/services/whatsappService.js`,
 `server/services/notificationStore.js`, `src/containers/AuthenticationPage/UserFieldPhoneNumber.js`,

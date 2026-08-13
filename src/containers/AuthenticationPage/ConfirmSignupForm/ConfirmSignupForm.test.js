@@ -164,6 +164,31 @@ describe('ConfirmSignupForm', () => {
     expect(screen.getByRole('button', { name: 'ConfirmSignupForm.signUp' })).toBeEnabled();
   });
 
+  it('does not collect a phone number during the first-release SSO signup flow', () => {
+    const phoneEnabledUserTypes = [
+      {
+        userType: 'a',
+        label: 'Seller',
+        defaultUserFields: { phoneNumber: true },
+        phoneNumberSettings: { displayInSignUp: true, required: true },
+      },
+    ];
+
+    render(
+      <ConfirmSignupForm
+        authInfo={authInfo}
+        intl={fakeIntl}
+        termsAndConditions={termsAndConditions}
+        userTypes={phoneEnabledUserTypes}
+        userFields={[]}
+        onSubmit={noop}
+        onOpenTermsOfService={noop}
+      />
+    );
+
+    expect(screen.queryByLabelText('ConfirmSignupForm.phoneNumberLabel')).toBeNull();
+  });
+
   it('shows custom user fields according to configuration', async () => {
     const user = userEvent.setup();
     render(

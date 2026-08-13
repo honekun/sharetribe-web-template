@@ -1630,15 +1630,16 @@ user imports for their own account. The only access-related setting is the admin
 
 | Setting                                                    | What it controls                                                                                                         |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **WhatsApp enabled** (`AV_WHATSAPP_NOTIFICATIONS_ENABLED`) | Explicit channel flag. Keep `false` until the blocking recipient, consent, and API-version work is resolved.             |
+| **WhatsApp enabled** (`AV_WHATSAPP_NOTIFICATIONS_ENABLED`) | Keep `false`. WhatsApp is code-level release-locked out of the first release; the flag cannot override that lock.        |
 | **WhatsApp Access Token**                                  | Permanent Meta system-user token for server-side sends. Keep private.                                                    |
 | **WhatsApp Phone Number ID**                               | Numeric ID of the registered WhatsApp sender number.                                                                     |
 | **Admin Phone**                                            | Consenting operator destination for admin alerts, stored as canonical E.164 (`+` plus country code and national number). |
 
-When the notification poller and WhatsApp flag are enabled, missing required settings make
-notification readiness fail; they are not treated as a harmless silent disable. See the
-[WhatsApp guide](integrations/whatsapp.md) and [pending blockers](pending/notifications.md) before
-changing the flag.
+The sender implementation is retained for a future release, but event sends and operator retries are
+blocked and signup does not collect the WhatsApp phone field. Existing contact/shipping phone fields
+and the bulk-import WhatsApp support link are separate and remain available. See the
+[WhatsApp guide](integrations/whatsapp.md) and [pending blockers](pending/notifications.md) before a
+reviewed code change removes the release lock.
 
 ### Shipping (eShip)
 
@@ -2486,9 +2487,10 @@ The production notification pipeline is healthy only when:
 - exactly one active process reports poller leadership; and
 - logs do not show recurring `[notificationAlert]`, provider, or backlog errors.
 
-Channel flags are explicit. Keep `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false` until the blocking
-recipient, consent, and Meta API version work in [pending notifications](pending/notifications.md)
-is complete. Do not work around that guard by adding a phone number or token alone.
+Channel flags are explicit. WhatsApp notifications are code-level release-locked out of the first
+release; keep `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false`. Do not work around the lock by adding a
+phone number or token. A later reviewed rollout must first complete the recipient, consent, and Meta
+API version work in [pending notifications](pending/notifications.md).
 
 For Brevo/newsletter cases:
 

@@ -24,8 +24,9 @@ Last reviewed: 2026-08-13.
 ## Product and integration decisions
 
 - [WhatsApp hardening](notifications.md) — recipient direction, consent, Graph API version, delivery
-  status, transition coverage, phone validation, and template governance. Keep
-  `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false` in production until the blocking items are resolved.
+  status, transition coverage, phone validation, and template governance. WhatsApp notifications are
+  release-locked out of the first release; keep `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false` until the
+  blocking items are resolved and a reviewed code change removes the lock.
 - [Bidding and offer acceptance](bidding.md) — choose a supported product/transaction model before
   implementation. Transaction-process changes require explicit approval and corresponding hosted
   process updates.
