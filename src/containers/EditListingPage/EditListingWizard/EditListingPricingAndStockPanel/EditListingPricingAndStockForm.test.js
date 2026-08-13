@@ -88,4 +88,61 @@ describe('EditListingPricingAndStockForm package size', () => {
     render(<EditListingPricingAndStockForm {...baseProps} />);
     expect(screen.queryByLabelText(originalPriceLabel)).not.toBeInTheDocument();
   });
+
+  it('blocks submission when the original price does not exceed the price', async () => {
+    const user = userEvent.setup();
+    const saveActionMsg = 'Save';
+    render(
+      <EditListingPricingAndStockForm
+        {...baseProps}
+        saveActionMsg={saveActionMsg}
+        showOriginalPrice={true}
+      />
+    );
+
+    await user.type(
+      screen.getByRole('textbox', { name: 'EditListingPricingAndStockForm.pricePerProduct' }),
+      '20'
+    );
+    await user.type(
+      screen.getByRole('spinbutton', { name: 'EditListingPricingAndStockForm.stockLabel' }),
+      '10'
+    );
+    await user.type(screen.getByLabelText(originalPriceLabel), '10');
+    // The error only shows once the field has been touched, i.e. after blur.
+    await user.tab();
+
+    expect(
+      screen.getByText('EditListingPricingAndStockForm.originalPriceTooLow')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: saveActionMsg })).toBeDisabled();
+  });
+
+  it('allows submission when the original price exceeds the price', async () => {
+    const user = userEvent.setup();
+    const saveActionMsg = 'Save';
+    render(
+      <EditListingPricingAndStockForm
+        {...baseProps}
+        saveActionMsg={saveActionMsg}
+        showOriginalPrice={true}
+      />
+    );
+
+    await user.type(
+      screen.getByRole('textbox', { name: 'EditListingPricingAndStockForm.pricePerProduct' }),
+      '10'
+    );
+    await user.type(
+      screen.getByRole('spinbutton', { name: 'EditListingPricingAndStockForm.stockLabel' }),
+      '10'
+    );
+    await user.type(screen.getByLabelText(originalPriceLabel), '20');
+    await user.tab();
+
+    expect(
+      screen.queryByText('EditListingPricingAndStockForm.originalPriceTooLow')
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: saveActionMsg })).toBeEnabled();
+  });
 });

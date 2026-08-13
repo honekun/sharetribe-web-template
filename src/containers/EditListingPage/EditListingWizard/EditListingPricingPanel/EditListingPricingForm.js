@@ -7,6 +7,7 @@ import classNames from 'classnames';
 import appSettings from '../../../../config/settings';
 import { FormattedMessage, useIntl } from '../../../../util/reactIntl';
 import * as validators from '../../../../util/validators';
+import { originalPriceAbovePrice } from '../../../../util/avValidators';
 import { formatMoney } from '../../../../util/currency';
 import { types as sdkTypes } from '../../../../util/sdkLoader';
 import { FIXED, isBookingProcess } from '../../../../transactions/transaction';
@@ -169,6 +170,9 @@ export const EditListingPricingForm = props => (
                     id: 'EditListingPricingForm.originalPricePlaceholder',
                   })}
                   currencyConfig={appSettings.getCurrencyFormatting(marketplaceCurrency)}
+                  validate={originalPriceAbovePrice(
+                    intl.formatMessage({ id: 'EditListingPricingForm.originalPriceTooLow' })
+                  )}
                 />
               ) : null}
               <FieldCurrencyInput

@@ -175,6 +175,60 @@ describe('validateRows', () => {
 
   // --- Successful validation ---
 
+  // --- Original price checks ---
+
+  const withImages = (overrides = {}) =>
+    validRow({
+      image_front: 'front.jpg',
+      image_back: 'back.jpg',
+      image_horizontal: 'front.jpg',
+      ...overrides,
+    });
+
+  it('rejects an original price below the sale price', () => {
+    const result = validateRows([withImages({ pd_originalPrice: '100' })], imageMap);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(
+      /"pd_originalPrice" \(100\) debe ser mayor que "price" \(250\)/
+    );
+  });
+
+  it('rejects an original price equal to the sale price', () => {
+    const result = validateRows([withImages({ pd_originalPrice: '250' })], imageMap);
+    expect(result.valid).toBe(false);
+  });
+
+  it('rejects a non-numeric original price', () => {
+    const result = validateRows([withImages({ pd_originalPrice: 'abc' })], imageMap);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/"pd_originalPrice" debe ser un número positivo/);
+  });
+
+  it('checks the pub_ spelling of the column too', () => {
+    const result = validateRows([withImages({ pub_originalPrice: '100' })], imageMap);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/"pub_originalPrice"/);
+  });
+
+  it('accepts an original price above the sale price', () => {
+    const result = validateRows([withImages({ pd_originalPrice: '600' })], imageMap);
+    expect(result.valid).toBe(true);
+    expect(result.rows[0].publicData.originalPrice).toBe(600);
+  });
+
+  it('stores an operator-formatted amount as a number the worker can use', () => {
+    const result = validateRows([withImages({ pd_originalPrice: '$1,000.00' })], imageMap);
+    expect(result.valid).toBe(true);
+    // parseFloat('$1,000.00') is NaN and parseFloat('1,000') is 1, so the raw
+    // string must not reach importWorker.
+    expect(result.rows[0].publicData.originalPrice).toBe(1000);
+  });
+
+  it('accepts a row without an original price', () => {
+    const result = validateRows([withImages()], imageMap);
+    expect(result.valid).toBe(true);
+  });
+
   it('returns valid result for correct rows', () => {
     const result = validateRows(
       [

@@ -325,7 +325,13 @@ button). Quoting and label purchase also need the Integration credentials
   `ImageSlot` (4 labeled slots → `publicData.imageSlots`, captions rendered by
   `ListingImageGallery.js`).
 - **Original price** — `publicData.originalPrice` `{amount,currency}`, must exceed `price`; renders
-  as strike-through "was" in OrderPanel + cards.
+  as strike-through "was" in OrderPanel + cards. Who may set it is gated by
+  `configAV.canShowOriginalPrice()` (both pricing forms hide the field, and both panels drop the
+  value on submit). The "must exceed" rule is enforced on every write path:
+  `util/avValidators.originalPriceAbovePrice` on the two forms, and row validation in
+  `bulk-import/csvParser.js` (which also normalises `$1,000.00` to a number, since the worker
+  re-parses with `parseFloat`). Display still requires `originalPrice > price`, so a stored
+  violation would silently never render.
 - **EarningsEstimator** — fee breakdown below price input (simple price only). Fees from
   `config.earningsEstimate` (`configDefault.js`), env overrides
   `REACT_APP_PROVIDER_COMMISSION_PERCENTAGE` (10), `REACT_APP_STRIPE_FEE_PERCENTAGE` (2.9),

@@ -203,6 +203,33 @@ function validateRows(rows, imageMap, authorOptions = {}) {
       );
     }
 
+    // Original price validation. The column is optional, but a value that does
+    // not exceed the sale price is never displayed (OrderPanel and the listing
+    // cards only render a "was" price above the price), so importing one would
+    // silently store a value the marketplace ignores.
+    // Either prefix reaches publicData, so accept both spellings here.
+    const originalPriceKey = ['pd_originalPrice', 'pub_originalPrice'].find(
+      key => row[key] != null && String(row[key]).trim() !== ''
+    );
+    let originalPrice = NaN;
+    if (originalPriceKey) {
+      const rawOriginalPrice = row[originalPriceKey];
+      originalPrice = parsePrice(rawOriginalPrice);
+      if (isNaN(originalPrice) || originalPrice <= 0) {
+        rowErrors.push(
+          `Fila ${rowNum}: "${label(
+            originalPriceKey
+          )}" debe ser un número positivo, se recibió "${rawOriginalPrice}".`
+        );
+      } else if (!isNaN(price) && originalPrice <= price) {
+        rowErrors.push(
+          `Fila ${rowNum}: "${label(
+            originalPriceKey
+          )}" (${originalPrice}) debe ser mayor que "${label('price')}" (${price}).`
+        );
+      }
+    }
+
     // Required image columns
     for (const col of REQUIRED_IMAGE_COLUMNS) {
       const filename = row[col];
@@ -253,6 +280,14 @@ function validateRows(rows, imageMap, authorOptions = {}) {
           publicData[pdKey] = trimmed;
         }
       }
+    }
+
+    // Store the original price as the parsed number. Operators type it the same
+    // way as the sale price ("$1,000.00"), which the import worker would
+    // otherwise re-parse with parseFloat — dropping that value and turning
+    // "1,000" into 1.
+    if (originalPriceKey && publicData.originalPrice != null && !isNaN(originalPrice)) {
+      publicData.originalPrice = originalPrice;
     }
 
     // Geolocation

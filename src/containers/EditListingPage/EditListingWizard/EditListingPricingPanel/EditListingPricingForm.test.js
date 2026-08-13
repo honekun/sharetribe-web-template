@@ -72,4 +72,50 @@ describe('EditListingPricingForm original price', () => {
     render(<EditListingPricingForm {...baseProps} />);
     expect(screen.queryByLabelText(originalPriceLabel)).not.toBeInTheDocument();
   });
+
+  it('blocks submission when the original price does not exceed the price', async () => {
+    const user = userEvent.setup();
+    const saveActionMsg = 'Save';
+    render(
+      <EditListingPricingForm
+        {...baseProps}
+        saveActionMsg={saveActionMsg}
+        showOriginalPrice={true}
+      />
+    );
+
+    await user.type(
+      screen.getByRole('textbox', { name: 'EditListingPricingForm.pricePerProduct' }),
+      '20'
+    );
+    await user.type(screen.getByLabelText(originalPriceLabel), '10');
+    // The error only shows once the field has been touched, i.e. after blur.
+    await user.tab();
+
+    expect(screen.getByText('EditListingPricingForm.originalPriceTooLow')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: saveActionMsg })).toBeDisabled();
+  });
+
+  it('allows submission when the original price exceeds the price', async () => {
+    const user = userEvent.setup();
+    const saveActionMsg = 'Save';
+    render(
+      <EditListingPricingForm
+        {...baseProps}
+        saveActionMsg={saveActionMsg}
+        showOriginalPrice={true}
+      />
+    );
+
+    await user.type(
+      screen.getByRole('textbox', { name: 'EditListingPricingForm.pricePerProduct' }),
+      '10'
+    );
+    await user.type(screen.getByLabelText(originalPriceLabel), '20');
+
+    expect(
+      screen.queryByText('EditListingPricingForm.originalPriceTooLow')
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: saveActionMsg })).toBeEnabled();
+  });
 });
