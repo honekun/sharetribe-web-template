@@ -220,7 +220,14 @@ AV keeps upstream files unmodified via extension architecture in `src/extensions
   registry, never inline.
 - `pageBuilder/av/` — registers `avHero2`/`avHero3`/`avVideo` for CMSPage; `sectionStyles.js`
   (`parseSectionCustomOptions`, `parseSectionCtaClass`); `constants.js`; `transform.js`.
-- `accountNav/` (`getAccountSettingsTabs()`), `topbar/` (custom link config), `searchFilters/`.
+- `accountNav/` (`getAccountSettingsTabs()`), `topbar/` (custom link config +
+  `topbarDataProvider.js`), `searchFilters/`.
+- `topbar/topbarDataProvider.js` — single source for the topbar's category-dropdown config and
+  local-design users. The desktop menu and the (closed but mounted) mobile menu both live on every
+  page, so each fetching for itself doubled every request; both now share one in-flight promise,
+  cached 5 min. Server side, `/api/topbar/local-design-users` coalesces concurrent loads and narrows
+  the query with `pub_userType`, falling back to a full user scan (and remembering that) when the
+  marketplace has no schema for it.
 - Redux: `src/ducks/avExtension.duck.js` — `avLandingExtension` slice (`tagListingIds`), SSR-safe,
   registered in `ducks/index.js`.
 

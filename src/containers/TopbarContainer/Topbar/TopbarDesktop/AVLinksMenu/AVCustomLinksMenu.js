@@ -6,11 +6,15 @@ import PriorityLinks, { CreateCusomMenusLinks } from './AVPriorityLinks';
 import LinksMenu from './AVLinksMenu';
 import {
   defaultTopbarCategoryDropdowns,
-  fetchLocalTopbarData,
   getCategoryDropdownsConfig,
   resolveDropdownMenuItems,
 } from './categoryDropdowns';
-import { fetchLocalDesignUsers, resolveUserDropdownMenuItems } from './userDropdowns';
+import { resolveUserDropdownMenuItems } from './userDropdowns';
+// Shared with TopbarMobileMenu so the two menus fetch once between them.
+import {
+  getLocalDesignUsers,
+  getTopbarData,
+} from '../../../../../extensions/topbar/topbarDataProvider';
 
 import css from './AVCustomLinksMenu.module.css';
 
@@ -135,7 +139,7 @@ const CustomLinksMenu = ({
   useEffect(() => {
     let isActive = true;
 
-    fetchLocalTopbarData(window?.fetch?.bind(window)).then(data => {
+    getTopbarData().then(data => {
       if (isActive && data) {
         setLocalTopbarData(data);
       }
@@ -149,7 +153,7 @@ const CustomLinksMenu = ({
   useEffect(() => {
     let isActive = true;
 
-    fetchLocalDesignUsers().then(users => {
+    getLocalDesignUsers().then(users => {
       if (isActive) {
         setLocalDesignUsers(users);
       }

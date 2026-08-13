@@ -921,8 +921,14 @@ Despite its current **Marcas** label, this menu is a directory of eligible store
 
 The items are sorted by display name and open each store's profile page. Review the user's type,
 display name, and `localDesign` value before expecting the menu to change; results are cached for
-five minutes. If the configured user-management flow does not expose `localDesign` for editing,
-request a controlled development/administrative update rather than substituting a brand field.
+five minutes.
+
+Defining a **user field schema for `userType`** in Console lets the server ask the API for store
+users only. Without it the server has to read every user account (up to 2,000) to find them, which
+makes the first load after each cache expiry slower as the marketplace grows. Nothing breaks either
+way — the menu falls back to reading all users automatically. If the configured user-management flow
+does not expose `localDesign` for editing, request a controlled development/administrative update
+rather than substituting a brand field.
 
 ### Top-Right Action Icons (Desktop)
 
