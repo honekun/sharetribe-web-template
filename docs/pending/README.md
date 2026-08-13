@@ -35,12 +35,6 @@ Last reviewed: 2026-08-13.
 - [Bulk-import horizontal scaling](scaling.md) — shared coordination or a durable worker, only when
   more than one web process or restart-safe imports are required.
 
-## Future-use record
-
-- [Removed pricing-plan component](pricing-plans.md) — former behavior, data contract, deleted
-  integration points, and requirements for a future reimplementation. It is not active or pending
-  rollout.
-
 ## Completion rule
 
 When an item is finished:

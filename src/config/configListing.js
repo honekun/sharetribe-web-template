@@ -467,7 +467,3 @@ export const listingTypes = [
 // Read More:
 // https://www.sharetribe.com/docs/how-to/manage-search-schemas-with-flex-cli/#adding-listing-search-schemas
 export const enforceValidListingType = false;
-
-// AV: render the labeled-slot photo form (front/back/horizontal/details).
-// Set to 'gallery' to use the upstream free-form FieldArray gallery.
-export const photoMode = 'slots';

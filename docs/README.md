@@ -46,7 +46,6 @@ Start with the [pending-work index](pending/README.md). It contains actionable o
 explicitly retained future-use record:
 
 - [WhatsApp and notification hardening](pending/notifications.md)
-- [Removed pricing-plan component reference](pending/pricing-plans.md)
 - [Bidding and offer-acceptance research](pending/bidding.md)
 - [eShip policy and reconciliation](pending/eship.md)
 - [Bulk-import horizontal scaling](pending/scaling.md)

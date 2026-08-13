@@ -9,9 +9,8 @@ import getPageDataLoadingAPI from '../containers/pageDataLoadingAPI';
 // `routeConfiguration.js` only imports `avRouteConfiguration()` and spreads the
 // three returned groups into its route array at the positions where they belong.
 //
-// Ordering matters for `tailRoutes`: `HotListPage` reuses the `/s` path, so it
-// must stay *after* the real SearchPage route (it is only ever reached by name
-// through NamedLink, never by path matching).
+// `tailRoutes` is currently empty. It is kept so the splice point at the end of
+// the upstream route array stays available without another edit to that file.
 
 const pageDataLoadingAPI = getPageDataLoadingAPI();
 
@@ -55,12 +54,9 @@ const CreateTypePage = loadable(() =>
 /**
  * AV route groups, keyed by where they are spliced into the upstream route array.
  *
- * @param {Object} deps
- * @param {React.ComponentType} deps.SearchPage - the SearchPage variant resolved by
- *   the upstream `routeConfiguration()` from `layoutConfig.searchPage.variantType`.
  * @returns {{ inboxRoutes: Array, accountRoutes: Array, tailRoutes: Array }}
  */
-export const avRouteConfiguration = ({ SearchPage }) => ({
+export const avRouteConfiguration = () => ({
   // Spliced in right after the upstream InboxPage route.
   inboxRoutes: [
     {
@@ -141,13 +137,6 @@ export const avRouteConfiguration = ({ SearchPage }) => ({
     },
   ],
 
-  // Appended last — see the ordering note above.
-  tailRoutes: [
-    {
-      path: '/s',
-      name: 'HotListPage',
-      extra: { pub_tags: 'mas-nuevo' },
-      component: SearchPage,
-    },
-  ],
+  // Appended last — see the note above.
+  tailRoutes: [],
 });

@@ -10,11 +10,7 @@ import { H3, ListingLink } from '../../../../components';
 
 // Import modules from this directory
 import EditListingPhotosForm from './EditListingPhotosForm';
-import EditListingPhotosFormSlots from './EditListingPhotosFormSlots';
 import css from './EditListingPhotosPanel.module.css';
-
-// AV: labeled-slot photo mode (see avPhotoSlots.js); upstream gallery mode is unchanged.
-import { submitSlots, useStableSlotInitialValues } from './avPhotoSlots';
 
 const getInitialValues = params => {
   const { images = [] } = params;
@@ -59,24 +55,7 @@ const EditListingPhotosPanel = props => {
     listingImageConfig,
     updatePageTitle: UpdatePageTitle,
     intl,
-    photoMode = 'gallery',
-    allFilesUploadedAndVerified,
-    filesTabParams,
-    filesRequired,
   } = props;
-
-  // AV: labeled-slot mode swaps the form and the initial-values/submit shape.
-  const isSlotMode = photoMode === 'slots';
-  const FormComponent = isSlotMode ? EditListingPhotosFormSlots : EditListingPhotosForm;
-  const slotInitialValues = useStableSlotInitialValues(listing);
-  const initialValues = isSlotMode ? slotInitialValues : getInitialValues(props);
-  const handleSubmit = values => {
-    if (isSlotMode) {
-      return submitSlots(values, onSubmit);
-    }
-    const { addImage, ...updateValues } = values;
-    return onSubmit(updateValues);
-  };
 
   const rootClass = rootClassName || css.root;
   const classes = classNames(rootClass, className);
@@ -105,23 +84,35 @@ const EditListingPhotosPanel = props => {
       <H3 as="h1">
         <FormattedMessage id={panelHeadingProps.id} values={{ ...panelHeadingProps.values }} />
       </H3>
-      <FormComponent
+      {/* <H3 as="h1">
+        {isPublished ? (
+          <FormattedMessage
+            id="EditListingPhotosPanel.title"
+            values={{ listingTitle: <ListingLink listing={listing} />, lineBreak: <br /> }}
+          />
+        ) : (
+          <FormattedMessage
+            id="EditListingPhotosPanel.createListingTitle"
+            values={{ lineBreak: <br /> }}
+          />
+        )}
+      </H3> */}
+      <EditListingPhotosForm
         className={css.form}
         disabled={disabled}
         ready={ready}
         fetchErrors={errors}
-        images={props.images}
-        initialValues={initialValues}
+        initialValues={getInitialValues(props)}
         onImageUpload={onImageUpload}
-        onSubmit={handleSubmit}
+        onSubmit={values => {
+          const { addImage, ...updateValues } = values;
+          onSubmit(updateValues);
+        }}
         onRemoveImage={onRemoveImage}
         saveActionMsg={submitButtonText}
         updated={panelUpdated}
         updateInProgress={updateInProgress}
         listingImageConfig={listingImageConfig}
-        allFilesUploadedAndVerified={allFilesUploadedAndVerified}
-        filesTabParams={filesTabParams}
-        filesRequired={filesRequired}
       />
     </main>
   );

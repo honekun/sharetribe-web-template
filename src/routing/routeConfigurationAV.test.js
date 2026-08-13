@@ -6,7 +6,7 @@ import { avRouteConfiguration } from './routeConfigurationAV';
 describe('avRouteConfiguration', () => {
   const routes = routeConfiguration({ listingPage: { variantType: 'carousel' } }, {});
   const names = routes.map(r => r.name);
-  const groups = avRouteConfiguration({ SearchPage: () => null });
+  const groups = avRouteConfiguration();
 
   it('adds every AV route exactly once', () => {
     const avNames = [...groups.inboxRoutes, ...groups.accountRoutes, ...groups.tailRoutes].map(
@@ -23,8 +23,8 @@ describe('avRouteConfiguration', () => {
     expect(names.indexOf('MyAddressesPage')).toBe(names.indexOf('ContactDetailsPage') + 1);
   });
 
-  it('keeps HotListPage after the real SearchPage so /s still matches SearchPage', () => {
-    expect(names.indexOf('HotListPage')).toBeGreaterThan(names.indexOf('SearchPage'));
+  it('leaves /s to the real SearchPage', () => {
+    expect(routes.filter(r => r.path === '/s')).toHaveLength(1);
     expect(routes.find(r => r.path === '/s').name).toBe('SearchPage');
   });
 });

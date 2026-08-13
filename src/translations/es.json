@@ -302,6 +302,7 @@
   "EditListingPage.screenreader.removeImage": "Eliminar imagen",
   "EditListingPage.titleCreateListing": "Publicar anuncio | {panelHeading}",
   "EditListingPage.titleEditListing": "Editar anuncio | {panelHeading}",
+  "EditListingPhotosForm.addImagesTip": "Consejo: sube las mejores 2-3 fotos desde diferentes ángulos.",
   "EditListingPhotosForm.chooseImage": "+ Añade una foto…",
   "EditListingPhotosForm.filesNotReady": "Antes de poder publicar, los archivos que subiste deben pasar una verificación de seguridad. Consulta el estado en la {filesTabLink}. Tu anuncio se ha guardado como borrador.",
   "EditListingPhotosForm.filesTabLinkText": "pestaña Archivos",
