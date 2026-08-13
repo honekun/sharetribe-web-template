@@ -10,11 +10,11 @@ import {
   fetchLocalTopbarData,
   getCategoryDropdownsConfig,
   resolveDropdownMenuItems,
-} from '../TopbarDesktop/CustomLinksMenu/categoryDropdowns';
+} from '../TopbarDesktop/AVLinksMenu/categoryDropdowns';
 import {
   fetchLocalDesignUsers,
   resolveUserDropdownMenuItems,
-} from '../TopbarDesktop/CustomLinksMenu/userDropdowns';
+} from '../TopbarDesktop/AVLinksMenu/userDropdowns';
 
 import css from './TopbarMobileMenu.module.css';
 

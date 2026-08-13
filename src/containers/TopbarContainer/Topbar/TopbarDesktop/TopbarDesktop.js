@@ -16,12 +16,13 @@ import {
 } from '../../../../components';
 
 import TopbarSearchForm from '../TopbarSearchForm/TopbarSearchForm';
-import CustomLinksMenu from './CustomLinksMenu/CustomLinksMenu';
+// AV: forked links menu (AV dropdowns) — upstream's CustomLinksMenu/ is left untouched.
+import CustomLinksMenu from './AVLinksMenu/AVCustomLinksMenu';
 
 import css from './TopbarDesktop.module.css';
 import { AV_PROFILE_LINKS } from '../../../../extensions/topbar/links';
 
-import { CreateListingMenuLink } from './CustomLinksMenu/PriorityLinks';
+import { CreateListingMenuLink } from './AVLinksMenu/AVPriorityLinks';
 
 const SignupLink = () => {
   return (

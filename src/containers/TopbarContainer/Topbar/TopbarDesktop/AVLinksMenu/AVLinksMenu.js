@@ -12,7 +12,7 @@ import {
   NamedLink,
 } from '../../../../../components';
 
-import css from './LinksMenu.module.css';
+import css from './AVLinksMenu.module.css';
 
 /**
  * Link components to be shown inside the dropdown.
@@ -106,6 +106,7 @@ const MeasureMoreMenu = props => {
 
 /**
  * Menu label has text (Menu vs More) and arrow up vs down
+ * <IconArrowHead direction="down" size="small" rootClassName={css.arrowIcon} /> was removed.
  *
  * @param {*} props contain keys: showMoreLabel, isOpen, intl
  * @returns span containing menu label text and IconArrowHead

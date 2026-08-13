@@ -38,10 +38,7 @@ describe('userDropdowns', () => {
 
   it('fetches local design users from the server endpoint', async () => {
     topbarLocalDesignUsers.mockResolvedValueOnce({
-      users: [
-        { id: 'user-1', text: 'Tienda Uno' },
-        { id: 'user-2', text: 'Tienda Dos' },
-      ],
+      users: [{ id: 'user-1', text: 'Tienda Uno' }, { id: 'user-2', text: 'Tienda Dos' }],
     });
 
     await expect(fetchLocalDesignUsers()).resolves.toEqual([

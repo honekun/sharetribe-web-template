@@ -22,19 +22,20 @@
   align-items: baseline;
   margin: 27px 0;
   text-decoration: inherit;
+  white-space: nowrap;
 }
 
 .linkMenuLabel {
   flex-shrink: 0;
 
-  border-bottom: 0px solid;
+  /* Reserve the 4px hover underline so hovering doesn't shift layout. */
+  border-bottom: 4px solid transparent;
   transition: var(--transitionStyleButton);
 
-  font-weight: var(--fontWeightMedium);
-  font-size: 14px;
+  font-weight: var(--fontWeightBold);
+  font-size: 17px;
   line-height: 18px;
-  letter-spacing: 0;
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
 
   display: inline;
   height: 100%;
@@ -49,13 +50,13 @@
   }
 
   &:active {
-    border-bottom: 0;
+    border-bottom: 4px solid transparent;
   }
 }
 
 .linkMenuIsOpen {
   &:hover {
-    border-bottom: 0;
+    border-bottom: 4px solid transparent;
   }
 }
 
@@ -66,6 +67,10 @@
 .linkMenuContent {
   min-width: 276px;
   padding: 20px 0;
+  max-height: calc(100vh - var(--topbarHeightDesktop) - 24px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
 }
 
 /* left animated "border" like hover element */
@@ -79,7 +84,6 @@
 }
 
 .menuLink {
-  composes: textSmall from global;
   position: relative;
   display: block;
 
@@ -90,9 +94,13 @@
   padding: 4px 24px;
 
   /* Layout details */
-  color: var(--colorGrey700);
+  color: var(--colorBlack);
   text-align: left;
   transition: var(--transitionStyleButton);
+
+  font-weight: var(--fontWeightBold);
+  font-size: 17px;
+  line-height: 18px;
 
   &:hover {
     color: var(--colorBlack);

@@ -4,11 +4,14 @@ import classNames from 'classnames';
 import { FormattedMessage } from '../../../../../util/reactIntl';
 
 import { ExternalLink, NamedLink } from '../../../../../components';
+import LinksMenuDropdown from './LinksMenuDropdown';
 
-import css from './PriorityLinks.module.css';
+import css from './AVPriorityLinks.module.css';
 
 /**
- * Create component that shows only a single "Post a new listing" link.
+ * Create component that shows only a single "Post a new listing" (VENDE) link.
+ * AV: points to the create-type chooser (single listing vs bulk import)
+ * instead of NewListingPage directly.
  *
  * @param {*} props contains customLinksMenuClass
  * @returns div with only one link inside.
@@ -16,11 +19,72 @@ import css from './PriorityLinks.module.css';
 export const CreateListingMenuLink = props => {
   return (
     <div className={props.customLinksMenuClass}>
-      <NamedLink name="NewListingPage" className={classNames(css.priorityLink, css.highlight)}>
+      <NamedLink name="CreateTypePage" className={classNames(css.priorityLink, css.button)}>
         <span className={css.priorityLinkLabel}>
           <FormattedMessage id="TopbarDesktop.createListing" />
         </span>
       </NamedLink>
+    </div>
+  );
+};
+
+/**
+ * Create component that shows only a single "Post a new listing" link.
+ *
+ * @param {*} props contains customLinksMenuClass
+ * @returns div with only one link inside.
+ */
+export const CreateCusomMenusLinks = props => {
+  const {
+    intl,
+    currentPage,
+    menuLinksDropdown1,
+    menuLinksDropdown2,
+    menuLinksDropdown3,
+    customLinksCss,
+    wrapperStyle,
+  } = props;
+
+  return (
+    <div style={wrapperStyle}>
+      <div className={customLinksCss.leftLinkWrapper}>
+        <NamedLink
+          name="SearchPage"
+          to={{ search: intl.formatMessage({ id: 'Topbar.custom.leftOneHref' }) }}
+          className={customLinksCss.leftLink}
+        >
+          <span className={customLinksCss.leftLinkLabel}>
+            <FormattedMessage id="Topbar.custom.leftOne" />
+          </span>
+        </NamedLink>
+      </div>
+      {menuLinksDropdown1.length > 0 ? (
+        <LinksMenuDropdown
+          id="linksMenuDropdown1"
+          label={intl.formatMessage({ id: 'Topbar.custom.menuOne' })}
+          currentPage={currentPage}
+          items={menuLinksDropdown1}
+          intl={intl}
+        />
+      ) : null}
+      {menuLinksDropdown2.length > 0 ? (
+        <LinksMenuDropdown
+          id="linksMenuDropdown2"
+          label={intl.formatMessage({ id: 'Topbar.custom.menuTwo' })}
+          currentPage={currentPage}
+          items={menuLinksDropdown2}
+          intl={intl}
+        />
+      ) : null}
+      {menuLinksDropdown3.length > 0 ? (
+        <LinksMenuDropdown
+          id="linksMenuDropdown3"
+          label={intl.formatMessage({ id: 'Topbar.custom.menuThree' })}
+          currentPage={currentPage}
+          items={menuLinksDropdown3}
+          intl={intl}
+        />
+      ) : null}
     </div>
   );
 };
@@ -103,6 +167,10 @@ const PriorityLinks = props => {
   return (
     <ul className={css.priorityLinkWrapper} {...styleWrapper} ref={containerRef}>
       {linkConfigs.map((linkConfig, index) => {
+        // AV: skip links whose label is empty (used to hide hosted links).
+        if ('' === linkConfig.text.trim()) {
+          return null;
+        }
         return (
           <li key={`${linkConfig.text}_${index}`} className={css.priorityLinkItem}>
             <PriorityLink linkConfig={linkConfig} />
