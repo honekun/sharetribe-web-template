@@ -1,4 +1,8 @@
-import { getShippingDetailsMaybe, getEshipDestinationFromValues } from './avMxAddress';
+import {
+  getShippingDetailsMaybe,
+  getEshipDestinationFromValues,
+  copyShippingAddressToBilling,
+} from './avMxAddress';
 
 describe('getEshipDestinationFromValues', () => {
   const complete = {
@@ -79,5 +83,64 @@ describe('getShippingDetailsMaybe', () => {
     });
     expect(shippingDetails.address.line1).toBe('Av. Reforma 123 Int. 4B');
     expect(shippingDetails.address.interiorNumber).toBe('4B');
+  });
+});
+
+describe('copyShippingAddressToBilling', () => {
+  const makeFormApi = values => {
+    const changes = {};
+    return {
+      changes,
+      getState: () => ({ values }),
+      batch: fn => fn(),
+      change: (field, value) => {
+        changes[field] = value;
+      },
+    };
+  };
+
+  const shipping = {
+    recipientName: 'Ana',
+    recipientAddressLine1: 'Av. Reforma',
+    recipientExteriorNumber: '100',
+    recipientInteriorNumber: '3B',
+    recipientColonia: 'Juárez',
+    recipientPostal: '06600',
+    recipientCity: 'CDMX',
+    recipientState: 'CMX',
+    recipientPhoneNumber: '5555555555',
+  };
+
+  it('copies every shipping field to its billing counterpart', () => {
+    const formApi = makeFormApi(shipping);
+    copyShippingAddressToBilling(formApi, true);
+    expect(formApi.changes).toEqual({
+      billingName: 'Ana',
+      billingAddressLine1: 'Av. Reforma',
+      billingExteriorNumber: '100',
+      billingInteriorNumber: '3B',
+      billingColonia: 'Juárez',
+      billingPostal: '06600',
+      billingCity: 'CDMX',
+      billingState: 'CMX',
+    });
+  });
+
+  it('never copies the phone number — billing does not collect one', () => {
+    const formApi = makeFormApi(shipping);
+    copyShippingAddressToBilling(formApi, true);
+    expect(Object.keys(formApi.changes)).not.toContain('billingPhoneNumber');
+    expect(Object.values(formApi.changes)).not.toContain('5555555555');
+  });
+
+  it('clears the billing fields when unchecked', () => {
+    const formApi = makeFormApi(shipping);
+    copyShippingAddressToBilling(formApi, false);
+    expect(Object.values(formApi.changes).every(v => v === '')).toBe(true);
+  });
+
+  it('tolerates a form with no values yet', () => {
+    const formApi = { getState: () => undefined, batch: fn => fn(), change: () => {} };
+    expect(() => copyShippingAddressToBilling(formApi, true)).not.toThrow();
   });
 });

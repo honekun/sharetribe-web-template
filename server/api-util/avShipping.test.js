@@ -1,6 +1,8 @@
 'use strict';
 
 const {
+  AV_SHIPPING_FEE_INCLUDE_FOR,
+  resolveAvShippingFee,
   authoritativeShippingDestination,
   buildAvShippingProtectedData,
   destinationFromShippingDetails,
@@ -218,5 +220,83 @@ describe('withAvShippingProtectedData', () => {
     expect(withAvShippingProtectedData(undefined, { avShipping: { rate_id: 'r1' } })).toEqual({
       protectedData: { avShipping: { rate_id: 'r1' } },
     });
+  });
+});
+
+describe('resolveAvShippingFee', () => {
+  const rate = { amountSubunits: 11800, currency: 'MXN', rate: { rate_id: 'r1' } };
+  const shipping = { deliveryMethod: 'shipping', avShippingType: 'nacionalExpress' };
+
+  it('keeps the shipping fee off the provider payout', () => {
+    // AV buys the label centrally, so the buyer's shipping payment stays with the platform.
+    expect(AV_SHIPPING_FEE_INCLUDE_FOR).toEqual(['customer']);
+  });
+
+  it('returns null for a non-shipping order without quoting', async () => {
+    const resolveBucketPrice = jest.fn();
+    expect(
+      await resolveAvShippingFee({
+        resolveBucketPrice,
+        orderData: { deliveryMethod: 'pickup', avShippingType: 'nacionalExpress' },
+        currency: 'MXN',
+      })
+    ).toBeNull();
+    expect(resolveBucketPrice).not.toHaveBeenCalled();
+  });
+
+  it('does not quote before the buyer has chosen a delivery type', async () => {
+    const resolveBucketPrice = jest.fn();
+    expect(
+      await resolveAvShippingFee({
+        resolveBucketPrice,
+        orderData: { deliveryMethod: 'shipping' },
+        currency: 'MXN',
+      })
+    ).toBeNull();
+    expect(resolveBucketPrice).not.toHaveBeenCalled();
+  });
+
+  it('quotes and returns a Money at the resolved amount', async () => {
+    const fee = await resolveAvShippingFee({
+      resolveBucketPrice: jest.fn().mockResolvedValue(rate),
+      orderData: shipping,
+      currency: 'MXN',
+    });
+    expect(fee.amount).toEqual(11800);
+    expect(fee.currency).toEqual('MXN');
+  });
+
+  it('falls back to the listing currency when the rate omits one', async () => {
+    const fee = await resolveAvShippingFee({
+      resolveBucketPrice: jest.fn().mockResolvedValue({ amountSubunits: 500 }),
+      orderData: shipping,
+      currency: 'MXN',
+    });
+    expect(fee.currency).toEqual('MXN');
+  });
+
+  it('uses a pre-resolved rate instead of quoting again', async () => {
+    const resolveBucketPrice = jest.fn();
+    const fee = await resolveAvShippingFee({
+      resolveBucketPrice,
+      orderData: shipping,
+      currency: 'MXN',
+      options: { resolvedShippingRate: rate },
+    });
+    expect(fee.amount).toEqual(11800);
+    expect(resolveBucketPrice).not.toHaveBeenCalled();
+  });
+
+  it('treats an explicit pre-resolved null as "resolved to nothing", not "unresolved"', async () => {
+    const resolveBucketPrice = jest.fn();
+    expect(
+      await resolveAvShippingFee({
+        resolveBucketPrice,
+        orderData: shipping,
+        currency: 'MXN',
+        options: { resolvedShippingRate: null },
+      })
+    ).toBeNull();
+    expect(resolveBucketPrice).not.toHaveBeenCalled();
   });
 });

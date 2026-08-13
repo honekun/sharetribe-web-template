@@ -4,7 +4,7 @@
  * It's also handled separately in handleSubmit function.
  */
 import React, { Component } from 'react';
-import { Form as FinalForm, FormSpy } from 'react-final-form';
+import { Form as FinalForm } from 'react-final-form';
 import arrayMutators from 'final-form-arrays';
 import classNames from 'classnames';
 
@@ -26,6 +26,10 @@ import {
   CustomExtendedDataField,
   MxAddressFields,
 } from '../../../components';
+
+// AV: MX address composition + the eShip delivery-type slot
+import { copyShippingAddressToBilling } from '../avMxAddress';
+import AVShippingFormSection from './AVShippingFormSection';
 
 import css from './StripePaymentForm.module.css';
 
@@ -377,21 +381,8 @@ class StripePaymentForm extends Component {
   }
 
   updateBillingDetailsToMatchShippingAddress(shouldFill) {
-    const formApi = this.finalFormAPI;
-    const values = formApi.getState()?.values || {};
-    // AV: billing uses the same granular MX fields as shipping (the ShippingDetails
-    // component with the `billing` prefix). Copy each shipping field to its billing
-    // counterpart (no phone — billing doesn't collect it).
-    formApi.batch(() => {
-      formApi.change('billingName', shouldFill ? values.recipientName : '');
-      formApi.change('billingAddressLine1', shouldFill ? values.recipientAddressLine1 : '');
-      formApi.change('billingExteriorNumber', shouldFill ? values.recipientExteriorNumber : '');
-      formApi.change('billingInteriorNumber', shouldFill ? values.recipientInteriorNumber : '');
-      formApi.change('billingColonia', shouldFill ? values.recipientColonia : '');
-      formApi.change('billingPostal', shouldFill ? values.recipientPostal : '');
-      formApi.change('billingCity', shouldFill ? values.recipientCity : '');
-      formApi.change('billingState', shouldFill ? values.recipientState : '');
-    });
+    // AV: billing uses the same granular MX fields as shipping (see avMxAddress.js).
+    copyShippingAddressToBilling(this.finalFormAPI, shouldFill);
   }
 
   changePaymentMethod(changedTo) {
@@ -612,13 +603,12 @@ class StripePaymentForm extends Component {
           intl={intl}
         />
 
-        {askShippingDetails && onShippingValuesChange ? (
-          <FormSpy
-            subscription={{ values: true }}
-            onChange={({ values: formValues }) => onShippingValuesChange(formValues)}
+        {askShippingDetails ? (
+          <AVShippingFormSection
+            shippingSelectorSlot={shippingSelectorSlot}
+            onShippingValuesChange={onShippingValuesChange}
           />
         ) : null}
-        {askShippingDetails ? shippingSelectorSlot : null}
 
         {billingDetailsNeeded && !loadingData ? (
           <React.Fragment>

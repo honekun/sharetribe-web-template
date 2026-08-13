@@ -182,3 +182,32 @@ export const getEshipDestinationFromValues = formValues => {
       }
     : null;
 };
+
+/**
+ * Copy the shipping address into the billing fields (or clear them).
+ *
+ * Billing uses the same granular MX fields as shipping, just with a `billing`
+ * prefix instead of `recipient`, so this is a straight field-by-field copy. Phone
+ * is not copied — billing does not collect one.
+ *
+ * @param {Object} formApi - the React Final Form API
+ * @param {boolean} shouldFill - true to copy the shipping values, false to clear
+ */
+export const copyShippingAddressToBilling = (formApi, shouldFill) => {
+  const values = formApi.getState()?.values || {};
+  const copy = [
+    ['billingName', 'recipientName'],
+    ['billingAddressLine1', 'recipientAddressLine1'],
+    ['billingExteriorNumber', 'recipientExteriorNumber'],
+    ['billingInteriorNumber', 'recipientInteriorNumber'],
+    ['billingColonia', 'recipientColonia'],
+    ['billingPostal', 'recipientPostal'],
+    ['billingCity', 'recipientCity'],
+    ['billingState', 'recipientState'],
+  ];
+  formApi.batch(() => {
+    copy.forEach(([billingField, shippingField]) => {
+      formApi.change(billingField, shouldFill ? values[shippingField] : '');
+    });
+  });
+};

@@ -1,5 +1,62 @@
 'use strict';
 
+const { types } = require('sharetribe-flex-sdk');
+const { Money } = types;
+
+// AV: shipping is NOT paid out to the provider. AV buys the eShip label centrally
+// (the "Segmail" account is billed directly; see shipmentService.js), so the
+// buyer's shipping payment is retained by the platform to cover the carrier cost
+// and keep the markup. Provider commission is computed on ['order'] only, so this
+// does not affect it (see lineItemHelpers.js getProviderCommissionMaybe).
+// Rationale + payout reconciliation: docs/integrations/eship.md.
+const AV_SHIPPING_FEE_INCLUDE_FOR = ['customer'];
+
+/**
+ * Resolve the server-authoritative shipping fee for an 'item' order line.
+ *
+ * The client-sent price is never trusted: a cache hit on `avQuoteToken` pins the
+ * quoted rate, a miss re-quotes eShip from scratch.
+ *
+ * Only resolves once the buyer has actually chosen a delivery type — the initial
+ * speculate (on checkout load) has no type/token/destination yet, and quoting then
+ * would hit eShip with no address and fail the whole speculation.
+ *
+ * Callers that already resolved the rate (the privileged endpoints, via
+ * `resolveAvShippingForOrder`) pass it through `options.resolvedShippingRate` so it
+ * is not quoted twice — including an explicit `null`, which means "resolved to
+ * nothing", not "not resolved yet".
+ *
+ * @param {Object} params
+ * @param {Function} params.resolveBucketPrice - shippingQuoteService.resolveBucketPrice
+ * @param {Object} params.orderData
+ * @param {string} params.currency - listing currency, used when the rate omits one
+ * @param {Object} params.listing
+ * @param {Object} [params.options] - may carry a pre-resolved `resolvedShippingRate`
+ * @returns {Promise<Money|null>} the shipping fee, or null when the order doesn't ship
+ */
+async function resolveAvShippingFee({ resolveBucketPrice, orderData, currency, listing, options }) {
+  const isShipping = orderData?.deliveryMethod === 'shipping';
+  if (!isShipping) {
+    return null;
+  }
+
+  const opts = options || {};
+  const hasPreResolvedRate = Object.prototype.hasOwnProperty.call(opts, 'resolvedShippingRate');
+  const resolved = hasPreResolvedRate
+    ? opts.resolvedShippingRate
+    : orderData?.avShippingType
+    ? await resolveBucketPrice({
+        quoteToken: orderData.avQuoteToken,
+        avShippingType: orderData.avShippingType,
+        listing,
+        destination: orderData.avDestination,
+        buyerEmail: orderData.buyerEmail,
+      })
+    : null;
+
+  return resolved ? new Money(resolved.amountSubunits, resolved.currency || currency) : null;
+}
+
 // Shape the chosen eShip rate for persistence on the transaction. Read back by
 // the label-generation step (Spec B) and seller surplus/payout logic.
 function buildAvShippingProtectedData(orderData, resolvedRate) {
@@ -114,6 +171,8 @@ class ShippingQuoteRequiredError extends Error {
 }
 
 module.exports = {
+  AV_SHIPPING_FEE_INCLUDE_FOR,
+  resolveAvShippingFee,
   authoritativeShippingDestination,
   buildAvShippingProtectedData,
   destinationFromShippingDetails,
