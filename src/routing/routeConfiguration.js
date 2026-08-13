@@ -10,6 +10,9 @@ import PreviewResolverPage from '../containers/PreviewResolverPage/PreviewResolv
 // at that point css bundling / imports will happen in wrong order.
 import { NamedRedirect } from '../components';
 
+// AV: custom routes + the AV listing-page variant, kept out of this file.
+import { avRouteConfiguration, AVListingPageCarousel } from './routeConfigurationAV';
+
 const pageDataLoadingAPI = getPageDataLoadingAPI();
 
 const AuthenticationPage = loadable(() => import(/* webpackChunkName: "AuthenticationPage" */ '../containers/AuthenticationPage/AuthenticationPage'));
@@ -17,25 +20,14 @@ const CheckoutPage = loadable(() => import(/* webpackChunkName: "CheckoutPage" *
 const CMSPage = loadable(() => import(/* webpackChunkName: "CMSPage" */ '../containers/CMSPage/CMSPage'));
 const ContactDetailsPage = loadable(() => import(/* webpackChunkName: "ContactDetailsPage" */ '../containers/ContactDetailsPage/ContactDetailsPage'));
 const EditListingPage = loadable(() => import(/* webpackChunkName: "EditListingPage" */ '../containers/EditListingPage/EditListingPage'));
-const ShippingOriginPage = loadable(() => import(/* webpackChunkName: "ShippingOriginPage" */ '../containers/ShippingOriginPage/ShippingOriginPage'));
-const MyAddressesPage = loadable(() => import(/* webpackChunkName: "MyAddressesPage" */ '../containers/MyAddressesPage/MyAddressesPage'));
 const EmailVerificationPage = loadable(() => import(/* webpackChunkName: "EmailVerificationPage" */ '../containers/EmailVerificationPage/EmailVerificationPage'));
 const InboxPage = loadable(() => import(/* webpackChunkName: "InboxPage" */ '../containers/InboxPage/InboxPage'));
 const MakeOfferPage = loadable(() => import(/* webpackChunkName: "MakeOfferPage" */ '../containers/MakeOfferPage/MakeOfferPage'));
 const LandingPage = loadable(() => import(/* webpackChunkName: "LandingPage" */ '../containers/LandingPage/LandingPage'));
 const ListingPageCoverPhoto = loadable(() => import(/* webpackChunkName: "ListingPageCoverPhoto" */ /* webpackPrefetch: true */ '../containers/ListingPage/ListingPageCoverPhoto'));
 const ListingPageCarousel = loadable(() => import(/* webpackChunkName: "ListingPageCarousel" */ /* webpackPrefetch: true */ '../containers/ListingPage/ListingPageCarousel'));
-// AV: redesigned carousel listing page (drop-in for the carousel variant).
-const AVListingPageCarousel = loadable(() => import(/* webpackChunkName: "AVListingPageCarousel" */ /* webpackPrefetch: true */ '../containers/ListingPage/AVListingPageCarousel'));
 const ManageListingsPage = loadable(() => import(/* webpackChunkName: "ManageListingsPage" */ '../containers/ManageListingsPage/ManageListingsPage'));
 const ManageAccountPage = loadable(() => import(/* webpackChunkName: "ManageAccountPage" */ '../containers/ManageAccountPage/ManageAccountPage'));
-const MyPurchasesPage = loadable(() => import(/* webpackChunkName: "MyPurchasesPage" */ '../containers/MyPurchasesPage/MyPurchasesPage'));
-const MyBalancePage = loadable(() => import(/* webpackChunkName: "MyBalancePage" */ '../containers/MyBalancePage/MyBalancePage'));
-const BulkImportPage = loadable(() => import(/* webpackChunkName: "BulkImportPage" */ '../containers/BulkImportPage/BulkImportPage'));
-const MySalesPage = loadable(() => import(/* webpackChunkName: "MySalesPage" */ '../containers/MySalesPage/MySalesPage'));
-const FavoritesPage = loadable(() => import(/* webpackChunkName: "FavoritesPage" */ '../containers/FavoritesPage/FavoritesPage'));
-const BagPage = loadable(() => import(/* webpackChunkName: "BagPage" */ '../containers/BagPage/BagPage'));
-const CreateTypePage = loadable(() => import(/* webpackChunkName: "CreateTypePage" */ '../containers/CreateTypePage/CreateTypePage'));
 const PasswordChangePage = loadable(() => import(/* webpackChunkName: "PasswordChangePage" */ '../containers/PasswordChangePage/PasswordChangePage'));
 const PasswordRecoveryPage = loadable(() => import(/* webpackChunkName: "PasswordRecoveryPage" */ '../containers/PasswordRecoveryPage/PasswordRecoveryPage'));
 const PasswordResetPage = loadable(() => import(/* webpackChunkName: "PasswordResetPage" */ '../containers/PasswordResetPage/PasswordResetPage'));
@@ -83,6 +75,8 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
   const ListingPage = layoutConfig.listingPage?.variantType === 'carousel'
     ? AVListingPageCarousel
     : ListingPageCoverPhoto;
+
+  const avRoutes = avRouteConfiguration({ SearchPage });
 
   const isPrivateMarketplace = accessControlConfig?.marketplace?.private === true;
   const authForPrivateMarketplace = isPrivateMarketplace ? { auth: true } : {};
@@ -294,62 +288,7 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       component: InboxPage,
       loadData: pageDataLoadingAPI.InboxPage.loadData,
     },
-    {
-      path: '/my-purchases',
-      name: 'MyPurchasesPage',
-      auth: true,
-      authPage: 'LoginPage',
-      component: MyPurchasesPage,
-      loadData: pageDataLoadingAPI.MyPurchasesPage.loadData,
-    },
-    {
-      path: '/my-sales',
-      name: 'MySalesPage',
-      auth: true,
-      authPage: 'LoginPage',
-      component: MySalesPage,
-      loadData: pageDataLoadingAPI.MySalesPage.loadData,
-    },
-    {
-      path: '/my-balance',
-      name: 'MyBalancePage',
-      auth: true,
-      authPage: 'LoginPage',
-      component: MyBalancePage,
-      loadData: pageDataLoadingAPI.MyBalancePage.loadData,
-    },
-    {
-      path: '/favorites',
-      name: 'FavoritesPage',
-      auth: true,
-      authPage: 'LoginPage',
-      component: FavoritesPage,
-      loadData: pageDataLoadingAPI.FavoritesPage.loadData,
-    },
-    {
-      // Public: the bag lives in localStorage, so no auth and no loadData
-      // (the page fetches client-side after hydration).
-      path: '/bag',
-      name: 'BagPage',
-      component: BagPage,
-    },
-    {
-      path: '/admin/bulk-import',
-      name: 'BulkImportPage',
-      auth: true,
-      authPage: 'LoginPage',
-      component: BulkImportPage,
-    },
-    {
-      // Chooser between single-listing creation and bulk ZIP import;
-      // the topbar VENDE (create listing) button points here.
-      path: '/create-type',
-      name: 'CreateTypePage',
-      auth: true,
-      authPage: 'LoginPage',
-      component: CreateTypePage,
-      loadData: pageDataLoadingAPI.CreateTypePage.loadData,
-    },
+    ...avRoutes.inboxRoutes,
     {
       path: '/order/:id',
       name: 'OrderDetailsPage',
@@ -407,22 +346,7 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       component: ContactDetailsPage,
       loadData: pageDataLoadingAPI.ContactDetailsPage.loadData,
     },
-    {
-      path: '/account/my-addresses',
-      name: 'MyAddressesPage',
-      auth: true,
-      authPage: 'LoginPage',
-      component: MyAddressesPage,
-      loadData: pageDataLoadingAPI.MyAddressesPage.loadData,
-    },
-    {
-      path: '/account/shipping-origin',
-      name: 'ShippingOriginPage',
-      auth: true,
-      authPage: 'LoginPage',
-      component: ShippingOriginPage,
-      loadData: pageDataLoadingAPI.ShippingOriginPage.loadData,
-    },
+    ...avRoutes.accountRoutes,
     {
       path: '/account/change-password',
       name: 'PasswordChangePage',
@@ -553,14 +477,7 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       component: PreviewResolverPage ,
     },
 
-
-    // CUSTOM:
-    {
-      path: '/s',
-      name: 'HotListPage',
-      extra: { pub_tags: 'mas-nuevo' },
-      component: SearchPage,
-    },
+    ...avRoutes.tailRoutes,
   ];
 };
 

@@ -50,6 +50,59 @@ function authoritativeShippingDestination(fullOrderData, isSpeculative) {
   return destinationFromShippingDetails(fullOrderData?.protectedData?.shippingDetails);
 }
 
+// Resolve the authoritative shipping rate for one privileged call.
+//
+// This is the whole AV shipping concern for `initiate-privileged` and
+// `transition-privileged`, kept here so those two upstream files only need a
+// single call each (they were carrying ~30 identical lines apiece).
+//
+// The client-sent price is never trusted: `resolveBucketPrice` either replays the
+// cached quote for `quoteToken` or re-quotes eShip from scratch on a cache miss.
+//
+// Returns `{ resolvedRate, avShippingProtectedData }`. Throws
+// `ShippingQuoteRequiredError` when a real (non-speculative) shipping order has
+// no usable destination or rate, so the buyer can't pay without a priced label.
+async function resolveAvShippingForOrder({
+  resolveBucketPrice,
+  listing,
+  fullOrderData,
+  isSpeculative,
+}) {
+  const isShipping = fullOrderData?.deliveryMethod === 'shipping';
+  if (!isShipping) {
+    return { resolvedRate: null, avShippingProtectedData: {} };
+  }
+
+  const destination = authoritativeShippingDestination(fullOrderData, isSpeculative);
+  const resolvedRate = fullOrderData.avShippingType
+    ? await resolveBucketPrice({
+        quoteToken: fullOrderData.avQuoteToken,
+        avShippingType: fullOrderData.avShippingType,
+        listing,
+        destination,
+        buyerEmail: fullOrderData.buyerEmail,
+      })
+    : null;
+
+  if (!isSpeculative && (!destination || !resolvedRate)) {
+    throw new ShippingQuoteRequiredError();
+  }
+
+  return {
+    resolvedRate,
+    avShippingProtectedData: buildAvShippingProtectedData(fullOrderData, resolvedRate),
+  };
+}
+
+// Merge the resolved eShip rate into the outgoing transaction params without
+// clobbering protectedData the caller already set. No-op when nothing resolved.
+function withAvShippingProtectedData(params, avShippingProtectedData) {
+  if (!avShippingProtectedData || Object.keys(avShippingProtectedData).length === 0) {
+    return {};
+  }
+  return { protectedData: { ...params?.protectedData, ...avShippingProtectedData } };
+}
+
 class ShippingQuoteRequiredError extends Error {
   constructor() {
     super('A valid shipping quote and destination are required before payment');
@@ -64,5 +117,7 @@ module.exports = {
   authoritativeShippingDestination,
   buildAvShippingProtectedData,
   destinationFromShippingDetails,
+  resolveAvShippingForOrder,
+  withAvShippingProtectedData,
   ShippingQuoteRequiredError,
 };

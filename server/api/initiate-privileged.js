@@ -2,9 +2,8 @@ const sharetribeSdk = require('sharetribe-flex-sdk');
 const { transactionLineItems } = require('../api-util/lineItems');
 const { resolveBucketPrice } = require('../services/shippingQuoteService');
 const {
-  authoritativeShippingDestination,
-  buildAvShippingProtectedData,
-  ShippingQuoteRequiredError,
+  resolveAvShippingForOrder,
+  withAvShippingProtectedData,
 } = require('../api-util/avShipping');
 const { isIntentionToMakeOffer } = require('../api-util/negotiation');
 const {
@@ -78,24 +77,14 @@ module.exports = (req, res) => {
         commissionAsset?.type === 'jsonAsset' ? commissionAsset.attributes.data : {};
 
       const fullOrderData = getFullOrderData(orderData, bodyParams, currency);
-      const isShipping = fullOrderData.deliveryMethod === 'shipping';
-      const destination = isShipping
-        ? authoritativeShippingDestination(fullOrderData, isSpeculative)
-        : null;
-      const resolvedRate =
-        isShipping && fullOrderData.avShippingType
-          ? await resolveBucketPrice({
-              quoteToken: fullOrderData.avQuoteToken,
-              avShippingType: fullOrderData.avShippingType,
-              listing,
-              destination,
-              buyerEmail: fullOrderData.buyerEmail,
-            })
-          : null;
-
-      if (!isSpeculative && isShipping && (!destination || !resolvedRate)) {
-        throw new ShippingQuoteRequiredError();
-      }
+      const avShipping = await resolveAvShippingForOrder({
+        resolveBucketPrice,
+        listing,
+        fullOrderData,
+        isSpeculative,
+      });
+      const resolvedRate = avShipping.resolvedRate;
+      avShippingProtectedData = avShipping.avShippingProtectedData;
 
       lineItems = await transactionLineItems(
         listing,
@@ -106,19 +95,13 @@ module.exports = (req, res) => {
       );
       metadataMaybe = getMetadata(orderData, transitionName);
 
-      if (isShipping) {
-        avShippingProtectedData = buildAvShippingProtectedData(fullOrderData, resolvedRate);
-      }
-
       return getTrustedSdk(req, res, tokenStore);
     })
     .then(trustedSdk => {
       const { params } = bodyParams;
 
       // Add lineItems to the body params
-      const avShippingMaybe = Object.keys(avShippingProtectedData).length
-        ? { protectedData: { ...params.protectedData, ...avShippingProtectedData } }
-        : {};
+      const avShippingMaybe = withAvShippingProtectedData(params, avShippingProtectedData);
       const body = {
         ...bodyParams,
         params: {
