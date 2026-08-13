@@ -71,4 +71,21 @@ describe('EditListingPricingAndStockForm package size', () => {
       screen.queryByLabelText(/EditListingPricingForm.packageSizeLabel/i)
     ).not.toBeInTheDocument();
   });
+
+  const originalPriceLabel = /EditListingPricingAndStockForm.originalPrice/i;
+
+  it('renders the original price input when showOriginalPrice is true', () => {
+    render(<EditListingPricingAndStockForm {...baseProps} showOriginalPrice={true} />);
+    expect(screen.getByLabelText(originalPriceLabel)).toBeInTheDocument();
+  });
+
+  it('does not render the input when showOriginalPrice is false', () => {
+    render(<EditListingPricingAndStockForm {...baseProps} showOriginalPrice={false} />);
+    expect(screen.queryByLabelText(originalPriceLabel)).not.toBeInTheDocument();
+  });
+
+  it('does not render the input when showOriginalPrice is omitted', () => {
+    render(<EditListingPricingAndStockForm {...baseProps} />);
+    expect(screen.queryByLabelText(originalPriceLabel)).not.toBeInTheDocument();
+  });
 });

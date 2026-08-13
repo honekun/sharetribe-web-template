@@ -88,6 +88,8 @@ const ErrorMessages = props => {
  * @param {boolean} [props.updated] - Whether the form is updated
  * @param {boolean} [props.updateInProgress] - Whether the form is updating
  * @param {Object} [props.fetchErrors] - The fetch errors
+ * @param {boolean} [props.showOriginalPrice] - AV: whether the seller may set a strike-through
+ * "was" price. The panel also drops the value on submit for users without the right.
  * @returns {JSX.Element}
  */
 export const EditListingPricingForm = props => (
@@ -157,16 +159,18 @@ export const EditListingPricingForm = props => (
             />
           ) : (
             <>
-              <FieldCurrencyInput
-                id={`${formId}originalPrice`}
-                name="originalPrice"
-                className={css.input}
-                label={intl.formatMessage({ id: 'EditListingPricingForm.originalPrice' })}
-                placeholder={intl.formatMessage({
-                  id: 'EditListingPricingForm.originalPricePlaceholder',
-                })}
-                currencyConfig={appSettings.getCurrencyFormatting(marketplaceCurrency)}
-              />
+              {showOriginalPrice ? (
+                <FieldCurrencyInput
+                  id={`${formId}originalPrice`}
+                  name="originalPrice"
+                  className={css.input}
+                  label={intl.formatMessage({ id: 'EditListingPricingForm.originalPrice' })}
+                  placeholder={intl.formatMessage({
+                    id: 'EditListingPricingForm.originalPricePlaceholder',
+                  })}
+                  currencyConfig={appSettings.getCurrencyFormatting(marketplaceCurrency)}
+                />
+              ) : null}
               <FieldCurrencyInput
                 id={`${formId}price`}
                 name="price"
