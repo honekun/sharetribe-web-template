@@ -7,7 +7,7 @@ import {
 describe('authentication marketing consent params', () => {
   test('email signup stores explicit consent evidence in protected data', () => {
     const submitSignup = jest.fn();
-    getHandleSubmitSignup({ submitSignup, userFields: [] })({
+    getHandleSubmitSignup({ submitSignup, userFields: [], userTypes: [] })({
       userType: 'vendedor',
       email: 'seller@example.com',
       password: 'secret-password',
@@ -31,7 +31,7 @@ describe('authentication marketing consent params', () => {
 
   test('unchecked signup remains explicitly opted out', () => {
     const submitSignup = jest.fn();
-    getHandleSubmitSignup({ submitSignup, userFields: [] })({
+    getHandleSubmitSignup({ submitSignup, userFields: [], userTypes: [] })({
       userType: 'vendedor',
       email: 'seller@example.com',
       password: 'secret-password',
@@ -56,6 +56,7 @@ describe('authentication marketing consent params', () => {
       },
       submitSingupWithIdp,
       userFields: [],
+      userTypes: [],
     })({
       userType: 'vendedor-tienda',
       email: 'seller@example.com',
