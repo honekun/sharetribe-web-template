@@ -94,7 +94,8 @@ seller shipping window **P7D** (`transition/auto-cancel`; reminders P3D + P5D
   `REACT_APP_AV_DEFAULT_COUNTRY`); `sellerUserTypes` + `canShowOriginalPrice()` (originalPrice
   gate); `storeSellerUserType`/`storeTypeFieldKey`/`getStoreTypeTags()` (StoreTypeTags gate/labels);
   `welcomePopupUserTypes`/`canShowWelcomePopup()`/`welcomePopupSuppressedPaths` (AVWelcomePopup
-  gate). The three gates are intentionally separate.
+  gate); `moveListingFieldToEnd()` (keeps `tags` last; called from `configHelpers`). The three gates
+  are intentionally separate.
 
 **Styling** — CSS Modules (`*.module.css`, `className={css.root}`). Globals in `src/styles/`:
 `marketplaceDefaults.css`, `avBrandOverrides.css`, `customMediaQueries.css`. Theme vars
@@ -313,8 +314,11 @@ button). Quoting and label purchase also need the Integration credentials
 
 ## Listing Form Customizations (Edit Listing Wizard)
 
-- **Two-column grid** — Details/Delivery/Location panels use `.fieldsGrid` (1fr 1fr at
-  `--viewportMedium`); full-width fields use `.fullWidth`.
+- **Two-column grid** — only the Details panel uses `.fieldsGrid` (1fr 1fr at `--viewportMedium`,
+  from the AV-owned `editListingGridAV.module.css`); every direct child spans the full row and only
+  `.customField` wrappers (`DisplayOverrideField`) opt into half width. The Delivery and Location
+  forms carried the same wrapper but rendered a single column with it, so they were reverted to
+  pristine upstream — do not re-add a grid wrapper there.
 - **Photos in Details** — when `requireListingImage(listingTypeConfig)`, the Photos step is hidden
   and a `PhotoGallerySection` (free-form, max 10, drag-reorder via `@dnd-kit`; merge logic in
   `reconcileOrderedImages.js`) goes in Details. Otherwise standalone `EditListingPhotosPanel` +
@@ -405,6 +409,19 @@ class in `AVSectionContainer` (and document it in operator-guide §5.1).
 custom component, config file, extension hook, or CSS override instead? Only touch upstream files
 when genuinely required (new route, nav link). Keep changes minimal — add, don't rewrite.
 
+Preferred order when an upstream component needs to behave differently:
+
+1. **Swap at the composition root.** Copy the leaf to an `AV*` sibling, change the behaviour there,
+   and repoint the parent's import (one line). Example: `OrderBreakdown.js` imports
+   `AVLineItemProviderCommissionMaybe`; upstream's own `LineItemProviderCommissionMaybe.js` stays
+   pristine. Worth it when the leaf diff is large; a handful of lines merges more easily inline than
+   a full fork that silently misses upstream fixes.
+2. **Move helper bodies to AV modules** and import them back, so the upstream file keeps a one-line
+   call instead of a block (e.g. `configAV.moveListingFieldToEnd` used by `util/configHelpers.js`).
+3. **Never wrap upstream JSX just for layout.** A wrapper `<div>` re-indents the whole subtree and
+   makes every future upstream hunk conflict. Style the existing element from `avBrandOverrides.css`
+   instead.
+
 ### Watchlist — high merge-conflict risk
 
 | File                                                                                    | Why touched                                                                                                     |
@@ -436,13 +453,13 @@ when genuinely required (new route, nav link). Keep changes minimal — add, don
 
 Also high-conflict on sync: `SearchResultsPanel.js` (AVListingCard swap), `CMSPage.js` (section
 injection), `TopbarDesktop.js`/`TopbarMobileMenu.js`/`UserNav.js` (nav links),
-`EditListingPhotosPanel/`, `EditListing{Delivery,Location}Form.js` (grid wrappers),
-`EditListingPricingAndStockPanel.js` (EarningsEstimator + originalPrice),
+`EditListingPhotosPanel/`, `EditListingPricingAndStockPanel.js` (EarningsEstimator + originalPrice),
 `SectionGallery.js`/`ListingImageGallery.js` (imageSlots captions), `OrderBreakdown.js`
-(`LineItemProviderCommissionFixedMaybe`), `OrderPanel.js` (originalPrice), `configDefault.js`
-(earningsEstimate), `CheckoutPage/ShippingDetails/ShippingDetails.js` (MX-only address layout:
-Calle/Número Exterior+Interior/Colonia/C.P.+Ciudad/Estado-select/Teléfono; AV `ShippingDetails.mx*`
-keys; states from `config/configMxStates.js`), `CheckoutPage/CheckoutPageTransactionHelpers.js`
+(`extraOrderBreakdownLineItems` seam + the `AVLineItemProviderCommissionMaybe` import swap),
+`OrderPanel.js` (originalPrice), `configDefault.js` (earningsEstimate),
+`CheckoutPage/ShippingDetails/ShippingDetails.js` (MX-only address layout: Calle/Número
+Exterior+Interior/Colonia/C.P.+Ciudad/Estado-select/Teléfono; AV `ShippingDetails.mx*` keys; states
+from `config/configMxStates.js`), `CheckoutPage/CheckoutPageTransactionHelpers.js`
 (`getShippingDetailsMaybe` composes MX fields into `line1`/`line2` + structured keys, hardcodes
 country 'MX'), `CheckoutPage/StripePaymentForm/StripePaymentForm.js` (shipping→billing copy maps
 colonia→line2, country→'MX'), `TransactionPage/TransactionPage.js` +

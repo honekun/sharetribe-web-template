@@ -782,6 +782,11 @@ textarea {
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* Tab labels read one step larger than upstream's 14px across every tab bar. */
+:root [class*='TabNavHorizontal_tabContent__'] {
+  font-size: 16px;
+}
+
 /* TabNavHorizontal dark skin — reskinned as an AV white/blue pill bar. Used only
    by UserNav (the sole `skin="dark"` consumer); a future dark consumer should
    branch on a new skin value rather than reverting this. Upstream used grey700

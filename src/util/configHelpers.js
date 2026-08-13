@@ -1,4 +1,5 @@
 import { subUnitDivisors } from '../config/settingsCurrency';
+import { moveListingFieldToEnd } from '../config/configAV';
 import { getSupportedProcessesInfo, isBookingProcessAlias } from '../transactions/transaction';
 import { sanitizeText } from './sanitize';
 import { EXTENDED_DATA_SCHEMA_TYPES } from './types';
@@ -1359,21 +1360,6 @@ const union = (arr1, arr2, key) => {
   const all = [...arr1, ...arr2];
   const map = new Map(all.map(obj => [obj[key], obj]));
   return [...map.values()];
-};
-
-// Keep `tags` as the last visible listing field so it doesn't interrupt the field flow.
-export const moveListingFieldToEnd = (listingFields, keyToMove) => {
-  if (!Array.isArray(listingFields) || !keyToMove) {
-    return listingFields;
-  }
-
-  const matchedFields = listingFields.filter(field => field?.key === keyToMove);
-  if (matchedFields.length === 0) {
-    return listingFields;
-  }
-
-  const remainingFields = listingFields.filter(field => field?.key !== keyToMove);
-  return [...remainingFields, ...matchedFields];
 };
 
 // For debugging, it becomes sometimes important to be able to merge and overwrite with local values

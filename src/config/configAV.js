@@ -68,6 +68,22 @@ export const getStoreTypeTags = (author, config = {}) => {
   });
 };
 
+// Keep `tags` as the last visible listing field so it doesn't interrupt the field
+// flow. Called from `configHelpers.mergeListingConfig` on the merged field list.
+export const moveListingFieldToEnd = (listingFields, keyToMove) => {
+  if (!Array.isArray(listingFields) || !keyToMove) {
+    return listingFields;
+  }
+
+  const matchedFields = listingFields.filter(field => field?.key === keyToMove);
+  if (matchedFields.length === 0) {
+    return listingFields;
+  }
+
+  const remainingFields = listingFields.filter(field => field?.key !== keyToMove);
+  return [...remainingFields, ...matchedFields];
+};
+
 // AV shipping config lives in a CommonJS sibling (configAVShipping.js) so the
 // server can require the same source. Re-export for ergonomic client imports.
 const avShipping = require('./configAVShipping');

@@ -14,16 +14,16 @@ the field's `schemaType`.
 
 The component handles six different schema types:
 
-| Schema Type       | Display Component     | Description                                                |
-| ----------------- | --------------------- | ---------------------------------------------------------- |
-| `enum`            | `SectionDetails`      | Single-select dropdown values displayed as key-value pairs |
-| `long`            | `SectionDetails`      | Numeric values displayed as key-value pairs                |
-| `boolean`         | `SectionDetails`      | Yes/No values displayed as key-value pairs                 |
-| `multi-enum`      | `SectionMultiEnum`    | Multiple selection fields displayed with PropertyGroup     |
-| `multi-enum` + `color` key | `SectionColor` | Color listings displayed as swatch circles |
-| `multi-enum` + `all_sizes` key | `SectionAllSizes` | Selected sizes displayed as yellow chips |
-| `text`            | `SectionText`         | Long-form text                                             |
-| `youtubeVideoUrl` | `SectionYoutubeVideo` | Embedded YouTube videos                                    |
+| Schema Type                    | Display Component     | Description                                                |
+| ------------------------------ | --------------------- | ---------------------------------------------------------- |
+| `enum`                         | `SectionDetails`      | Single-select dropdown values displayed as key-value pairs |
+| `long`                         | `SectionDetails`      | Numeric values displayed as key-value pairs                |
+| `boolean`                      | `SectionDetails`      | Yes/No values displayed as key-value pairs                 |
+| `multi-enum`                   | `SectionMultiEnum`    | Multiple selection fields displayed with PropertyGroup     |
+| `multi-enum` + `color` key     | `SectionColor`        | Color listings displayed as swatch circles                 |
+| `multi-enum` + `all_sizes` key | `SectionAllSizes`     | Selected sizes displayed as yellow chips                   |
+| `text`                         | `SectionText`         | Long-form text                                             |
+| `youtubeVideoUrl`              | `SectionYoutubeVideo` | Embedded YouTube videos                                    |
 
 ## Extended Data Scopes
 

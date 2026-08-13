@@ -25,7 +25,8 @@ import LineItemShippingFeeMaybe from './LineItemShippingFeeMaybe';
 import LineItemPickupFeeMaybe from './LineItemPickupFeeMaybe';
 import LineItemCustomerCommissionMaybe from './LineItemCustomerCommissionMaybe';
 import LineItemCustomerCommissionRefundMaybe from './LineItemCustomerCommissionRefundMaybe';
-import LineItemProviderCommissionMaybe from './LineItemProviderCommissionMaybe';
+// AV: percentage + fixed provider commissions are shown as one row (see the AV component).
+import LineItemProviderCommissionMaybe from './AVLineItemProviderCommissionMaybe';
 import LineItemProviderCommissionRefundMaybe from './LineItemProviderCommissionRefundMaybe';
 import { extraOrderBreakdownLineItems } from '../../config/configTransaction';
 import LineItemRefundMaybe from './LineItemRefundMaybe';
