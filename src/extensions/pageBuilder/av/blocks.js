@@ -27,22 +27,29 @@ export const getAvBlockComponents = () => {
     .default;
   const BlockBrevoForm = require('../../../containers/PageBuilder/BlockBuilder/BlockBrevoForm/BlockBrevoForm')
     .default;
+  const AVPhotoSliderBlock = require('../../../containers/PageBuilder/BlockBuilder/AVPhotoSliderBlock/AVPhotoSliderBlock')
+    .default;
 
   cachedBlockComponents = {
     blockInstagramFeed: { component: BlockInstagramFeed },
     blockMarkdownTable: { component: BlockMarkdownTable },
     blockBrevoForm: { component: BlockBrevoForm },
+    blockPhotoSlider: { component: AVPhotoSliderBlock },
   };
   return cachedBlockComponents;
 };
 
 // `blockId` shorthands let CMS authors use a fixed block id and skip the
-// blockType field entirely. (blockName is unused now but kept in the signature
-// so the BlockBuilder call site stays untouched.)
+// blockType field entirely; the `photoSlider ::` block-name token picks a block
+// component the same way.
 export const getEffectiveBlockType = (blockId, blockName, fallbackType) => {
   if (blockId === 'av-insta-feed') return 'blockInstagramFeed';
   if (blockId?.startsWith('av-table-')) return 'blockMarkdownTable';
   if (blockId === 'av-contact-form') return 'blockBrevoForm';
+  // Only a default block gains a slider: a footer or social-media block has no
+  // media field for it to stand in for.
+  const isDefaultBlock = !fallbackType || fallbackType === 'defaultBlock';
+  if (isDefaultBlock && blockName?.includes('photoSlider ::')) return 'blockPhotoSlider';
   return fallbackType;
 };
 

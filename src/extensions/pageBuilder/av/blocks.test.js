@@ -31,7 +31,27 @@ describe('getEffectiveBlockType', () => {
     );
   });
 
-  it('only blockId drives the shortcut; blockName is ignored', () => {
+  it('returns blockPhotoSlider for a default block named "photoSlider ::"', () => {
+    expect(getEffectiveBlockType('b1', 'Gallery photoSlider ::', 'defaultBlock')).toBe(
+      'blockPhotoSlider'
+    );
+    expect(getEffectiveBlockType('b1', 'photoSlider ::', undefined)).toBe('blockPhotoSlider');
+  });
+
+  it('leaves non-default block types alone even with the slider token', () => {
+    expect(getEffectiveBlockType('b1', 'photoSlider ::', 'footerBlock')).toBe('footerBlock');
+    expect(getEffectiveBlockType('b1', 'photoSlider ::', 'socialMediaLink')).toBe(
+      'socialMediaLink'
+    );
+  });
+
+  it('a blockId shortcut wins over the slider token', () => {
+    expect(getEffectiveBlockType('av-insta-feed', 'photoSlider ::', 'defaultBlock')).toBe(
+      'blockInstagramFeed'
+    );
+  });
+
+  it('apart from the slider token, only blockId drives the shortcut', () => {
     expect(getEffectiveBlockType('av-insta-feed', '2 cols buttons :: A', 'defaultBlock')).toBe(
       'blockInstagramFeed'
     );

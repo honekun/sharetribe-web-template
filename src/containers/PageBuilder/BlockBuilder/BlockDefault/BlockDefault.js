@@ -1,16 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import classNames from 'classnames';
 
 import Field, { hasDataInFields } from '../../Field';
 import BlockContainer from '../BlockContainer';
 
 import css from './BlockDefault.module.css';
-
-import sliderDefault1 from '../../../../assets/slider/slider_1.webp';
-import sliderDefault2 from '../../../../assets/slider/slider_2.webp';
-import sliderDefault3 from '../../../../assets/slider/slider_3.webp';
-import sliderDefault4 from '../../../../assets/slider/slider_4.webp';
-import sliderCss from './ImageSliderBlockComponent.module.css';
 
 const FieldMedia = props => {
   const { className, media, sizes, options } = props;
@@ -45,6 +39,7 @@ const FieldMedia = props => {
  * @param {Object?} props.title heading config for the block
  * @param {Object?} props.text content config for the block (can be markdown)
  * @param {Object?} props.callToAction call to action button (e.g. internal link config)
+ * @param {ReactNode?} props.mediaSlot element rendered in place of the media field
  * @param {string?} props.responsiveImageSizes
  * @param {Object} props.options extra options for the block component (e.g. custom fieldComponents)
  * @param {Object<string,FieldComponentConfig>?} props.options.fieldComponents Custom fieldComponents
@@ -72,7 +67,7 @@ const BlockDefault = props => {
     hasBlueTitle,
     hasFullLinks,
     hasImgTop,
-    sliderImages,
+    mediaSlot,
     ctaButtonWrapClass,
     ...customProps
   } = props;
@@ -105,13 +100,13 @@ const BlockDefault = props => {
   // The block media. When `hasMediaTitle` is set it is rendered between the
   // title and the rest of the content (see below); otherwise it stays above
   // the text column as usual.
+  // A block variant may pass its own media element as `mediaSlot` (AV's
+  // photoSlider block does) — it then stands in for the media field.
   const renderMedia = extraClassName =>
-    sliderImages?.length ? (
-      <ImageSliderBlockComponent
-        images={sliderImages}
-        className={classNames(fieldMediaClass, extraClassName)}
-        options={options}
-      />
+    mediaSlot ? (
+      React.cloneElement(mediaSlot, {
+        className: classNames(mediaSlot.props.className, extraClassName),
+      })
     ) : (
       <FieldMedia
         media={media}
@@ -164,31 +159,3 @@ const BlockDefault = props => {
 };
 
 export default BlockDefault;
-
-const ImageSliderBlockComponent = props => {
-  const { images } = props;
-  const [index, setIndex] = useState(0);
-
-  const defaultImages = [sliderDefault1, sliderDefault2, sliderDefault3, sliderDefault4];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIndex(prev => (prev + 1) % images.length);
-    }, 7000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div className={sliderCss.sliderWrapper}>
-      {defaultImages.map((src, i) => (
-        <img
-          key={i}
-          src={src}
-          alt={`Slide ${i}`}
-          className={`${sliderCss.sliderImage} ${index === i ? sliderCss.visible : ''}`}
-        />
-      ))}
-    </div>
-  );
-};

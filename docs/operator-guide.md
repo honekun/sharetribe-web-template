@@ -838,15 +838,15 @@ Each token ends with `::` (a space, then a double colon). Combine as many as you
 
 #### Layout and structure
 
-| Token                | Effect                                                                                                                                            |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `2Buttons ::`        | Adds a row of two buttons below the block content. Button text, links and styles come from the intl keys `TwoButtons.<blockId>.*` (see §10).      |
-| `photoSlider ::`     | Adds a 4-image photo carousel that auto-advances. Image URLs come from `PhotoSlider.<blockId>.image_1` … `.image_4` (see §10).                    |
-| `mediaTitle ::`      | Moves the block's image to sit **between** the title and the rest of the content (title → image → text/button) instead of above the title.        |
-| `imgTop ::`          | When the block media is cropped (e.g. inside an AvFeature row), anchors it to the **top** instead of the default centre (`object-position: top`). |
-| `icon img ::`        | Renders the block's image as a small centred icon (48 px) and tightens the surrounding text — for icon-and-label feature blocks.                  |
-| `social links ::`    | Shows social-media icon links (rendered by the footer block).                                                                                     |
-| `newsletter form ::` | Embeds the Brevo email signup form. Disclaimer / success / error text come from the `NewsletterForm.*` keys (see §10).                            |
+| Token                | Effect                                                                                                                                                                                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `2Buttons ::`        | Adds a row of two buttons below the block content. Button text, links and styles come from the intl keys `TwoButtons.<blockId>.*` (see §10).                                                                                                            |
+| `photoSlider ::`     | Adds a photo carousel that auto-advances every 7 seconds, in place of the block's image. Image URLs come from `PhotoSlider.<blockId>.image_1` … `.image_4` (see §10); blank keys are skipped, and if none is set the block shows its own image instead. |
+| `mediaTitle ::`      | Moves the block's image to sit **between** the title and the rest of the content (title → image → text/button) instead of above the title.                                                                                                              |
+| `imgTop ::`          | When the block media is cropped (e.g. inside an AvFeature row), anchors it to the **top** instead of the default centre (`object-position: top`).                                                                                                       |
+| `icon img ::`        | Renders the block's image as a small centred icon (48 px) and tightens the surrounding text — for icon-and-label feature blocks.                                                                                                                        |
+| `social links ::`    | Shows social-media icon links (rendered by the footer block).                                                                                                                                                                                           |
+| `newsletter form ::` | Embeds the Brevo email signup form. Disclaimer / success / error text come from the `NewsletterForm.*` keys (see §10).                                                                                                                                  |
 
 #### Title style
 
@@ -1898,16 +1898,16 @@ used alongside the regular keys.
 
 ### PageBuilder block key patterns
 
-| Area               | Key / pattern                               | English default | Spanish default | Operator note                           |
-| ------------------ | ------------------------------------------- | --------------- | --------------- | --------------------------------------- |
-| Two-buttons block  | `TwoButtons.<blockId>.titleEyebrow`         | Empty           | Empty           | Optional eyebrow above the block title. |
-| Two-buttons block  | `TwoButtons.<blockId>.cta1Text`             | —               | —               | First CTA text.                         |
-| Two-buttons block  | `TwoButtons.<blockId>.cta1Link`             | —               | —               | First CTA link.                         |
-| Two-buttons block  | `TwoButtons.<blockId>.cta1Style`            | Empty           | Empty           | Optional style tokens.                  |
-| Two-buttons block  | `TwoButtons.<blockId>.cta2Text`             | —               | —               | Second CTA text.                        |
-| Two-buttons block  | `TwoButtons.<blockId>.cta2Link`             | —               | —               | Second CTA link.                        |
-| Two-buttons block  | `TwoButtons.<blockId>.cta2Style`            | Empty           | Empty           | Optional style tokens.                  |
-| Photo slider block | `PhotoSlider.<blockId>.image_1` … `image_4` | Empty           | Empty           | Image URLs for `photoSlider ::` blocks. |
+| Area               | Key / pattern                               | English default | Spanish default | Operator note                                                                 |
+| ------------------ | ------------------------------------------- | --------------- | --------------- | ----------------------------------------------------------------------------- |
+| Two-buttons block  | `TwoButtons.<blockId>.titleEyebrow`         | Empty           | Empty           | Optional eyebrow above the block title.                                       |
+| Two-buttons block  | `TwoButtons.<blockId>.cta1Text`             | —               | —               | First CTA text.                                                               |
+| Two-buttons block  | `TwoButtons.<blockId>.cta1Link`             | —               | —               | First CTA link.                                                               |
+| Two-buttons block  | `TwoButtons.<blockId>.cta1Style`            | Empty           | Empty           | Optional style tokens.                                                        |
+| Two-buttons block  | `TwoButtons.<blockId>.cta2Text`             | —               | —               | Second CTA text.                                                              |
+| Two-buttons block  | `TwoButtons.<blockId>.cta2Link`             | —               | —               | Second CTA link.                                                              |
+| Two-buttons block  | `TwoButtons.<blockId>.cta2Style`            | Empty           | Empty           | Optional style tokens.                                                        |
+| Photo slider block | `PhotoSlider.<blockId>.image_1` … `image_4` | Empty           | Empty           | Image URLs for `photoSlider ::` blocks. Set at least one; blanks are skipped. |
 
 ### Newsletter form
 

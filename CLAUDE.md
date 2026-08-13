@@ -171,15 +171,21 @@ others. Tiered limits + per-user hourly rate limit + magic-byte image sniffing; 
 | `SectionSelectedUser`        | `avSelectedUsers` / `av-selected-users-*` | block names = user UUIDs                            |
 | `SectionInstaGrid`           | `avInstaGrid` / `av-insta-grid-*`         | 2–6 col image grid                                  |
 
-**Custom blocks** (`BlockBuilder/`): `BlockInstagramFeed`, `BlockMarkdownTable`, and
-`BlockBrevoForm`. `BlockDefault` blockName tokens (parsed in `extensions/pageBuilder/av/blocks.js`
-`createBlockCustomProps`): `smallerTitles ::` (mirrors `- SmallerTitles`), `mediaTitle ::` (renders
-media between the title and the rest of the content: title → media → text/CTA), `blueTitle ::`
-(mirrors `- BlueTitle` but colors only that block's own title, not body-markdown headings);
-`fullLinks ::` (applies `word-break: keep-all` to links in the block's body `<p>` elements so a
-word/URL is never broken mid-character — a too-long link overflows at full size instead of
-splitting); `imgTop ::` (applies `object-position: top` to the block media img/video so cropped
-media anchors to the top instead of center).
+**Custom blocks** (`BlockBuilder/`): `BlockInstagramFeed`, `BlockMarkdownTable`, `BlockBrevoForm`,
+and `AVPhotoSliderBlock` (registered as `blockPhotoSlider`; `getEffectiveBlockType` routes any
+default block whose blockName carries `photoSlider ::` to it). That block renders `AVPhotoSlider`
+into `BlockDefault`'s `mediaSlot` prop — the one seam upstream's `BlockDefault` keeps for a stand-in
+media element — so the title/text/CTA still come from `BlockDefault`. Slides come from
+`PhotoSlider.<blockId>.image_1…4` microcopy; blank keys are dropped and an entirely unset slider
+falls back to the block's own media field. Slides mount only as they are first shown, so an unseen
+slide is never fetched. `BlockDefault` blockName tokens (parsed in
+`extensions/pageBuilder/av/blocks.js` `createBlockCustomProps`): `smallerTitles ::` (mirrors
+`- SmallerTitles`), `mediaTitle ::` (renders media between the title and the rest of the content:
+title → media → text/CTA), `blueTitle ::` (mirrors `- BlueTitle` but colors only that block's own
+title, not body-markdown headings); `fullLinks ::` (applies `word-break: keep-all` to links in the
+block's body `<p>` elements so a word/URL is never broken mid-character — a too-long link overflows
+at full size instead of splitting); `imgTop ::` (applies `object-position: top` to the block media
+img/video so cropped media anchors to the top instead of center).
 
 ### ListingPage carousel layout (AVListingPageCarousel)
 
