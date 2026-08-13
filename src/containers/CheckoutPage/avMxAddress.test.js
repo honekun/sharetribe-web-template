@@ -1,7 +1,4 @@
-import {
-  getShippingDetailsMaybe,
-  getEshipDestinationFromValues,
-} from './CheckoutPageTransactionHelpers';
+import { getShippingDetailsMaybe, getEshipDestinationFromValues } from './avMxAddress';
 
 describe('getEshipDestinationFromValues', () => {
   const complete = {

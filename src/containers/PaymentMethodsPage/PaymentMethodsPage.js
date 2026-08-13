@@ -11,7 +11,7 @@ import { savePaymentMethod, deletePaymentMethod } from '../../ducks/paymentMetho
 import { handleCardSetup } from '../../ducks/stripe.duck';
 import { manageDisableScrolling, isScrollingDisabled } from '../../ducks/ui.duck';
 // AV: reuse the shared MX billing composition (billing* fields -> Stripe billing_details)
-import { getBillingDetails } from '../CheckoutPage/CheckoutPageTransactionHelpers';
+import { getBillingDetails } from '../CheckoutPage/avMxAddress';
 
 import { H3, SavedCardDetails, Page, UserNav, LayoutSideNavigation } from '../../components';
 
@@ -252,8 +252,11 @@ const mapDispatchToProps = dispatch => ({
   onDeletePaymentMethod: params => dispatch(deletePaymentMethod(params)),
 });
 
-const PaymentMethodsPage = compose(connect(mapStateToProps, mapDispatchToProps))(
-  PaymentMethodsPageComponent
-);
+const PaymentMethodsPage = compose(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )
+)(PaymentMethodsPageComponent);
 
 export default PaymentMethodsPage;

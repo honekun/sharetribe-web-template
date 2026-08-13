@@ -35,50 +35,34 @@ export const bookingDatesMaybe = bookingDates => {
 };
 
 /**
- * Construct billing details (JSON-like object) for the Stripe API.
+ * Construct billing details (JSON-like object) for the Stripe API
  *
- * AV: the billing address uses the same MX field set as the shipping address
- * (the ShippingDetails component with the `billing` prefix), so we compose the
- * granular fields (Calle + Número Exterior [Int.] → line1, Colonia → line2) into
- * Stripe's flat address, country hardcoded to 'MX'.
- *
- * @param {Object} formValues - billingName/billingAddressLine1/billingExteriorNumber/
- *   billingInteriorNumber/billingColonia/billingPostal/billingCity/billingState
+ * @param {Object} formValues object containing name, addressLine1, addressLine2, postal, city, state, country
  * @param {Object} currentUser
  * @returns Object that contains name, email and potentially address data for the Stripe API
  */
 export const getBillingDetails = (formValues, currentUser) => {
-  const {
-    billingName,
-    billingAddressLine1,
-    billingExteriorNumber,
-    billingInteriorNumber,
-    billingColonia,
-    billingPostal,
-    billingCity,
-    billingState,
-  } = formValues;
+  const { name, addressLine1, addressLine2, postal, city, state, country } = formValues;
 
-  const streetBase = [billingAddressLine1, billingExteriorNumber].filter(Boolean).join(' ');
-  const line1 = billingInteriorNumber ? `${streetBase} Int. ${billingInteriorNumber}` : streetBase;
-
-  // Billing address is recommended but optional — only include it once the buyer
-  // has filled the minimum fields.
+  // Billing address is recommended.
+  // However, let's not assume that <StripePaymentAddress> data is among formValues.
+  // Read more about this from Stripe's docs
+  // https://stripe.com/docs/stripe-js/reference#stripe-handle-card-payment-no-element
   const addressMaybe =
-    billingAddressLine1 && billingPostal
+    addressLine1 && postal
       ? {
           address: {
-            city: billingCity,
-            country: 'MX',
-            line1,
-            line2: billingColonia,
-            postal_code: billingPostal,
-            state: billingState,
+            city: city,
+            country: country,
+            line1: addressLine1,
+            line2: addressLine2,
+            postal_code: postal,
+            state: state,
           },
         }
       : {};
   return {
-    name: billingName,
+    name,
     email: currentUser?.attributes?.email,
     ...addressMaybe,
   };
@@ -99,16 +83,9 @@ export const getFormattedTotalPrice = (transaction, intl) => {
 /**
  * Construct shipping details (JSON-like object)
  *
- * AV: Mexico-only shipping form. The MX-specific fields (Número Exterior/Interior,
- * Colonia) are composed into the standard `line1`/`line2` so the seller's transaction
- * panel (DeliveryInfoMaybe) renders a complete address with no changes, and are also
- * stored as structured keys (exteriorNumber/interiorNumber/colonia) so the data stays
- * lossless for shipping labels / bulk export. Country is hardcoded to 'MX'.
- *
  * @param {Object} formValues object containing saveAfterOnetimePayment, recipientName,
- * recipientPhoneNumber, recipientAddressLine1 (Calle), recipientExteriorNumber,
- * recipientInteriorNumber, recipientColonia, recipientPostal, recipientCity, and
- * recipientState.
+ * recipientPhoneNumber, recipientAddressLine1, recipientAddressLine2, recipientPostal,
+ * recipientCity, recipientState, and recipientCountry.
  * @returns shippingDetails object containing name, phoneNumber and address
  */
 export const getShippingDetailsMaybe = formValues => {
@@ -117,17 +94,12 @@ export const getShippingDetailsMaybe = formValues => {
     recipientName,
     recipientPhoneNumber,
     recipientAddressLine1,
-    recipientExteriorNumber,
-    recipientInteriorNumber,
-    recipientColonia,
+    recipientAddressLine2,
     recipientPostal,
     recipientCity,
     recipientState,
+    recipientCountry,
   } = formValues;
-
-  // Compose the human-readable street line: "Calle Ext [Int. X]".
-  const street = [recipientAddressLine1, recipientExteriorNumber].filter(Boolean).join(' ');
-  const line1 = recipientInteriorNumber ? `${street} Int. ${recipientInteriorNumber}` : street;
 
   return recipientName && recipientAddressLine1 && recipientPostal
     ? {
@@ -136,63 +108,15 @@ export const getShippingDetailsMaybe = formValues => {
           phoneNumber: recipientPhoneNumber,
           address: {
             city: recipientCity,
-            country: 'MX',
-            line1,
-            line2: recipientColonia,
+            country: recipientCountry,
+            line1: recipientAddressLine1,
+            line2: recipientAddressLine2,
             postalCode: recipientPostal,
             state: recipientState,
-            // Structured MX fields (lossless; not displayed by DeliveryInfoMaybe).
-            exteriorNumber: recipientExteriorNumber,
-            interiorNumber: recipientInteriorNumber,
-            colonia: recipientColonia,
           },
         },
       }
     : {};
-};
-
-/**
- * Build the eShip destination address from the MX shipping form values. Mirrors
- * the composition in `getShippingDetailsMaybe` (street1 = Calle + Ext [Int.], line2
- * = Colonia) so the live quote and the persisted order agree. Returns `null` until
- * the minimum quotable fields (street1 + postal + state + city) are present.
- *
- * @param {Object} formValues - the StripePaymentForm values (recipient* fields)
- * @returns {Object|null} { name, street1, street2, city, state, zip, country, phone }
- */
-export const getEshipDestinationFromValues = formValues => {
-  const {
-    recipientName,
-    recipientPhoneNumber,
-    recipientAddressLine1,
-    recipientExteriorNumber,
-    recipientInteriorNumber,
-    recipientColonia,
-    recipientPostal,
-    recipientCity,
-    recipientState,
-  } = formValues || {};
-
-  const streetBase = [recipientAddressLine1, recipientExteriorNumber].filter(Boolean).join(' ');
-  const street1 = recipientInteriorNumber
-    ? `${streetBase} Int. ${recipientInteriorNumber}`
-    : streetBase;
-
-  const complete =
-    recipientAddressLine1 && recipientPostal && recipientState && recipientCity && recipientName;
-
-  return complete
-    ? {
-        name: recipientName,
-        street1,
-        street2: recipientColonia || '',
-        city: recipientCity,
-        state: recipientState,
-        zip: recipientPostal,
-        country: 'MX',
-        phone: recipientPhoneNumber || '',
-      }
-    : null;
 };
 
 /**
