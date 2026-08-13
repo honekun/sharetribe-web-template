@@ -36,6 +36,7 @@ export const TopbarContainerComponent = props => {
     notificationCount = 0,
     hasGenericError,
     currentUser,
+    isAuthenticated,
     location,
     onManageDisableScrolling,
     onMarkVendedorOnboarded,
@@ -45,16 +46,27 @@ export const TopbarContainerComponent = props => {
   const [popupDismissed, setPopupDismissed] = useState(false);
 
   // Hydrate the global favorites list from the fetched currentUser's privateData
-  // so hearts reflect saved state on every page. Runs whenever the saved list
-  // changes (login, favorite persisted elsewhere).
+  // so hearts reflect saved state on every page. Runs on login, on a favorite
+  // persisted elsewhere, and when the signed-in user changes.
   const dispatch = useDispatch();
-  const favoritesSource = currentUser?.attributes?.profile?.privateData?.favoriteListingIds;
+  const savedFavoriteIds = currentUser?.attributes?.profile?.privateData?.favoriteListingIds;
+  const currentUserId = currentUser?.id?.uuid || null;
+  // Primitive keys, so the effect re-runs when the identity or the saved list
+  // actually changes rather than on every new currentUser object.
+  const savedFavoritesKey = Array.isArray(savedFavoriteIds) ? savedFavoriteIds.join(',') : '';
+  // An authenticated session whose currentUser has not arrived yet says nothing
+  // about the saved list; syncing then would blank the hearts on every load.
+  const isUserSessionKnown = !isAuthenticated || !!currentUser;
   useEffect(() => {
-    if (favoritesSource) {
-      dispatch(syncFavoritesFromUser(currentUser));
+    if (!isUserSessionKnown) {
+      return;
     }
+    // Sync even when there is nothing saved: a user who has favorited nothing,
+    // and a logged-out one, both have to drop the previous session's list.
+    dispatch(syncFavoritesFromUser(currentUser));
+    // currentUser is read through the primitive keys above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(favoritesSource)]);
+  }, [dispatch, isUserSessionKnown, currentUserId, savedFavoritesKey]);
 
   // Hydrate the shopping bag from localStorage once on mount (client-only).
   useEffect(() => {
@@ -81,6 +93,7 @@ export const TopbarContainerComponent = props => {
         notificationCount={notificationCount}
         showGenericError={hasGenericError}
         currentUser={currentUser}
+        isAuthenticated={isAuthenticated}
         location={location}
         onManageDisableScrolling={onManageDisableScrolling}
         {...rest}

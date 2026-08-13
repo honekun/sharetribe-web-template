@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { setCurrentUser } from './user.duck';
+import { clearCurrentUser, setCurrentUser } from './user.duck';
 import { denormalisedResponseEntities } from '../util/data';
 import * as log from '../util/log';
 import { trackMarketingEngagement } from '../util/api';
@@ -22,6 +22,14 @@ const favoritesSlice = createSlice({
           ? [id, ...without].slice(0, MAX_FAVORITES)
           : without;
     },
+  },
+  extraReducers: builder => {
+    // Favorites belong to the signed-in user, so they end with the session.
+    // Tying this to the action rather than to a component means it happens even
+    // if nothing that syncs favorites is mounted at the time.
+    builder.addCase(clearCurrentUser, state => {
+      state.favoriteListingIds = [];
+    });
   },
 });
 

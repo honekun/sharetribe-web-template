@@ -41,7 +41,17 @@ describe('FavoritesPage', () => {
     const listingA = createListing('listing-a');
     const listingB = createListing('listing-b');
 
+    // The page only exists for a signed-in user, and TopbarContainer keeps the
+    // favorites slice in step with that user's saved list — so the session has
+    // to carry the same ids, or the sync would (correctly) clear them.
     const stateWithFavorites = favoriteListingIds => ({
+      auth: { isAuthenticated: true },
+      user: {
+        currentUser: {
+          id: { uuid: 'user-id' },
+          attributes: { profile: { publicData: {}, privateData: { favoriteListingIds } } },
+        },
+      },
       FavoritesPage: {
         listingRefs: [{ id: listingA.id, type: 'listing' }, { id: listingB.id, type: 'listing' }],
         queryInProgress: false,
