@@ -176,10 +176,8 @@ Unresolved research and actions live under `docs/pending/`:
 
 - `docs/pending/README.md`
 - `docs/pending/notifications.md`
-- `docs/pending/pricing-plans.md`
 - `docs/pending/bidding.md`
 - `docs/pending/eship.md`
 - `docs/pending/scaling.md`
-- `docs/pending/heroku-deployment.md`
 
 Do not keep implemented plans or resolved audit histories in `docs/`; Git history is the archive.

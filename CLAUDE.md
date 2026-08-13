@@ -6,8 +6,10 @@ Guidance for Claude Code working in this repository.
 
 Customized marketplace ("Archivo Vintach") built on the
 [Sharetribe Web Template](https://github.com/sharetribe/web-template) (React + Express SSR). Fork of
-`sharetribe/web-template`, deployed to Heroku (production) and Render.com (staging). Stripe Connect
-payments via Sharetribe Marketplace API.
+`sharetribe/web-template`. Render.com is the current Test staging host. The approved initial Live
+plan validates one Heroku app against Test services, then converts that same app and dyno formation
+to Live while reusing a reset, clean PostgreSQL add-on. Stripe Connect payments use Sharetribe
+Marketplace API.
 
 - GitHub: https://github.com/honekun/sharetribe-web-template
 - Upstream: https://github.com/sharetribe/web-template
@@ -129,7 +131,6 @@ it. Instead:
 - `FieldGroupedMultiSelect/` — grouped multi-select, removable yellow chips (`all_sizes`)
 - `FieldSearchableSelect/` — searchable single-select combobox (`brand`)
 - `NewsletterForm/` — Brevo subscribe; posts `/api/brevo/subscribe`
-- `PricingToggle/` — shared pricing card UI (BlockPriceSelector + SectionPriceSelector)
 - `StoreTypeTags/` — colored tag chips for `vendedor-tienda`; values from `tipoTienda` user field;
   gate/labels in `configAV.getStoreTypeTags()`; needs `profile.publicData.{userType,tipoTienda}` in
   `fields.user` (added to `SearchPage.duck.js` + `extensions/landingPage/av/listings.js`)
@@ -162,7 +163,6 @@ others. Tiered limits + per-user hourly rate limit + magic-byte image sniffing; 
 | `SectionHeroCustom2`         | `avHero2` / `av-hero2-*`                  | 2 CTAs, optional mobile bg + bgLink                 |
 | `SectionHeroCustom3`         | `avHero3` / `av-hero3-*`                  | block-based; each block = image strip + overlay     |
 | `SectionVideoSection`        | `avVideo` / `av-video-*`                  | 50/50 video+text; URL from translation key          |
-| `SectionPriceSelector`       | —                                         | data from `content/pricing-plans.json`              |
 | `SectionSelectedListings`    | `av-selections`                           | block `blockName` = listing UUID                    |
 | `SectionRecommendedListings` | `av-recommendeds`                         | block names = listing UUIDs                         |
 | `SectionTagCatListings`      | `av-tag-listings`                         | first block `blockName` = `tag:<v>`/`cat:<v>`/plain |
@@ -170,15 +170,15 @@ others. Tiered limits + per-user hourly rate limit + magic-byte image sniffing; 
 | `SectionSelectedUser`        | `avSelectedUsers` / `av-selected-users-*` | block names = user UUIDs                            |
 | `SectionInstaGrid`           | `avInstaGrid` / `av-insta-grid-*`         | 2–6 col image grid                                  |
 
-**Custom blocks** (`BlockBuilder/`): `BlockPriceSelector`, `BlockDefault`. `BlockDefault` blockName
-tokens (parsed in `extensions/pageBuilder/av/blocks.js` `createBlockCustomProps`):
-`smallerTitles ::` (mirrors `- SmallerTitles`), `mediaTitle ::` (renders media between the title and
-the rest of the content: title → media → text/CTA), `blueTitle ::` (mirrors `- BlueTitle` but colors
-only that block's own title, not body-markdown headings); `fullLinks ::` (applies
-`word-break: keep-all` to links in the block's body `<p>` elements so a word/URL is never broken
-mid-character — a too-long link overflows at full size instead of splitting); `imgTop ::` (applies
-`object-position: top` to the block media img/video so cropped media anchors to the top instead of
-center).
+**Custom blocks** (`BlockBuilder/`): `BlockInstagramFeed`, `BlockMarkdownTable`, and
+`BlockBrevoForm`. `BlockDefault` blockName tokens (parsed in `extensions/pageBuilder/av/blocks.js`
+`createBlockCustomProps`): `smallerTitles ::` (mirrors `- SmallerTitles`), `mediaTitle ::` (renders
+media between the title and the rest of the content: title → media → text/CTA), `blueTitle ::`
+(mirrors `- BlueTitle` but colors only that block's own title, not body-markdown headings);
+`fullLinks ::` (applies `word-break: keep-all` to links in the block's body `<p>` elements so a
+word/URL is never broken mid-character — a too-long link overflows at full size instead of
+splitting); `imgTop ::` (applies `object-position: top` to the block media img/video so cropped
+media anchors to the top instead of center).
 
 ### ListingPage carousel layout (AVListingPageCarousel)
 
@@ -211,9 +211,8 @@ AV keeps upstream files unmodified via extension architecture in `src/extensions
   `index.js` (registers AV sections + wires hooks). `LandingPage.js`/`LandingPage.duck.js` contain
   **only the extension wiring** (the `mapStateToProps`/`loadData` seam) — add features via the
   registry, never inline.
-- `pageBuilder/av/` — registers `avHero2`/`avHero3`/`avVideo`/`price-columns` for CMSPage;
-  `sectionStyles.js` (`parseSectionCustomOptions`, `parseSectionCtaClass`); `constants.js`;
-  `transform.js`.
+- `pageBuilder/av/` — registers `avHero2`/`avHero3`/`avVideo` for CMSPage; `sectionStyles.js`
+  (`parseSectionCustomOptions`, `parseSectionCtaClass`); `constants.js`; `transform.js`.
 - `accountNav/` (`getAccountSettingsTabs()`), `topbar/` (custom link config), `searchFilters/`.
 - Redux: `src/ducks/avExtension.duck.js` — `avLandingExtension` slice (`tagListingIds`), SSR-safe,
   registered in `ducks/index.js`.
@@ -325,10 +324,6 @@ button). Quoting and label purchase also need the Integration credentials
   `config.earningsEstimate` (`configDefault.js`), env overrides
   `REACT_APP_PROVIDER_COMMISSION_PERCENTAGE` (10), `REACT_APP_STRIPE_FEE_PERCENTAGE` (2.9),
   `REACT_APP_STRIPE_FEE_FIXED_AMOUNT` (30¢).
-
-**CMSPage pricing asset:** `CMSPage.duck.js` fetches `content/pricing-plans.json` →
-`state.CMSPage.pricingPlansData` (intl fallback). Schema and remaining cleanup in
-`docs/pending/pricing-plans.md`.
 
 ## Testing Conventions
 
@@ -471,8 +466,13 @@ Brand colors and the `TabNavHorizontal` `darkSkin` reskin were consolidated into
 
 ## Deployment
 
-- **Production (Heroku):** `git push heroku main` — `heroku-postbuild` runs `yarn build`.
-- **Staging (Render.com):** Stripe test keys (`pk_test_`/`sk_test_`); may cold-start.
+- **Approved initial Live cutover:** follow `docs/operations/heroku-deployment.md`. Deploy one
+  Heroku app with Sharetribe Test, Stripe test, and eShip QA; after approval, scale it down, back up
+  and reset the same PostgreSQL add-on, replace every environment-bound value with Live values,
+  rebuild, migrate, and reopen it as production.
+- **Steady-state staging (Render.com):** Sharetribe Test, Stripe test, and eShip QA; may cold-start.
+- **Steady-state production (Heroku):** Sharetribe Live, Stripe live, and eShip production. Build
+  independently because `REACT_APP_*` values are compiled into the browser bundle.
 
 ## Upstream Sync
 

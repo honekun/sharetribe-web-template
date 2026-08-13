@@ -21,8 +21,6 @@ let cachedBlockComponents;
 export const getAvBlockComponents = () => {
   if (cachedBlockComponents) return cachedBlockComponents;
 
-  const BlockPriceSelector = require('../../../containers/PageBuilder/BlockBuilder/BlockPriceSelector')
-    .default;
   const BlockInstagramFeed = require('../../../containers/PageBuilder/BlockBuilder/BlockInstagramFeed/BlockInstagramFeed')
     .default;
   const BlockMarkdownTable = require('../../../containers/PageBuilder/BlockBuilder/BlockMarkdownTable/BlockMarkdownTable')
@@ -31,7 +29,6 @@ export const getAvBlockComponents = () => {
     .default;
 
   cachedBlockComponents = {
-    blockPriceSelector: { component: BlockPriceSelector },
     blockInstagramFeed: { component: BlockInstagramFeed },
     blockMarkdownTable: { component: BlockMarkdownTable },
     blockBrevoForm: { component: BlockBrevoForm },

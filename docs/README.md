@@ -20,6 +20,7 @@ archive.
 
 - [Production release checklist](operations/release-checklist.md)
 - [Current deployment topology](operations/deployment.md)
+- [Approved Heroku Test-to-Live deployment](operations/heroku-deployment.md)
 - [Single-process and scaling constraints](operations/scaling.md)
 - [Local test accounts](operations/test-accounts.md)
 
@@ -41,15 +42,14 @@ archive.
 
 ## Pending work
 
-Start with the [pending-work index](pending/README.md). Detailed open topics are kept only while
-they remain actionable:
+Start with the [pending-work index](pending/README.md). It contains actionable open topics and the
+explicitly retained future-use record:
 
 - [WhatsApp and notification hardening](pending/notifications.md)
-- [Pricing plans hosted asset](pending/pricing-plans.md)
+- [Removed pricing-plan component reference](pending/pricing-plans.md)
 - [Bidding and offer-acceptance research](pending/bidding.md)
 - [eShip policy and reconciliation](pending/eship.md)
 - [Bulk-import horizontal scaling](pending/scaling.md)
-- [Proposed Heroku rollout](pending/heroku-deployment.md)
 
 Unchecked boxes in deployment and integration runbooks are environment-specific execution steps;
 they do not mean the documented implementation is missing.

@@ -19,7 +19,7 @@ const PageBuilder = loadable(() =>
 
 export const CMSPageComponent = props => {
   const intl = useIntl();
-  const { params, pageAssetsData, inProgress, error, pricingPlansData } = props;
+  const { params, pageAssetsData, inProgress, error } = props;
   const pageId = params.pageId || props.pageId;
 
   if (!inProgress && error?.status === 404) {
@@ -27,14 +27,12 @@ export const CMSPageComponent = props => {
   }
 
   const pageData = pageAssetsData?.[pageId]?.data;
-  const extensionData = { pricingPlansData };
 
   const transformedPageData = pageData
-    ? pageBuilderExtension.transformPageData({ pageData, intl, extensionData })
+    ? pageBuilderExtension.transformPageData({ pageData, intl })
     : pageData;
 
-  const extensionOptions =
-    pageBuilderExtension.getPageBuilderOptions({ pageData, extensionData }) || undefined;
+  const extensionOptions = pageBuilderExtension.getPageBuilderOptions({ pageData }) || undefined;
 
   return (
     <PageBuilder
@@ -54,7 +52,6 @@ CMSPageComponent.propTypes = {
 
 const mapStateToProps = state => {
   const { pageAssetsData, inProgress, error } = state.hostedAssets || {};
-  const { pricingPlansData } = state.CMSPage || {};
   const featuredListingData = state.featuredListings || {};
   const getListingEntitiesById = listingIds => getListingsById(state, listingIds);
 
@@ -62,7 +59,6 @@ const mapStateToProps = state => {
     pageAssetsData,
     inProgress,
     error,
-    pricingPlansData,
     featuredListingData,
     getListingEntitiesById,
   };
@@ -79,6 +75,12 @@ const mapDispatchToProps = dispatch => ({
 // lifecycle hook.
 //
 // See: https://github.com/ReactTraining/react-router/issues/4671
-const CMSPage = compose(withRouter, connect(mapStateToProps, mapDispatchToProps))(CMSPageComponent);
+const CMSPage = compose(
+  withRouter,
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )
+)(CMSPageComponent);
 
 export default CMSPage;

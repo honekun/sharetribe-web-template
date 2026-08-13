@@ -1,5 +1,5 @@
 // AV section transformers for the CMS PageBuilder.
-// Each function takes a raw CMS section + intl (and pricing asset where needed)
+// Each function takes a raw CMS section + intl
 // and returns the section enriched with the AV-specific shape that the matching
 // AV Section component expects.
 //
@@ -7,15 +7,12 @@
 // CMSPage.js or other render-path code.
 
 import {
-  avPriceSelectorSecionId,
   AV_HERO2_SECTION_TYPE,
   AV_HERO3_SECTION_TYPE,
   AV_VIDEO_SECTION_TYPE,
-  AV_PRICE_SELECTOR_SECTION_TYPE,
   AV_HERO2_PREFIX,
   AV_HERO3_PREFIX,
   AV_VIDEO_PREFIX,
-  FEATURE_DELIMITER,
 } from './constants';
 
 // Avoids calling formatMessage for missing/empty keys — react-intl fires a
@@ -79,55 +76,11 @@ const buildVideoSection = (intl, section) => {
   };
 };
 
-// --- Pricing (asset-preferred, intl-fallback) ---
-const buildPricingFromAsset = (assetData, baseSection) => ({
-  ...baseSection,
-  sectionId: avPriceSelectorSecionId,
-  sectionType: AV_PRICE_SELECTOR_SECTION_TYPE,
-  classWrap: '',
-  plans: assetData.plans,
-  toggles: assetData.toggles,
-});
-
-const buildPlanFromIntl = (intl, setKey, planIdx) => ({
-  title: fmt(intl, `PricingToggle.${setKey}.title${planIdx}`),
-  description: fmt(intl, `PricingToggle.${setKey}.description${planIdx}`),
-  price: fmt(intl, `PricingToggle.${setKey}.price${planIdx}`),
-  priceText: fmt(intl, `PricingToggle.${setKey}.priceText${planIdx}`),
-  cta: {
-    link: fmt(intl, `PricingToggle.${setKey}.cta${planIdx}Link`),
-    text: fmt(intl, `PricingToggle.${setKey}.cta${planIdx}Text`),
-  },
-  features: fmt(intl, `PricingToggle.${setKey}.features${planIdx}`).split(FEATURE_DELIMITER),
-});
-
-const buildPricingFromIntl = (intl, baseSection) => ({
-  ...baseSection,
-  sectionId: avPriceSelectorSecionId,
-  sectionType: AV_PRICE_SELECTOR_SECTION_TYPE,
-  classWrap: '',
-  plans: {
-    set1: [buildPlanFromIntl(intl, 'set1', 1), buildPlanFromIntl(intl, 'set1', 2)],
-    set2: [buildPlanFromIntl(intl, 'set2', 1), buildPlanFromIntl(intl, 'set2', 2)],
-  },
-  toggles: {
-    cta1: fmt(intl, 'PricingToggle.toggleSet1'),
-    cta2: fmt(intl, 'PricingToggle.toggleSet2'),
-  },
-});
-
 // Top-level transform: walk every section and rewrite the AV-recognized ones.
-export const transformAvSections = ({ pageData, intl, extensionData }) => {
+export const transformAvSections = ({ pageData, intl }) => {
   if (!pageData?.sections) return pageData;
 
-  const pricingAssetData = extensionData?.pricingPlansData;
-
   const sections = pageData.sections.map(s => {
-    if (s.sectionId === avPriceSelectorSecionId) {
-      return pricingAssetData
-        ? buildPricingFromAsset(pricingAssetData, s)
-        : buildPricingFromIntl(intl, s);
-    }
     if (s.sectionId?.startsWith(AV_HERO2_PREFIX)) return buildHero2Section(intl, s);
     if (s.sectionId?.startsWith(AV_HERO3_PREFIX)) return buildHero3Section(intl, s);
     if (s.sectionId?.startsWith(AV_VIDEO_PREFIX)) return buildVideoSection(intl, s);

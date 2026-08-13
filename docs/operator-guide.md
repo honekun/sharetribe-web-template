@@ -36,7 +36,6 @@ application settings. No technical background is required.
    - [Hero Banner (Multi-Instance)](#48-hero-banner-multi-instance-avhero2)
    - [Block-Based Hero](#49-block-based-hero-avhero3)
    - [Video + Text Split](#410-video--text-split-avvideo)
-   - [Pricing Plans](#411-pricing-plans-price-columns)
 5. [Display Options](#5-display-options)
    - [Section Display Options](#51-section-display-options)
    - [Block Name Tokens](#52-block-name-tokens)
@@ -75,7 +74,7 @@ All marketplace configuration is managed through the **Sharetribe Console** at
 | Console Area                   | What you manage there                                               |
 | ------------------------------ | ------------------------------------------------------------------- |
 | **Content → Pages**            | Landing page sections, about page, and other CMS pages              |
-| **Content → Assets**           | Pricing plans JSON and other hosted data files                      |
+| **Content → Assets**           | Hosted JSON and other data files used by current integrations       |
 | **Content → Translations**     | Text strings used by custom sections                                |
 | **Build → Listing fields**     | Custom product attributes (color, size, brand, etc.)                |
 | **Build → Listing types**      | Which fields apply to which listing types                           |
@@ -427,10 +426,9 @@ every custom type is available on every page:
 | ----------------------------------------------------------------------------------------------------- | ------------ | --------------- |
 | `avSelections`, `avSelectedCats`, `avTagListings`, `avRecommendeds`, `avSelectedUsers`, `avInstaGrid` | Yes          | No              |
 | Standard `hero`, `avHero2`, `avHero3`, `avVideo`                                                      | Yes          | Yes             |
-| `price-columns`                                                                                       | No           | Yes             |
 
-Do not add a landing-only section to another CMS page or `price-columns` to the landing page; that
-rendering component is not registered there.
+Do not add a landing-only section to another CMS page; those rendering components are not registered
+there.
 
 ### How sections work
 
@@ -733,20 +731,6 @@ Use the suffix after `av-video-`, not the complete Section ID. For example, sect
 
 - The video autoplays muted and loops.
 - Browser autoplay policies may prevent autoplay on some devices unless the video is muted.
-
----
-
-### 4.11 Pricing Plans (`price-columns`)
-
-Displays the interactive pricing plan selector with monthly/annual toggle on a regular CMS page. It
-is **not available on the Landing Page**.
-
-**Setup:**
-
-1. Open a CMS page other than the Landing Page and set **Section Type** to `price-columns`.
-2. The content (plan names, prices, features, CTAs) is loaded from a hosted data file. Go to
-   **Console → Content → Assets** and create a file at path `content/pricing-plans.json` with your
-   plan data. Ask the development team for the exact format.
 
 ---
 
@@ -2330,9 +2314,11 @@ environment and record IDs first, then take the smallest reversible action that 
 ### 14.1 Access and Environment Safety
 
 Archivo Vintach has separate Sharetribe **Test** and **Live** environments. Their users, listings,
-transactions, API applications, Integration API credentials, Stripe modes, and databases are
+transactions, API applications, Integration API credentials, Stripe modes, and operational data are
 separate. Content and configuration may be copied between environments, but marketplace records are
-not copied.
+not copied. For the initial Live deployment, the approved plan reuses one Heroku app and its
+PostgreSQL add-on only after the Test database contents are backed up and completely erased. No Test
+poller, notification, consent, or label record may remain when Live credentials are installed.
 
 Before any change:
 
@@ -2447,13 +2433,18 @@ not change the deployed Sharetribe process by themselves.
 For a cancellation or refund:
 
 1. Confirm whether payment was only authorized, captured, transferred, or already refunded.
-2. Confirm whether an eShip label was purchased. A Sharetribe/Stripe refund does not automatically
-   recover the carrier charge.
-3. Use the supported operator transition and verify the resulting transaction and Stripe states.
-4. Reconcile any purchased label manually under the approved business policy. The final
-   cancellation/refund cost policy is still pending, so escalate rather than inventing a deduction
-   from the seller payout.
-5. Record the amount, currency, transition, Stripe reference, label outcome, and approver.
+2. Confirm whether the label state is absent, purchased, processing, or unknown. A Sharetribe/Stripe
+   refund does not automatically cancel the label or recover the carrier charge.
+3. For a processing or unknown label outcome, stop. Check eShip before canceling or retrying because
+   the carrier may already have accepted the purchase.
+4. Use the supported Sharetribe operator cancellation transition. The current purchase process gives
+   the buyer a full refund, including shipping, and creates no seller payout. Do not issue a partial
+   Stripe Dashboard refund or invent a deduction from the seller payout.
+5. Escalate any purchased label for manual reconciliation under the proposed policy in
+   [pending eShip work](pending/eship.md). Until that policy is approved and tested, do not promise
+   a label credit or decide who absorbs an unrecovered carrier charge.
+6. Record the amount, currency, transition, Stripe reference, label outcome, cancellation cause, and
+   approver.
 
 Negotiation listings follow a different state machine from purchase listings. The current `offer`
 mode begins with a customer quote request and a provider's first numeric offer; it is not a direct
@@ -2526,7 +2517,9 @@ Escalate immediately when an issue may create duplicate charges or labels, expos
 misdirect notifications, alter payouts, block all checkout, or affect multiple Live users. Stop
 retries while the external outcome is unknown.
 
-For deployment rollback and production gates, follow the
-[release checklist](operations/release-checklist.md). After an operator-visible fix, update this
-canonical guide first, rebuild the English shareable HTML, and synchronize every translated edition
-intended for distribution.
+For the initial deployment boundary, follow the approved
+[Heroku Test-to-Live runbook](operations/heroku-deployment.md) and
+[release checklist](operations/release-checklist.md). Do not switch the production app between Test
+and Live as an ordinary support action. After an operator-visible fix, update this canonical guide
+first, rebuild the English shareable HTML, and synchronize every translated edition intended for
+distribution.
