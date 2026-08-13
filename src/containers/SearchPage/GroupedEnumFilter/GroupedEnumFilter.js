@@ -12,7 +12,8 @@ import FilterPlainCss from '../FilterPlain/FilterPlain.module.css';
  * `filterConfig.filterType === 'GroupedSelectMultipleFilter'`.
  *
  * Props match what FilterComponent already passes plus `childFilters` and the
- * pre-resolved component-id prefix.
+ * resolved `componentId`, which every id in here is derived from so that the
+ * desktop and mobile filter columns cannot emit the same ids.
  */
 const GroupedEnumFilter = props => {
   const {
@@ -25,16 +26,23 @@ const GroupedEnumFilter = props => {
     getAriaLabel,
     liveEdit,
     useHistoryPush,
-    prefix,
     rest = {},
   } = props;
 
   const [isOpen, setOpened] = useState(false);
   const toggleIsOpen = () => setOpened(!isOpen);
 
+  const panelId = `${componentId}.panel`;
+
   return (
     <div className={FilterPlainCss.root}>
-      <button className={FilterPlainCss.labelButton} onClick={toggleIsOpen}>
+      <button
+        type="button"
+        className={FilterPlainCss.labelButton}
+        onClick={toggleIsOpen}
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+      >
         <span className={FilterPlainCss.labelButtonContent}>
           <span className={FilterPlainCss.labelWrapper}>
             <span className={FilterPlainCss.label}>{label}</span>
@@ -46,7 +54,7 @@ const GroupedEnumFilter = props => {
       </button>
 
       <div
-        id={componentId}
+        id={panelId}
         className={classNames(FilterPlainCss.plain, FilterPlainCss.grouped, {
           [FilterPlainCss.isOpen]: isOpen,
         })}
@@ -54,13 +62,18 @@ const GroupedEnumFilter = props => {
         {childFilters.map(elementConfig => {
           const { key, schemaType, scope, enumOptions, filterConfig = {} } = elementConfig;
           const { label: childLabel } = filterConfig;
-          const childComponentId = `${prefix}.${key.toLowerCase()}`;
+          // Derived from the parent's id rather than the shared prefix, so the
+          // desktop and mobile filter columns do not both render these ids.
+          const childComponentId = `${componentId}.${key.toLowerCase()}`;
           const name = key.replace(/\s+/g, '-');
           const queryParamNames = [constructQueryParamName(key, scope)];
 
           return (
             <div key={childComponentId}>
+              {/* rest is spread first: an id arriving through it must not
+                  replace the one derived for this child. */}
               <SelectMultipleFilter
+                {...rest}
                 id={childComponentId}
                 label={childLabel}
                 name={name}
@@ -70,7 +83,6 @@ const GroupedEnumFilter = props => {
                 options={enumOptions}
                 schemaType={schemaType}
                 getAriaLabel={getAriaLabel}
-                {...rest}
               />
             </div>
           );
