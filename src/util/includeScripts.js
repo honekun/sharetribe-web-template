@@ -281,13 +281,6 @@ export const IncludeScripts = props => {
     };
   }, [isMapboxInUse, mapboxAccessToken]);
 
-  // AV: brand fonts loaded globally alongside the other injected scripts.
-  const fontScript = (
-    <style key="font">
-      {`@import url('https://fonts.googleapis.com/css2?family=Archivo&family=Archivo+Black&family=Roboto:ital@0;1&display=swap');`}
-    </style>
-  );
-
-  const allScripts = [fontScript, ...stripeLibrary, ...analyticsLibraries, ...mapLibraries];
+  const allScripts = [...stripeLibrary, ...analyticsLibraries, ...mapLibraries];
   return <Helmet onChangeClientState={onChangeClientState}>{allScripts}</Helmet>;
 };

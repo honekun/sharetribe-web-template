@@ -151,7 +151,7 @@
 
 .titleEyebrow {
   color: var(--gray, #bcbcbc);
-  font-family: Roboto;
+  font-family: var(--fontFamilyRoboto);
   font-size: 15px;
   font-style: normal;
   font-weight: 600;
