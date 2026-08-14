@@ -103,3 +103,20 @@
     padding: 56px 56px;
   }
 }
+
+/* The hero's words live in the block artwork, so the section title is rendered as
+   an <h1> that is hidden visually but kept in the DOM and the accessibility tree.
+   Uses the clip technique on purpose: display:none / visibility:hidden would drop
+   it from the a11y tree and get it discounted as hidden text by crawlers. */
+.visuallyHiddenHeading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

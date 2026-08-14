@@ -51,9 +51,27 @@ const alignmentClass = alignment => {
  * @param {Object}  props.options
  */
 const SectionHeroCustom3 = props => {
-  const { sectionId, className, rootClassName, defaultClasses, blocks = [], options } = props;
+  const {
+    sectionId,
+    className,
+    rootClassName,
+    defaultClasses,
+    blocks = [],
+    options,
+    title,
+  } = props;
 
   if (!blocks.length) return null;
+
+  // The hero is built entirely from block background images, so the page would
+  // otherwise ship no <h1> at all: the panel words ("VENDE" / "COMPRA") live in
+  // the artwork, not the DOM. Render the section's own title as a visually
+  // hidden <h1> so crawlers and screen readers get a real page heading.
+  //
+  // Hidden via the clip technique rather than display/visibility:hidden, which
+  // would drop it from the accessibility tree and have it discounted as hidden
+  // text. Empty titles render nothing - an empty <h1> is worse than none.
+  const headingText = typeof title?.content === 'string' ? title.content.trim() : '';
 
   const fieldComponents = options?.fieldComponents;
   const fieldOptions = { fieldComponents };
@@ -72,6 +90,7 @@ const SectionHeroCustom3 = props => {
 
   return (
     <section id={sectionId} className={classNames(rootClassName || css.root, className)}>
+      {headingText ? <h1 className={css.visuallyHiddenHeading}>{headingText}</h1> : null}
       {halves.map((block, i) => {
         const imageUrl = getImageUrl(block.media);
         // The whole-panel link comes from the block's "Block image link" setting
