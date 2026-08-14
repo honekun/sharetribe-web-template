@@ -68,7 +68,7 @@
    :at
    {:fn/plus
     [{:fn/timepoint [:time/first-entered-state :state/delivered]}
-     {:fn/period ["P14D"]}]},
+     {:fn/period ["P7D"]}]},
    :actions [{:name :action/stripe-create-payout}],
    :from :state/delivered,
    :to :state/received}
@@ -233,10 +233,13 @@
    :template :purchase-order-operator-marked-as-delivered}
   {:name :notification/purchase-mark-order-received-reminder,
    :on :transition/mark-delivered,
+   ;; Two days before :transition/auto-mark-received fires, as it was under the
+   ;; old 14-day window (P12D). Moving the deadline without moving this would
+   ;; schedule the reminder five days after the order had already auto-received.
    :at
    {:fn/plus
     [{:fn/timepoint [:time/first-entered-state :state/delivered]}
-     {:fn/period ["P12D"]}]},
+     {:fn/period ["P5D"]}]},
    :to :actor.role/customer,
    :template :purchase-mark-order-received-reminder}
   {:name :notification/order-marked-as-received-from-purchased,

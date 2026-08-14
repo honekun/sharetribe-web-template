@@ -2052,8 +2052,12 @@ authenticated API/engineering procedure after eShip reconciliation. The keys are
 > shipped/delivered. If they don't, the order is **canceled automatically** and the buyer receives a
 > full refund. The seller gets reminder emails on **day 3** and a last-chance warning on **day 5**
 > (Sharetribe built-in emails; Spanish copy for `PurchaseShippingReminder.*` and
-> `PurchaseShippingReminderFinal.*` is managed under **Console → Content → Email texts**). The
-> separate window for the **buyer** to confirm receipt after delivery remains **14 days**.
+> `PurchaseShippingReminderFinal.*` is managed under **Console → Content → Email texts**).
+
+> **Confirmation deadline: 7 days.** Once an order is marked shipped/delivered, the buyer has
+> **7 days** to confirm receipt. If they don't, the order is confirmed **automatically** and the
+> seller is paid out — buyers get a reminder email on **day 5**
+> (`PurchaseMarkOrderReceivedReminder.*`). This window was 14 days until 2026-08-14.
 
 The current delivery keys are `AVShippingSelector.*`:
 

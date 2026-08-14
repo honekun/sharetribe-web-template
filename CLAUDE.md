@@ -79,7 +79,9 @@ via `options.sectionComponents`.
 `ext/transaction-processes/*/process.edn` (deployed via `flex-cli process push` +
 `process update-alias`; in-flight transactions keep their old version). AV `default-purchase`:
 seller shipping window **P7D** (`transition/auto-cancel`; reminders P3D + P5D
-`purchase-shipping-reminder[-final]`); buyer confirm window stays P14D (`auto-mark-received`).
+`purchase-shipping-reminder[-final]`); buyer confirm window **P7D** (`auto-mark-received`, reminder
+P5D `purchase-mark-order-received-reminder`) — both were P14D before 2026-08-14. A reminder is
+pinned to its deadline, so moving a window means moving its reminder too.
 
 **SDK** — `sharetribe-flex-sdk`; client wrapper `src/util/sdkLoader.js`, server
 `server/api-util/sdk.js`. Tokens in HttpOnly cookies (auto-refresh). Hosted assets via
