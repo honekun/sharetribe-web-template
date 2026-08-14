@@ -1914,6 +1914,8 @@ used alongside the regular keys.
 | Two-buttons block  | `TwoButtons.<blockId>.cta2Link`             | —               | —               | Second CTA link.                                                              |
 | Two-buttons block  | `TwoButtons.<blockId>.cta2Style`            | Empty           | Empty           | Optional style tokens.                                                        |
 | Photo slider block | `PhotoSlider.<blockId>.image_1` … `image_4` | Empty           | Empty           | Image URLs for `photoSlider ::` blocks. Set at least one; blanks are skipped. |
+| Photo slider block | `AVPhotoSlider.pause`                       | `Pause the photo slideshow` | `Pausar la presentación de fotos` | Label read out for the slider's pause button. Not shown on screen. |
+| Photo slider block | `AVPhotoSlider.play`                        | `Play the photo slideshow` | `Reproducir la presentación de fotos` | Same button once the slideshow is paused. |
 
 ### Newsletter form
 

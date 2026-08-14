@@ -548,7 +548,7 @@ control). Small CSS-module forks (restyles kept inline due to scoped-class/var c
 | -------------------------------------------- | ----------------------------------------------------------------------- |
 | `translations/{en,es,de,fr}.json`            | `translations/{en,es}_av.json` overlays (see Coding Conventions)        |
 | `TopbarDesktop/CustomLinksMenu/*`            | `TopbarDesktop/AVLinksMenu/` (`AVCustomLinksMenu`/`AVPriorityLinks`/…)  |
-| `EditListingWizard/EditListingPhotosPanel/`  | `avPhotoSlots.js`                                                       |
+| `EditListingWizard/EditListingPhotosPanel/`  | `EditListingDetailsPanel/PhotoGallerySection.js` + `reconcileOrderedImages.js` (`avPhotoSlots.js` was deleted in `016d428c2`) |
 | `CheckoutPage/CheckoutPageTransactionHelpers.js` | `CheckoutPage/avMxAddress.js` (`getShippingDetailsMaybe`, `getBillingDetails`, `copyShippingAddressToBilling`) |
 | `BlockBuilder/{BlockBuilder,BlockDefault,BlockFooter}` | `options.blockComponents` → `AVBlockDefault`/`AVBlockFooter`   |
 | `styles/marketplaceDefaults.css`, `TabNavHorizontal.module.css` | `avBrandOverrides.css` (commit `c3bfa1b06`)           |
