@@ -84,7 +84,6 @@ checkEnvVariables(MANDATORY_ENV_VARIABLES);
 const notificationConfigReadiness = assertProductionNotificationConfig();
 
 const app = express();
-app.use(express.json());
 
 const errorPage500 = fs.readFileSync(path.join(buildPath, '500.html'), 'utf-8');
 const errorPage404 = fs.readFileSync(path.join(buildPath, '404.html'), 'utf-8');
