@@ -3,10 +3,19 @@ import React from 'react';
 import { FormattedMessage, useIntl } from '../../../util/reactIntl';
 import { formatMoney } from '../../../util/currency';
 import { types as sdkTypes } from '../../../util/sdkLoader';
+import { IconSpinner } from '../../../components';
 
+import AVShippingNotice from './AVShippingNotice';
 import css from './AVShippingSelector.module.css';
 
 const { Money } = sdkTypes;
+
+// Reads microcopy straight from the catalog instead of formatMessage, because a key set to an
+// empty string makes react-intl fall through and return the id itself (a truthy string).
+const microcopy = (intl, id) => {
+  const raw = intl.messages?.[id];
+  return typeof raw === 'string' && raw.trim() ? intl.formatMessage({ id }) : '';
+};
 
 const Price = ({ amountSubunits, currency, intl }) =>
   amountSubunits != null && currency ? (
@@ -65,6 +74,7 @@ const AVShippingSelector = props => {
   if (status === 'quoting') {
     return (
       <div className={css.loading}>
+        <IconSpinner rootClassName={css.spinner} />
         <FormattedMessage id="AVShippingSelector.loading" />
       </div>
     );
@@ -120,6 +130,11 @@ const AVShippingSelector = props => {
           intl={intl}
         />
       </div>
+
+      <AVShippingNotice
+        title={microcopy(intl, 'AVShippingSelector.noticeTitle')}
+        text={microcopy(intl, 'AVShippingSelector.noticeText')}
+      />
 
       {rawRates.length > 0 ? (
         <div className={css.rawSection}>

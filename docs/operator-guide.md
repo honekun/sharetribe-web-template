@@ -2028,7 +2028,13 @@ The checkout (step shown after the buyer clicks **Comprar ahora**) has these AV-
    prices include a margin buffer over the raw carrier cost. Prices are **not** set in the Console —
    they come from the carrier in real time. The **Pay** button stays disabled until a delivery
    option is chosen.
-3. **No automatic quote → Contactar AV** — if the seller hasn't set a shipping-origin address, the
+3. **Confirm-with-seller notice** — an amber notice box sits directly below the two delivery
+   options, reminding the buyer that same-day dispatch isn't guaranteed and that they should message
+   the seller. It has a bold title line and a body line, both editable (`AVShippingSelector.notice*`
+   in the table below); there is no button. It appears only once priced options are shown, so it is
+   absent while the quote loads and on the _Contactar AV_ fallback. Blanking **both** keys removes
+   the box.
+4. **No automatic quote → Contactar AV** — if the seller hasn't set a shipping-origin address, the
    item is package size **especial**, or the carrier can't be reached, the buyer sees a retry and/or
    a **Contactar a AV** button instead of priced options (they cannot complete an automatic
    purchase).
@@ -2073,6 +2079,8 @@ The current delivery keys are `AVShippingSelector.*`:
 | Delivery options | `AVShippingSelector.errorPermanent`                          | `Automatic shipping isn't available…`                | `El envío automático no está disponible…`       | No origin / especial (shows **Contactar**).           |
 | Delivery options | `AVShippingSelector.retry`                                   | `Try again`                                          | `Reintentar`                                    | Retry button on a transient error.                    |
 | Delivery options | `AVShippingSelector.contactSeller`                           | `Contact AV`                                         | `Contactar al vendedor`                                | Fallback button when no quote is possible.            |
+| Delivery options | `AVShippingSelector.noticeTitle`                             | `Remember to confirm with the seller.`               | `Recuerda confirmar con la vendedora.`          | Bold first line of the amber notice under the options. Blank to hide the line. |
+| Delivery options | `AVShippingSelector.noticeText`                              | `Same-day shipping isn't guaranteed…`                | `Escríbele al vendedor para confirmar…`         | Body copy of the same notice. Blank **both** notice keys to remove the box entirely. |
 | Delivery options | `AVShippingSelector.rawListTitle`                            | `All available rates`                                | `Todas las tarifas disponibles`                 | Heading above the raw rate list.                      |
 | Seller origin    | `ShippingOriginPage.heading`                                 | `Shipping origin address`                            | `Dirección de origen de envíos`                 | Account settings page heading.                        |
 | Seller origin    | `ShippingOriginBanner.message`                               | `Add your shipping origin address…`                  | `Agrega tu dirección de origen…`                | Manage-listings reminder banner.                      |

@@ -346,7 +346,9 @@ Modules: `server/api-util/eshipClient.js` (HTTP: `quote` + `createShipment`),
 (`/api/shipping/quote`) + `server/api/shipping-label/` (`/api/shipping/label`, both AV-owned in
 `customApiRoutes.js`), `server/api-util/avShipping.js` (persist helper). Client:
 `CheckoutPage/shippingQuote.duck.js` (global reducer), `CheckoutPage/AVShippingSelector/` (buckets +
-raw list + retry/Contactar AV), `ShippingOriginPage` (`/account/shipping-origin`, seller origin in
+`AVShippingNotice` + raw list + retry/Contactar AV; `IconSpinner` passed `rootClassName` so it
+replaces the icon's own 28px `.root` rather than tying on specificity),
+`ShippingOriginPage` (`/account/shipping-origin`, seller origin in
 `protectedData.shippingOrigin`), `ManageListingsPage/ShippingOriginBanner/` (missing-origin nudge),
 `util/shippingOrigin.js` (`hasCompleteShippingOrigin`). **Watchlist:** `StripePaymentForm.js` now
 hosts the selector slot + surfaces address values via `FormSpy` + gates the Pay button

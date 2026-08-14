@@ -176,7 +176,7 @@ threaded through `TransactionPanel`.
 | `server/api/shipping-quote/`                                                | `POST /api/shipping/quote`                            |
 | `server/api/shipping-label/`                                                | `POST /api/shipping/label` (+ `rateLimiter.js`)       |
 | `src/config/configAVShipping.js`                                            | Package sizes, markup math, bucket mapping            |
-| `src/containers/CheckoutPage/shippingQuote.duck.js` + `AVShippingSelector/` | Client quote UI                                       |
+| `src/containers/CheckoutPage/shippingQuote.duck.js` + `AVShippingSelector/` | Client quote UI (incl. `AVShippingNotice`)            |
 | `src/containers/TransactionPage/AVShippingLabelMaybe/`                      | Provider label control                                |
 
 Both custom routers mount at `/api/shipping` in `server/customApiRoutes.js` (`/label` falls through

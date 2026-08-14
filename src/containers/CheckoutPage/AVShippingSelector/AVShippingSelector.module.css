@@ -42,13 +42,30 @@
   color: var(--colorGrey400);
 }
 
-.loading,
 .error {
   composes: marketplaceBodyFontStyles from global;
   display: flex;
   flex-direction: column;
   gap: 8px;
   color: var(--colorBlack);
+}
+
+.loading {
+  composes: marketplaceBodyFontStyles from global;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: var(--colorBlack);
+}
+
+/* Passed as rootClassName so it replaces IconSpinner's own 28px .root outright. */
+.spinner {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  stroke: var(--marketplaceColor);
+  stroke-width: 3px;
 }
 
 .retry,

@@ -53,6 +53,8 @@
   "AVShippingSelector.errorPermanent": "El envío automático no está disponible para este artículo.",
   "AVShippingSelector.retry": "Reintentar",
   "AVShippingSelector.contactSeller": "Contactar al vendedor",
+  "AVShippingSelector.noticeTitle": "Recuerda confirmar con la vendedora.",
+  "AVShippingSelector.noticeText": "Escríbele al vendedor para confirmar que se envíe el mismo día.",
   "AVShippingSelector.rawListTitle": "Todas las tarifas disponibles",
   "AVShippingLabel.heading": "Guía de envío",
   "AVShippingLabel.download": "Descargar guía",

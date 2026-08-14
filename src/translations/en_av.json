@@ -53,6 +53,8 @@
   "AVShippingSelector.errorPermanent": "Automatic shipping isn't available for this item.",
   "AVShippingSelector.retry": "Try again",
   "AVShippingSelector.contactSeller": "Contact AV",
+  "AVShippingSelector.noticeTitle": "Remember to confirm with the seller.",
+  "AVShippingSelector.noticeText": "Same-day shipping isn't guaranteed — message the seller to confirm.",
   "AVShippingSelector.rawListTitle": "All available rates",
   "AVShippingLabel.heading": "Shipping label",
   "AVShippingLabel.download": "Download label",
