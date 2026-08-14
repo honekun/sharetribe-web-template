@@ -28,6 +28,10 @@ import TopbarDesktop from './TopbarDesktop/TopbarDesktop';
 
 import css from './Topbar.module.css';
 import { getCurrentUserTypeRoles, showCreateListingLinkForUser } from '../../../util/userHelpers';
+import {
+  resolveKeywordsInitialValue,
+  resolveKeywordsSearchParams,
+} from '../../../extensions/searchFilters/avBrandSearch';
 
 const MAX_MOBILE_SCREEN_WIDTH = 1599;
 
@@ -163,7 +167,11 @@ const TopbarComponent = props => {
 
     const topbarSearchParams = () => {
       if (isMainSearchTypeKeywords(config)) {
-        return { keywords: values?.keywords };
+        // AV: a query naming a brand searches pub_brand instead of keywords.
+        return resolveKeywordsSearchParams({
+          keywords: values?.keywords,
+          listingFields: config?.listing?.listingFields,
+        });
       }
       // topbar search defaults to 'location' search
       const { search, selectedPlace } = values?.location || {};
@@ -228,10 +236,13 @@ const TopbarComponent = props => {
     ? 'sales'
     : 'orders';
 
-  const { mobilemenu, mobilesearch, keywords, address, origin, bounds } = parse(location.search, {
-    latlng: ['origin'],
-    latlngBounds: ['bounds'],
-  });
+  const { mobilemenu, mobilesearch, keywords, address, origin, bounds, pub_brand } = parse(
+    location.search,
+    {
+      latlng: ['origin'],
+      latlngBounds: ['bounds'],
+    }
+  );
 
   // Custom links are sorted so that group="primary" are always at the beginning of the list.
   const sortedCustomLinks = sortCustomLinks(config.topbar?.customLinks);
@@ -263,7 +274,14 @@ const TopbarComponent = props => {
 
   const topbarSearcInitialValues = () => {
     if (isMainSearchTypeKeywords(config)) {
-      return { keywords };
+      // AV: a brand search leaves no `keywords` param - show the brand label instead.
+      return {
+        keywords: resolveKeywordsInitialValue({
+          keywords,
+          pubBrand: pub_brand,
+          listingFields: config?.listing?.listingFields,
+        }),
+      };
     }
 
     // Only render current search if full place object is available in the URL params
