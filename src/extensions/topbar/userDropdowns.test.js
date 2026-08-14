@@ -1,10 +1,10 @@
 import { fetchLocalDesignUsers, resolveUserDropdownMenuItems } from './userDropdowns';
 
-jest.mock('../../../../../util/api', () => ({
+jest.mock('../../util/api', () => ({
   topbarLocalDesignUsers: jest.fn(),
 }));
 
-import { topbarLocalDesignUsers } from '../../../../../util/api';
+import { topbarLocalDesignUsers } from '../../util/api';
 
 describe('userDropdowns', () => {
   it('maps local design users to profile links', () => {

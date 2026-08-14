@@ -9,8 +9,8 @@ import {
   defaultTopbarCategoryDropdowns,
   getCategoryDropdownsConfig,
   resolveDropdownMenuItems,
-} from '../TopbarDesktop/AVLinksMenu/categoryDropdowns';
-import { resolveUserDropdownMenuItems } from '../TopbarDesktop/AVLinksMenu/userDropdowns';
+} from '../../../../extensions/topbar/categoryDropdowns';
+import { resolveUserDropdownMenuItems } from '../../../../extensions/topbar/userDropdowns';
 // Shared with TopbarDesktop so the two menus fetch once between them.
 import {
   getLocalDesignUsers,

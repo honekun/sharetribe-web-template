@@ -8,8 +8,8 @@ import {
   defaultTopbarCategoryDropdowns,
   getCategoryDropdownsConfig,
   resolveDropdownMenuItems,
-} from './categoryDropdowns';
-import { resolveUserDropdownMenuItems } from './userDropdowns';
+} from '../../../../../extensions/topbar/categoryDropdowns';
+import { resolveUserDropdownMenuItems } from '../../../../../extensions/topbar/userDropdowns';
 // Shared with TopbarMobileMenu so the two menus fetch once between them.
 import {
   getLocalDesignUsers,

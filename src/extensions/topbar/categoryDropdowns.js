@@ -1,4 +1,4 @@
-import { stringify } from '../../../../../util/urlHelpers';
+import { stringify } from '../../util/urlHelpers';
 
 export const LOCAL_TOPBAR_DATA_PATH = '/static/data/top-bar.json';
 

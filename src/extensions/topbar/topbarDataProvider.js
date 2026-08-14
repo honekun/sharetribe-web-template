@@ -1,5 +1,5 @@
-import { fetchLocalTopbarData } from '../../containers/TopbarContainer/Topbar/TopbarDesktop/AVLinksMenu/categoryDropdowns';
-import { fetchLocalDesignUsers } from '../../containers/TopbarContainer/Topbar/TopbarDesktop/AVLinksMenu/userDropdowns';
+import { fetchLocalTopbarData } from './categoryDropdowns';
+import { fetchLocalDesignUsers } from './userDropdowns';
 
 /**
  * Shared source for the two pieces of topbar data (the category dropdown config

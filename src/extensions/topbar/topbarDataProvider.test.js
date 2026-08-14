@@ -1,18 +1,12 @@
 const mockFetchTopbarData = jest.fn();
 const mockFetchDesignUsers = jest.fn();
 
-jest.mock(
-  '../../containers/TopbarContainer/Topbar/TopbarDesktop/AVLinksMenu/categoryDropdowns',
-  () => ({
-    fetchLocalTopbarData: (...args) => mockFetchTopbarData(...args),
-  })
-);
-jest.mock(
-  '../../containers/TopbarContainer/Topbar/TopbarDesktop/AVLinksMenu/userDropdowns',
-  () => ({
-    fetchLocalDesignUsers: (...args) => mockFetchDesignUsers(...args),
-  })
-);
+jest.mock('./categoryDropdowns', () => ({
+  fetchLocalTopbarData: (...args) => mockFetchTopbarData(...args),
+}));
+jest.mock('./userDropdowns', () => ({
+  fetchLocalDesignUsers: (...args) => mockFetchDesignUsers(...args),
+}));
 
 const {
   getTopbarData,

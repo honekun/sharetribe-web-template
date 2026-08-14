@@ -1,4 +1,4 @@
-import { topbarLocalDesignUsers } from '../../../../../util/api';
+import { topbarLocalDesignUsers } from '../../util/api';
 
 export const fetchLocalDesignUsers = () => {
   return topbarLocalDesignUsers()

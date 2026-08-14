@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import classNames from 'classnames';
 
 import PriorityLinks, { CreateListingMenuLink } from './PriorityLinks';
 import LinksMenu from './LinksMenu';
@@ -121,8 +120,8 @@ const CustomLinksMenu = ({
   ]);
 
   const [layoutData, setLayoutData] = useState({
-    priorityLinks: [],
-    menuLinks: [],
+    priorityLinks: links,
+    menuLinks: links,
     containerWidth: 0,
   });
 
@@ -196,32 +195,20 @@ const CustomLinksMenu = ({
     return <CreateListingMenuLink customLinksMenuClass={css.createListingLinkOnly} />;
   }
 
-  const linksMeasured = !!links?.[0]?.width;
-  const moreLabelMeasured = moreLabelWidth > 0;
-  const layoutComputed = containerWidth > 0;
-  const hasLinksToLayout = links.length > 0;
-  const layoutReady = !hasLinksToLayout || (linksMeasured && moreLabelMeasured && layoutComputed);
-
+  const styleMaybe = mounted ? { style: { width: `${containerWidth}px` } } : {};
+  const isMeasured = !!links?.[0]?.width;
   const hasMenuLinks = menuLinks?.length > 0;
-  const hasPriorityLinks = linksMeasured && priorityLinks.length > 0;
-
-  // Render LinksMenu while measuring (hidden via layoutPending), then only when menu links exist.
-  const showLinksMenu = mounted && links.length > 0 && (!layoutReady || hasMenuLinks);
-
-  const containerClassName = classNames(css.customLinksMenu, {
-    [css.layoutPending]: !layoutReady,
-  });
-  const containerStyle = layoutReady ? { width: `${containerWidth}px` } : undefined;
+  const hasPriorityLinks = isMeasured && priorityLinks.length > 0;
 
   return (
-    <div className={containerClassName} ref={containerRef} style={containerStyle}>
+    <div className={css.customLinksMenu} ref={containerRef} {...styleMaybe}>
       <PriorityLinks links={links} priorityLinks={priorityLinks} setLinks={setLinks} />
-      {showLinksMenu ? (
+      {mounted && hasMenuLinks ? (
         <LinksMenu
           id="linksMenu"
           currentPage={currentPage}
-          links={layoutReady ? menuLinks : links}
-          showMoreLabel={layoutReady && hasPriorityLinks}
+          links={menuLinks}
+          showMoreLabel={hasPriorityLinks}
           moreLabelWidth={moreLabelWidth}
           setMoreLabelWidth={setMoreLabelWidth}
           intl={intl}

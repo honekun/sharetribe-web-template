@@ -4,9 +4,6 @@
   justify-content: right;
   height: 100%;
 }
-.layoutPending {
-  visibility: hidden;
-}
 .createListingLinkOnly {
   display: flex;
   justify-content: right;
