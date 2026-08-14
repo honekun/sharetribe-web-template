@@ -35,6 +35,7 @@ archive.
 - [Brevo email and consent](integrations/brevo.md)
 - [Brevo Spanish templates](integrations/brevo-templates-es.md)
 - [WhatsApp](integrations/whatsapp.md)
+- [Instagram feed](integrations/instagram.md)
 
 ### Technical reference
 

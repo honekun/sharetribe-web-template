@@ -2,6 +2,7 @@ const express = require('express');
 const fetch = require('node-fetch');
 const { createTTLCache } = require('../api-util/cache');
 const { createRateLimiter } = require('../api-util/rateLimit');
+const { getInstagramTokenService } = require('../services/instagramTokenService');
 
 const router = express.Router();
 const feedRateLimit = createRateLimiter({
@@ -10,22 +11,45 @@ const feedRateLimit = createRateLimiter({
   message: { ok: false, error: 'rate_limited' },
 });
 
-const ACCESS_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN;
 const GRAPH_BASE = 'https://graph.instagram.com/v18.0';
 const CACHE_TTL = 3600; // 1 hour
 
 const igCache = createTTLCache(CACHE_TTL);
 
+// An expired token needs a person in the Meta dashboard, not a retry, so it is
+// worth telling apart from a transient upstream error. Instagram reports it as
+// OAuthException / code 190.
+class InstagramApiError extends Error {
+  constructor(status, body) {
+    super(`Instagram API ${status}: ${body}`);
+    this.status = status;
+    this.body = body;
+    let parsed;
+    try {
+      parsed = JSON.parse(body);
+    } catch (e) {
+      parsed = null;
+    }
+    const error = parsed && parsed.error;
+    this.isTokenExpired = !!error && (error.code === 190 || error.type === 'OAuthException');
+    this.detail = error?.message || null;
+  }
+}
+
 const fetchJSON = async url => {
   const r = await fetch(url);
   if (!r.ok) {
     const body = await r.text().catch(() => '');
-    throw new Error(`Instagram API ${r.status}: ${body}`);
+    throw new InstagramApiError(r.status, body);
   }
   return r.json();
 };
 
 router.get('/feed', feedRateLimit, async (_req, res) => {
+  const ACCESS_TOKEN = await getInstagramTokenService()
+    .getAccessToken()
+    .catch(() => process.env.INSTAGRAM_ACCESS_TOKEN || null);
+
   if (!ACCESS_TOKEN) {
     return res.status(503).json({ ok: false, error: 'not_configured' });
   }
@@ -70,6 +94,18 @@ router.get('/feed', feedRateLimit, async (_req, res) => {
     igCache.feed = result;
     return res.json(result);
   } catch (e) {
+    if (e.isTokenExpired) {
+      // Silence here is what let the token stay dead for seven weeks in 2026.
+      // Say plainly what has to happen, and use a status that reads as
+      // "operator action required" rather than "upstream hiccup".
+      console.error(
+        '[instagram] ACCESS TOKEN REJECTED — the feed is hidden until a new long-lived token is ' +
+          'minted in the Meta dashboard and set as INSTAGRAM_ACCESS_TOKEN on this environment. ' +
+          'Instagram said:',
+        e.detail || e.message
+      );
+      return res.status(503).json({ ok: false, error: 'token_expired' });
+    }
     console.error('[instagram] feed fetch failed:', e.message);
     return res.status(502).json({ ok: false, error: 'fetch_failed' });
   }
