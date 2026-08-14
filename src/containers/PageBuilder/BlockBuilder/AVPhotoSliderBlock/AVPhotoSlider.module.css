@@ -1,16 +1,14 @@
-@import '../../../../styles/customMediaQueries.css';
-
+/* The slider fills the box the section gives it, exactly like the block media
+   field it stands in for. It deliberately sets no desktop width of its own: in
+   an `- AvFeature` row the 50/50 split comes from SectionFeatures
+   (`.blockAvFeature > *`), and in a columns/carousel/article section the column
+   is the width. A hardcoded 50% here also overflowed a plain features row,
+   which adds a 64px gap on top of the two halves. */
 .sliderWrapper {
   width: 100%;
   overflow: hidden;
   position: relative;
   aspect-ratio: 520 / 780;
-
-  @media (--viewportMedium) {
-    flex: 0 0 50%;
-    width: 50%;
-    max-width: 50%;
-  }
 }
 
 .sliderImage {
@@ -28,4 +26,51 @@
 .visible {
   opacity: 1;
   z-index: 1;
+}
+
+/* Pause/play control (WCAG 2.2.2). Kept quiet over the photo until it is
+   hovered or focused, but never hidden — it has to stay reachable by keyboard
+   and touch, where there is no hover. */
+.playToggle {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+
+  border: none;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.55);
+  color: var(--colorWhite);
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s ease-in-out;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--colorWhite);
+    outline-offset: 2px;
+  }
+}
+
+/* Honour the OS setting: no cross-fade, and the slider starts paused (see
+   AVPhotoSlider.js). */
+@media (prefers-reduced-motion: reduce) {
+  .sliderImage {
+    transition: none;
+  }
+
+  .playToggle {
+    transition: none;
+  }
 }

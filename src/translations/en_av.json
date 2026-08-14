@@ -1,4 +1,6 @@
 {
+  "AVPhotoSlider.pause": "Pause the photo slideshow",
+  "AVPhotoSlider.play": "Play the photo slideshow",
   "AVShippingTypeSelector.legend": "Choose a delivery option",
   "AVShippingTypeSelector.noOptions": "Shipping is not available for this item — contact AV.",
   "AVShippingTypeSelector.type.nacionalExpress": "Nacional Express",

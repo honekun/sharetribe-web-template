@@ -68,9 +68,11 @@ export const getAvBlockComponents = () => {
   return cachedBlockComponents;
 };
 
-// `blockId` shorthands let CMS authors use a fixed block id and skip the
-// blockType field entirely; the `photoSlider ::` block-name token picks a block
-// component the same way.
+// `blockId` shorthands let CMS authors pick a block component with a fixed block
+// id instead of a block type; the `photoSlider ::` block-name token picks one the
+// same way. A block that carries no `blockType` at all is handled by
+// `normalizeAvBlockTypes` below, because upstream's BlockBuilder selects on
+// `blockType` before any AV code runs.
 export const getEffectiveBlockType = (blockId, blockName, fallbackType) => {
   if (blockId === 'av-insta-feed') return 'blockInstagramFeed';
   if (blockId?.startsWith('av-table-')) return 'blockMarkdownTable';
@@ -78,7 +80,7 @@ export const getEffectiveBlockType = (blockId, blockName, fallbackType) => {
   // Only a default block gains a slider: a footer or social-media block has no
   // media field for it to stand in for.
   const isDefaultBlock = !fallbackType || fallbackType === 'defaultBlock';
-  if (isDefaultBlock && blockName?.includes('photoSlider ::')) return 'blockPhotoSlider';
+  if (isDefaultBlock && hasBlockNameToken(blockName, 'photoSlider')) return 'blockPhotoSlider';
   return fallbackType;
 };
 
@@ -97,6 +99,67 @@ export const resolveAvBlockComponent = ({ blockId, blockName, blockType }) => {
   if (effectiveType === blockType) return null;
   return getAvSpecialBlockComponents()[effectiveType]?.component || null;
 };
+
+/**
+ * Give a `blockType`-less block the `defaultBlock` type when an AV shorthand
+ * applies to it.
+ *
+ * Upstream's BlockBuilder resolves the component with `components[block.blockType]`
+ * and warns + renders nothing when that misses, so a CMS block relying purely on
+ * an `av-*` blockId (or the `photoSlider ::` token) never reaches `AVBlockDefault`,
+ * where the re-routing lives. Typing it `defaultBlock` puts it back on that path;
+ * `resolveAvBlockComponent` then swaps in the real AV block.
+ *
+ * Blocks that already declare a type are returned untouched, and so is a
+ * type-less block that no shorthand matches — that one is genuinely unknown and
+ * keeps upstream's warning. Applied once per section in SectionBuilder, the choke
+ * point every BlockBuilder call site passes through.
+ *
+ * @param {Array<Object>?} blocks - a section's block configs
+ * @returns {Array<Object>?} the same array when nothing needed normalizing
+ */
+export const normalizeAvBlockTypes = blocks => {
+  if (!Array.isArray(blocks)) return blocks;
+
+  let didNormalize = false;
+  const normalized = blocks.map(block => {
+    if (!block || block.blockType) return block;
+    const effectiveType = getEffectiveBlockType(block.blockId, block.blockName, block.blockType);
+    if (!effectiveType) return block;
+    didNormalize = true;
+    return { ...block, blockType: 'defaultBlock' };
+  });
+
+  return didNormalize ? normalized : blocks;
+};
+
+// ---- Block-name tokens ----
+
+/**
+ * Whether a block name carries a given `<token> ::` flag.
+ *
+ * Tokens may appear anywhere in the name and in any order — that is what
+ * docs/operator-guide.md §5.2 promises operators ("combine as many as you like,
+ * in any order") — so this is a substring test, never a prefix one. Anything
+ * outside this file that reacts to a token has to go through here too, or a
+ * combined name like `smallerTitles :: social links ::` is read one way by one
+ * caller and another way by the next.
+ *
+ * @param {string?} blockName - the block's Block Name field
+ * @param {string} token - the token without its ` ::` suffix
+ * @returns {boolean}
+ */
+export const hasBlockNameToken = (blockName, token) => !!blockName?.includes(`${token} ::`);
+
+/**
+ * The `social links ::` token, which both `AVBlockFooter` (renders the icons
+ * inside the block) and `SectionFooter` (suppresses its own default icon row)
+ * key off. They must agree, so both ask this.
+ *
+ * @param {string?} blockName - the block's Block Name field
+ * @returns {boolean}
+ */
+export const hasSocialLinksToken = blockName => hasBlockNameToken(blockName, 'social links');
 
 // ---- CTA token parsers ----
 
@@ -209,8 +272,10 @@ export const createBlockCustomProps = (block, intl, css) => {
   blockCustomProps.ctaButtonPrimaryClass = DEFAULT_CLASSES.ctaButtonPrimary;
   blockCustomProps.ctaButtonSecondaryClass = DEFAULT_CLASSES.ctaButtonSecondary;
 
+  const hasToken = token => hasBlockNameToken(block.blockName, token);
+
   // 2Buttons :: — a two-button row below the block content.
-  if (block.blockName?.includes('2Buttons ::')) {
+  if (hasToken('2Buttons')) {
     const tb = 'TwoButtons.' + block.blockId;
     const cta1ClassName = parseCtaStyleString(fmt(intl, tb + '.cta1Style'), css);
     const cta2ClassName = parseCtaStyleString(fmt(intl, tb + '.cta2Style'), css);
@@ -233,21 +298,23 @@ export const createBlockCustomProps = (block, intl, css) => {
 
   // Layout / text style flags.
   // mediaTitle :: — render media between the title and the rest of the content.
-  if (block.blockName?.includes('mediaTitle ::')) blockCustomProps.hasMediaTitle = true;
+  if (hasToken('mediaTitle')) blockCustomProps.hasMediaTitle = true;
   // smallerTitles :: — mirror of the section-name token "- SmallerTitles".
-  if (block.blockName?.includes('smallerTitles ::')) blockCustomProps.hasSmallerTitles = true;
+  if (hasToken('smallerTitles')) blockCustomProps.hasSmallerTitles = true;
   // blueTitle :: — mirror of "- BlueTitle"; colors only this block's own title.
-  if (block.blockName?.includes('blueTitle ::')) blockCustomProps.hasBlueTitle = true;
+  if (hasToken('blueTitle')) blockCustomProps.hasBlueTitle = true;
   // fullLinks :: — keep links in the block's body P elements whole (never break a
   // word/URL mid-character; `word-break: keep-all`). A too-long link overflows at
   // full size rather than being split.
-  if (block.blockName?.includes('fullLinks ::')) blockCustomProps.hasFullLinks = true;
+  if (hasToken('fullLinks')) blockCustomProps.hasFullLinks = true;
   // imgTop :: — anchor cropped block media to the top (object-position: top)
   // instead of the default center.
-  if (block.blockName?.includes('imgTop ::')) blockCustomProps.hasImgTop = true;
-  if (block.blockName?.includes('icon img ::')) blockCustomProps.hasIconImg = true;
-  if (block.blockName?.includes('social links ::')) blockCustomProps.hasSocialLinks = true;
-  if (block.blockName?.includes('newsletter form ::')) {
+  if (hasToken('imgTop')) blockCustomProps.hasImgTop = true;
+  if (hasToken('icon img')) blockCustomProps.hasIconImg = true;
+  // social links :: — SectionFooter drops its own icon row when a block claims
+  // them, so both sides read the token through `hasSocialLinksToken`.
+  if (hasSocialLinksToken(block.blockName)) blockCustomProps.hasSocialLinks = true;
+  if (hasToken('newsletter form')) {
     blockCustomProps.hasNewsletterForm = true;
     blockCustomProps.disclaimerText = fmt(intl, 'NewsletterForm.disclaimerText');
     blockCustomProps.okMsg = fmt(intl, 'NewsletterForm.successMessage');
@@ -255,7 +322,7 @@ export const createBlockCustomProps = (block, intl, css) => {
   }
 
   // photoSlider :: — 4-image carousel sourced from intl keys.
-  if (block.blockName?.includes('photoSlider ::')) {
+  if (hasToken('photoSlider')) {
     const ps = 'PhotoSlider.' + block.blockId;
     blockCustomProps.sliderImages = [
       fmt(intl, ps + '.image_1'),

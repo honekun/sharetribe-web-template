@@ -24,7 +24,10 @@ import {
   parseSectionCtaClass,
   parseSectionCustomOptions,
 } from '../../../extensions/pageBuilder/av/sectionStyles';
-import { getAvBlockComponents } from '../../../extensions/pageBuilder/av/blocks';
+import {
+  getAvBlockComponents,
+  normalizeAvBlockTypes,
+} from '../../../extensions/pageBuilder/av/blocks';
 
 // E.g. share the same title styles
 const DEFAULT_CLASSES = {
@@ -133,9 +136,13 @@ const SectionBuilder = props => {
   };
 
   // Resolve all section ids
+  // AV: BlockBuilder picks the block component by `blockType` alone, so a block
+  // that leans on an AV blockId/blockName shorthand without a blockType is
+  // typed `defaultBlock` here — AVBlockDefault re-routes it from there.
   const sectionsWithResolvedIds = sections.map((section, index) => ({
     ...section,
     sectionId: getUniqueSectionId(section.sectionId, index),
+    ...(section.blocks ? { blocks: normalizeAvBlockTypes(section.blocks) } : {}),
   }));
 
   return (

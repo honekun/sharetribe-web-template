@@ -284,6 +284,32 @@ describe('AVBlockDefault — re-routing to AV block components', () => {
     expect(sources).toContain('https://cdn.test/slide1.jpg');
   });
 
+  it('gives the slider the section and token media classes the media field gets', () => {
+    // The slider stands in for the media field, so anything that would have
+    // styled that field has to reach it too.
+    const { container } = render(
+      <BlockBuilder
+        blocks={[
+          {
+            blockId: 'b1',
+            blockType: 'defaultBlock',
+            blockName: 'photoSlider :: imgTop ::',
+            media,
+          },
+        ]}
+        sectionId="s1"
+        mediaClassName="sectionMedia"
+        options={{ blockComponents: getAvBlockComponents() }}
+      />,
+      { messages: { 'PhotoSlider.b1.image_1': 'https://cdn.test/slide1.jpg' } }
+    );
+
+    const slider = container.querySelector('.sliderWrapper');
+    expect(slider).toBeInTheDocument();
+    expect(slider).toHaveClass('sectionMedia');
+    expect(slider).toHaveClass('imgTop');
+  });
+
   it('does not re-route an ordinary block', () => {
     const { getByText } = renderThroughBlockBuilder({
       blockId: 'b1',

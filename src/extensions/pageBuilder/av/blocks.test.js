@@ -2,6 +2,9 @@
 
 import {
   getEffectiveBlockType,
+  normalizeAvBlockTypes,
+  hasBlockNameToken,
+  hasSocialLinksToken,
   createBlockCustomProps,
   parseBlockCtaClass,
   mergeBlockCtaClass,
@@ -67,6 +70,93 @@ describe('getEffectiveBlockType', () => {
 
   it('handles undefined blockId and blockName gracefully', () => {
     expect(getEffectiveBlockType(undefined, undefined, 'blockDefault')).toBe('blockDefault');
+  });
+});
+
+describe('normalizeAvBlockTypes', () => {
+  it('types a shorthand blockId with no blockType as defaultBlock', () => {
+    // Upstream's BlockBuilder looks up components[block.blockType], so without
+    // this the block would warn and render nothing instead of reaching
+    // AVBlockDefault's re-routing.
+    expect(normalizeAvBlockTypes([{ blockId: 'av-insta-feed' }])).toEqual([
+      { blockId: 'av-insta-feed', blockType: 'defaultBlock' },
+    ]);
+    expect(normalizeAvBlockTypes([{ blockId: 'av-table-fees' }])).toEqual([
+      { blockId: 'av-table-fees', blockType: 'defaultBlock' },
+    ]);
+    expect(normalizeAvBlockTypes([{ blockId: 'av-contact-form' }])).toEqual([
+      { blockId: 'av-contact-form', blockType: 'defaultBlock' },
+    ]);
+  });
+
+  it('types a blockType-less "photoSlider ::" block as defaultBlock', () => {
+    expect(normalizeAvBlockTypes([{ blockId: 'b1', blockName: 'photoSlider ::' }])).toEqual([
+      { blockId: 'b1', blockName: 'photoSlider ::', blockType: 'defaultBlock' },
+    ]);
+  });
+
+  it('leaves blocks that declare a blockType untouched', () => {
+    const blocks = [
+      { blockId: 'av-insta-feed', blockType: 'defaultBlock' },
+      { blockId: 'av-table-fees', blockType: 'footerBlock' },
+      { blockId: 'b1', blockName: 'photoSlider ::', blockType: 'socialMediaLink' },
+    ];
+    expect(normalizeAvBlockTypes(blocks)).toBe(blocks);
+  });
+
+  it('leaves a type-less block that matches no shorthand alone, so it still warns', () => {
+    const blocks = [{ blockId: 'regular-block', blockName: 'Just a name' }];
+    expect(normalizeAvBlockTypes(blocks)).toBe(blocks);
+  });
+
+  it('normalizes only the blocks that need it, keeping the others by reference', () => {
+    const typed = { blockId: 'b1', blockType: 'defaultBlock' };
+    const untyped = { blockId: 'av-insta-feed' };
+    const result = normalizeAvBlockTypes([typed, untyped]);
+
+    expect(result[0]).toBe(typed);
+    expect(result[1]).not.toBe(untyped);
+    expect(untyped.blockType).toBeUndefined();
+  });
+
+  it('passes through a missing or non-array blocks value', () => {
+    expect(normalizeAvBlockTypes(undefined)).toBeUndefined();
+    expect(normalizeAvBlockTypes(null)).toBeNull();
+  });
+
+  it('tolerates null entries in the block list', () => {
+    expect(normalizeAvBlockTypes([null, { blockId: 'av-insta-feed' }])).toEqual([
+      null,
+      { blockId: 'av-insta-feed', blockType: 'defaultBlock' },
+    ]);
+  });
+});
+
+describe('hasBlockNameToken', () => {
+  it('matches a token wherever it sits in the block name', () => {
+    expect(hasBlockNameToken('social links ::', 'social links')).toBe(true);
+    expect(hasBlockNameToken('smallerTitles :: social links ::', 'social links')).toBe(true);
+    expect(hasBlockNameToken('Footer col :: social links :: blueTitle ::', 'social links')).toBe(
+      true
+    );
+  });
+
+  it('does not match a token that is absent or missing its "::" suffix', () => {
+    expect(hasBlockNameToken('smallerTitles ::', 'social links')).toBe(false);
+    expect(hasBlockNameToken('social links', 'social links')).toBe(false);
+  });
+
+  it('returns false rather than throwing for an unset block name', () => {
+    expect(hasBlockNameToken(undefined, 'social links')).toBe(false);
+    expect(hasBlockNameToken(null, 'social links')).toBe(false);
+    expect(hasBlockNameToken('', 'social links')).toBe(false);
+  });
+
+  it('reads the social-links token the same way for SectionFooter and AVBlockFooter', () => {
+    // Both sides call this; if they disagree the footer shows its icons twice.
+    expect(hasSocialLinksToken('smallerTitles :: social links ::')).toBe(true);
+    expect(hasSocialLinksToken('smallerTitles ::')).toBe(false);
+    expect(hasSocialLinksToken(undefined)).toBe(false);
   });
 });
 

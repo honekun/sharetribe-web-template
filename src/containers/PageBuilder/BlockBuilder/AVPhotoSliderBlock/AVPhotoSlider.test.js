@@ -141,3 +141,96 @@ describe('AVPhotoSlider', () => {
     expect(container.firstChild).toHaveClass('mediaInTitle');
   });
 });
+
+describe('AVPhotoSlider — pause control', () => {
+  const originalMatchMedia = window.matchMedia;
+
+  const setReducedMotion = matches => {
+    window.matchMedia = jest.fn().mockReturnValue({
+      matches,
+      media: '(prefers-reduced-motion: reduce)',
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    });
+  };
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+  });
+
+  it('offers a pause control, since the slides advance indefinitely', () => {
+    const { getByRole } = render(<AVPhotoSlider images={IMAGES} />);
+    expect(getByRole('button', { name: 'AVPhotoSlider.pause' })).toBeInTheDocument();
+  });
+
+  it('has no control for a single slide, which never advances', () => {
+    const { queryByRole } = render(<AVPhotoSlider images={['only.jpg']} />);
+    expect(queryByRole('button')).toBeNull();
+  });
+
+  it('stops advancing once paused and resumes when played again', () => {
+    jest.useFakeTimers();
+    try {
+      const { container, getByRole } = render(<AVPhotoSlider images={IMAGES} intervalMs={1000} />);
+
+      act(() => {
+        getByRole('button', { name: 'AVPhotoSlider.pause' }).click();
+      });
+      act(() => {
+        jest.advanceTimersByTime(5000);
+      });
+
+      // Still on the first slide: no further slide was even mounted.
+      expect(slidesOf(container)).toHaveLength(1);
+
+      act(() => {
+        getByRole('button', { name: 'AVPhotoSlider.play' }).click();
+      });
+      act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      const rendered = slidesOf(container);
+      expect(rendered).toHaveLength(2);
+      expect(rendered[1].getAttribute('aria-hidden')).toBe('false');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('starts paused when the visitor prefers reduced motion', () => {
+    setReducedMotion(true);
+    jest.useFakeTimers();
+    try {
+      const { container, getByRole } = render(<AVPhotoSlider images={IMAGES} intervalMs={1000} />);
+
+      act(() => {
+        jest.advanceTimersByTime(5000);
+      });
+
+      expect(slidesOf(container)).toHaveLength(1);
+      expect(getByRole('button', { name: 'AVPhotoSlider.play' })).toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('lets a reduced-motion visitor start it anyway', () => {
+    setReducedMotion(true);
+    jest.useFakeTimers();
+    try {
+      const { container, getByRole } = render(<AVPhotoSlider images={IMAGES} intervalMs={1000} />);
+
+      act(() => {
+        getByRole('button', { name: 'AVPhotoSlider.play' }).click();
+      });
+      act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      expect(slidesOf(container)).toHaveLength(2);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+});

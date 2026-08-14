@@ -24,8 +24,10 @@ import css from './AVBlockFooter.module.css';
 /**
  * Renders a 'footerBlock' config.
  *
- * AV fork of upstream `BlockFooter` (forked at a252774a — see the fork note in
- * CLAUDE.md), adding the `social links ::` and `newsletter form ::` block-name
+ * AV fork of upstream `BlockFooter` — the "Deliberate forks" table in CLAUDE.md
+ * records the fork commit and the diff to run on each upstream sync; don't
+ * restate the SHA here, so there is one place to keep current. Adds the
+ * `social links ::` and `newsletter form ::` block-name
  * tokens. The token props themselves are computed by `AVBlockDefault`'s shared
  * helper and arrive here as props.
  *

@@ -1,4 +1,6 @@
 {
+  "AVPhotoSlider.pause": "Pausar la presentación de fotos",
+  "AVPhotoSlider.play": "Reproducir la presentación de fotos",
   "AVShippingTypeSelector.legend": "Elige una opción de envío",
   "AVShippingTypeSelector.noOptions": "El envío no está disponible para este artículo — contacta a AV.",
   "AVShippingTypeSelector.type.nacionalExpress": "Nacional Express",

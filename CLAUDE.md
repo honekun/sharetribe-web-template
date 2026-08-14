@@ -38,6 +38,7 @@ yarn test-ci                               # CI: server then client (--runInBand
 yarn run format / format-ci                # Prettier (write / check)
 yarn run config                            # Config validation/setup wizard
 yarn run translate                         # Translation management
+yarn av-translation-check                  # en_av.json / es_av.json key symmetry
 ```
 
 **Node:** `>=18.20.1 <23.2.0` | **Package manager:** Yarn
@@ -188,7 +189,11 @@ others. Tiered limits + per-user hourly rate limit + magic-byte image sniffing; 
 `extensions/pageBuilder/av/blocks.js` `getAvBlockComponents()`. SectionBuilder is the choke point
 every section's `<BlockBuilder options={options}>` flows through, so this reaches all eight
 `<PageBuilder>` call sites — including ToS/Privacy/Fallback pages, which pass no options of their
-own. Caller-supplied `blockComponents` are spread last and still win.
+own. Caller-supplied `blockComponents` are spread last and still win. SectionBuilder also runs each
+section's blocks through `normalizeAvBlockTypes()`: upstream's BlockBuilder resolves the component
+from `blockType` alone, so a block relying only on an AV `blockId`/`blockName` shorthand is typed
+`defaultBlock` there — without it the block would warn and render nothing instead of reaching the
+dispatcher. A type-less block matching no shorthand is left alone and still warns.
 
 ```
 upstream BlockBuilder → options.blockComponents
@@ -452,6 +457,10 @@ class in `AVSectionContainer` (and document it in operator-guide §5.1).
 - Prefer extending over overriding core template files (reduces merge conflicts).
 - Always use Stripe Connect — never direct charges.
 - Heroku filesystem is ephemeral — never write files to disk at runtime.
+- **Translations:** AV keys go in the `src/translations/{en,es}_av.json` overlays, never in
+  `en.json`/`es.json`/`de.json`/`fr.json` — those four are byte-identical to upstream and mixing AV
+  keys in made every upstream translation update a conflict. `app.js` merges the overlay over
+  `en.json`. Keep the two overlays symmetric and run `yarn av-translation-check`.
 
 ## Upstream File Policy
 
@@ -501,8 +510,6 @@ git diff 832f8d66f upstream/main -- src/containers/PageBuilder/BlockBuilder/Bloc
 | `containers/SearchPage/FilterComponent.js`                                              | Custom filter type branches (delegates to `searchFilters/avFilters`)                                            |
 | `containers/SearchPage/SearchPageWithGrid.js`                                           | Grouped-sizes filter injection (`injectAvFilters`)                                                              |
 | `PageBuilder/SectionBuilder/SectionBuilder.js`                                          | Custom section registration + AV `blockComponents` injection                                                    |
-| `translations/en.json`                                                                  | AV keys mixed with upstream                                                                                     |
-| `TopbarContainer/Topbar/TopbarDesktop/CustomLinksMenu/*`                                | AV user/category dropdowns (~480 LOC)                                                                           |
 | `CheckoutPage/CheckoutPageWithPayment.js`                                               | Default Stripe country (`configAV.defaultCountry`)                                                              |
 | `EditListingWizard/EditListingWizard.js`                                                | Default Stripe Connect payout country; blue "Bulk import" CTA (`NamedLink`) on new-listing flow                 |
 | `EditListingWizard/EditListingWizardTab.js`                                             | `currentUser` prop drilling for pricing                                                                         |
@@ -521,24 +528,30 @@ git diff 832f8d66f upstream/main -- src/containers/PageBuilder/BlockBuilder/Bloc
 
 Also high-conflict on sync: `SearchResultsPanel.js` (AVListingCard swap), `CMSPage.js` (section
 injection), `TopbarDesktop.js`/`TopbarMobileMenu.js`/`UserNav.js` (nav links),
-`EditListingPhotosPanel/`, `EditListingPricingAndStockPanel.js` (EarningsEstimator + originalPrice),
+`EditListingPricingAndStockPanel.js` (EarningsEstimator + originalPrice),
 `SectionGallery.js`/`ListingImageGallery.js` (imageSlots captions), `OrderBreakdown.js`
 (`extraOrderBreakdownLineItems` seam + the `AVLineItemProviderCommissionMaybe` import swap),
 `OrderPanel.js` (originalPrice), `configDefault.js` (earningsEstimate),
 `CheckoutPage/ShippingDetails/ShippingDetails.js` (MX-only address layout: Calle/Número
 Exterior+Interior/Colonia/C.P.+Ciudad/Estado-select/Teléfono; AV `ShippingDetails.mx*` keys; states
-from `config/configMxStates.js`), `CheckoutPage/CheckoutPageTransactionHelpers.js`
-(`getShippingDetailsMaybe` composes MX fields into `line1`/`line2` + structured keys, hardcodes
-country 'MX'), `CheckoutPage/StripePaymentForm/StripePaymentForm.js` (shipping→billing copy maps
-colonia→line2, country→'MX'), `TransactionPage/TransactionPage.js` +
+from `config/configMxStates.js`), `CheckoutPage/StripePaymentForm/StripePaymentForm.js`
+(shipping→billing copy maps colonia→line2, country→'MX'), `TransactionPage/TransactionPage.js` +
 `TransactionPanel/TransactionPanel.js` (provider-only `shippingLabelSlot` for the Spec B eShip label
 control). Small CSS-module forks (restyles kept inline due to scoped-class/var coupling — see the
 `AV:` comments in each): `SectionContainer.module.css`, `SectionListings.module.css`,
 `FilterPlain.module.css`.
 
-Brand colors and the `TabNavHorizontal` `darkSkin` reskin were consolidated into
-`avBrandOverrides.css` (commit `c3bfa1b06`), so `marketplaceDefaults.css` and
-`TabNavHorizontal.module.css` are now upstream-clean — do not re-add AV CSS to them.
+**Already restored to pristine — do not re-dirty, and do not re-add to the watchlist.** Verify with
+`git diff upstream/main -- <file>` before assuming any of these still carries AV code.
+
+| Upstream file                                | Where the AV code lives now                                             |
+| -------------------------------------------- | ----------------------------------------------------------------------- |
+| `translations/{en,es,de,fr}.json`            | `translations/{en,es}_av.json` overlays (see Coding Conventions)        |
+| `TopbarDesktop/CustomLinksMenu/*`            | `TopbarDesktop/AVLinksMenu/` (`AVCustomLinksMenu`/`AVPriorityLinks`/…)  |
+| `EditListingWizard/EditListingPhotosPanel/`  | `avPhotoSlots.js`                                                       |
+| `CheckoutPage/CheckoutPageTransactionHelpers.js` | `CheckoutPage/avMxAddress.js` (`getShippingDetailsMaybe`, `getBillingDetails`, `copyShippingAddressToBilling`) |
+| `BlockBuilder/{BlockBuilder,BlockDefault,BlockFooter}` | `options.blockComponents` → `AVBlockDefault`/`AVBlockFooter`   |
+| `styles/marketplaceDefaults.css`, `TabNavHorizontal.module.css` | `avBrandOverrides.css` (commit `c3bfa1b06`)           |
 
 ### Unavoidable upstream files — append AV additions at the bottom
 

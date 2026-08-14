@@ -25,8 +25,10 @@ const FieldMedia = props => {
 /**
  * Renders a 'defaultBlock' config.
  *
- * AV fork of upstream `BlockDefault` (forked at a252774a — see the fork note in
- * CLAUDE.md). This is the *view*: it is purely prop-driven and does no token
+ * AV fork of upstream `BlockDefault` — the "Deliberate forks" table in CLAUDE.md
+ * records the fork commit and the diff to run on each upstream sync; don't
+ * restate the SHA here, so there is one place to keep current. This is the
+ * *view*: it is purely prop-driven and does no token
  * parsing. `AVBlockDefault` is the dispatcher that computes those props; render
  * this directly (as AVPhotoSliderBlock does) to avoid dispatching twice.
  *
@@ -106,11 +108,14 @@ const AVBlockDefaultView = props => {
   // title and the rest of the content (see below); otherwise it stays above
   // the text column as usual.
   // A block variant may pass its own media element as `mediaSlot` (AV's
-  // photoSlider block does) — it then stands in for the media field.
+  // photoSlider block does) — it then stands in for the media field, and so
+  // takes the same section-supplied and token classes the media field would
+  // have had. It keeps its own root class; only `css.media` is left out, since
+  // the slot element brings its own box styling.
   const renderMedia = extraClassName =>
     mediaSlot ? (
       React.cloneElement(mediaSlot, {
-        className: classNames(mediaSlot.props.className, extraClassName),
+        className: classNames(mediaSlot.props.className, fieldMediaClass, extraClassName),
       })
     ) : (
       <FieldMedia
