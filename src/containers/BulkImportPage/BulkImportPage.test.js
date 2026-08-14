@@ -3,7 +3,7 @@ import '@testing-library/jest-dom';
 
 // CustomLinksMenu fetches /static/data/top-bar.json in a useEffect (via fetchLocalTopbarData).
 // Mock the whole component to prevent it from consuming global.fetch responses meant for tests.
-jest.mock('../TopbarContainer/Topbar/TopbarDesktop/CustomLinksMenu/CustomLinksMenu', () => () =>
+jest.mock('../TopbarContainer/Topbar/TopbarDesktop/AVLinksMenu/AVCustomLinksMenu', () => () =>
   null
 );
 

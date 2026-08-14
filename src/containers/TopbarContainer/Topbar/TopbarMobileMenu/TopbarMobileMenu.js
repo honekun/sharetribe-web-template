@@ -2,7 +2,7 @@
  *  TopbarMobileMenu prints the menu content for authenticated user or
  * shows login actions for those who are not authenticated.
  */
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import classNames from 'classnames';
 
 import { ACCOUNT_SETTINGS_PAGES } from '../../../../routing/routeConfiguration';
@@ -17,9 +17,9 @@ import {
   NotificationBadge,
 } from '../../../../components';
 import MobileCustomLinksMenu from './MobileCustomLinksMenu';
+import { AVMobileBagSection, renderAvMobileMenuLinks } from './AVMobileMenuLinks';
 
 import css from './TopbarMobileMenu.module.css';
-import { AV_PROFILE_LINKS } from '../../../../extensions/topbar/links';
 
 const CustomLinkComponent = ({ linkConfig, currentPage }) => {
   const { group, text, type, href, route } = linkConfig;
@@ -88,12 +88,6 @@ const TopbarMobileMenu = props => {
 
   const user = ensureCurrentUser(currentUser);
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  const authenticatedOnClientSide = mounted && isAuthenticated;
-  const isAuthenticatedOrJustHydrated = isAuthenticated || !mounted;
   const extraLinks = customLinks.map((linkConfig, index) => {
     return (
       <CustomLinkComponent
@@ -143,13 +137,7 @@ const TopbarMobileMenu = props => {
             />
           </div>
 
-          <ul className={css.accountLinksWrapper}>
-            <li className={css.navigationLink}>
-              <NamedLink name="BagPage">
-                <FormattedMessage id="TopbarMobileMenu.bagLink" />
-              </NamedLink>
-            </li>
-          </ul>
+          <AVMobileBagSection />
 
           <MobileCustomLinksMenu intl={intl} />
 
@@ -202,21 +190,7 @@ const TopbarMobileMenu = props => {
             </NamedLink>
           </li>
           {manageListingsLinkMaybe}
-          <li className={classNames(css.navigationLink, currentPageClass('BagPage'))}>
-            <NamedLink name="BagPage">
-              <FormattedMessage id="TopbarMobileMenu.bagLink" />
-            </NamedLink>
-          </li>
-          {AV_PROFILE_LINKS.map(({ pageName, labels }) => (
-            <li
-              key={pageName}
-              className={classNames(css.navigationLink, currentPageClass(pageName))}
-            >
-              <NamedLink name={pageName}>
-                <FormattedMessage id={labels.mobile} />
-              </NamedLink>
-            </li>
-          ))}
+          {renderAvMobileMenuLinks(currentPageClass)}
           <li className={classNames(css.navigationLink, currentPageClass('ProfileSettingsPage'))}>
             <NamedLink name="ProfileSettingsPage">
               <FormattedMessage id="TopbarMobileMenu.profileSettingsLink" />

@@ -19,8 +19,6 @@ const radix = 10;
 const PORT = parseInt(process.env.REACT_APP_DEV_API_SERVER_PORT, radix);
 const app = express();
 
-app.use(express.json());
-
 // NOTE: CORS is only needed in this dev API server because it's
 // running in a different port than the main app.
 app.use(
@@ -32,10 +30,9 @@ app.use(
 app.use(cookieParser());
 app.use('/.well-known', wellKnownRouter);
 
-// AV-owned custom routes (/api/brevo, /api/instagram, /api/my-balance,
-// /api/bulk-import, /api/shipping). Use the shared mounter so this dev server
-// stays in sync with production (server/index.js) — adding a route in
-// customApiRoutes.js then automatically works in `yarn dev` too.
+// AV-owned custom routes. Use the shared mounter so this dev server stays in
+// sync with production (server/index.js) — adding a route in customApiRoutes.js
+// then automatically works in `yarn dev` too, including its body parsing.
 const { mountCustomApiRoutes } = require('./customApiRoutes');
 mountCustomApiRoutes(app);
 

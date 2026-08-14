@@ -1,7 +1,7 @@
 /**
  * CurrencyInput renders an input field that format it's value according to currency formatting rules
  * onFocus: renders given value in unformatted manner: "9999.99"
- * onBlur: formats the given input (AV: forced en-US, matches displayed prices): "$9,999.99"
+ * onBlur: formats the given input (AV: pinned price locale, matches displayed prices): "$9,999.99"
  */
 import React, { Component } from 'react';
 import { Field } from 'react-final-form';
@@ -19,6 +19,7 @@ import {
   ensureSeparator,
   truncateToSubUnitPrecision,
 } from '../../util/currency';
+import { formatPriceNumber } from '../../util/avNumberFormat';
 import * as log from '../../util/log';
 
 import { ValidationError } from '../../components';
@@ -33,14 +34,11 @@ const allowedInputProps = allProps => {
   return inputProps;
 };
 
-// AV: Force en-US number formatting so the price input matches the displayed
-// price. formatMoney() (util/currency.js) also forces en-US, so without this the
-// input would show the marketplace locale's "1.325,00 $" while every read-only
-// price on the page shows "$1,325.00". Keeps thousands=",", decimals=".",
-// symbol before the value. currencyConfig is the getCurrencyFormatting() output
-// (valid Intl.NumberFormat options), the same object passed to formatMoney().
-const formatEnUS = (value, currencyConfig) =>
-  new Intl.NumberFormat('en-US', currencyConfig).format(value);
+// AV: the price input formats through `formatPriceNumber`, the same pinned-locale
+// helper formatMoney() uses, so what you type matches every read-only price on
+// the page rather than the marketplace locale's "1.325,00 $". `currencyConfig` is
+// the getCurrencyFormatting() output — valid Intl.NumberFormat options, the same
+// object formatMoney() passes.
 
 // Convert unformatted value (e.g. 10,00) to Money (or null)
 const getPrice = (unformattedValue, currencyConfig) => {
@@ -72,10 +70,10 @@ class CurrencyInputComponent extends Component {
     const initialValue = initialValueIsMoney ? convertMoneyToNumber(input.value) : defaultValue;
     const hasInitialValue = typeof initialValue === 'number' && !isNaN(initialValue);
 
-    // AV: detect the decimal separator from the forced en-US formatter (was
-    // intl.formatNumber, which used the marketplace locale). en-US uses "." for
-    // decimals, so usesComma is false and typing/blur formatting stay consistent.
-    const testSubUnitFormat = formatEnUS('1.1', currencyConfig);
+    // AV: detect the decimal separator from the pinned price formatter (was
+    // intl.formatNumber, which used the marketplace locale), so typing and blur
+    // formatting agree with what the rest of the page displays.
+    const testSubUnitFormat = formatPriceNumber('1.1', currencyConfig);
     const usesComma = testSubUnitFormat.indexOf(',') >= 0;
 
     try {
@@ -90,7 +88,7 @@ class CurrencyInputComponent extends Component {
         : '';
       // Formatted value fully localized currency string ("$1,000.99")
       const formattedValue = hasInitialValue
-        ? formatEnUS(ensureDotSeparator(unformattedValue), currencyConfig)
+        ? formatPriceNumber(ensureDotSeparator(unformattedValue), currencyConfig)
         : '';
 
       this.state = {
@@ -183,7 +181,7 @@ class CurrencyInputComponent extends Component {
       );
       const unformattedValue = !isEmptyString ? truncatedValueString : '';
       const formattedValue = !isEmptyString
-        ? formatEnUS(ensureDotSeparator(truncatedValueString), currencyConfig)
+        ? formatPriceNumber(ensureDotSeparator(truncatedValueString), currencyConfig)
         : '';
 
       this.setState({
@@ -205,7 +203,7 @@ class CurrencyInputComponent extends Component {
 
   render() {
     const { className, currencyConfig, defaultValue, placeholder } = this.props;
-    const placeholderText = placeholder || formatEnUS(defaultValue, currencyConfig);
+    const placeholderText = placeholder || formatPriceNumber(defaultValue, currencyConfig);
     return (
       <input
         className={className}
@@ -257,7 +255,7 @@ const FieldCurrencyInputComponent = props => {
  * Final Form Field containing currency input.
  * CurrencyInput renders an input field that format it's value according to currency formatting rules
  * onFocus: renders given value in unformatted manner: "9999.99"
- * onBlur: formats the given input (AV: forced en-US, matches displayed prices): "$9,999.99"
+ * onBlur: formats the given input (AV: pinned price locale, matches displayed prices): "$9,999.99"
  *
  * @component
  * @param {Object} props

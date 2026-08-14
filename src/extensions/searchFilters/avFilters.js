@@ -83,7 +83,6 @@ export const getAvFilter = ({
           getAriaLabel={getAriaLabel}
           liveEdit={liveEdit}
           useHistoryPush={useHistoryPush}
-          prefix={prefix}
           rest={rest}
         />
       );

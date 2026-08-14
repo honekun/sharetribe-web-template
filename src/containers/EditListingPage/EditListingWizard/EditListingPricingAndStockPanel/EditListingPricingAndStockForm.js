@@ -9,6 +9,7 @@ import { FormattedMessage, useIntl } from '../../../../util/reactIntl';
 import { STOCK_INFINITE_ITEMS, STOCK_MULTIPLE_ITEMS, propTypes } from '../../../../util/types';
 import { isOldTotalMismatchStockError } from '../../../../util/errors';
 import * as validators from '../../../../util/validators';
+import { originalPriceAbovePrice } from '../../../../util/avValidators';
 import { formatMoney } from '../../../../util/currency';
 import { types as sdkTypes } from '../../../../util/sdkLoader';
 
@@ -196,6 +197,9 @@ export const EditListingPricingAndStockForm = props => (
                 id: 'EditListingPricingAndStockForm.originalPricePlaceholder',
               })}
               currencyConfig={appSettings.getCurrencyFormatting(marketplaceCurrency)}
+              validate={originalPriceAbovePrice(
+                intl.formatMessage({ id: 'EditListingPricingAndStockForm.originalPriceTooLow' })
+              )}
             />
           ) : null}
           <FieldCurrencyInput

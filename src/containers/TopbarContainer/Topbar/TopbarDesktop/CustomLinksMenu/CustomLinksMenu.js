@@ -1,17 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react';
+import classNames from 'classnames';
 
-import { useConfiguration } from '../../../../../context/configurationContext';
-import PriorityLinks, { CreateCusomMenusLinks } from './PriorityLinks';
+import PriorityLinks, { CreateListingMenuLink } from './PriorityLinks';
 import LinksMenu from './LinksMenu';
-import {
-  defaultTopbarCategoryDropdowns,
-  fetchLocalTopbarData,
-  getCategoryDropdownsConfig,
-  resolveDropdownMenuItems,
-} from './categoryDropdowns';
-import { fetchLocalDesignUsers, resolveUserDropdownMenuItems } from './userDropdowns';
 
 import css from './CustomLinksMenu.module.css';
+
+const createListingLinkConfigMaybe = (intl, showLink) =>
+  showLink
+    ? [
+        {
+          group: 'primary',
+          text: intl.formatMessage({ id: 'TopbarDesktop.createListing' }),
+          type: 'internal',
+          route: {
+            name: 'NewListingPage',
+          },
+          highlight: true,
+        },
+      ]
+    : [];
 
 /**
  * Group links to 2 groups:
@@ -66,19 +74,13 @@ const calculateContainerWidth = (containerRefTarget, parentWidth) => {
     : [];
   const siblingWidthsCombined = siblingArray.reduce((acc, node) => acc + node.offsetWidth, 0);
 
-  // Subtract the parent's horizontal padding. The AV two-row topbar gives the
-  // CustomLinksMenu's parent (`.bottomRow`) padding on BOTH sides so the links
-  // align under the logo, so we must account for padding-left as well as
-  // padding-right — otherwise the container is computed too wide and over-fills
-  // with non-shrinking priority links, causing horizontal scroll.
-  // `getComputedStyle` is used over `computedStyleMap()` because the latter is
-  // unsupported in Firefox.
-  const parentEl = containerRefTarget?.parentElement;
-  const parentStyle =
-    parentEl && typeof window !== 'undefined' ? window.getComputedStyle(parentEl) : null;
-  const paddingLeft = parentStyle ? parseFloat(parentStyle.paddingLeft) || 0 : 0;
-  const paddingRight = parentStyle ? parseFloat(parentStyle.paddingRight) || 0 : 78;
-  const padding = paddingLeft + paddingRight;
+  // .root class of the TopbarDesktop has 24px padding on the right
+  // Firefox doesn't support computedStyleMap()
+  const parentStyleMap = containerRefTarget?.parentElement?.computedStyleMap
+    ? containerRefTarget.parentElement.computedStyleMap()
+    : null;
+  const topbarPaddingRight = parentStyleMap?.get('padding-right')?.value;
+  const padding = topbarPaddingRight != null ? topbarPaddingRight : 24;
 
   // We figure out available width from parent (TopbarDesktop/<nav>) and siblings
   const availableContainerWidth = parentWidth - siblingWidthsCombined - padding;
@@ -109,54 +111,23 @@ const CustomLinksMenu = ({
   intl,
   showCreateListingsLink,
 }) => {
-  const config = useConfiguration();
   const containerRef = useRef(null);
   const observer = useRef(null);
   const [mounted, setMounted] = useState(false);
   const [moreLabelWidth, setMoreLabelWidth] = useState(0);
-  const [localTopbarData, setLocalTopbarData] = useState(null);
-  const [localDesignUsers, setLocalDesignUsers] = useState(null);
   const [links, setLinks] = useState([
-    /// ...createListingLinkConfigMaybe(intl, showCreateListingsLink),
+    ...createListingLinkConfigMaybe(intl, showCreateListingsLink),
     ...customLinks,
   ]);
 
   const [layoutData, setLayoutData] = useState({
-    priorityLinks: links,
-    menuLinks: links,
+    priorityLinks: [],
+    menuLinks: [],
     containerWidth: 0,
   });
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    let isActive = true;
-
-    fetchLocalTopbarData(window?.fetch?.bind(window)).then(data => {
-      if (isActive && data) {
-        setLocalTopbarData(data);
-      }
-    });
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let isActive = true;
-
-    fetchLocalDesignUsers().then(users => {
-      if (isActive) {
-        setLocalDesignUsers(users);
-      }
-    });
-
-    return () => {
-      isActive = false;
-    };
   }, []);
 
   useEffect(() => {
@@ -219,66 +190,38 @@ const CustomLinksMenu = ({
   }, [containerRef, hasClientSideContentReady, moreLabelWidth, links]);
 
   const { priorityLinks, menuLinks, containerWidth } = layoutData;
-  const categoryDropdowns = getCategoryDropdownsConfig(localTopbarData);
-  const fallbackDropdown1 = localTopbarData
-    ? []
-    : defaultTopbarCategoryDropdowns.menuLinksDropdown1;
-  const fallbackDropdown2 = localTopbarData
-    ? []
-    : defaultTopbarCategoryDropdowns.menuLinksDropdown2;
-  const menuLinksDropdown1 = resolveDropdownMenuItems(
-    categoryDropdowns.menuLinksDropdown1,
-    config?.categoryConfiguration,
-    fallbackDropdown1
-  );
-  const menuLinksDropdown2 = resolveDropdownMenuItems(
-    categoryDropdowns.menuLinksDropdown2,
-    config?.categoryConfiguration,
-    fallbackDropdown2
-  );
-
-  const menuLinksDropdown3 = resolveUserDropdownMenuItems(localDesignUsers);
 
   // If there are no custom links, just render createListing link.
-  if (customLinks?.length === 0) {
-    const wrapperStyle = { display: 'flex', width: '100%' };
-    return (
-      <CreateCusomMenusLinks
-        intl={intl}
-        menuLinksDropdown1={menuLinksDropdown1}
-        menuLinksDropdown2={menuLinksDropdown2}
-        menuLinksDropdown3={menuLinksDropdown3}
-        customLinksCss={css}
-        wrapperStyle={wrapperStyle}
-      />
-    );
+  if (customLinks?.length === 0 && showCreateListingsLink) {
+    return <CreateListingMenuLink customLinksMenuClass={css.createListingLinkOnly} />;
   }
 
-  const styleMaybe = mounted ? { style: { width: `${containerWidth}px` } } : {};
-  const isMeasured = !!links?.[0]?.width;
+  const linksMeasured = !!links?.[0]?.width;
+  const moreLabelMeasured = moreLabelWidth > 0;
+  const layoutComputed = containerWidth > 0;
+  const hasLinksToLayout = links.length > 0;
+  const layoutReady = !hasLinksToLayout || (linksMeasured && moreLabelMeasured && layoutComputed);
+
   const hasMenuLinks = menuLinks?.length > 0;
-  const hasPriorityLinks = isMeasured && priorityLinks.length > 0;
-  const wrapperStyle = { display: 'flex' };
+  const hasPriorityLinks = linksMeasured && priorityLinks.length > 0;
+
+  // Render LinksMenu while measuring (hidden via layoutPending), then only when menu links exist.
+  const showLinksMenu = mounted && links.length > 0 && (!layoutReady || hasMenuLinks);
+
+  const containerClassName = classNames(css.customLinksMenu, {
+    [css.layoutPending]: !layoutReady,
+  });
+  const containerStyle = layoutReady ? { width: `${containerWidth}px` } : undefined;
 
   return (
-    <div className={css.customLinksMenu} ref={containerRef} {...styleMaybe}>
-      <CreateCusomMenusLinks
-        intl={intl}
-        menuLinksDropdown1={menuLinksDropdown1}
-        menuLinksDropdown2={menuLinksDropdown2}
-        menuLinksDropdown3={menuLinksDropdown3}
-        customLinksCss={css}
-        wrapperStyle={wrapperStyle}
-      />
-
+    <div className={containerClassName} ref={containerRef} style={containerStyle}>
       <PriorityLinks links={links} priorityLinks={priorityLinks} setLinks={setLinks} />
-
-      {mounted && hasMenuLinks ? (
+      {showLinksMenu ? (
         <LinksMenu
           id="linksMenu"
           currentPage={currentPage}
-          links={menuLinks}
-          showMoreLabel={hasPriorityLinks}
+          links={layoutReady ? menuLinks : links}
+          showMoreLabel={layoutReady && hasPriorityLinks}
           moreLabelWidth={moreLabelWidth}
           setMoreLabelWidth={setMoreLabelWidth}
           intl={intl}

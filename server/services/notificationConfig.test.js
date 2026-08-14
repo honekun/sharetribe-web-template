@@ -3,6 +3,7 @@
 const {
   assertProductionNotificationConfig,
   getNotificationConfigReadiness,
+  isWhatsAppEnabled,
 } = require('./notificationConfig');
 
 const ORIGINAL_ENV = process.env;
@@ -98,6 +99,29 @@ describe('notification configuration readiness', () => {
         whatsapp: expect.objectContaining({ enabled: false, ready: true }),
       })
     );
+  });
+
+  test('keeps WhatsApp release-locked even when its environment flag is true', () => {
+    Object.assign(process.env, {
+      AV_NOTIFICATIONS_ENABLED: 'true',
+      AV_SHIPPING_LABELS_ENABLED: 'false',
+      AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED: 'false',
+      AV_BREVO_CAMPAIGNS_ENABLED: 'false',
+      AV_WHATSAPP_NOTIFICATIONS_ENABLED: 'true',
+      SHARETRIBE_INTEGRATION_CLIENT_ID: 'integration-id',
+      SHARETRIBE_INTEGRATION_CLIENT_SECRET: 'integration-secret',
+      DATABASE_URL: 'postgresql://localhost/database',
+      WHATSAPP_ACCESS_TOKEN: 'meta-token',
+      WHATSAPP_PHONE_NUMBER_ID: 'phone-id',
+      WHATSAPP_ADMIN_PHONE: '+525500000001',
+    });
+
+    const readiness = getNotificationConfigReadiness();
+
+    expect(readiness.whatsapp).toEqual(
+      expect.objectContaining({ enabled: false, releaseLocked: true, ready: true })
+    );
+    expect(isWhatsAppEnabled()).toBe(false);
   });
 
   test('requires all campaign templates, list, and webhook configuration when campaigns are on', () => {

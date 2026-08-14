@@ -7,6 +7,8 @@ const {
 const { types } = require('sharetribe-flex-sdk');
 const { Money } = types;
 const { resolveBucketPrice } = require('../services/shippingQuoteService');
+// AV: live eShip shipping fee + the platform-retained payout rule.
+const { AV_SHIPPING_FEE_INCLUDE_FOR, resolveAvShippingFee } = require('./avShipping');
 
 /**
  * Get quantity and add extra line-items that are related to delivery method
@@ -22,34 +24,17 @@ const getItemQuantityAndLineItems = async (
   listing,
   options = {}
 ) => {
-  // Check delivery method and shipping prices
   const quantity = orderData ? orderData.stockReservationQuantity : null;
-  const deliveryMethod = orderData && orderData.deliveryMethod;
-  const isShipping = deliveryMethod === 'shipping';
 
-  // AV: live eShip quote (token cache hit -> pinned; miss -> re-quote). The
-  // client-sent price is never trusted; this is the server-authoritative amount.
-  // Only resolve once the buyer has actually chosen a delivery type — the initial
-  // speculate (on checkout load) has no type/token/destination yet, and quoting
-  // then would hit eShip with no address and fail the whole speculation.
-  const hasPreResolvedRate = Object.prototype.hasOwnProperty.call(options, 'resolvedShippingRate');
-  const resolved = hasPreResolvedRate
-    ? options.resolvedShippingRate
-    : isShipping && orderData?.avShippingType
-    ? await resolveBucketPrice({
-        quoteToken: orderData?.avQuoteToken,
-        avShippingType: orderData?.avShippingType,
-        listing,
-        destination: orderData?.avDestination,
-        buyerEmail: orderData?.buyerEmail,
-      })
-    : null;
-
-  const shippingFee = !isShipping
-    ? null
-    : resolved
-    ? new Money(resolved.amountSubunits, resolved.currency || currency)
-    : null;
+  // AV: server-authoritative live eShip fee — replaces upstream's static
+  // shippingPriceInSubunits* calculation (see api-util/avShipping.js).
+  const shippingFee = await resolveAvShippingFee({
+    resolveBucketPrice,
+    orderData,
+    currency,
+    listing,
+    options,
+  });
 
   // Add line-item for given delivery method.
   // Note: by default, pickup considered as free and, therefore, we don't add pickup fee line-item
@@ -59,14 +44,7 @@ const getItemQuantityAndLineItems = async (
           code: 'line-item/shipping-fee',
           unitPrice: shippingFee,
           quantity: 1,
-          // AV: shipping is NOT paid out to the provider. AV buys the eShip label
-          // centrally (the "Segmail" account is billed directly — see Spec B in
-          // shipmentService.js), so the buyer's shipping payment is retained by
-          // the platform to cover the carrier cost + keep the markup. Provider
-          // commission is computed on [order] only, so this does not affect it
-          // (lineItemHelpers.js getProviderCommissionMaybe). Rationale + payout
-          // reconciliation details: docs/eship-integration.md.
-          includeFor: ['customer'],
+          includeFor: AV_SHIPPING_FEE_INCLUDE_FOR,
         },
       ]
     : [];
@@ -75,6 +53,14 @@ const getItemQuantityAndLineItems = async (
 };
 
 const getOfferQuantityAndLineItems = orderData => {
+  return { quantity: 1, extraLineItems: [] };
+};
+
+/**
+ * Get quantity for digital items. The quantity is always 1, you can't have multiples of digital files.
+ * @param {Object} orderData
+ */
+const getDigitalItemQuantityAndLineItems = orderData => {
   return { quantity: 1, extraLineItems: [] };
 };
 
@@ -208,6 +194,8 @@ exports.transactionLineItems = async (
   const quantityAndExtraLineItems =
     unitType === 'item'
       ? await getItemQuantityAndLineItems(orderData, publicData, currency, listing, options)
+      : unitType === 'file'
+      ? getDigitalItemQuantityAndLineItems(orderData)
       : unitType === 'fixed'
       ? getFixedQuantityAndLineItems(orderData)
       : unitType === 'hour'

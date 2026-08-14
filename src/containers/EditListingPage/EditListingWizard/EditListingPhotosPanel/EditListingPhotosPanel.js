@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import classNames from 'classnames';
 
 // Import configs and util modules
@@ -10,61 +10,34 @@ import { H3, ListingLink } from '../../../../components';
 
 // Import modules from this directory
 import EditListingPhotosForm from './EditListingPhotosForm';
-import EditListingPhotosFormSlots from './EditListingPhotosFormSlots';
 import css from './EditListingPhotosPanel.module.css';
 
-// AV variant: 4 fixed labeled image slots saved to publicData.imageSlots.
-const SLOT_KEYS = ['front', 'back', 'horizontal', 'details'];
-
-// Upstream initial values: pass images through as-is.
-const getInitialValuesGallery = ({ images = [] }) => ({ images });
-
-// Slot-mode initial values: map each labeled slot back to its image, falling
-// back to positional order for older listings without imageSlots metadata.
-const getInitialValuesSlots = ({ images = [], listing }) => {
-  const publicData = listing?.attributes?.publicData || {};
-  const imageSlots = publicData.imageSlots || {};
-  const initialValues = {};
-  const hasSlotMapping = Object.keys(imageSlots).length > 0;
-
-  if (hasSlotMapping) {
-    SLOT_KEYS.forEach(slotKey => {
-      const imageUuid = imageSlots[slotKey];
-      if (imageUuid) {
-        const matchedImage = images.find(img => {
-          const uuid = img?.imageId?.uuid || img?.id?.uuid;
-          return uuid === imageUuid;
-        });
-        if (matchedImage) {
-          initialValues[`image_${slotKey}`] = matchedImage;
-        }
-      }
-    });
-  } else {
-    SLOT_KEYS.forEach((slotKey, index) => {
-      if (images[index]) initialValues[`image_${slotKey}`] = images[index];
-    });
-  }
-  return initialValues;
+const getInitialValues = params => {
+  const { images = [] } = params;
+  return { images };
 };
 
-// Slot-mode submit: collect ordered images + build publicData.imageSlots.
-const submitSlots = (values, onSubmit) => {
-  const images = SLOT_KEYS.map(k => values[`image_${k}`]).filter(Boolean);
-  const imageSlots = {};
-  SLOT_KEYS.forEach(k => {
-    const img = values[`image_${k}`];
-    if (img) imageSlots[k] = img.imageId?.uuid || img.id?.uuid;
-  });
-  onSubmit({ images, publicData: { imageSlots } });
-};
-
-// Upstream submit: strip out the addImage scratch field.
-const submitGallery = (values, onSubmit) => {
-  const { addImage, ...updateValues } = values;
-  onSubmit(updateValues);
-};
-
+/**
+ * The EditListingPhotosPanel component.
+ *
+ * @component
+ * @param {Object} props
+ * @param {string} [props.className] - Custom class that extends the default class for the root element
+ * @param {string} [props.rootClassName] - Custom class that overrides the default class for the root element
+ * @param {Object} props.errors - The errors object
+ * @param {boolean} props.disabled - Whether the form is disabled
+ * @param {boolean} props.ready - Whether the form is ready
+ * @param {Array} props.images - The images array
+ * @param {propTypes.ownListing} props.listing - The listing object
+ * @param {Function} props.onImageUpload - The image upload function
+ * @param {string} props.submitButtonText - The submit button text
+ * @param {boolean} props.panelUpdated - Whether the panel is updated
+ * @param {boolean} props.updateInProgress - Whether the update is in progress
+ * @param {Function} props.onSubmit - The submit function
+ * @param {Function} props.onRemoveImage - The remove image function
+ * @param {Object} props.listingImageConfig - The listing image config
+ * @returns {JSX.Element}
+ */
 const EditListingPhotosPanel = props => {
   const {
     className,
@@ -82,33 +55,10 @@ const EditListingPhotosPanel = props => {
     listingImageConfig,
     updatePageTitle: UpdatePageTitle,
     intl,
-    photoMode = 'gallery',
+    allFilesUploadedAndVerified,
+    filesTabParams,
+    filesRequired,
   } = props;
-
-  const isSlotMode = photoMode === 'slots';
-  const FormComponent = isSlotMode ? EditListingPhotosFormSlots : EditListingPhotosForm;
-
-  // Slot mode: stabilize initialValues so React Final Form never reinitializes.
-  // RFF uses === on initialValues — a new object every render triggers re-init,
-  // which resets fields managed via form.change back to initialValues, breaking
-  // the upload-then-remove flow.
-  const stableInitialValuesRef = useRef(null);
-  const trackedListingIdRef = useRef(undefined);
-  const currentListingId = listing?.id?.uuid;
-  if (isSlotMode && currentListingId !== trackedListingIdRef.current) {
-    trackedListingIdRef.current = currentListingId;
-    stableInitialValuesRef.current = getInitialValuesSlots({
-      images: listing?.images || [],
-      listing,
-    });
-  }
-
-  const initialValues = isSlotMode
-    ? stableInitialValuesRef.current
-    : getInitialValuesGallery(props);
-
-  const handleSubmit = values =>
-    isSlotMode ? submitSlots(values, onSubmit) : submitGallery(values, onSubmit);
 
   const rootClass = rootClassName || css.root;
   const classes = classNames(rootClass, className);
@@ -137,20 +87,26 @@ const EditListingPhotosPanel = props => {
       <H3 as="h1">
         <FormattedMessage id={panelHeadingProps.id} values={{ ...panelHeadingProps.values }} />
       </H3>
-      <FormComponent
+
+      <EditListingPhotosForm
         className={css.form}
         disabled={disabled}
         ready={ready}
         fetchErrors={errors}
-        images={props.images}
-        initialValues={initialValues}
+        initialValues={getInitialValues(props)}
         onImageUpload={onImageUpload}
-        onSubmit={handleSubmit}
+        onSubmit={values => {
+          const { addImage, ...updateValues } = values;
+          onSubmit(updateValues);
+        }}
         onRemoveImage={onRemoveImage}
         saveActionMsg={submitButtonText}
         updated={panelUpdated}
         updateInProgress={updateInProgress}
         listingImageConfig={listingImageConfig}
+        allFilesUploadedAndVerified={allFilesUploadedAndVerified}
+        filesTabParams={filesTabParams}
+        filesRequired={filesRequired}
       />
     </main>
   );

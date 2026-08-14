@@ -157,10 +157,7 @@ const listingFieldsInquiry = [
       listingTypeIds: ['inquiry'],
     },
     schemaType: 'enum',
-    enumOptions: [
-      { option: 'cat_1', label: 'Cat 1' },
-      { option: 'cat_2', label: 'Cat 2' },
-    ],
+    enumOptions: [{ option: 'cat_1', label: 'Cat 1' }, { option: 'cat_2', label: 'Cat 2' }],
     filterConfig: {
       showFilter: true,
       label: 'Cat',
@@ -188,10 +185,7 @@ const listingFieldsPurchase = [
       categoryIds: ['sneakers'],
     },
     schemaType: 'enum',
-    enumOptions: [
-      { option: 'cat_1', label: 'Cat 1' },
-      { option: 'cat_2', label: 'Cat 2' },
-    ],
+    enumOptions: [{ option: 'cat_1', label: 'Cat 1' }, { option: 'cat_2', label: 'Cat 2' }],
     filterConfig: {
       showFilter: true,
       label: 'Cat',
@@ -215,10 +209,7 @@ const listingFieldsBooking = [
       listingTypeIds: ['rent-bicycles-daily', 'rent-bicycles-nightly', 'rent-bicycles-hourly'],
     },
     schemaType: 'multi-enum',
-    enumOptions: [
-      { option: 'dog_1', label: 'Dog 1' },
-      { option: 'dog_2', label: 'Dog 2' },
-    ],
+    enumOptions: [{ option: 'dog_1', label: 'Dog 1' }, { option: 'dog_2', label: 'Dog 2' }],
     filterConfig: {
       showFilter: true,
       label: 'Amenities',
@@ -341,6 +332,9 @@ describe('EditListingPage', () => {
       updateInProgress: false,
       payoutDetailsSaveInProgress: false,
       payoutDetailsSaved: false,
+      fileUploads: {},
+      fileUploadsDisabled: false,
+      fileDownloads: {},
     },
     marketplaceData: {
       entities: {
@@ -2828,6 +2822,13 @@ describe('EditListingPageComponent', () => {
         onRemoveListingImage={noop}
         onPayoutDetailsChange={noop}
         onPayoutDetailsSubmit={noop}
+        fileUploads={[]}
+        fileUploadsDisabled={false}
+        hasPendingFileUploads={false}
+        allFilesUploadedAndVerified={false}
+        onUploadFile={noop}
+        onClearUploadedFiles={noop}
+        onDownloadFile={noop}
         page={{
           uploadedImagesOrder: [],
           images: {},

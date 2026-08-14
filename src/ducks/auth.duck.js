@@ -3,6 +3,7 @@ import * as log from '../util/log';
 import { storableError } from '../util/errors';
 import { clearCurrentUser, fetchCurrentUser } from './user.duck';
 import { createUserWithIdp, updateMarketingPreference } from '../util/api';
+import { clearStoredReferralData } from '../util/webStorageHelpers';
 
 const authenticated = authInfo => authInfo?.isAnonymous === false;
 const loggedInAs = authInfo => authInfo?.isLoggedInAs === true;
@@ -121,7 +122,11 @@ const signupThunk = createAsyncThunk(
         dispatch(loginThunk({ username: params.email, password: params.password })).unwrap()
       )
       .then(() => syncSignupMarketingPreference(params, 'signup_email'))
-      .then(() => params)
+      .then(() => {
+        // Clear potential referral data from session storage
+        clearStoredReferralData();
+        return params;
+      })
       .catch(e => {
         log.error(e, 'signup-failed', {
           email: params.email,
@@ -148,9 +153,13 @@ const signupWithIdpThunk = createAsyncThunk(
     return createUserWithIdp(params)
       .then(() => dispatch(fetchCurrentUser({ afterLogin: true })))
       .then(() => syncSignupMarketingPreference(params, 'signup_idp'))
-      .then(() => params)
+      .then(() => {
+        // Clear potential referral data from session storage
+        clearStoredReferralData();
+        return params;
+      })
       .catch(e => {
-        log.error(e, 'create-user-with-idp-failed', { params });
+        log.error(e, 'create-user-with-idp-failed');
         return rejectWithValue(storableError(e));
       });
   },

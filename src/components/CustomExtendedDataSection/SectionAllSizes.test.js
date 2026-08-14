@@ -7,11 +7,7 @@ import SectionAllSizes from './SectionAllSizes';
 
 const { screen } = testingLibrary;
 
-const options = [
-  { key: 's', label: 'S' },
-  { key: 'm', label: 'M' },
-  { key: 'l', label: 'L' },
-];
+const options = [{ key: 's', label: 'S' }, { key: 'm', label: 'M' }, { key: 'l', label: 'L' }];
 
 describe('SectionAllSizes', () => {
   it('renders the heading and the selected size chips', () => {

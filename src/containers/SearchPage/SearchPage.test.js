@@ -92,10 +92,7 @@ const listingFields = [
       categoryIds: ['cats'],
     },
     schemaType: 'enum',
-    enumOptions: [
-      { option: 'cat_1', label: 'Cat 1' },
-      { option: 'cat_2', label: 'Cat 2' },
-    ],
+    enumOptions: [{ option: 'cat_1', label: 'Cat 1' }, { option: 'cat_2', label: 'Cat 2' }],
     filterConfig: {
       showFilter: true,
       label: 'Cat',
@@ -116,10 +113,7 @@ const listingFields = [
       listingTypeIds: ['sell-bicycles'],
     },
     schemaType: 'enum',
-    enumOptions: [
-      { option: 'boat_1', label: 'Boat 1' },
-      { option: 'boat_2', label: 'Boat 2' },
-    ],
+    enumOptions: [{ option: 'boat_1', label: 'Boat 1' }, { option: 'boat_2', label: 'Boat 2' }],
     filterConfig: {
       showFilter: true,
       label: 'Boat',
@@ -136,10 +130,7 @@ const listingFields = [
     key: 'singleSelectTest',
     scope: 'public',
     schemaType: 'enum',
-    enumOptions: [
-      { option: 'enum1', label: 'Enum 1' },
-      { option: 'enum2', label: 'Enum 2' },
-    ],
+    enumOptions: [{ option: 'enum1', label: 'Enum 1' }, { option: 'enum2', label: 'Enum 2' }],
     filterConfig: {
       showFilter: true,
       filterType: 'SelectSingleFilter',
@@ -157,10 +148,7 @@ const listingFields = [
     key: 'amenities',
     scope: 'public',
     schemaType: 'multi-enum',
-    enumOptions: [
-      { option: 'dog_1', label: 'Dog 1' },
-      { option: 'dog_2', label: 'Dog 2' },
-    ],
+    enumOptions: [{ option: 'dog_1', label: 'Dog 1' }, { option: 'dog_2', label: 'Dog 2' }],
     filterConfig: {
       showFilter: true,
       label: 'Amenities',
@@ -657,6 +645,9 @@ describe('Duck', () => {
       ...defaultConfig.listingTypes,
     },
     accessControl: { marketplace: { private: true } },
+    user: {
+      userTypes: defaultConfig.userTypes.userTypes,
+    },
   };
   // Shared parameters for viewing rights loadData tests
   const fakeResponse = resource => ({ data: { data: resource, include: [] } });

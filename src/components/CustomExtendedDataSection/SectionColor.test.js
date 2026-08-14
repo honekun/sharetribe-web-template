@@ -7,10 +7,7 @@ import SectionColor from './SectionColor';
 
 const { screen } = testingLibrary;
 
-const options = [
-  { key: 'red', label: 'Red' },
-  { key: 'blue', label: 'Blue' },
-];
+const options = [{ key: 'red', label: 'Red' }, { key: 'blue', label: 'Blue' }];
 
 describe('SectionColor', () => {
   it('renders the heading and the selected color labels', () => {

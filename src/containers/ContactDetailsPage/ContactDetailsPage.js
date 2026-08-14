@@ -215,8 +215,11 @@ const mapDispatchToProps = dispatch => ({
   onResetPassword: values => dispatch(resetPassword(values)),
 });
 
-const ContactDetailsPage = compose(connect(mapStateToProps, mapDispatchToProps))(
-  ContactDetailsPageComponent
-);
+const ContactDetailsPage = compose(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )
+)(ContactDetailsPageComponent);
 
 export default ContactDetailsPage;

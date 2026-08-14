@@ -7,7 +7,6 @@ import SectionArticle from './SectionArticle';
 import SectionFeatures from './SectionFeatures';
 import SectionCarousel from './SectionCarousel';
 import SectionHero from './SectionHero';
-import SectionPriceSelector from './SectionPriceSelector';
 import SectionRecommendedListings from './SectionRecommendedListings';
 
 // Main component: SectionBuilder
@@ -19,7 +18,6 @@ export {
   SectionArticle,
   SectionFeatures,
   SectionCarousel,
-  SectionPriceSelector,
   SectionRecommendedListings,
 };
 

@@ -7,6 +7,15 @@
 // Overridable via env so deployments outside MX don't need a code change.
 export const defaultCountry = process.env.REACT_APP_AV_DEFAULT_COUNTRY || 'MX';
 
+// Locale used to format *prices only*, independent of the marketplace UI locale
+// (which the hosted /general/localization.json asset sets to Spanish). AV shows
+// MXN as "$1,325.00" rather than the es-MX "1.325,00 $".
+//
+// Applied through `util/avNumberFormat.js`, so every price path — formatMoney,
+// formatCurrencyMajorUnit and the price inputs — agrees. Overridable via env so
+// a deployment can follow its own locale instead.
+export const priceFormatLocale = process.env.REACT_APP_AV_PRICE_FORMAT_LOCALE || 'en-US';
+
 // User-type values (set in `currentUser.attributes.profile.publicData.userType`)
 // that may set an `originalPrice` on a listing — i.e. show the strike-through
 // "was" price input in the pricing panels.
@@ -66,6 +75,22 @@ export const getStoreTypeTags = (author, config = {}) => {
     const match = options.find(o => o.option === value);
     return { key: value, label: match?.label || value };
   });
+};
+
+// Keep `tags` as the last visible listing field so it doesn't interrupt the field
+// flow. Called from `configHelpers.mergeListingConfig` on the merged field list.
+export const moveListingFieldToEnd = (listingFields, keyToMove) => {
+  if (!Array.isArray(listingFields) || !keyToMove) {
+    return listingFields;
+  }
+
+  const matchedFields = listingFields.filter(field => field?.key === keyToMove);
+  if (matchedFields.length === 0) {
+    return listingFields;
+  }
+
+  const remainingFields = listingFields.filter(field => field?.key !== keyToMove);
+  return [...remainingFields, ...matchedFields];
 };
 
 // AV shipping config lives in a CommonJS sibling (configAVShipping.js) so the

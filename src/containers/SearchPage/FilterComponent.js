@@ -20,6 +20,10 @@ import { getAvFilter } from '../../extensions/searchFilters/avFilters';
  */
 const FilterComponent = props => {
   const {
+    // Pulled out of `rest` on purpose: it is spread after `id={componentId}` in
+    // every branch below, so leaving it there would silently override the id
+    // this component derives — and hand the same one to nested filters.
+    id,
     idPrefix,
     config,
     urlQueryParams,
@@ -39,7 +43,10 @@ const FilterComponent = props => {
 
   const useHistoryPush = liveEdit || showAsPopup;
   const prefix = idPrefix || 'SearchPage';
-  const componentId = `${prefix}.${key.toLowerCase()}`;
+  // The caller's id already namespaces the placement (e.g. SearchFiltersDesktop
+  // vs SearchFiltersMobile), which keeps the desktop and mobile filter columns
+  // from rendering the same ids on one page.
+  const componentId = id || `${prefix}.${key.toLowerCase()}`;
   const name = key.replace(/\s+/g, '-');
   const getAriaLabel = (label, values) => {
     const status = values ? 'active' : 'inactive';

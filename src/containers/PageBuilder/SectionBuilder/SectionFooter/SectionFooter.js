@@ -8,6 +8,7 @@ import BlockBuilder from '../../BlockBuilder';
 import renderMarkdown from '../../markdownProcessor';
 
 import AVSectionContainer from '../SectionContainer/AVSectionContainer';
+import { hasSocialLinksToken } from '../../../../extensions/pageBuilder/av/blocks';
 import css from './SectionFooter.module.css';
 
 // The number of columns (numberOfColumns) affects styling
@@ -110,10 +111,12 @@ const SectionFooter = props => {
     : true;
   const logoLayout = isMobileLayout ? 'mobile' : 'desktop';
 
-  // use block builder instead of mapping blocks manually
-  const blocksHasSocial = blocks.some(
-    (obj, idx, list) => obj.blockName?.startsWith('social links ::') ?? false
-  );
+  // A block carrying `social links ::` renders the icons itself (AVBlockFooter),
+  // so the default icon row below the slogan stands down. Both sides read the
+  // token through the same helper: tokens are combinable in any order, so a
+  // prefix test here would miss `smallerTitles :: social links ::` and render
+  // the icons twice.
+  const blocksHasSocial = blocks.some(block => hasSocialLinksToken(block.blockName));
 
   return (
     <AVSectionContainer

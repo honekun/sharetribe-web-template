@@ -125,8 +125,11 @@ const mapDispatchToProps = dispatch => ({
   onChange: () => dispatch(saveShippingOriginClear()),
 });
 
-const ShippingOriginPage = compose(connect(mapStateToProps, mapDispatchToProps))(
-  ShippingOriginPageComponent
-);
+const ShippingOriginPage = compose(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )
+)(ShippingOriginPageComponent);
 
 export default ShippingOriginPage;

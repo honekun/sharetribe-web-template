@@ -16,7 +16,6 @@ const transactionLineItems = require('./api/transaction-line-items');
 const initiatePrivileged = require('./api/initiate-privileged');
 const transitionPrivileged = require('./api/transition-privileged');
 const deleteAccount = require('./api/delete-account');
-const topbarLocalDesignUsers = require('./api/topbar-local-design-users');
 
 const createUserWithIdp = require('./api/auth/createUserWithIdp');
 
@@ -57,9 +56,6 @@ router.post('/transaction-line-items', transactionLineItems);
 router.post('/initiate-privileged', initiatePrivileged);
 router.post('/transition-privileged', transitionPrivileged);
 router.post('/delete-account', deleteAccount);
-// No auth required: returns display names + UUIDs of local-design sellers.
-// Data is effectively public (these sellers appear in the public nav).
-router.get('/topbar/local-design-users', topbarLocalDesignUsers);
 
 // Create user with identity provider (e.g. Facebook or Google)
 // This endpoint is called to create a new user after user has confirmed

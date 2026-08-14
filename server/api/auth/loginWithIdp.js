@@ -3,6 +3,12 @@ const https = require('https');
 const sharetribeSdk = require('sharetribe-flex-sdk');
 const log = require('../../log.js');
 const sdkUtils = require('../../api-util/sdk');
+const { buildMarketplaceRedirectUrl, isRelativePath } = require('../../api-util/url');
+const {
+  authErrorCookieOptions,
+  pendingSignupDisplayCookieOptions,
+  pendingSignupTokenCookieOptions,
+} = require('../../api-util/cookieOptions');
 
 const CLIENT_ID = process.env.REACT_APP_SHARETRIBE_SDK_CLIENT_ID;
 const CLIENT_SECRET = process.env.SHARETRIBE_SDK_CLIENT_SECRET;
@@ -34,9 +40,7 @@ module.exports = (err, user, req, res, idpClientId, idpId) => {
           code: err.code,
           message: err.message,
         },
-        {
-          maxAge: 15 * 60 * 1000, // 15 minutes
-        }
+        authErrorCookieOptions()
       )
       .redirect(`${rootUrl}/login#`);
   }
@@ -57,9 +61,7 @@ module.exports = (err, user, req, res, idpClientId, idpId) => {
           code: 400,
           message: 'Failed to fetch user details from identity provider!',
         },
-        {
-          maxAge: 15 * 60 * 1000, // 15 minutes
-        }
+        authErrorCookieOptions()
       )
       .redirect(`${rootUrl}/login#`);
   }
@@ -96,11 +98,8 @@ module.exports = (err, user, req, res, idpClientId, idpId) => {
         // We need to add # to the end of the URL because otherwise Facebook
         // login will add their defaul #_#_ which breaks the routing in frontend.
 
-        if (from) {
-          res.redirect(`${rootUrl}${from}#`);
-        } else {
-          res.redirect(`${rootUrl}${defaultReturn}#`);
-        }
+        const redirectUrl = buildMarketplaceRedirectUrl(rootUrl, from, defaultReturn);
+        res.redirect(`${redirectUrl}#`);
       }
     })
     .catch(() => {
@@ -109,28 +108,24 @@ module.exports = (err, user, req, res, idpClientId, idpId) => {
         'Authenticating with idp failed. User needs to confirm creating sign up in frontend.'
       );
 
-      // If authentication fails, we want to create a new user with idp
-      // For this we will need to pass some information to frontend so
-      // that we can use that information in createUserWithIdp api call.
-      // The createUserWithIdp api call is triggered from frontend
-      // after showing a confirm page to user
+      // If authentication fails, we want to create a new user with idp.
+      // Display fields go in a JS-readable cookie; idpToken is httpOnly only.
+      res
+        .cookie(
+          'st-authinfo',
+          {
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            idpId,
+            from: from && isRelativePath(from) ? from : undefined,
+            userType,
+          },
+          pendingSignupDisplayCookieOptions()
+        )
+        .cookie('st-idp-token', user.idpToken, pendingSignupTokenCookieOptions());
 
-      res.cookie(
-        'st-authinfo',
-        {
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          idpToken: user.idpToken,
-          idpId,
-          from,
-          userType,
-        },
-        {
-          maxAge: 15 * 60 * 1000, // 15 minutes
-        }
-      );
-
-      res.redirect(`${rootUrl}${defaultConfirm}#`);
+      const confirmUrl = buildMarketplaceRedirectUrl(rootUrl, defaultConfirm);
+      res.redirect(`${confirmUrl}#`);
     });
 };

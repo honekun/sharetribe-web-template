@@ -1,33 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import ReactDOM from 'react-dom';
 import classNames from 'classnames';
 
 import { FormattedMessage } from '../../../../../util/reactIntl';
 
 import { ExternalLink, NamedLink } from '../../../../../components';
-import LinksMenuDropdown from './LinksMenuDropdown';
 
 import css from './PriorityLinks.module.css';
-
-/**
- * Create component that shows only a single "Post a new listing" (VENDE) link.
- * AV: points to the create-type chooser (single listing vs bulk import)
- * instead of NewListingPage directly.
- *
- * @param {*} props contains customLinksMenuClass
- * @returns div with only one link inside.
- */
-export const CreateListingMenuLink = props => {
-  return (
-    <div className={props.customLinksMenuClass}>
-      <NamedLink name="CreateTypePage" className={classNames(css.priorityLink, css.button)}>
-        <span className={css.priorityLinkLabel}>
-          <FormattedMessage id="TopbarDesktop.createListing" />
-        </span>
-      </NamedLink>
-    </div>
-  );
-};
 
 /**
  * Create component that shows only a single "Post a new listing" link.
@@ -35,57 +13,14 @@ export const CreateListingMenuLink = props => {
  * @param {*} props contains customLinksMenuClass
  * @returns div with only one link inside.
  */
-export const CreateCusomMenusLinks = props => {
-  const {
-    intl,
-    currentPage,
-    menuLinksDropdown1,
-    menuLinksDropdown2,
-    menuLinksDropdown3,
-    customLinksCss,
-    wrapperStyle,
-  } = props;
-
+export const CreateListingMenuLink = props => {
   return (
-    <div style={wrapperStyle}>
-      <div className={customLinksCss.leftLinkWrapper}>
-        <NamedLink
-          name="SearchPage"
-          to={{ search: intl.formatMessage({ id: 'Topbar.custom.leftOneHref' }) }}
-          className={customLinksCss.leftLink}
-        >
-          <span className={customLinksCss.leftLinkLabel}>
-            <FormattedMessage id="Topbar.custom.leftOne" />
-          </span>
-        </NamedLink>
-      </div>
-      {menuLinksDropdown1.length > 0 ? (
-        <LinksMenuDropdown
-          id="linksMenuDropdown1"
-          label={intl.formatMessage({ id: 'Topbar.custom.menuOne' })}
-          currentPage={currentPage}
-          items={menuLinksDropdown1}
-          intl={intl}
-        />
-      ) : null}
-      {menuLinksDropdown2.length > 0 ? (
-        <LinksMenuDropdown
-          id="linksMenuDropdown2"
-          label={intl.formatMessage({ id: 'Topbar.custom.menuTwo' })}
-          currentPage={currentPage}
-          items={menuLinksDropdown2}
-          intl={intl}
-        />
-      ) : null}
-      {menuLinksDropdown3.length > 0 ? (
-        <LinksMenuDropdown
-          id="linksMenuDropdown3"
-          label={intl.formatMessage({ id: 'Topbar.custom.menuThree' })}
-          currentPage={currentPage}
-          items={menuLinksDropdown3}
-          intl={intl}
-        />
-      ) : null}
+    <div className={props.customLinksMenuClass}>
+      <NamedLink name="NewListingPage" className={classNames(css.priorityLink, css.highlight)}>
+        <span className={css.priorityLinkLabel}>
+          <FormattedMessage id="TopbarDesktop.createListing" />
+        </span>
+      </NamedLink>
     </div>
   );
 };
@@ -124,7 +59,7 @@ const PriorityLink = ({ linkConfig }) => {
  * If space is limited, this doesn't include anything to the Topbar.
  *
  * @param {*} props contains links array and setLinks function
- * @returns container div with priority links included.
+ * @returns list of priority links.
  */
 const PriorityLinks = props => {
   const containerRef = useRef(null);
@@ -147,7 +82,6 @@ const PriorityLinks = props => {
   }, [containerRef]);
 
   const { links, priorityLinks } = props;
-  const isServer = typeof window === 'undefined';
   const isMeasured = links?.[0]?.width && (priorityLinks.length === 0 || priorityLinks?.[0]?.width);
   const styleWrapper = !!isMeasured
     ? {}
@@ -164,24 +98,18 @@ const PriorityLinks = props => {
       };
   const linkConfigs = isMeasured ? priorityLinks : links;
 
-  return isMeasured || isServer ? (
-    <div className={css.priorityLinkWrapper} {...styleWrapper} ref={containerRef}>
+  // Always render inline in the Topbar tree so SSR and the initial client render match.
+  // (Portaling to document.body caused hydration mismatches.)
+  return (
+    <ul className={css.priorityLinkWrapper} {...styleWrapper} ref={containerRef}>
       {linkConfigs.map((linkConfig, index) => {
-        if ('' === linkConfig.text.trim()) {
-          return;
-        }
-        return <PriorityLink key={`${linkConfig.text}_${index}`} linkConfig={linkConfig} />;
+        return (
+          <li key={`${linkConfig.text}_${index}`} className={css.priorityLinkItem}>
+            <PriorityLink linkConfig={linkConfig} />
+          </li>
+        );
       })}
-    </div>
-  ) : (
-    ReactDOM.createPortal(
-      <div className={css.priorityLinkWrapper} {...styleWrapper} ref={containerRef}>
-        {linkConfigs.map((linkConfig, index) => {
-          return <PriorityLink key={`${linkConfig.text}_${index}`} linkConfig={linkConfig} />;
-        })}
-      </div>,
-      document.body
-    )
+    </ul>
   );
 };
 

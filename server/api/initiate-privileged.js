@@ -2,12 +2,12 @@ const sharetribeSdk = require('sharetribe-flex-sdk');
 const { transactionLineItems } = require('../api-util/lineItems');
 const { resolveBucketPrice } = require('../services/shippingQuoteService');
 const {
-  authoritativeShippingDestination,
-  buildAvShippingProtectedData,
-  ShippingQuoteRequiredError,
+  resolveAvShippingForOrder,
+  withAvShippingProtectedData,
 } = require('../api-util/avShipping');
 const { isIntentionToMakeOffer } = require('../api-util/negotiation');
 const {
+  createCookieTokenStore,
   getSdk,
   getTrustedSdk,
   handleError,
@@ -59,7 +59,9 @@ const getMetadata = (orderData, transition) => {
 module.exports = (req, res) => {
   const { isSpeculative, orderData, bodyParams, queryParams } = req.body || {};
   const transitionName = bodyParams.transition;
-  const sdk = getSdk(req, res);
+  // Share one cookie token store so a refresh during listings.show is reused for exchangeToken.
+  const tokenStore = createCookieTokenStore(req, res);
+  const sdk = getSdk(req, res, tokenStore);
   let lineItems = null;
   let metadataMaybe = {};
   // AV: persist the chosen eShip rate so the label step + payout logic can read it.
@@ -75,24 +77,14 @@ module.exports = (req, res) => {
         commissionAsset?.type === 'jsonAsset' ? commissionAsset.attributes.data : {};
 
       const fullOrderData = getFullOrderData(orderData, bodyParams, currency);
-      const isShipping = fullOrderData.deliveryMethod === 'shipping';
-      const destination = isShipping
-        ? authoritativeShippingDestination(fullOrderData, isSpeculative)
-        : null;
-      const resolvedRate =
-        isShipping && fullOrderData.avShippingType
-          ? await resolveBucketPrice({
-              quoteToken: fullOrderData.avQuoteToken,
-              avShippingType: fullOrderData.avShippingType,
-              listing,
-              destination,
-              buyerEmail: fullOrderData.buyerEmail,
-            })
-          : null;
-
-      if (!isSpeculative && isShipping && (!destination || !resolvedRate)) {
-        throw new ShippingQuoteRequiredError();
-      }
+      const avShipping = await resolveAvShippingForOrder({
+        resolveBucketPrice,
+        listing,
+        fullOrderData,
+        isSpeculative,
+      });
+      const resolvedRate = avShipping.resolvedRate;
+      avShippingProtectedData = avShipping.avShippingProtectedData;
 
       lineItems = await transactionLineItems(
         listing,
@@ -103,19 +95,13 @@ module.exports = (req, res) => {
       );
       metadataMaybe = getMetadata(orderData, transitionName);
 
-      if (isShipping) {
-        avShippingProtectedData = buildAvShippingProtectedData(fullOrderData, resolvedRate);
-      }
-
-      return getTrustedSdk(req);
+      return getTrustedSdk(req, res, tokenStore);
     })
     .then(trustedSdk => {
       const { params } = bodyParams;
 
       // Add lineItems to the body params
-      const avShippingMaybe = Object.keys(avShippingProtectedData).length
-        ? { protectedData: { ...params.protectedData, ...avShippingProtectedData } }
-        : {};
+      const avShippingMaybe = withAvShippingProtectedData(params, avShippingProtectedData);
       const body = {
         ...bodyParams,
         params: {

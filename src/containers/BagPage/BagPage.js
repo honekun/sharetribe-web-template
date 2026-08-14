@@ -122,5 +122,10 @@ const mapDispatchToProps = dispatch => ({
   onInitializeCardPaymentData: () => dispatch(initializeCardPaymentData()),
 });
 
-const BagPage = compose(connect(mapStateToProps, mapDispatchToProps))(BagPageComponent);
+const BagPage = compose(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )
+)(BagPageComponent);
 export default BagPage;

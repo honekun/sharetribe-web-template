@@ -17,6 +17,7 @@ describe('composeLandingPageExtensions', () => {
       selectExtensionProps: jest.fn(() => ({ a: 1 })),
       getPageBuilderOptions: jest.fn(() => ({
         sectionComponents: { first: { component: 'A' } },
+        blockComponents: { blockA: { component: 'BA' } },
         other: 'x',
       })),
       transformPageData: jest.fn(({ pageData }) => ({ ...pageData, markerA: true })),
@@ -26,6 +27,7 @@ describe('composeLandingPageExtensions', () => {
       selectExtensionProps: jest.fn(() => ({ b: 2 })),
       getPageBuilderOptions: jest.fn(() => ({
         sectionComponents: { second: { component: 'B' } },
+        blockComponents: { blockB: { component: 'BB' } },
       })),
       transformPageData: jest.fn(({ pageData }) => ({ ...pageData, markerB: true })),
     };
@@ -41,6 +43,12 @@ describe('composeLandingPageExtensions', () => {
       sectionComponents: {
         first: { component: 'A' },
         second: { component: 'B' },
+      },
+      // Merged rather than overwritten, so a later extension cannot drop an
+      // earlier one's blocks.
+      blockComponents: {
+        blockA: { component: 'BA' },
+        blockB: { component: 'BB' },
       },
       other: 'x',
     });

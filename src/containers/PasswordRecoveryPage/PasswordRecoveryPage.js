@@ -234,8 +234,11 @@ const mapDispatchToProps = dispatch => ({
   onRetypeEmail: () => dispatch(retypePasswordRecoveryEmail()),
 });
 
-const PasswordRecoveryPage = compose(connect(mapStateToProps, mapDispatchToProps))(
-  PasswordRecoveryPageComponent
-);
+const PasswordRecoveryPage = compose(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )
+)(PasswordRecoveryPageComponent);
 
 export default PasswordRecoveryPage;

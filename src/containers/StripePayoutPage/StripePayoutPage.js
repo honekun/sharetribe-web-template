@@ -304,8 +304,11 @@ const mapDispatchToProps = dispatch => ({
   onGetStripeConnectAccountLink: params => dispatch(getStripeConnectAccountLink(params)),
 });
 
-const StripePayoutPage = compose(connect(mapStateToProps, mapDispatchToProps))(
-  StripePayoutPageComponent
-);
+const StripePayoutPage = compose(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )
+)(StripePayoutPageComponent);
 
 export default StripePayoutPage;

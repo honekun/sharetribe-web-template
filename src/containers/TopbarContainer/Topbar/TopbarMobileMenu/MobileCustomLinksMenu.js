@@ -7,14 +7,15 @@ import { useConfiguration } from '../../../../context/configurationContext';
 
 import {
   defaultTopbarCategoryDropdowns,
-  fetchLocalTopbarData,
   getCategoryDropdownsConfig,
   resolveDropdownMenuItems,
-} from '../TopbarDesktop/CustomLinksMenu/categoryDropdowns';
+} from '../../../../extensions/topbar/categoryDropdowns';
+import { resolveUserDropdownMenuItems } from '../../../../extensions/topbar/userDropdowns';
+// Shared with TopbarDesktop so the two menus fetch once between them.
 import {
-  fetchLocalDesignUsers,
-  resolveUserDropdownMenuItems,
-} from '../TopbarDesktop/CustomLinksMenu/userDropdowns';
+  getLocalDesignUsers,
+  getTopbarData,
+} from '../../../../extensions/topbar/topbarDataProvider';
 
 import css from './TopbarMobileMenu.module.css';
 
@@ -65,7 +66,7 @@ const MobileCustomLinksMenu = ({ intl }) => {
   useEffect(() => {
     if (!mounted) return;
     let isActive = true;
-    fetchLocalTopbarData(window.fetch.bind(window)).then(data => {
+    getTopbarData().then(data => {
       if (isActive && data) setLocalTopbarData(data);
     });
     return () => {
@@ -76,7 +77,7 @@ const MobileCustomLinksMenu = ({ intl }) => {
   useEffect(() => {
     if (!mounted) return;
     let isActive = true;
-    fetchLocalDesignUsers().then(users => {
+    getLocalDesignUsers().then(users => {
       if (isActive) setLocalDesignUsers(users || []);
     });
     return () => {

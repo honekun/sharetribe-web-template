@@ -1,0 +1,73 @@
+@import '../../../../../styles/customMediaQueries.css';
+
+.customLinksMenu {
+  flex-grow: 1;
+  display: flex;
+  justify-content: left;
+  height: 100%;
+}
+.layoutPending {
+  visibility: hidden;
+}
+.createListingLinkOnly {
+  display: flex;
+  justify-content: right;
+  height: 100%;
+}
+
+.leftLinkWrapper {
+  width: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+}
+.leftLink {
+  /* Reserve the 4px hover underline so hovering doesn't shift layout. */
+  border-bottom: 4px solid transparent;
+  transition: var(--transitionStyleButton);
+  font-weight: var(--fontWeightMedium);
+  font-size: 15px;
+  line-height: 18px;
+  letter-spacing: 1px;
+  color: var(--colorBlack);
+
+  flex-shrink: 0;
+  height: 100%;
+  padding: 0 8px 0 8px;
+  margin: 0;
+
+  &:hover {
+    color: var(--colorBlack);
+    border-bottom: 4px solid var(--marketplaceColor);
+    border-radius: 0;
+    text-decoration: none;
+  }
+
+  @media (--viewportMedium) {
+    line-height: 16px;
+    margin: 0;
+  }
+
+  @media (--viewportLargeWithPaddings) {
+    font-size: 14px;
+  }
+}
+.highlight {
+  color: var(--marketplaceColor);
+  &:hover {
+    color: var(--marketplaceColorDark);
+  }
+}
+.leftLinkLabel {
+  font-weight: var(--fontWeightBold);
+  font-size: 15px;
+  display: inline-block;
+  margin: 28px 0;
+  text-decoration: inherit;
+  text-wrap: nowrap;
+
+  @media (--viewportLargeWithPaddings) {
+    font-size: 17px;
+  }
+}

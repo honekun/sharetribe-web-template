@@ -2,6 +2,7 @@ import Decimal from 'decimal.js';
 
 import appSettings from '../config/settings';
 import { types as sdkTypes } from '../util/sdkLoader';
+import { formatPriceNumber } from './avNumberFormat';
 
 const { subUnitDivisors, getCurrencyFormatting } = appSettings;
 const { Money } = sdkTypes;
@@ -252,8 +253,8 @@ export const formatMoney = (intl, value) => {
   const options = {};
   const numberFormatOptions = getCurrencyFormatting(value.currency, options);
 
-  // Force en-US locale for number formatting so MXN displays as 23,456.00 (not 23.456,00)
-  return new Intl.NumberFormat('en-US', numberFormatOptions).format(valueAsNumber);
+  // AV: prices use a pinned locale, not the marketplace one — see avNumberFormat.
+  return formatPriceNumber(valueAsNumber, numberFormatOptions);
 };
 
 /**
@@ -280,5 +281,8 @@ export const formatCurrencyMajorUnit = (intl, currency, valueWithoutSubunits) =>
     maximumFractionDigits: 0,
   };
 
-  return intl.formatNumber(valueAsNumber, numberFormatOptions);
+  // AV: same pinned locale as formatMoney. This used to call intl.formatNumber,
+  // so search price-filter labels rendered "1.325 $" while every other price on
+  // the page rendered "$1,325.00".
+  return formatPriceNumber(valueAsNumber, numberFormatOptions);
 };

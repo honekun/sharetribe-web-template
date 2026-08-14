@@ -192,6 +192,29 @@ describe('SignupForm', () => {
     expect(screen.queryByText('SignupForm.displayNameLabel')).toBeNull();
   });
 
+  it('does not collect a phone number during the first-release signup flow', () => {
+    const phoneEnabledUserTypes = [
+      {
+        userType: 'a',
+        label: 'Seller',
+        defaultUserFields: { phoneNumber: true },
+        phoneNumberSettings: { displayInSignUp: true, required: true },
+      },
+    ];
+
+    render(
+      <SignupForm
+        intl={fakeIntl}
+        termsAndConditions={termsAndConditions}
+        userTypes={phoneEnabledUserTypes}
+        userFields={[]}
+        onSubmit={noop}
+      />
+    );
+
+    expect(screen.queryByLabelText('SignupForm.phoneNumberLabel')).toBeNull();
+  });
+
   it('shows custom user fields according to configuration', async () => {
     const user = userEvent.setup();
     render(

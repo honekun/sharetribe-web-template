@@ -134,8 +134,11 @@ const mapDispatchToProps = dispatch => ({
   onResetPassword: values => dispatch(resetPassword(values)),
 });
 
-const PasswordChangePage = compose(connect(mapStateToProps, mapDispatchToProps))(
-  PasswordChangePageComponent
-);
+const PasswordChangePage = compose(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )
+)(PasswordChangePageComponent);
 
 export default PasswordChangePage;

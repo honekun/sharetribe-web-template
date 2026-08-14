@@ -1,6 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import debounce from 'lodash/debounce';
-import { useSelector } from 'react-redux';
+import React, { useState } from 'react';
 
 // Import contexts and util modules
 import { FormattedMessage, intlShape } from '../../util/reactIntl';
@@ -12,10 +10,12 @@ import {
 import { propTypes } from '../../util/types';
 import { ensureTransaction } from '../../util/data';
 import { createSlug } from '../../util/urlHelpers';
-import { isTransactionInitiateListingNotFoundError } from '../../util/errors';
+import {
+  isTransactionInitiateListingNotFoundError,
+  isTransactionsTransitionInvalidTransition,
+} from '../../util/errors';
 import {
   getProcess,
-  isBookingProcessAlias,
   resolveLatestProcessName,
   BOOKING_PROCESS_NAME,
   NEGOTIATION_PROCESS_NAME,
@@ -25,12 +25,12 @@ import {
 // Import shared components
 import { H3, H4, NamedLink, OrderBreakdown, Page, TopbarSimplified } from '../../components';
 
+// Session helpers file needs to be imported before other CheckoutPage modules that use it
+import { clearData } from './CheckoutPageSessionHelpers';
+
 import {
   bookingDatesMaybe,
-  getBillingDetails,
-  getEshipDestinationFromValues,
   getFormattedTotalPrice,
-  getShippingDetailsMaybe,
   getTransactionTypeData,
   hasDefaultPaymentMethod,
   hasPaymentExpired,
@@ -38,6 +38,9 @@ import {
   processCheckoutWithPayment,
   setOrderPageInitialValues,
 } from './CheckoutPageTransactionHelpers.js';
+// AV: MX-only billing/shipping address composition (replaces the upstream
+// same-named helpers, which stay untouched in CheckoutPageTransactionHelpers.js).
+import { getBillingDetails, getShippingDetailsMaybe } from './avMxAddress';
 import { getErrorMessages } from './ErrorMessages';
 
 import StripePaymentForm from './StripePaymentForm/StripePaymentForm';
@@ -47,22 +50,21 @@ import MobileOrderBreakdown from './MobileOrderBreakdown';
 
 import css from './CheckoutPage.module.css';
 
-// AV shipping: live eShip quote selector (Express/Estándar + raw rates)
-import AVShippingSelector from './AVShippingSelector/AVShippingSelector';
-import { resolvePackageSize, isEspecialSize } from '../../config/configAVShipping';
-import { fetchShippingQuote } from './shippingQuote.duck';
+// AV shipping: live eShip quote (state + handlers live in the hook)
+import { useAvShippingQuote } from './useAvShippingQuote';
+import AVShippingSelectorSlot from './AVShippingSelector/AVShippingSelectorSlot';
+import {
+  avDeliveryMethodFromPageData,
+  avEffectiveDeliveryMethod,
+  avShippingOrderParams,
+  avShippingProtectedData,
+} from './avOrderParams';
 // AV: prefill checkout shipping fields from the buyer's saved address (MyAddressesPage)
 import { valuesFromShippingOrigin } from '../../util/shippingOrigin';
-// AV shipping: "contact the seller" reuses the ListingPage inquiry-modal flow
-import { setInitialValues as setListingPageInitialValues } from '../ListingPage/ListingPage.duck';
 
 // Stripe PaymentIntent statuses, where user actions are already completed
 // https://stripe.com/docs/payments/payment-intents/status
 const STRIPE_PI_USER_ACTIONS_DONE_STATUSES = ['processing', 'requires_capture', 'succeeded'];
-
-// AV: how long to wait after the last shipping-address edit before quoting eShip,
-// so typing an already-complete address doesn't fire one request per keystroke.
-const QUOTE_DEBOUNCE_MS = 600;
 
 // Payment charge options
 const ONETIME_PAYMENT = 'ONETIME_PAYMENT';
@@ -132,32 +134,9 @@ export const getOrderParams = (
   const quantityMaybe = quantity ? { quantity } : {};
   const seats = pageData.orderData?.seats;
   const seatsMaybe = seats ? { seats } : {};
-  // AV: every product ships. The Console listingType shipping setting is always
-  // off, so OrderPanel emits deliveryMethod 'none' (or nothing). For purchases,
-  // treat anything that isn't an explicit 'pickup' as 'shipping' so the server
-  // computes the size×type grid shipping fee and the delivery-type selector
-  // engages. Mirrors the checkout component's `effectiveDeliveryMethod`.
-  const transactionProcessAlias =
-    pageData?.listing?.attributes?.publicData?.transactionProcessAlias || '';
-  const isPurchaseProcess = transactionProcessAlias.split('/')[0] === PURCHASE_PROCESS_NAME;
-  const rawDeliveryMethod = pageData.orderData?.deliveryMethod;
-  const deliveryMethod = isPurchaseProcess
-    ? rawDeliveryMethod === 'pickup'
-      ? 'pickup'
-      : 'shipping'
-    : rawDeliveryMethod;
+  // AV: shipping defaults + the chosen eShip bucket (see avOrderParams.js)
+  const deliveryMethod = avDeliveryMethodFromPageData(pageData);
   const deliveryMethodMaybe = deliveryMethod ? { deliveryMethod } : {};
-  // AV shipping: the selected delivery type drives the server-side shipping fee
-  // and is persisted into protectedData for later label generation (Spec B). The
-  // quote token (cache key) + destination let the server resolve/re-quote the fee.
-  const avShippingType = pageData.orderData?.avShippingType;
-  const avShippingTypeMaybe = avShippingType ? { avShippingType } : {};
-  const avQuoteToken = pageData.orderData?.avQuoteToken;
-  const avQuoteTokenMaybe = avQuoteToken ? { avQuoteToken } : {};
-  const avDestination = pageData.orderData?.avDestination;
-  const avDestinationMaybe = avDestination ? { avDestination } : {};
-  const buyerEmail = pageData.orderData?.buyerEmail;
-  const buyerEmailMaybe = buyerEmail ? { buyerEmail } : {};
   const { listingType, unitType, priceVariants } = pageData?.listing?.attributes?.publicData || {};
 
   // price variant data for fixed duration bookings
@@ -172,7 +151,7 @@ export const getOrderParams = (
     protectedData: {
       ...getTransactionTypeData(listingType, unitType, config),
       ...deliveryMethodMaybe,
-      ...avShippingTypeMaybe,
+      ...avShippingProtectedData(pageData.orderData),
       ...shippingDetails,
       ...priceVariantMaybe,
       ...transactionFieldProtectedData,
@@ -192,10 +171,7 @@ export const getOrderParams = (
   const orderParams = {
     listingId: pageData?.listing?.id,
     ...deliveryMethodMaybe,
-    ...avShippingTypeMaybe,
-    ...avQuoteTokenMaybe,
-    ...avDestinationMaybe,
-    ...buyerEmailMaybe,
+    ...avShippingOrderParams(pageData.orderData),
     ...quantityMaybe,
     ...seatsMaybe,
     ...bookingDatesMaybe(pageData.orderData?.bookingDates),
@@ -304,10 +280,12 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
     onConfirmCardPayment,
     onConfirmPayment,
     onSavePaymentMethod,
+    onFetchTransaction,
     onSubmitCallback,
     pageData,
     setPageData,
     sessionStorageKey,
+    transaction: reduxTransaction,
     transactionFieldConfigs = [],
   } = props;
   const { card, message, paymentMethod: selectedPaymentMethod, formValues } = values;
@@ -393,6 +371,36 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
     .catch(err => {
       console.error(err);
       setSubmitting(false);
+
+      // After process expiry (or if payment was already confirmed), confirm/initiate can fail with
+      // invalid transition while checkout still holds a stale pending-payment transaction.
+      if (!isTransactionsTransitionInvalidTransition(err)) {
+        return;
+      }
+
+      const txId = pageData?.transaction?.id || reduxTransaction?.id;
+      if (!txId || !onFetchTransaction) {
+        return;
+      }
+
+      onFetchTransaction(txId)
+        .then(tx => {
+          if (process.getState(tx) === process.states.PAYMENT_EXPIRED) {
+            setPageData({ ...pageData, transaction: tx });
+            clearData(sessionStorageKey);
+          } else if (process.hasPassedState(process.states.PENDING_PAYMENT, tx)) {
+            // Confirm already succeeded earlier (e.g. network drop after Marketplace confirm).
+            const orderDetailsPath = pathByRouteName('OrderDetailsPage', routeConfiguration, {
+              id: tx.id.uuid,
+            });
+            setOrderPageInitialValues({}, routeConfiguration, dispatch);
+            onSubmitCallback();
+            history.push(orderDetailsPath);
+          }
+        })
+        .catch(() => {
+          // Keep the generic confirm/initiate error UI from Redux.
+        });
     });
 };
 
@@ -425,7 +433,6 @@ const onStripeInitialized = (stripe, process, props) => {
  * @param {boolean} props.scrollingDisabled - Whether the page should scroll
  * @param {string} props.speculateTransactionError - The error message for the speculate transaction
  * @param {propTypes.transaction} props.speculatedTransaction - The speculated transaction
- * @param {boolean} props.isClockInSync - Whether the clock is in sync
  * @param {string} props.initiateOrderError - The error message for the initiate order
  * @param {string} props.confirmPaymentError - The error message for the confirm payment
  * @param {intlShape} props.intl - The intl object
@@ -444,6 +451,7 @@ const onStripeInitialized = (stripe, process, props) => {
  * @param {Function} props.onInitiateOrder - The function to initiate the order
  * @param {Function} props.onConfirmCardPayment - The function to confirm the card payment
  * @param {Function} props.onConfirmPayment - The function to confirm the payment after Stripe call is made
+ * @param {Function} props.onFetchTransaction - The function to fetch an up-to-date transaction entity
  * @param {Function} props.onSavePaymentMethod - The function to save the payment method for later use
  * @param {Function} props.onSubmitCallback - The function to submit the callback
  * @param {propTypes.error} props.initiateOrderError - The error message for the initiate order
@@ -467,7 +475,6 @@ export const CheckoutPageWithPayment = props => {
     speculateTransactionError,
     speculateTransactionInProgress,
     speculatedTransaction: speculatedTransactionMaybe,
-    isClockInSync,
     initiateOrderError,
     confirmPaymentError,
     intl,
@@ -488,17 +495,7 @@ export const CheckoutPageWithPayment = props => {
     fetchSpeculatedTransaction,
     history,
     routeConfiguration,
-    dispatch,
   } = props;
-
-  // AV shipping: the buyer must choose a delivery type before paying. The choice
-  // is persisted into pageData.orderData.avShippingType (flows through getOrderParams
-  // → speculate/initiate) so the server recomputes the shipping fee from the grid.
-  const [selectedShippingType, setSelectedShippingType] = useState(
-    props.pageData?.orderData?.avShippingType || null
-  );
-  // AV shipping: live eShip quote state ({ status, quoteToken, express, estandar, rawRates, errorCode }).
-  const shippingQuote = useSelector(state => state.shippingQuote);
 
   // Since the listing data is already given from the ListingPage
   // and stored to handle refreshes, it might not have the possible
@@ -545,7 +542,7 @@ export const CheckoutPageWithPayment = props => {
 
   const process = processName ? getProcess(processName) : null;
   const transitions = process.transitions;
-  const isPaymentExpired = hasPaymentExpired(existingTransaction, process, isClockInSync);
+  const isPaymentExpired = hasPaymentExpired(existingTransaction, process);
 
   // Allow showing page when currentUser is still being downloaded,
   // but show payment form only when user info is loaded.
@@ -606,15 +603,8 @@ export const CheckoutPageWithPayment = props => {
     billingName: userName,
     ...(savedAddress ? valuesFromShippingOrigin(savedAddress) : {}),
   };
-  // AV: every product ships and the Console shipping setting is always off, so
-  // OrderPanel emits deliveryMethod 'none' (or nothing). For purchases, treat
-  // anything that isn't an explicit 'pickup' as 'shipping'. An explicit 'pickup'
-  // is still respected. Mirrors the default applied in getOrderParams.
-  const effectiveDeliveryMethod = isPurchase
-    ? orderData?.deliveryMethod === 'pickup'
-      ? 'pickup'
-      : 'shipping'
-    : orderData?.deliveryMethod;
+  // AV: every product ships unless the buyer explicitly picked pickup (see avOrderParams.js)
+  const effectiveDeliveryMethod = avEffectiveDeliveryMethod(orderData?.deliveryMethod, isPurchase);
 
   const askShippingDetails =
     effectiveDeliveryMethod === 'shipping' &&
@@ -624,108 +614,30 @@ export const CheckoutPageWithPayment = props => {
   const showPickUpLocation = isPurchase && orderData?.deliveryMethod === 'pickup';
   const showLocation = (isBooking || isNegotiation) && listingLocation?.address;
 
-  // AV shipping: live eShip quote. The buyer enters their destination in the
-  // payment form; we quote when it's complete and show Express/Estándar + the raw
-  // rate list. `especial`-sized listings have no automatic quote (Contactar AV).
-  const avPackageSize = resolvePackageSize(listing?.attributes?.publicData);
-  const isAvShipping =
-    isPurchase &&
-    effectiveDeliveryMethod === 'shipping' &&
-    !isEspecialSize(avPackageSize) &&
-    !hasTransactionPassedPendingPayment(existingTransaction, process);
-  const isManualShipping =
-    isPurchase &&
-    effectiveDeliveryMethod === 'shipping' &&
-    isEspecialSize(avPackageSize) &&
-    !hasTransactionPassedPendingPayment(existingTransaction, process);
-  const buyerEmail = currentUser?.attributes?.email || null;
-  const lastDestinationRef = useRef(null);
-
-  // Debounced quote dispatch. FormSpy fires handleShippingValuesChange on every
-  // keystroke, so while the buyer edits an already-complete address each change
-  // would otherwise hit the eShip API. Coalesce rapid edits into a single fetch
-  // once typing settles. Built once (stable dispatch + setState refs); the latest
-  // args win because lodash debounce invokes with the most recent call's args.
-  const debouncedQuoteRef = useRef(null);
-  if (debouncedQuoteRef.current === null) {
-    debouncedQuoteRef.current = debounce(args => {
-      dispatch(fetchShippingQuote(args));
-    }, QUOTE_DEBOUNCE_MS);
-  }
-  const debouncedQuote = debouncedQuoteRef.current;
-  // Cancel any pending quote if the buyer leaves checkout mid-type.
-  useEffect(() => () => debouncedQuote.cancel(), [debouncedQuote]);
-
-  // Quote (or re-quote) whenever the buyer's destination address changes to a new
-  // complete value. Clears any prior delivery-type selection immediately (so a
-  // stale pick can't be paid mid-edit) and debounces the actual fetch. Driven by
-  // StripePaymentForm's FormSpy via onShippingValuesChange.
-  const handleShippingValuesChange = useCallback(
-    formValues => {
-      if (!isAvShipping) return;
-      const destination = getEshipDestinationFromValues(formValues);
-      const key = destination ? JSON.stringify(destination) : null;
-      const prevKey = lastDestinationRef.current
-        ? JSON.stringify(lastDestinationRef.current)
-        : null;
-      if (!key || key === prevKey) return;
-      lastDestinationRef.current = destination;
-      setSelectedShippingType(null);
-      debouncedQuote({ listingId: listing?.id?.uuid, destination, buyerEmail });
+  // AV shipping: live eShip quote — state, debounce and handlers live in the hook.
+  const avShipping = useAvShippingQuote({
+    isPurchase,
+    effectiveDeliveryMethod,
+    listing,
+    listingTitle,
+    currentUser,
+    pageData,
+    existingTransaction,
+    process,
+    history,
+    routeConfiguration,
+    // Persist the chosen bucket and re-speculate so the "Shipping fee" row
+    // updates before the buyer pays.
+    onSelectShippingType: nextPageData => {
+      if (setPageData) {
+        setPageData(nextPageData);
+      }
+      if (fetchSpeculatedTransaction) {
+        const orderParams = getOrderParams(nextPageData, {}, {}, config);
+        fetchSpeculatedTransactionIfNeeded(orderParams, nextPageData, fetchSpeculatedTransaction);
+      }
     },
-    [isAvShipping, debouncedQuote, listing, buyerEmail]
-  );
-
-  const handleRetryQuote = () => {
-    if (lastDestinationRef.current) {
-      dispatch(
-        fetchShippingQuote({
-          listingId: listing?.id?.uuid,
-          destination: lastDestinationRef.current,
-          buyerEmail,
-        })
-      );
-    }
-  };
-
-  // Persist the chosen type + quote token + destination into pageData.orderData and
-  // re-speculate so the "Shipping fee" row updates before the buyer pays.
-  const handleSelectShippingType = type => {
-    setSelectedShippingType(type);
-    const nextPageData = {
-      ...pageData,
-      orderData: {
-        ...pageData.orderData,
-        avShippingType: type,
-        avQuoteToken: shippingQuote?.quoteToken || null,
-        avDestination: lastDestinationRef.current || null,
-        buyerEmail,
-      },
-    };
-    if (setPageData) {
-      setPageData(nextPageData);
-    }
-    if (fetchSpeculatedTransaction) {
-      const orderParams = getOrderParams(nextPageData, {}, {}, config);
-      fetchSpeculatedTransactionIfNeeded(orderParams, nextPageData, fetchSpeculatedTransaction);
-    }
-  };
-
-  // AV shipping: let the buyer message the seller to confirm the shipping date.
-  // Reuses the ListingPage inquiry-modal flow — pre-set the modal flag, then
-  // navigate to the listing page where the inquiry modal opens automatically.
-  const listingId = listing?.id?.uuid;
-  const handleContactSeller =
-    listingId && history && routeConfiguration && dispatch
-      ? () => {
-          dispatch(setListingPageInitialValues({ inquiryModalOpenForListingId: listingId }));
-          const listingPath = pathByRouteName('ListingPage', routeConfiguration, {
-            id: listingId,
-            slug: createSlug(listingTitle),
-          });
-          history.push(listingPath);
-        }
-      : null;
+  });
 
   const providerDisplayName = isNegotiation
     ? existingTransaction?.provider?.attributes?.profile?.displayName
@@ -795,35 +707,11 @@ export const CheckoutPageWithPayment = props => {
 
             {showPaymentForm ? (
               <StripePaymentForm
-                shippingSelectorSlot={
-                  isAvShipping ? (
-                    <AVShippingSelector
-                      status={shippingQuote?.status}
-                      errorCode={shippingQuote?.errorCode}
-                      express={shippingQuote?.express}
-                      estandar={shippingQuote?.estandar}
-                      rawRates={shippingQuote?.rawRates}
-                      selectedType={selectedShippingType}
-                      onSelect={handleSelectShippingType}
-                      onRetry={handleRetryQuote}
-                      onContactSeller={handleContactSeller}
-                    />
-                  ) : isManualShipping ? (
-                    <AVShippingSelector
-                      status="error"
-                      errorCode="ESPECIAL"
-                      express={null}
-                      estandar={null}
-                      rawRates={[]}
-                      selectedType={null}
-                      onSelect={() => {}}
-                      onRetry={() => {}}
-                      onContactSeller={handleContactSeller}
-                    />
-                  ) : null
+                shippingSelectorSlot={<AVShippingSelectorSlot av={avShipping} />}
+                onShippingValuesChange={
+                  avShipping.isAvShipping ? avShipping.handleShippingValuesChange : undefined
                 }
-                onShippingValuesChange={isAvShipping ? handleShippingValuesChange : undefined}
-                submitDisabledExtra={isManualShipping || (isAvShipping && !selectedShippingType)}
+                submitDisabledExtra={avShipping.submitDisabled}
                 className={css.paymentForm}
                 onSubmit={values =>
                   handleSubmit(values, process, props, stripe, submitting, setSubmitting)
@@ -856,7 +744,7 @@ export const CheckoutPageWithPayment = props => {
                 locale={config.localization.locale}
                 stripePublishableKey={config.stripe.publishableKey}
                 marketplaceName={config.marketplaceName}
-                isBooking={isBookingProcessAlias(transactionProcessAlias)}
+                processName={processName}
                 isFuzzyLocation={config.maps.fuzzy.enabled}
                 transactionFieldConfigs={transactionFieldConfigs}
                 showTransactionFields={showTransactionFields}

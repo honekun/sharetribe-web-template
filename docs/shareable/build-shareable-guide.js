@@ -20,6 +20,8 @@ const fs = require('fs');
 const path = require('path');
 const micromark = require('micromark');
 
+const REPOSITORY_DOCS_URL = 'https://github.com/honekun/sharetribe-web-template/blob/main/docs';
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -33,6 +35,13 @@ const slugify = text =>
     .toLowerCase()
     .replace(/[^\p{L}\p{N} _-]/gu, '')
     .replace(/ /g, '-');
+
+const uniqueSlug = (text, counts) => {
+  const base = slugify(text);
+  const count = counts.get(base) || 0;
+  counts.set(base, count + 1);
+  return count === 0 ? base : `${base}-${count}`;
+};
 
 const escapeHtml = text =>
   text
@@ -87,7 +96,7 @@ const isTableLine = line => /^\s*\|/.test(line);
 const isTableSep = line => /^\s*\|[\s:|-]+\|?\s*$/.test(line);
 
 // Render a markdown chunk: tables ourselves, the rest through micromark.
-const renderBlocks = md => {
+const renderBlocks = (md, headingSlugCounts = new Map()) => {
   const lines = md.split('\n');
   const out = [];
   let buf = [];
@@ -120,7 +129,46 @@ const renderBlocks = md => {
   // Give sub-headings their GitHub anchors so in-page links keep working.
   return out.join('\n').replace(/<(h[34])>(.*?)<\/\1>/g, (m, tag, inner) => {
     const plain = inner.replace(/<[^>]+>/g, '');
-    return `<${tag} id="${slugify(plain)}">${inner}</${tag}>`;
+    return `<${tag} id="${uniqueSlug(plain, headingSlugCounts)}">${inner}</${tag}>`;
+  });
+};
+
+const rewriteRelativeLinks = (html, sourcePath, outputPath) => {
+  const sourceDir = path.dirname(path.resolve(sourcePath));
+  const outputDir = path.dirname(path.resolve(outputPath));
+
+  return html.replace(/href="([^"]+)"/g, (match, href) => {
+    if (
+      href.startsWith('#') ||
+      href.startsWith('/') ||
+      href.startsWith('//') ||
+      /^[a-z][a-z0-9+.-]*:/i.test(href)
+    ) {
+      return match;
+    }
+
+    const parts = href.match(/^([^?#]+)(.*)$/);
+    if (!parts) return match;
+
+    const absoluteTarget = path.resolve(sourceDir, parts[1]);
+    const docsRelativeTarget = path.relative(sourceDir, absoluteTarget);
+    if (
+      docsRelativeTarget &&
+      !docsRelativeTarget.startsWith(`..${path.sep}`) &&
+      docsRelativeTarget !== '..'
+    ) {
+      const repositoryPath = docsRelativeTarget
+        .split(path.sep)
+        .map(encodeURIComponent)
+        .join('/');
+      return `href="${REPOSITORY_DOCS_URL}/${repositoryPath}${parts[2]}"`;
+    }
+
+    const relativeTarget = path
+      .relative(outputDir, absoluteTarget)
+      .split(path.sep)
+      .join('/');
+    return `href="${relativeTarget}${parts[2]}"`;
   });
 };
 
@@ -164,6 +212,7 @@ const parseGuide = md => {
     }
     if (cur) cur.body.push(line);
   }
+  const documentSlugCounts = new Map();
   return sections.map((s, i) => {
     const isOverview = i === 0;
     const displayTitle = s.title.replace(/`/g, '');
@@ -173,10 +222,10 @@ const parseGuide = md => {
       .replace(/\n---\s*$/g, '\n')
       .trim();
     return {
-      id: isOverview ? 'overview' : slugify(s.title),
+      id: uniqueSlug(isOverview ? 'overview' : s.title, documentSlugCounts),
       title: displayTitle,
       label: isOverview ? displayTitle : label,
-      html: renderBlocks(body),
+      html: renderBlocks(body, documentSlugCounts),
       excerptSource: body,
     };
   });
@@ -249,7 +298,11 @@ const cards = sections
   .slice(1)
   .map((s, i) => quickCard(s, i + 1))
   .join('');
-const body = sections.map((s, i) => renderSection(s, i, kicker)).join('\n');
+const body = rewriteRelativeLinks(
+  sections.map((s, i) => renderSection(s, i, kicker)).join('\n'),
+  mdPath,
+  htmlPath
+);
 
 html = html.replace(
   /(<nav class="toc" aria-label="[^"]*">).*?(<\/nav>)/s,

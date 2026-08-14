@@ -3,8 +3,6 @@ import classNames from 'classnames';
 
 import Field, { hasDataInFields } from '../../Field';
 import BlockContainer from '../BlockContainer';
-import BlockBuilder from '../../BlockBuilder';
-import NewsletterForm from '../../../../components/NewsletterForm/NewsletterForm';
 
 import css from './BlockFooter.module.css';
 
@@ -32,17 +30,7 @@ import css from './BlockFooter.module.css';
  * @returns {JSX.Element} component that renders block type: 'footerBlock'
  */
 const BlockFooter = props => {
-  const {
-    blockId,
-    className,
-    rootClassName,
-    textClassName,
-    text,
-    options,
-    hasSocialLinks,
-    hasNewsletterForm,
-    customProps,
-  } = props;
+  const { blockId, className, rootClassName, textClassName, text, options } = props;
   const classes = classNames(rootClassName || css.root, className);
   const hasTextComponentFields = hasDataInFields([text], options);
 
@@ -55,26 +43,6 @@ const BlockFooter = props => {
         >
           <Field data={text} options={options} />
         </nav>
-      ) : null}
-
-      {hasNewsletterForm ? (
-        <div className={classNames(css.newsletter)}>
-          <NewsletterForm
-            disclaimerText={props.disclaimerText}
-            okMsg={props.okMsg}
-            errorMsg={props.errorMsg}
-          />
-        </div>
-      ) : null}
-
-      {hasSocialLinks && customProps.socialLinks ? (
-        <div className={css.blockSocial}>
-          <BlockBuilder
-            blocks={customProps.socialLinks}
-            sectionId={blockId + '-social'}
-            options={options}
-          />
-        </div>
       ) : null}
     </BlockContainer>
   );

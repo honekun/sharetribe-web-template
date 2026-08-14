@@ -18,7 +18,8 @@ import {
 
 import FieldSelectUserType from '../FieldSelectUserType';
 import UserFieldDisplayName from '../UserFieldDisplayName';
-import UserFieldPhoneNumber from '../UserFieldPhoneNumber';
+// First release: keep the phone component available for the future WhatsApp rollout.
+// import UserFieldPhoneNumber from '../UserFieldPhoneNumber';
 
 import css from './SignupForm.module.css';
 
@@ -207,12 +208,13 @@ const SignupFormComponent = props => (
                 validate={passwordValidators}
               />
 
+              {/* First release: WhatsApp notifications and signup phone collection are disabled.
               <UserFieldPhoneNumber
                 formName="SignupForm"
                 className={css.row}
                 userTypeConfig={userTypeConfig}
                 intl={intl}
-              />
+              /> */}
             </div>
           ) : null}
 
