@@ -47,10 +47,9 @@ class EshipTimeoutError extends Error {
   }
 }
 
-// POST {base}/{path} with a Bearer-authed JSON body. Returns the parsed JSON.
-// Shared by quote() and createShipment() so both handle auth, timeout, and the
-// non-JSON-error capture identically.
-async function eshipPost(path, payload) {
+// Request {base}/{path} with Bearer auth. Shared by quote(), createShipment(),
+// and webhook verification so every call has the same timeout/error behavior.
+async function eshipRequest(path, { method, payload = null }) {
   const apiKey = process.env.ESHIP_API_KEY;
   if (!apiKey) throw new EshipApiError(401, { error: 'ESHIP_API_KEY missing' });
 
@@ -58,12 +57,12 @@ async function eshipPost(path, payload) {
   const timer = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
   try {
     const response = await fetch(`${eshipBaseUrl}/${path}`, {
-      method: 'POST',
+      method,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify(payload),
+      ...(payload == null ? {} : { body: JSON.stringify(payload) }),
       signal: controller.signal,
     });
     if (!response.ok) {
@@ -86,6 +85,14 @@ async function eshipPost(path, payload) {
   }
 }
 
+async function eshipPost(path, payload) {
+  return eshipRequest(path, { method: 'POST', payload });
+}
+
+async function eshipGet(path) {
+  return eshipRequest(path, { method: 'GET' });
+}
+
 // POST {base}/quotation. Returns the parsed quotation object ({ quot_id, rates }).
 async function quote({ addressFrom, addressTo, parcels }) {
   return eshipPost('quotation', { address_from: addressFrom, address_to: addressTo, parcels });
@@ -97,4 +104,21 @@ async function createShipment({ rateId }) {
   return eshipPost('shipment', { rate_id: rateId });
 }
 
-module.exports = { quote, createShipment, EshipApiError, EshipTimeoutError, describeEshipError };
+// Re-fetch the shipment before trusting an unsigned webhook. eventList lets us
+// confirm picked_up even if the carrier has already advanced to a later state.
+async function getShipment({ shipmentId, eventList = true }) {
+  const params = new URLSearchParams({
+    shipment_id: shipmentId,
+    ...(eventList ? { eventList: 'true' } : {}),
+  });
+  return eshipGet(`shipment?${params.toString()}`);
+}
+
+module.exports = {
+  quote,
+  createShipment,
+  getShipment,
+  EshipApiError,
+  EshipTimeoutError,
+  describeEshipError,
+};

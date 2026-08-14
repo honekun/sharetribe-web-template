@@ -1,0 +1,1 @@
+{{t "PurchaseOrderDisputedCustomer.Subject" "Necesitamos información sobre tu disputa de {listingTitle}" listingTitle=transaction.listing.title}}

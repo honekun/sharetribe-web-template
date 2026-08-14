@@ -162,8 +162,10 @@ async function buyLabelForTransaction(
     status: 'purchased',
     shipmentId,
     trackingNumber: shipment.tracking_number || null,
+    trackingUrlProvider: shipment.tracking_url_provider || null,
+    trackingUrlCustom: shipment.tracking_url_custom || null,
     labelUrl: shipment.label_url,
-    carrier: av.carrier || null,
+    carrier: shipment.provider || av.carrier || null,
     servicelevel: av.servicelevel || null,
     purchasedAt: new Date().toISOString(),
   };

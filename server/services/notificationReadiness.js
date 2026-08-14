@@ -16,6 +16,7 @@ async function getNotificationReadiness({ pool = null } = {}) {
     deliveriesByStatus: {},
     jobsByStatus: {},
     shippingLabelsByStatus: {},
+    eshipTrackingByStatus: {},
     marketingPreferences: 0,
   };
 
@@ -28,6 +29,7 @@ async function getNotificationReadiness({ pool = null } = {}) {
         jobsResult,
         preferencesResult,
         shippingLabelsResult,
+        eshipTrackingResult,
       ] = await Promise.all([
         databasePool.query(
           `SELECT last_sequence_id, owner_id, heartbeat_at
@@ -53,6 +55,11 @@ async function getNotificationReadiness({ pool = null } = {}) {
            FROM av_shipping_label_attempts
            GROUP BY status`
         ),
+        databasePool.query(
+          `SELECT status, COUNT(*)::integer AS count
+           FROM av_eship_tracking_notifications
+           GROUP BY status`
+        ),
       ]);
       const pollerState = stateResult.rows[0] || {};
       database.ready = stateResult.rowCount === 1;
@@ -69,6 +76,9 @@ async function getNotificationReadiness({ pool = null } = {}) {
       database.marketingPreferences = preferencesResult.rows[0]?.count || 0;
       database.shippingLabelsByStatus = Object.fromEntries(
         shippingLabelsResult.rows.map(row => [row.status, row.count])
+      );
+      database.eshipTrackingByStatus = Object.fromEntries(
+        eshipTrackingResult.rows.map(row => [row.status, row.count])
       );
     } catch (err) {
       database.ready = false;

@@ -59,6 +59,11 @@
    :actions [],
    :from :state/purchased,
    :to :state/delivered}
+  {:name :transition/eship-picked-up-from-purchased,
+   :actor :actor.role/operator,
+   :actions [],
+   :from :state/purchased,
+   :to :state/purchased}
   {:name :transition/mark-received,
    :actor :actor.role/customer,
    :actions [{:name :action/stripe-create-payout}],
@@ -72,6 +77,11 @@
    :actions [{:name :action/stripe-create-payout}],
    :from :state/delivered,
    :to :state/received}
+  {:name :transition/eship-picked-up-from-delivered,
+   :actor :actor.role/operator,
+   :actions [],
+   :from :state/delivered,
+   :to :state/delivered}
   {:name :transition/dispute,
    :actor :actor.role/customer,
    :actions [{:name :action/update-protected-data}],
@@ -231,6 +241,14 @@
    :on :transition/operator-mark-delivered,
    :to :actor.role/provider,
    :template :purchase-order-operator-marked-as-delivered}
+  {:name :notification/purchase-order-in-transit-from-purchased-to-customer,
+   :on :transition/eship-picked-up-from-purchased,
+   :to :actor.role/customer,
+   :template :purchase-order-in-transit-customer}
+  {:name :notification/purchase-order-in-transit-from-delivered-to-customer,
+   :on :transition/eship-picked-up-from-delivered,
+   :to :actor.role/customer,
+   :template :purchase-order-in-transit-customer}
   {:name :notification/purchase-mark-order-received-reminder,
    :on :transition/mark-delivered,
    ;; Two days before :transition/auto-mark-received fires, as it was under the
@@ -278,6 +296,10 @@
    :on :transition/dispute,
    :to :actor.role/provider,
    :template :purchase-order-disputed}
+  {:name :notification/order-disputed-to-customer,
+   :on :transition/dispute,
+   :to :actor.role/customer,
+   :template :purchase-order-disputed-customer}
   {:name :notification/purchase-order-operator-disputed-to-customer,
    :on :transition/operator-dispute,
    :to :actor.role/customer,

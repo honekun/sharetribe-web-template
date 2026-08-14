@@ -5,6 +5,7 @@ const { TEMPLATE_ENV } = require('./marketingCampaigns');
 const FLAG_NAMES = {
   poller: 'AV_NOTIFICATIONS_ENABLED',
   shippingLabels: 'AV_SHIPPING_LABELS_ENABLED',
+  eshipTracking: 'AV_ESHIP_TRACKING_EMAILS_ENABLED',
   brevo: 'AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED',
   campaigns: 'AV_BREVO_CAMPAIGNS_ENABLED',
   whatsapp: 'AV_WHATSAPP_NOTIFICATIONS_ENABLED',
@@ -37,11 +38,13 @@ function missingTemplateIds(names) {
 function getNotificationConfigReadiness() {
   const pollerFlag = readBooleanFlag(FLAG_NAMES.poller);
   const shippingLabelsFlag = readBooleanFlag(FLAG_NAMES.shippingLabels);
+  const eshipTrackingFlag = readBooleanFlag(FLAG_NAMES.eshipTracking);
   const brevoFlag = readBooleanFlag(FLAG_NAMES.brevo);
   const campaignsFlag = readBooleanFlag(FLAG_NAMES.campaigns);
   const whatsappFlag = readBooleanFlag(FLAG_NAMES.whatsapp);
 
-  const eventPollerEnabled = pollerFlag.enabled || shippingLabelsFlag.enabled;
+  const eventPollerEnabled =
+    pollerFlag.enabled || shippingLabelsFlag.enabled || eshipTrackingFlag.enabled;
   const pollerMissing = eventPollerEnabled
     ? missingVariables([
         'SHARETRIBE_INTEGRATION_CLIENT_ID',
@@ -52,6 +55,7 @@ function getNotificationConfigReadiness() {
   const missingPollerFlags = [
     ...(pollerFlag.configured ? [] : [FLAG_NAMES.poller]),
     ...(shippingLabelsFlag.configured ? [] : [FLAG_NAMES.shippingLabels]),
+    ...(eshipTrackingFlag.configured ? [] : [FLAG_NAMES.eshipTracking]),
   ];
   const pollerReady =
     missingPollerFlags.length === 0 && (!eventPollerEnabled || pollerMissing.length === 0);
@@ -62,6 +66,17 @@ function getNotificationConfigReadiness() {
   const shippingLabelsReady =
     shippingLabelsFlag.configured &&
     (!shippingLabelsFlag.enabled || shippingLabelsMissing.length === 0);
+  const eshipTrackingMissing = eshipTrackingFlag.enabled
+    ? [
+        ...missingVariables(['ESHIP_API_KEY', 'ESHIP_BASE_URL', 'ESHIP_WEBHOOK_SECRET']),
+        ...(Buffer.byteLength(String(process.env.ESHIP_WEBHOOK_SECRET || ''), 'utf8') >= 32
+          ? []
+          : ['ESHIP_WEBHOOK_SECRET']),
+      ].filter((name, index, values) => values.indexOf(name) === index)
+    : [];
+  const eshipTrackingReady =
+    eshipTrackingFlag.configured &&
+    (!eshipTrackingFlag.enabled || eshipTrackingMissing.length === 0);
 
   const brevoMissing =
     pollerFlag.enabled && brevoFlag.enabled
@@ -103,7 +118,13 @@ function getNotificationConfigReadiness() {
     (whatsappFlag.configured && (!whatsappFlag.enabled || whatsappMissing.length === 0));
 
   return {
-    ready: pollerReady && shippingLabelsReady && brevoReady && campaignsReady && whatsappReady,
+    ready:
+      pollerReady &&
+      shippingLabelsReady &&
+      eshipTrackingReady &&
+      brevoReady &&
+      campaignsReady &&
+      whatsappReady,
     poller: {
       configured: missingPollerFlags.length === 0,
       enabled: eventPollerEnabled,
@@ -115,6 +136,12 @@ function getNotificationConfigReadiness() {
       enabled: shippingLabelsFlag.enabled,
       ready: shippingLabelsReady,
       missing: shippingLabelsFlag.configured ? shippingLabelsMissing : [FLAG_NAMES.shippingLabels],
+    },
+    eshipTracking: {
+      configured: eshipTrackingFlag.configured,
+      enabled: eshipTrackingFlag.enabled,
+      ready: eshipTrackingReady,
+      missing: eshipTrackingFlag.configured ? eshipTrackingMissing : [FLAG_NAMES.eshipTracking],
     },
     brevo: {
       configured: brevoFlag.configured,
@@ -148,6 +175,7 @@ function assertProductionNotificationConfig() {
     const missing = [
       ...readiness.poller.missing,
       ...readiness.shippingLabels.missing,
+      ...readiness.eshipTracking.missing,
       ...readiness.brevo.missing,
       ...readiness.campaigns.missing,
       ...readiness.whatsapp.missing,
@@ -168,7 +196,13 @@ function isShippingLabelsEnabled() {
 }
 
 function isEventPollerEnabled() {
-  return isNotificationPollerEnabled() || isShippingLabelsEnabled();
+  return (
+    isNotificationPollerEnabled() || isShippingLabelsEnabled() || isEshipTrackingEmailsEnabled()
+  );
+}
+
+function isEshipTrackingEmailsEnabled() {
+  return readBooleanFlag(FLAG_NAMES.eshipTracking).enabled;
 }
 
 function isWelcomeEmailEnabled() {
@@ -193,6 +227,7 @@ module.exports = {
   assertProductionNotificationConfig,
   getNotificationConfigReadiness,
   isEventPollerEnabled,
+  isEshipTrackingEmailsEnabled,
   isMarketingCampaignsEnabled,
   isNotificationPollerEnabled,
   isShippingLabelsEnabled,

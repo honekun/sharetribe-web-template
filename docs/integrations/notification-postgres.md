@@ -7,7 +7,8 @@ The notification event poller requires PostgreSQL for four related guarantees:
 - an atomic notification-delivery ledger that deduplicates provider sends across replay and
   concurrent workers; and
 - durable campaign jobs, marketing consent/suppression, first-party engagement, and Brevo webhook
-  audit.
+  audit; and
+- idempotent eShip pickup-event claims and native Sharetribe tracking-email outcomes.
 
 Every deployed process may start the poller coordinator, but only the process holding the PostgreSQL
 lock schedules Integration API polling. The other processes remain standbys and retry leadership
@@ -58,6 +59,7 @@ AV_NOTIFICATIONS_ENABLED=true
 AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=true
 AV_BREVO_CAMPAIGNS_ENABLED=false
 AV_WHATSAPP_NOTIFICATIONS_ENABLED=false
+AV_ESHIP_TRACKING_EMAILS_ENABLED=false
 ```
 
 ## 2. Local database commands
@@ -132,10 +134,10 @@ The same acknowledgement can recover a `processing` claim only after it is older
 notification database are ready, or `503` otherwise. It distinguishes:
 
 - shared event poller, shipping-label capability, seller welcome, Brevo campaign, and WhatsApp flags
-  and missing variable names;
+  plus the eShip tracking-email flag and missing variable names;
 - database migration, active ownership, heartbeat, and current sequence ID;
-- notification delivery, delayed-job, and shipping-label attempt counts by outcome, plus the
-  marketing-preference count; and
+- notification delivery, delayed-job, shipping-label attempt, and eShip tracking-email counts by
+  outcome, plus the marketing-preference count; and
 - pages/events processed, sequence lag in remaining events, oldest observed event age, page-bound
   state, and repeated-error counters.
 
@@ -156,11 +158,12 @@ attach the same populated database to Test and Live simultaneously.
 1. Provision a durable managed PostgreSQL database.
 2. Set its server-only `DATABASE_URL` on every web process. All processes must use the same
    database.
-3. Set both `AV_NOTIFICATIONS_ENABLED` and `AV_SHIPPING_LABELS_ENABLED` explicitly. Either enabled
-   capability starts the shared event poller. When notifications are enabled, explicitly set seller
-   welcome, Brevo campaign, and WhatsApp flags. When shipping labels are enabled, supply eShip and
-   Integration API credentials. Automatic purchase remains separately controlled by
-   `ESHIP_LABEL_AUTOBUY`. Incomplete production configuration prevents startup.
+3. Set `AV_NOTIFICATIONS_ENABLED`, `AV_SHIPPING_LABELS_ENABLED`, and
+   `AV_ESHIP_TRACKING_EMAILS_ENABLED` explicitly. Any enabled capability starts the shared event
+   poller. When notifications are enabled, explicitly set seller welcome, Brevo campaign, and
+   WhatsApp flags. Labels and tracking email require eShip and Integration API credentials; tracking
+   email also requires `ESHIP_WEBHOOK_SECRET`. Automatic label purchase remains separately
+   controlled by `ESHIP_LABEL_AUTOBUY`. Incomplete production configuration prevents startup.
 4. Add the provider's required TLS parameters to the connection URL, such as `sslmode=require`,
    according to that provider's certificate guidance.
 5. Run `yarn db:migrate` as a release/pre-deploy command before the new application version starts.
@@ -181,9 +184,9 @@ and the [Docker Official PostgreSQL image documentation](https://hub.docker.com/
 
 ## 5. Failure behavior
 
-- In production, enabling notifications or shipping labels without `DATABASE_URL` prevents the
-  application from starting. A configured but unmigrated database causes readiness and poller
-  failures until `yarn db:migrate` completes.
+- In production, enabling notifications, shipping labels, or eShip tracking email without
+  `DATABASE_URL` prevents the application from starting. A configured but unmigrated database causes
+  readiness and poller failures until `yarn db:migrate` completes.
 - In non-production, a temporary database or leadership failure may be logged and retried, but the
   poller never runs without PostgreSQL coordination.
 - If the leader's dedicated PostgreSQL connection fails, its polling timers stop. PostgreSQL
@@ -197,6 +200,10 @@ and the [Docker Official PostgreSQL image documentation](https://hub.docker.com/
 - Campaign jobs left in `processing` by a worker restart are reclaimed after
   `AV_NOTIFICATION_STALE_CLAIM_MINUTES`; the delivery ledger then deduplicates any provider send
   that completed before the interruption.
+- eShip tracking events are unique per shipment/event, reclaimed after a stale processing claim, and
+  retried with a bounded exponential delay. Before retrying a transition, the worker reconciles
+  Sharetribe transition history so a successful email is not sent twice after a database-finalize
+  interruption.
 - A provider request with no definitive response is stored as `unknown` and never automatically
   retried. PostgreSQL cannot atomically commit a third-party HTTP request, so operator
   reconciliation remains required for this outcome.

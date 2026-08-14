@@ -1,0 +1,1 @@
+{{t "PurchaseOrderInTransitCustomer.Subject" "Tu pedido de {listingTitle} está en camino" listingTitle=transaction.listing.title}}

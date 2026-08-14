@@ -85,6 +85,8 @@ production.
       resolved.
 - [ ] Keep `ESHIP_LABEL_AUTOBUY=false` until the purchased-label cancellation/refund policy is
       approved.
+- [ ] Keep `AV_ESHIP_TRACKING_EMAILS_ENABLED=false` until migration 009, the hosted purchase
+      process/templates, Spanish Email texts, and the environment-matched eShip webhook are ready.
 
 ## 4. In-place Test-to-Live cutover gate
 
@@ -115,6 +117,10 @@ production.
 - [ ] Verify order math, platform-retained shipping fee, seller payout, and transaction shipping
       data.
 - [ ] Purchase and download the real label manually; record the carrier charge.
+- [ ] Confirm one real `TRANSIT/picked_up` webhook sends exactly one native Sharetribe tracking
+      email; replaying the same event sends no duplicate and does not change transaction state.
+- [ ] Reply to the buyer dispute acknowledgement with an image attachment and confirm it reaches the
+      monitored Archivo Vintach mailbox; confirm no transaction change occurs at 24 hours.
 - [ ] Verify the welcome email and built-in Sharetribe links use the production sender/domain.
 - [ ] Perform the approved refund/cancellation test and reconcile the label separately.
 - [ ] Record evidence and obtain the launch approver's sign-off.

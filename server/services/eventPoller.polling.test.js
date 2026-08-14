@@ -10,6 +10,9 @@ jest.mock('./whatsappService', () => ({
 jest.mock('./notificationDelivery', () => ({
   deliverNotification: jest.fn(),
 }));
+jest.mock('./eshipTrackingService', () => ({
+  processDueEshipTrackingNotifications: jest.fn().mockResolvedValue(0),
+}));
 jest.mock('./notificationConfig', () => ({
   isMarketingCampaignsEnabled: jest.fn(),
   isShippingLabelsEnabled: jest.fn(),

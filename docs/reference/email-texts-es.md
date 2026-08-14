@@ -10,13 +10,15 @@
 - every Email-text key referenced by the five transaction-process template families under
   `ext/transaction-processes/`.
 
-The file contains 594 keys:
+The file contains 604 keys:
 
 - 584 current Sharetribe Spanish defaults, including built-in account emails and the booking,
   inquiry, purchase, negotiation, and download process families.
-- 10 used template keys missing from both the official Spanish file and the current Console asset:
-  `BookingMoneyPaid.StartLabel`, `BookingMoneyPaid.EndLabel`, and the eight
-  `PurchaseShippingReminderFinal.*` keys.
+- 20 used template keys missing from both the official Spanish file and the current Console asset:
+  `BookingMoneyPaid.StartLabel`, `BookingMoneyPaid.EndLabel`, the eight
+  `PurchaseShippingReminderFinal.*` keys, and the ten `PurchaseOrderDisputedCustomer.*` /
+  `PurchaseOrderInTransitCustomer.*` keys added for the native buyer dispute acknowledgement and
+  eShip pickup notification.
 
 Of the 584 default keys, 316 are already present in Test Console and retain the exact Console value.
 Thirty-three of those values differ from the current Sharetribe default. In every duplicate, the
@@ -41,6 +43,11 @@ Transaction templates load the hosted object with
 `{{set-translations (asset "content/email-texts.json")}}`. A hosted value therefore overrides the
 English fallback embedded in the template. There is no local Spanish Email-text JSON used at
 runtime.
+
+The buyer dispute acknowledgement deliberately keeps its 24-hour informational wording but does not
+add an automatic 24-hour transition, refund, payout, or reply/attachment parser. The eShip pickup
+family is used only by the internal `TRANSIT/picked_up` operator self-transitions; those transitions
+leave the purchase transaction state unchanged.
 
 Test and Live are separate Sharetribe environments. Review and publish this object in Test first,
 then copy the approved content to Live through the normal content-release process. Preserve ICU

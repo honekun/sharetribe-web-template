@@ -11,12 +11,13 @@ money-flow decisions baked into the code.
 
 ## 1. Overview
 
-Two flows, both server-side:
+Three flows, all server-side:
 
-| Flow               | When                                      | Endpoint                | Result                                           |
-| ------------------ | ----------------------------------------- | ----------------------- | ------------------------------------------------ |
-| **Quote**          | Buyer enters a MX destination at checkout | `POST {base}/quotation` | Express/Estándar buckets → buyer price line item |
-| **Label purchase** | Payment confirmed / manual retry          | `POST {base}/shipment`  | `metadata.avLabel` (tracking + label PDF)        |
+| Flow                       | When                                      | Endpoint                           | Result                                           |
+| -------------------------- | ----------------------------------------- | ---------------------------------- | ------------------------------------------------ |
+| **Quote**                  | Buyer enters a MX destination at checkout | `POST {base}/quotation`            | Express/Estándar buckets → buyer price line item |
+| **Label purchase**         | Payment confirmed / manual retry          | `POST {base}/shipment`             | `metadata.avLabel` (tracking + label PDF)        |
+| **Picked-up notification** | Carrier scans the package                 | `POST /api/shipping/eship-webhook` | One native Sharetribe buyer email                |
 
 eShip bills the **Segmail account directly** for every label — i.e. **AV fronts the carrier cost**,
 not the seller. That single fact drives the payout decision in §9.
@@ -49,6 +50,8 @@ not the seller. That single fact drives the payout decision in §9.
 | `ESHIP_MARKUP_PCT`                             | no                 | `0.18`                         | Buyer markup over raw carrier cost (see §7).                                                                                                                                                     |
 | `ESHIP_API_DEBUG`                              | no                 | `false`                        | `true` echoes the carrier's error text in the API response (`{ code, detail }`). Leave off in prod.                                                                                              |
 | `AV_SHIPPING_LABELS_ENABLED`                   | yes (explicit)     | `false`                        | Enables the label-purchase capability and its shared Integration API poller path. Independent of notification delivery; it does not enable automatic purchase by itself.                         |
+| `AV_ESHIP_TRACKING_EMAILS_ENABLED`             | yes (explicit)     | `false`                        | Accepts durable eShip tracking events and processes the `TRANSIT/picked_up` buyer email through the shared poller.                                                                               |
+| `ESHIP_WEBHOOK_SECRET`                         | yes (tracking)     | —                              | At least 32 random bytes. Shared only between the eShip dashboard URL and server; the webhook is also verified through an authenticated eShip API read.                                          |
 | `SHIPPING_LABEL_OPERATOR_EMAILS`               | no                 | —                              | Comma-separated emails allowed to retry **any** seller's label. Sellers can always retry their own.                                                                                              |
 | `ESHIP_LABEL_AUTOBUY`                          | no                 | `false`                        | `true` → buy the label automatically on `confirm-payment` (poller). Unset/`false` → manual only: the seller buys it via the **Generar guía** button. Requires `AV_SHIPPING_LABELS_ENABLED=true`. |
 | `DATABASE_URL`                                 | yes (labels)       | —                              | Shared durable PostgreSQL ledger used by both manual and automatic label purchase. Required whenever `AV_SHIPPING_LABELS_ENABLED=true`.                                                          |
@@ -132,7 +135,8 @@ No origin / `especial` size / carrier error → buyer sees **Contactar AV**.
 automatically — the seller buys it via the manual button below.
 
 ```
-{ status: 'purchased', shipmentId, trackingNumber, labelUrl, carrier, servicelevel, purchasedAt }
+{ status: 'purchased', shipmentId, trackingNumber, trackingUrlProvider,
+  trackingUrlCustom, labelUrl, carrier, servicelevel, purchasedAt }
 { status: 'failed',    error, rate_id, failedAt }
 { status: 'unknown',   error, rate_id, unknownAt }
 ```
@@ -163,21 +167,83 @@ POSTs and prefers the returned `avLabel`) + `AVShippingLabelMaybe` (3-state: **D
 **Generar guía** / hidden for especial). Rendered provider-only via a `shippingLabelSlot` prop
 threaded through `TransactionPanel`.
 
-### 5.3 Module index
+### 5.3 Tracking webhook → native Sharetribe email
 
-| Module                                                                      | Role                                                  |
-| --------------------------------------------------------------------------- | ----------------------------------------------------- |
-| `server/api-util/eshipClient.js`                                            | HTTP: `quote` + `createShipment` (shared `eshipPost`) |
-| `server/services/shippingQuoteService.js`                                   | Quote orchestration + 15-min cache                    |
-| `server/services/shipmentService.js`                                        | Label purchase (idempotent core + poller hook)        |
-| `server/services/shippingLabelStore.js`                                     | Durable PostgreSQL purchase claims/outcomes           |
-| `server/migrations/007_shipping_label_attempts.sql`                         | Label purchase ledger schema                          |
-| `server/api-util/avShipping.js`                                             | Persist chosen rate → `protectedData.avShipping`      |
-| `server/api/shipping-quote/`                                                | `POST /api/shipping/quote`                            |
-| `server/api/shipping-label/`                                                | `POST /api/shipping/label` (+ `rateLimiter.js`)       |
-| `src/config/configAVShipping.js`                                            | Package sizes, markup math, bucket mapping            |
-| `src/containers/CheckoutPage/shippingQuote.duck.js` + `AVShippingSelector/` | Client quote UI (incl. `AVShippingNotice`)            |
-| `src/containers/TransactionPage/AVShippingLabelMaybe/`                      | Provider label control                                |
+eShip sends tracking checkpoints to the public HTTPS endpoint. Its documentation provides a custom
+webhook URL but no request-signature scheme, so the integration uses two checks:
+
+1. the dashboard URL carries a high-entropy shared secret that the server compares in constant time;
+   and
+2. the worker re-fetches the shipment with Bearer auth using
+   `GET {base}/shipment?shipment_id=…&eventList=true` before trusting the checkpoint, provider, or
+   tracking link.
+
+Configure the matching eShip environment under **Settings → webhook/custom tracking URL**:
+
+```text
+https://MARKETPLACE_HOST/api/shipping/eship-webhook?secret=ESHIP_WEBHOOK_SECRET
+```
+
+Do not log, paste into tickets, or expose the full URL to the browser. Rotate the secret and update
+both the host and eShip immediately if it is disclosed.
+
+The endpoint accepts eShip's documented JSON shape. Only the exact normalized pair below is queued;
+all other carrier events return `202` and are ignored:
+
+```json
+{
+  "object_id": "60e37902e86e1",
+  "tracking_number": "281115007045",
+  "provider": "FEDEX",
+  "status": "TRANSIT",
+  "substatus": "picked_up",
+  "timestamp": "2026-08-14 12:00:00",
+  "timezone": "-06:00"
+}
+```
+
+PostgreSQL stores one `transit-picked-up` row per shipment. The leader poller claims due rows,
+retries transient failures up to eight times with a 30-second-to-one-hour exponential delay, and
+reports counts under `database.eshipTrackingByStatus` at `GET /api/notifications/readiness`.
+Duplicate webhooks return `200` without creating another transition or email.
+
+The worker maps `object_id` through the label-purchase ledger, verifies the authenticated shipment
+and tracking number, prefers `tracking_url_provider` and falls back to `tracking_url_custom`, then
+writes `metadata.avTracking`. It executes one of two operator-only self-transitions:
+
+```text
+purchased → purchased   transition/eship-picked-up-from-purchased
+delivered → delivered   transition/eship-picked-up-from-delivered
+```
+
+These transitions exist only to trigger `purchase-order-in-transit-customer`; they do not change the
+transaction state, first-entered-state timestamps, stock, refund, payment, or payout. If the seller
+marks the order delivered during processing, the worker re-reads once and uses the delivered
+self-transition. Received, disputed, canceled, completed, non-purchase, and older process versions
+are recorded as ignored.
+
+The hosted `default-purchase` version and its Email texts must be deployed before enabling the flag.
+Only transactions initiated on that version can use the new transitions; existing transactions
+remain pinned to their original process version.
+
+### 5.4 Module index
+
+| Module                                                                      | Role                                                         |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `server/api-util/eshipClient.js`                                            | HTTP: quote, create, and authenticated shipment verification |
+| `server/services/shippingQuoteService.js`                                   | Quote orchestration + 15-min cache                           |
+| `server/services/shipmentService.js`                                        | Label purchase (idempotent core + poller hook)               |
+| `server/services/shippingLabelStore.js`                                     | Durable PostgreSQL purchase claims/outcomes                  |
+| `server/migrations/007_shipping_label_attempts.sql`                         | Label purchase ledger schema                                 |
+| `server/services/eshipTrackingService.js` + `eshipTrackingStore.js`         | Verified pickup email worker + durable claims                |
+| `server/migrations/009_eship_tracking_notifications.sql`                    | Idempotent tracking-notification ledger                      |
+| `server/api-util/avShipping.js`                                             | Persist chosen rate → `protectedData.avShipping`             |
+| `server/api/shipping-quote/`                                                | `POST /api/shipping/quote`                                   |
+| `server/api/shipping-label/`                                                | `POST /api/shipping/label` (+ `rateLimiter.js`)              |
+| `server/api/eship-webhook.js`                                               | `POST /api/shipping/eship-webhook`                           |
+| `src/config/configAVShipping.js`                                            | Package sizes, markup math, bucket mapping                   |
+| `src/containers/CheckoutPage/shippingQuote.duck.js` + `AVShippingSelector/` | Client quote UI (incl. `AVShippingNotice`)                   |
+| `src/containers/TransactionPage/AVShippingLabelMaybe/`                      | Provider label control                                       |
 
 Both custom routers mount at `/api/shipping` in `server/customApiRoutes.js` (`/label` falls through
 the quote router).
@@ -250,6 +316,7 @@ no `quot_id` or `shipment_id`.**
 ```
 
 → `shipmentService` maps `object_id`→`shipmentId`, `tracking_number`→`trackingNumber`,
+`tracking_url_provider` / `tracking_url_custom`→the stored tracking links, and
 `label_url`→`labelUrl`.
 
 ---
@@ -258,9 +325,13 @@ no `quot_id` or `shipment_id`.**
 
 - **Unit/integration** (mocked `node-fetch` + SDK): `eshipClient.test.js`,
   `shipmentService.test.js`, `shippingQuoteService.test.js`, `shippingLabelStore.test.js`,
-  `shipping-label/index.test.js`, `lineItems.test.js`. Run `yarn test-server`.
-- Run `yarn db:migrate` before enabling label purchases, then set `AV_SHIPPING_LABELS_ENABLED=true`.
-  Readiness includes label-attempt counts by status and fails when migration `007` is absent.
+  `eshipTrackingService.test.js`, `eshipTrackingStore.test.js`, `eship-webhook.test.js`,
+  `shipping-label/index.test.js`, and `lineItems.test.js`. Run `yarn test-server`.
+- Run `yarn db:migrate` before enabling labels or tracking email. Migration `009` must be present
+  before `AV_ESHIP_TRACKING_EMAILS_ENABLED=true`; readiness includes both label and tracking counts.
+- In Test, push the purchase process/templates and Email texts first, configure the QA dashboard
+  webhook to the staging URL, then enable the flag. A real `picked_up` checkpoint must produce one
+  buyer email, and replaying the same body must not produce a second.
 - **Live smoke** (real apiqa call): a standalone script that loads env like the server, then calls
   `eshipClient.quote` / a raw `/shipment` POST, printing the response so field names can be
   re-verified against prod later. Keep such scripts out of the repo (scratchpad only) — they hit a

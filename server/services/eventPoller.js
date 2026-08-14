@@ -2,6 +2,7 @@
 
 const { getIntegrationSdk } = require('./integrationSdk');
 const { maybeBuyLabelForEvent } = require('./shipmentService');
+const { processDueEshipTrackingNotifications } = require('./eshipTrackingService');
 const { getAdminPhone, lookupUserPhone } = require('./whatsappService');
 const { claimOwnership, loadCursor, releaseOwnership, saveCursor } = require('./eventPollerCursor');
 const { getLeadership } = require('./eventPollerLeadership');
@@ -444,6 +445,13 @@ async function pollEvents(options = {}) {
       if (jobsProcessed > 0) {
         console.log(`[eventPoller] Processed due campaign jobs=${jobsProcessed}`);
       }
+    }
+
+    const trackingNotificationsProcessed = await processDueEshipTrackingNotifications(ownerId);
+    if (trackingNotificationsProcessed > 0) {
+      console.log(
+        `[eventPoller] Processed eShip tracking notifications=${trackingNotificationsProcessed}`
+      );
     }
 
     const pollMetrics = {
