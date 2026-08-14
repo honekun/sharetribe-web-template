@@ -1,20 +1,16 @@
-import { composeLandingPageExtensions } from './composeExtensions';
+import { composePageBuilderExtensions } from './composeExtensions';
 
-describe('composeLandingPageExtensions', () => {
-  it('uses safe defaults for missing hooks', async () => {
-    const api = composeLandingPageExtensions([{}]);
+describe('composePageBuilderExtensions', () => {
+  it('uses safe defaults for missing hooks', () => {
+    const api = composePageBuilderExtensions([{}]);
     const args = { pageData: { sections: [] } };
 
-    await expect(api.loadDataExtension(args)).resolves.toBeUndefined();
-    expect(api.selectExtensionProps(args)).toEqual({});
     expect(api.getPageBuilderOptions(args)).toBeUndefined();
     expect(api.transformPageData(args)).toEqual(args.pageData);
   });
 
-  it('composes and merges data from multiple extensions', async () => {
+  it('merges sectionComponents and blockComponents from multiple extensions', () => {
     const hookA = {
-      loadDataExtension: jest.fn(() => Promise.resolve()),
-      selectExtensionProps: jest.fn(() => ({ a: 1 })),
       getPageBuilderOptions: jest.fn(() => ({
         sectionComponents: { first: { component: 'A' } },
         blockComponents: { blockA: { component: 'BA' } },
@@ -23,39 +19,43 @@ describe('composeLandingPageExtensions', () => {
       transformPageData: jest.fn(({ pageData }) => ({ ...pageData, markerA: true })),
     };
     const hookB = {
-      loadDataExtension: jest.fn(() => Promise.resolve()),
-      selectExtensionProps: jest.fn(() => ({ b: 2 })),
       getPageBuilderOptions: jest.fn(() => ({
         sectionComponents: { second: { component: 'B' } },
         blockComponents: { blockB: { component: 'BB' } },
       })),
       transformPageData: jest.fn(({ pageData }) => ({ ...pageData, markerB: true })),
     };
-    const api = composeLandingPageExtensions([hookA, hookB]);
+    const api = composePageBuilderExtensions([hookA, hookB]);
     const args = { pageData: { sections: [] } };
 
-    await api.loadDataExtension(args);
-    expect(hookA.loadDataExtension).toHaveBeenCalledWith(args);
-    expect(hookB.loadDataExtension).toHaveBeenCalledWith(args);
-
-    expect(api.selectExtensionProps(args)).toEqual({ a: 1, b: 2 });
     expect(api.getPageBuilderOptions(args)).toEqual({
       sectionComponents: {
         first: { component: 'A' },
         second: { component: 'B' },
       },
-      // Merged rather than overwritten, so a later extension cannot drop an
-      // earlier one's blocks.
+      // Merged, not overwritten — hookB must not drop hookA's block.
       blockComponents: {
         blockA: { component: 'BA' },
         blockB: { component: 'BB' },
       },
       other: 'x',
     });
+
     expect(api.transformPageData(args)).toEqual({
       sections: [],
       markerA: true,
       markerB: true,
+    });
+  });
+
+  it('lets a later extension override an earlier block of the same type', () => {
+    const api = composePageBuilderExtensions([
+      { getPageBuilderOptions: () => ({ blockComponents: { shared: { component: 'first' } } }) },
+      { getPageBuilderOptions: () => ({ blockComponents: { shared: { component: 'second' } } }) },
+    ]);
+
+    expect(api.getPageBuilderOptions({}).blockComponents).toEqual({
+      shared: { component: 'second' },
     });
   });
 });

@@ -171,14 +171,34 @@ others. Tiered limits + per-user hourly rate limit + magic-byte image sniffing; 
 | `SectionSelectedUser`        | `avSelectedUsers` / `av-selected-users-*` | block names = user UUIDs                            |
 | `SectionInstaGrid`           | `avInstaGrid` / `av-insta-grid-*`         | 2–6 col image grid                                  |
 
-**Custom blocks** (`BlockBuilder/`): `BlockInstagramFeed`, `BlockMarkdownTable`, `BlockBrevoForm`,
-and `AVPhotoSliderBlock` (registered as `blockPhotoSlider`; `getEffectiveBlockType` routes any
-default block whose blockName carries `photoSlider ::` to it). That block renders `AVPhotoSlider`
-into `BlockDefault`'s `mediaSlot` prop — the one seam upstream's `BlockDefault` keeps for a stand-in
-media element — so the title/text/CTA still come from `BlockDefault`. Slides come from
+**Custom blocks** (`BlockBuilder/`). Upstream's `BlockBuilder.js`, `BlockDefault.js` and
+`BlockFooter.js` are **byte-identical to upstream** — AV plugs in entirely through
+`options.blockComponents`, which `SectionBuilder` injects from
+`extensions/pageBuilder/av/blocks.js` `getAvBlockComponents()`. SectionBuilder is the choke point
+every section's `<BlockBuilder options={options}>` flows through, so this reaches all eight
+`<PageBuilder>` call sites — including ToS/Privacy/Fallback pages, which pass no options of their
+own. Caller-supplied `blockComponents` are spread last and still win.
+
+```
+upstream BlockBuilder → options.blockComponents
+  ├─ defaultBlock → AVBlockDefault (dispatcher) → AVBlockDefaultView | an AV block below
+  ├─ footerBlock  → AVBlockFooter
+  └─ blockPhotoSlider · blockInstagramFeed · blockMarkdownTable · blockBrevoForm
+```
+
+`AVBlockDefault` is a dispatcher, not a renderer. It calls `buildAvBlockProps` (token props + CTA
+class layering, both in `av/blocks.js`) and `resolveAvBlockComponent` (routes by `blockId` /
+`blockName`), then renders either the matched AV block or `AVBlockDefaultView`. **AV blocks must
+render `AVBlockDefaultView`, never `AVBlockDefault`** — otherwise a `photoSlider ::` block
+dispatches to itself forever. `AVBlockDefaultView` / `AVBlockFooter` are deliberate forks; see
+Deliberate forks below.
+
+`AVPhotoSliderBlock` (`blockPhotoSlider`; reached by the `photoSlider ::` blockName token) renders
+`AVPhotoSlider` into `AVBlockDefaultView`'s `mediaSlot` prop — the seam kept for a stand-in media
+element — so the title/text/CTA still come from the view. Slides come from
 `PhotoSlider.<blockId>.image_1…4` microcopy; blank keys are dropped and an entirely unset slider
 falls back to the block's own media field. Slides mount only as they are first shown, so an unseen
-slide is never fetched. `BlockDefault` blockName tokens (parsed in
+slide is never fetched. blockName tokens (parsed in
 `extensions/pageBuilder/av/blocks.js` `createBlockCustomProps`): `smallerTitles ::` (mirrors
 `- SmallerTitles`), `mediaTitle ::` (renders media between the title and the rest of the content:
 title → media → text/CTA), `blueTitle ::` (mirrors `- BlueTitle` but colors only that block's own
@@ -441,6 +461,21 @@ Preferred order when an upstream component needs to behave differently:
    makes every future upstream hunk conflict. Style the existing element from `avBrandOverrides.css`
    instead.
 
+### Deliberate forks — diff these on every upstream sync
+
+These are option 1 taken all the way: a full copy, swapped in at the composition root, with the
+upstream original left byte-identical. Upstream fixes therefore **do not** reach them automatically.
+On each sync, diff the upstream original against its fork commit and hand-apply anything relevant.
+
+| AV fork                                                     | Upstream original                     | Forked at  |
+| ----------------------------------------------------------- | -------------------------------------- | ---------- |
+| `PageBuilder/BlockBuilder/AVBlockDefault/AVBlockDefaultView` | `BlockBuilder/BlockDefault/BlockDefault` | `a252774a` |
+| `PageBuilder/BlockBuilder/AVBlockFooter/AVBlockFooter`       | `BlockBuilder/BlockFooter/BlockFooter`   | `a252774a` |
+
+```sh
+git diff a252774a upstream/main -- src/containers/PageBuilder/BlockBuilder/BlockDefault/
+```
+
 ### Watchlist — high merge-conflict risk
 
 | File                                                                                    | Why touched                                                                                                     |
@@ -450,8 +485,7 @@ Preferred order when an upstream component needs to behave differently:
 | `util/configHelpers.js`                                                                 | Listing field merge (code wins over Console)                                                                    |
 | `containers/SearchPage/FilterComponent.js`                                              | Custom filter type branches (delegates to `searchFilters/avFilters`)                                            |
 | `containers/SearchPage/SearchPageWithGrid.js`                                           | Grouped-sizes filter injection (`injectAvFilters`)                                                              |
-| `PageBuilder/BlockBuilder/{BlockBuilder,BlockDefault}.js`                               | Custom block registration                                                                                       |
-| `PageBuilder/SectionBuilder/SectionBuilder.js`                                          | Custom section registration                                                                                     |
+| `PageBuilder/SectionBuilder/SectionBuilder.js`                                          | Custom section registration + AV `blockComponents` injection                                                    |
 | `translations/en.json`                                                                  | AV keys mixed with upstream                                                                                     |
 | `TopbarContainer/Topbar/TopbarDesktop/CustomLinksMenu/*`                                | AV user/category dropdowns (~480 LOC)                                                                           |
 | `CheckoutPage/CheckoutPageWithPayment.js`                                               | Default Stripe country (`configAV.defaultCountry`)                                                              |

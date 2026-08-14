@@ -24,6 +24,7 @@ import {
   parseSectionCtaClass,
   parseSectionCustomOptions,
 } from '../../../extensions/pageBuilder/av/sectionStyles';
+import { getAvBlockComponents } from '../../../extensions/pageBuilder/av/blocks';
 
 // E.g. share the same title styles
 const DEFAULT_CLASSES = {
@@ -94,6 +95,14 @@ const SectionBuilder = props => {
   const { sections = [], options } = props;
   const { sectionComponents = {}, isInsideContainer, ...otherOption } = options || {};
 
+  // AV: every section forwards `options` to BlockBuilder, so this is the one
+  // choke point that reaches all eight <PageBuilder> call sites — including
+  // TermsOfServicePage, PrivacyPolicyPage and the FallbackPages, which pass no
+  // options of their own. Registering AV's `defaultBlock`/`footerBlock` here is
+  // what keeps BlockBuilder, BlockDefault and BlockFooter pristine upstream.
+  // Caller-supplied blockComponents are spread last so they still win.
+  const blockComponents = { ...getAvBlockComponents(), ...otherOption.blockComponents };
+
   // If there's no sections, we can't render the correct section component
   if (!sections || sections.length === 0) {
     return null;
@@ -154,7 +163,7 @@ const SectionBuilder = props => {
               className={classes}
               defaultClasses={resolvedDefaultClasses}
               isInsideContainer={isInsideContainer}
-              options={{ ...otherOption, defaultClasses: resolvedDefaultClasses }}
+              options={{ ...otherOption, blockComponents, defaultClasses: resolvedDefaultClasses }}
               {...section}
               sectionId={sectionId}
               customOption={customOption}

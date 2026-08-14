@@ -39,7 +39,6 @@ const FieldMedia = props => {
  * @param {Object?} props.title heading config for the block
  * @param {Object?} props.text content config for the block (can be markdown)
  * @param {Object?} props.callToAction call to action button (e.g. internal link config)
- * @param {ReactNode?} props.mediaSlot element rendered in place of the media field
  * @param {string?} props.responsiveImageSizes
  * @param {Object} props.options extra options for the block component (e.g. custom fieldComponents)
  * @param {Object<string,FieldComponentConfig>?} props.options.fieldComponents Custom fieldComponents
@@ -60,16 +59,6 @@ const BlockDefault = props => {
     responsiveImageSizes,
     options = {},
     alignment,
-    twoButtons,
-    hasIconImg,
-    hasSmallerTitles,
-    hasMediaTitle,
-    hasBlueTitle,
-    hasFullLinks,
-    hasImgTop,
-    mediaSlot,
-    ctaButtonWrapClass,
-    ...customProps
   } = props;
   const classes = classNames(rootClassName || css.root, className);
   const hasTextComponentFields = hasDataInFields([title, text, callToAction], options);
@@ -82,76 +71,19 @@ const BlockDefault = props => {
 
   const alignmentClass = alignmentClasses[alignment];
 
-  const textComponentsClass = classNames(
-    textClassName,
-    alignmentClass,
-    css.text,
-    hasIconImg ? css.slimContent : '',
-    hasSmallerTitles ? css.smallerTitles : '',
-    hasFullLinks ? css.fullLinks : ''
-  );
-
-  const fieldMediaClass = classNames(
-    mediaClassName,
-    hasIconImg ? css.iconImg : '',
-    hasImgTop ? css.imgTop : ''
-  );
-
-  // The block media. When `hasMediaTitle` is set it is rendered between the
-  // title and the rest of the content (see below); otherwise it stays above
-  // the text column as usual.
-  // A block variant may pass its own media element as `mediaSlot` (AV's
-  // photoSlider block does) — it then stands in for the media field.
-  const renderMedia = extraClassName =>
-    mediaSlot ? (
-      React.cloneElement(mediaSlot, {
-        className: classNames(mediaSlot.props.className, extraClassName),
-      })
-    ) : (
+  return (
+    <BlockContainer id={blockId} className={classes}>
       <FieldMedia
         media={media}
         sizes={responsiveImageSizes}
-        className={classNames(fieldMediaClass, extraClassName)}
+        className={mediaClassName}
         options={options}
       />
-    );
-
-  // Place the media inside the text column (after the title) only when the
-  // token is set AND there are text fields to anchor it under. Otherwise keep
-  // it at the top so a media-only block still renders.
-  const mediaInTitle = hasMediaTitle && hasTextComponentFields;
-
-  return (
-    <BlockContainer id={blockId} className={classes}>
-      {mediaInTitle ? null : renderMedia()}
       {hasTextComponentFields ? (
-        <div className={textComponentsClass}>
-          {twoButtons && twoButtons.titleEyebrow ? (
-            <span className={css.titleEyebrow}>{twoButtons.titleEyebrow}</span>
-          ) : null}
-          <Field
-            data={title}
-            className={hasBlueTitle ? css.blueTitle : undefined}
-            options={options}
-          />
-          {mediaInTitle ? renderMedia(css.mediaInTitle) : null}
+        <div className={classNames(textClassName, alignmentClass, css.text)}>
+          <Field data={title} options={options} />
           <Field data={text} options={options} />
           <Field data={callToAction} className={ctaButtonClass} options={options} />
-
-          {twoButtons ? (
-            <div className={classNames(css.buttonWrap, ctaButtonWrapClass)}>
-              <Field
-                data={twoButtons.callToAction1}
-                className={twoButtons.cta1ClassName || customProps.ctaButtonPrimaryClass}
-                options={options}
-              />
-              <Field
-                data={twoButtons.callToAction2}
-                className={twoButtons.cta2ClassName || customProps.ctaButtonSecondaryClass}
-                options={options}
-              />
-            </div>
-          ) : null}
         </div>
       ) : null}
     </BlockContainer>

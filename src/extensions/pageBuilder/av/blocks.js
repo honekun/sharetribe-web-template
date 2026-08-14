@@ -16,10 +16,16 @@ const fmt = (intl, id, def = '') => {
 
 // ---- Block components ----
 
-let cachedBlockComponents;
+// The AV-only block types. These are reached by blockId/blockName rather than by
+// a CMS-authored `blockType` — see `getEffectiveBlockType` / `resolveAvBlockComponent`.
+//
+// Everything here is `require`d lazily and cached: `AVBlockDefault` imports the
+// helpers in this file, so a top-level import back into the container tree would
+// be a cycle.
+let cachedSpecialBlockComponents;
 
-export const getAvBlockComponents = () => {
-  if (cachedBlockComponents) return cachedBlockComponents;
+export const getAvSpecialBlockComponents = () => {
+  if (cachedSpecialBlockComponents) return cachedSpecialBlockComponents;
 
   const BlockInstagramFeed = require('../../../containers/PageBuilder/BlockBuilder/BlockInstagramFeed/BlockInstagramFeed')
     .default;
@@ -30,11 +36,34 @@ export const getAvBlockComponents = () => {
   const AVPhotoSliderBlock = require('../../../containers/PageBuilder/BlockBuilder/AVPhotoSliderBlock/AVPhotoSliderBlock')
     .default;
 
-  cachedBlockComponents = {
+  cachedSpecialBlockComponents = {
     blockInstagramFeed: { component: BlockInstagramFeed },
     blockMarkdownTable: { component: BlockMarkdownTable },
     blockBrevoForm: { component: BlockBrevoForm },
     blockPhotoSlider: { component: AVPhotoSliderBlock },
+  };
+  return cachedSpecialBlockComponents;
+};
+
+let cachedBlockComponents;
+
+/**
+ * The full AV block-component map, injected as `options.blockComponents` by
+ * SectionBuilder. Overriding the two standard keys is what keeps upstream's
+ * `BlockBuilder`, `BlockDefault` and `BlockFooter` byte-identical.
+ */
+export const getAvBlockComponents = () => {
+  if (cachedBlockComponents) return cachedBlockComponents;
+
+  const AVBlockDefault = require('../../../containers/PageBuilder/BlockBuilder/AVBlockDefault/AVBlockDefault')
+    .default;
+  const AVBlockFooter = require('../../../containers/PageBuilder/BlockBuilder/AVBlockFooter/AVBlockFooter')
+    .default;
+
+  cachedBlockComponents = {
+    ...getAvSpecialBlockComponents(),
+    defaultBlock: { component: AVBlockDefault },
+    footerBlock: { component: AVBlockFooter },
   };
   return cachedBlockComponents;
 };
@@ -51,6 +80,22 @@ export const getEffectiveBlockType = (blockId, blockName, fallbackType) => {
   const isDefaultBlock = !fallbackType || fallbackType === 'defaultBlock';
   if (isDefaultBlock && blockName?.includes('photoSlider ::')) return 'blockPhotoSlider';
   return fallbackType;
+};
+
+/**
+ * The AV block component a block should re-route to, or `null` to render the
+ * component's own view.
+ *
+ * `AVBlockDefault` / `AVBlockFooter` call this instead of upstream's BlockBuilder
+ * doing the lookup, so the re-routing works on every page — including
+ * TermsOfServicePage, PrivacyPolicyPage and the FallbackPages, which pass no
+ * PageBuilder options at all.
+ */
+export const resolveAvBlockComponent = ({ blockId, blockName, blockType }) => {
+  const effectiveType = getEffectiveBlockType(blockId, blockName, blockType);
+  // No AV rule matched — the caller renders itself.
+  if (effectiveType === blockType) return null;
+  return getAvSpecialBlockComponents()[effectiveType]?.component || null;
 };
 
 // ---- CTA token parsers ----
@@ -221,4 +266,53 @@ export const createBlockCustomProps = (block, intl, css) => {
   }
 
   return blockCustomProps;
+};
+
+/**
+ * All AV props for one block: the token-driven copy/layout props from
+ * `createBlockCustomProps`, plus the CTA classes layered onto whatever the
+ * section passed down.
+ *
+ * This used to run in upstream's BlockBuilder, once per block before the render
+ * loop. It now runs inside the AV block component itself, which is what lets
+ * BlockBuilder stay byte-identical to upstream.
+ *
+ * @param {Object} block - the block config (blockId, blockName, …)
+ * @param {Object} intl - react-intl object, for the token-keyed microcopy
+ * @param {Object} css - SectionBuilder.module.css, where the CTA classes live
+ * @param {string?} inheritedCtaButtonClass - the section's own CTA class
+ * @returns {Object} props to spread over the rendered block component
+ */
+export const buildAvBlockProps = (block, intl, css, inheritedCtaButtonClass) => {
+  const customProps = createBlockCustomProps(block, intl, css);
+
+  const blockCtaOverride = parseBlockCtaClass(block.blockName, css);
+  if (blockCtaOverride) {
+    // Layer the block's CTA tokens onto the section-inherited CTA class
+    // (e.g. `- SectionCtaBtnBlue`): a block color token replaces the base,
+    // while modifiers (position/border/font) layer on top and keep the
+    // inherited color.
+    customProps.ctaButtonClass = mergeBlockCtaClass(blockCtaOverride, inheritedCtaButtonClass, css);
+    if (customProps.twoButtons) {
+      if (!customProps.twoButtons.cta1ClassName)
+        customProps.ctaButtonPrimaryClass = mergeBlockCtaClass(
+          blockCtaOverride,
+          customProps.ctaButtonPrimaryClass,
+          css
+        );
+      if (!customProps.twoButtons.cta2ClassName)
+        customProps.ctaButtonSecondaryClass = mergeBlockCtaClass(
+          blockCtaOverride,
+          customProps.ctaButtonSecondaryClass,
+          css
+        );
+    }
+  }
+
+  const tokens = block.blockName ? [...block.blockName.matchAll(/(\S+)\s*::/g)].map(m => m[1]) : [];
+  if (tokens.includes('ctaBtnCenter')) {
+    customProps.ctaButtonWrapClass = css.ctaBtnCenterWrap;
+  }
+
+  return customProps;
 };

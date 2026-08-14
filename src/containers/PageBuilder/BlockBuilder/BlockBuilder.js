@@ -5,16 +5,6 @@ import BlockDefault from './BlockDefault';
 import BlockFooter from './BlockFooter';
 import BlockSocialMediaLink from './BlockSocialMediaLink';
 
-import { useIntl } from '../../../util/reactIntl';
-import sectionCss from './../SectionBuilder/SectionBuilder.module.css';
-import {
-  getAvBlockComponents,
-  getEffectiveBlockType,
-  parseBlockCtaClass,
-  mergeBlockCtaClass,
-  createBlockCustomProps,
-} from '../../../extensions/pageBuilder/av/blocks';
-
 ///////////////////////////////////////////
 // Mapping of block types and components //
 ///////////////////////////////////////////
@@ -23,7 +13,6 @@ const defaultBlockComponents = {
   defaultBlock: { component: BlockDefault },
   footerBlock: { component: BlockFooter },
   socialMediaLink: { component: BlockSocialMediaLink },
-  ...getAvBlockComponents(),
 };
 
 ////////////////////
@@ -69,7 +58,6 @@ const defaultBlockComponents = {
  * @returns {JSX.Element} containing form that allows adding availability exceptions
  */
 const BlockBuilder = props => {
-  const intl = useIntl();
   const { blocks = [], sectionId, options, ...otherProps } = props;
 
   // Extract block & field component mappings from props
@@ -87,52 +75,12 @@ const BlockBuilder = props => {
   // Combine component-mapping from props together with the default one:
   const components = { ...defaultBlockComponents, ...blockComponents };
 
-  // AV: pre-compute custom props per block (intl-driven copy + CTA overrides).
-  const blockCustomPropsList = blocks.map(block => {
-    const customProps = createBlockCustomProps(block, intl, sectionCss);
-    const blockCtaOverride = parseBlockCtaClass(block.blockName, sectionCss);
-    if (blockCtaOverride) {
-      // Layer the block's CTA tokens onto the section-inherited CTA class
-      // (e.g. `- SectionCtaBtnBlue`): a block color token replaces the base,
-      // while modifiers (position/border/font) layer on top and keep the
-      // inherited color. `otherProps.ctaButtonClass` is the section default.
-      customProps.ctaButtonClass = mergeBlockCtaClass(
-        blockCtaOverride,
-        otherProps.ctaButtonClass,
-        sectionCss
-      );
-      if (customProps.twoButtons) {
-        if (!customProps.twoButtons.cta1ClassName)
-          customProps.ctaButtonPrimaryClass = mergeBlockCtaClass(
-            blockCtaOverride,
-            customProps.ctaButtonPrimaryClass,
-            sectionCss
-          );
-        if (!customProps.twoButtons.cta2ClassName)
-          customProps.ctaButtonSecondaryClass = mergeBlockCtaClass(
-            blockCtaOverride,
-            customProps.ctaButtonSecondaryClass,
-            sectionCss
-          );
-      }
-    }
-    const tokens = block.blockName
-      ? [...block.blockName.matchAll(/(\S+)\s*::/g)].map(m => m[1])
-      : [];
-    if (tokens.includes('ctaBtnCenter')) {
-      customProps.ctaButtonWrapClass = sectionCss.ctaBtnCenterWrap;
-    }
-    return customProps;
-  });
-
   return (
     <>
       {blocks.map((block, index) => {
-        const blockId = block.blockId || `${sectionId}-block-${index + 1}`;
-        const effectiveBlockType = getEffectiveBlockType(blockId, block.blockName, block.blockType);
-        const config = components[effectiveBlockType];
+        const config = components[block.blockType];
         const Block = config?.component;
-        const blockCustomProps = blockCustomPropsList[index];
+        const blockId = block.blockId || `${sectionId}-block-${index + 1}`;
 
         if (Block) {
           return (
@@ -142,7 +90,6 @@ const BlockBuilder = props => {
               blockId={blockId}
               {...blockOptionsMaybe}
               {...otherProps}
-              {...blockCustomProps}
             />
           );
         } else {

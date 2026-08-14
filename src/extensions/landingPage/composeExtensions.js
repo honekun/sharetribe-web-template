@@ -8,6 +8,8 @@ const mergePageBuilderOptions = (base, next) => {
 
   const baseSectionComponents = base?.sectionComponents || {};
   const nextSectionComponents = next?.sectionComponents || {};
+  const baseBlockComponents = base?.blockComponents || {};
+  const nextBlockComponents = next?.blockComponents || {};
 
   return {
     ...base,
@@ -15,6 +17,12 @@ const mergePageBuilderOptions = (base, next) => {
     sectionComponents: {
       ...baseSectionComponents,
       ...nextSectionComponents,
+    },
+    // Merged, not overwritten: a second extension returning blockComponents
+    // would otherwise drop the first extension's blocks.
+    blockComponents: {
+      ...baseBlockComponents,
+      ...nextBlockComponents,
     },
   };
 };

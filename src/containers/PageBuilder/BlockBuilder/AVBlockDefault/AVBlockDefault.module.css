@@ -1,0 +1,172 @@
+@import '../../../../styles/customMediaQueries.css';
+
+.root {
+}
+
+/* ── Media ────────────────────────────────────────────────────────────────── */
+
+.media {
+  width: 100%;
+  border-radius: 8px;
+  margin-bottom: 0;
+}
+
+/* Media moved into the text column (title → media → content) via the
+   "mediaTitle ::" block-name token. Adds breathing room above/below. */
+.mediaInTitle {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+/* "icon img ::": render the block media as a small centered icon. */
+.iconImg {
+  width: 48px;
+  margin: auto;
+}
+
+/* "imgTop ::": when the block media is cropped (object-fit: cover, e.g. inside
+   an AvFeature row), anchor it to the top instead of the default center. */
+.imgTop img,
+.imgTop video {
+  object-position: top;
+}
+
+/* ── Text column ──────────────────────────────────────────────────────────── */
+
+.text {
+  width: 100%;
+  margin-top: 20px;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+/* Block-level mirror of the section-name token "- BlueTitle": color only the
+   block's own title (the title Field carries this class), scoped under .text so
+   it never touches headings inside the body markdown. */
+.text .blueTitle {
+  color: var(--avBlue);
+}
+
+/* "fullLinks ::": keep links inside the block's body P elements whole — never
+   break a word/URL mid-character; wrap only at spaces (a too-long link overflows
+   at full size rather than being split). Matches the AV heading keep-whole rules.
+   word-break: keep-all is supported across all modern desktop + mobile browsers. */
+.fullLinks p a {
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphens: none;
+}
+
+/* Block-level mirror of the section-name token "- SmallerTitles":
+   shift all headings down one size level. */
+.smallerTitles {
+  h1 {
+    font-size: 30px;
+  }
+  h2 {
+    font-size: 20px;
+  }
+  h3 {
+    font-size: 18px;
+    padding-bottom: 3px;
+  }
+  h4 {
+    font-size: 16px;
+  }
+  h5 {
+    font-size: 14px;
+  }
+}
+
+/* "icon img ::": tighten the text column around a small icon. */
+.slimContent {
+  h3,
+  h4 {
+    font-family: var(--fontFamilyHeadings);
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 140%; /* 28px */
+
+    + h4,
+    + h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+  }
+
+  p {
+    margin: 0 auto;
+    line-height: 150%; /* 24px */
+  }
+
+  a {
+    display: inline-block;
+  }
+}
+
+/* ── Alignment ────────────────────────────────────────────────────────────── */
+
+.alignLeft {
+  text-align: left;
+}
+
+.alignCenter {
+  text-align: center;
+
+  & > ul,
+  & > ol {
+    text-align: left;
+    width: fit-content;
+    /* center */
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  & > p {
+    /* center */
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.alignRight {
+  text-align: right;
+  & > ul,
+  & > ol {
+    text-align: left;
+    width: fit-content;
+    /* push to right */
+    margin-left: auto;
+  }
+
+  & > p {
+    /* push to right */
+    margin-left: auto;
+  }
+}
+
+/* ── Two-button row ("2Buttons ::") ───────────────────────────────────────── */
+
+.titleEyebrow {
+  color: var(--gray, #bcbcbc);
+  font-family: Roboto;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 150%; /* 22.5px */
+  margin-bottom: 10px;
+}
+
+.buttonWrap {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+
+  a {
+    margin-top: 0;
+  }
+}
