@@ -33,7 +33,10 @@ import Routes from './routing/Routes';
 import defaultMessages from './translations/en.json';
 // AV-specific translation overrides + additions, kept in a separate file so the
 // upstream-baseline en.json stays merge-clean.
-import avMessages from './translations/en_av.json';
+// The marketplace is Spanish-facing, so the Spanish overlay is the fallback: any AV
+// key the operator has not translated in Console renders in Spanish, not English.
+// (en_av.json stays the source of truth for key symmetry - see yarn av-translation-check.)
+import avMessages from './translations/es_av.json';
 
 // If you want to change the language of default (fallback) translations,
 // change the imports to match the wanted locale:
