@@ -115,10 +115,21 @@ it. Instead:
 - **Add a new component-specific class** consumed by JS → put it in a new co-located AV module
   (`<Component>.av.module.css`) imported by the (already-forked) component, not in the upstream
   `.module.css`. A global override can't apply a class the module never declares.
-- Pristine upstream baseline for diffing/reverting a file: `git diff a252774a -- <file>` (the
-  `upstream/main` merge-base); empty diff = clean. The big forked files
-  (TopbarDesktop/MobileMenu/SearchForm + CustomLinksMenu, SectionBuilder, BlockDefault,
-  SectionFeatures/Footer, vendored `image-gallery.css`) are intentionally kept as-is.
+- **Pristine upstream baseline: always `upstream/main`, never a hardcoded SHA.**
+
+  ```sh
+  git fetch upstream
+  git diff upstream/main -- <file>   # empty = clean
+  ```
+
+  Do **not** diff or revert against `a252774a`. That was the merge-base before the v12.1.0 merge
+  and `upstream/main` is now ~275 commits past it, so `git checkout a252774a -- <file>` silently
+  throws away merged upstream work — it did exactly that to `EditListingPhotosForm` and
+  `CustomLinksMenu/`, which were already clean. Any SHA written down here goes stale the next time
+  upstream is merged; resolve the baseline at the time you use it.
+
+  The big forked files (TopbarDesktop/MobileMenu/SearchForm, SectionBuilder, SectionFeatures/Footer,
+  vendored `image-gallery.css`) are intentionally kept as-is.
 
 ## Custom AV Components
 
@@ -467,13 +478,17 @@ These are option 1 taken all the way: a full copy, swapped in at the composition
 upstream original left byte-identical. Upstream fixes therefore **do not** reach them automatically.
 On each sync, diff the upstream original against its fork commit and hand-apply anything relevant.
 
-| AV fork                                                     | Upstream original                     | Forked at  |
-| ----------------------------------------------------------- | -------------------------------------- | ---------- |
-| `PageBuilder/BlockBuilder/AVBlockDefault/AVBlockDefaultView` | `BlockBuilder/BlockDefault/BlockDefault` | `a252774a` |
-| `PageBuilder/BlockBuilder/AVBlockFooter/AVBlockFooter`       | `BlockBuilder/BlockFooter/BlockFooter`   | `a252774a` |
+| AV fork                                                      | Upstream original                        | Forked from upstream |
+| ------------------------------------------------------------ | ----------------------------------------- | --------------------- |
+| `PageBuilder/BlockBuilder/AVBlockDefault/AVBlockDefaultView` | `BlockBuilder/BlockDefault/BlockDefault` | `832f8d66f` (v12.1.0) |
+| `PageBuilder/BlockBuilder/AVBlockFooter/AVBlockFooter`       | `BlockBuilder/BlockFooter/BlockFooter`   | `832f8d66f` (v12.1.0) |
+
+The "forked from" SHA is a historical fact — it does not go stale. To see what upstream has changed
+in the original since the fork, and hand-apply what matters:
 
 ```sh
-git diff a252774a upstream/main -- src/containers/PageBuilder/BlockBuilder/BlockDefault/
+git fetch upstream
+git diff 832f8d66f upstream/main -- src/containers/PageBuilder/BlockBuilder/BlockDefault/
 ```
 
 ### Watchlist — high merge-conflict risk

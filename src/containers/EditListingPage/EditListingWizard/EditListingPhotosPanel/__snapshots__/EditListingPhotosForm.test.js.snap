@@ -11,6 +11,9 @@ exports[`EditListingDeliveryForm matches snapshot 1`] = `
       class="imagesFieldArray"
     >
       <div
+        class="sortableImages"
+      />
+      <div
         class="addImageWrapper"
       >
         <div
@@ -65,13 +68,17 @@ exports[`EditListingDeliveryForm matches snapshot 1`] = `
         EditListingPhotosForm.addImagesTip
       </span>
     </p>
-    <button
-      class="root submitButton"
-      disabled=""
-      type="submit"
+    <div
+      class="submitSection"
     >
-      Save photos
-    </button>
+      <button
+        class="root submitButton"
+        disabled=""
+        type="submit"
+      >
+        Save photos
+      </button>
+    </div>
   </form>
 </DocumentFragment>
 `;
