@@ -43,6 +43,43 @@ describe('AVShippingSelector', () => {
     expect(screen.getByText('AVShippingSelector.loading')).toBeInTheDocument();
   });
 
+  it('shows an animated spinner alongside the loading text', () => {
+    render(<AVShippingSelector status="quoting" {...base} />);
+    expect(
+      screen.getByRole('img', { name: 'IconSpinner.screenreader.loading' })
+    ).toBeInTheDocument();
+  });
+
+  it('does not show the spinner once quoted', () => {
+    render(<AVShippingSelector status="quoted" {...base} />);
+    expect(
+      screen.queryByRole('img', { name: 'IconSpinner.screenreader.loading' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows the confirm-with-seller notice below the buckets when quoted', () => {
+    render(<AVShippingSelector status="quoted" {...base} />);
+    expect(screen.getByText('AVShippingSelector.noticeTitle')).toBeInTheDocument();
+    expect(screen.getByText('AVShippingSelector.noticeText')).toBeInTheDocument();
+  });
+
+  it('hides the notice when the microcopy keys are blank', () => {
+    render(<AVShippingSelector status="quoted" {...base} />, {
+      messages: { 'AVShippingSelector.noticeTitle': '', 'AVShippingSelector.noticeText': '' },
+    });
+    expect(screen.queryByText('AVShippingSelector.noticeTitle')).not.toBeInTheDocument();
+    expect(screen.queryByText('AVShippingSelector.noticeText')).not.toBeInTheDocument();
+  });
+
+  it('does not show the notice while quoting or on error', () => {
+    const { unmount } = render(<AVShippingSelector status="quoting" {...base} />);
+    expect(screen.queryByText('AVShippingSelector.noticeTitle')).not.toBeInTheDocument();
+    unmount();
+
+    render(<AVShippingSelector status="error" errorCode="ESHIP_ERROR" {...base} />);
+    expect(screen.queryByText('AVShippingSelector.noticeTitle')).not.toBeInTheDocument();
+  });
+
   it('shows a retry control on transient error', () => {
     render(<AVShippingSelector status="error" errorCode="ESHIP_ERROR" {...base} />);
     expect(screen.getByText('AVShippingSelector.retry')).toBeInTheDocument();

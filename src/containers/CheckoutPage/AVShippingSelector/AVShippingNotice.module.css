@@ -1,0 +1,29 @@
+/* Mirrors StripeConnectAccountStatusBox's `verificiationBox verficiationNeededBox`
+   pairing: --colorAttention border on --colorAttentionSubtle, --borderRadiusMedium
+   corners, h5 type with a semibold title over regular body text. Padding is local
+   rather than that box's 15px/32px, since this sits in the narrow checkout column. */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 18px;
+  border: 1px solid var(--colorAttention);
+  border-radius: var(--borderRadiusMedium);
+  background-color: var(--colorAttentionSubtle);
+}
+
+.title {
+  composes: h5 from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorBlack);
+  margin: 0;
+  padding: 0;
+}
+
+.text {
+  composes: h5 from global;
+  font-weight: var(--fontWeightRegular);
+  color: var(--colorBlack);
+  margin: 0;
+  padding: 0;
+}

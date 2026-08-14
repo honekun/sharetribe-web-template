@@ -35,10 +35,13 @@ archive.
 - [Brevo email and consent](integrations/brevo.md)
 - [Brevo Spanish templates](integrations/brevo-templates-es.md)
 - [WhatsApp](integrations/whatsapp.md)
+- [Instagram feed](integrations/instagram.md)
 
 ### Technical reference
 
 - [Sharetribe hosted-assets API](reference/hosted-assets.md)
+- [Spanish marketplace-text reference](reference/marketplace-texts-es.md)
+- [Spanish Email-text reference](reference/email-texts-es.md)
 
 ## Pending work
 

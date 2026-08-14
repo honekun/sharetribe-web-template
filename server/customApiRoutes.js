@@ -11,6 +11,7 @@
 // to a request that does not want one:
 //   - brevo      needs JSON (POST /subscribe, /engagement, /webhook, PUT /preference)
 //   - shipping-* declare their own `express.json()` on the one POST each has
+//   - eShip webhook declares a 32kb JSON limit on its tracking POST
 //   - bulk-import uses per-route `multer` for multipart; JSON would be a no-op
 //   - instagram / my-balance / notifications / topbar are GET-only
 // Upstream's own `/api/*` routes are unaffected: they are Transit-encoded and
@@ -25,6 +26,7 @@ const myBalanceRouter = require('./api/my-balance');
 const bulkImportRouter = require('./api/bulk-import');
 const shippingQuoteRouter = require('./api/shipping-quote');
 const shippingLabelRouter = require('./api/shipping-label');
+const eshipWebhookRouter = require('./api/eship-webhook');
 const notificationsRouter = require('./api/notifications');
 const topbarLocalDesignUsers = require('./api/topbar-local-design-users');
 
@@ -40,6 +42,7 @@ const mountCustomApiRoutes = app => {
   app.use('/api/bulk-import', bulkImportRouter);
   app.use('/api/shipping', shippingQuoteRouter);
   app.use('/api/shipping', shippingLabelRouter);
+  app.use('/api/shipping', eshipWebhookRouter);
   app.use('/api/notifications', notificationsRouter);
   app.use('/api/topbar', topbarRouter);
 };

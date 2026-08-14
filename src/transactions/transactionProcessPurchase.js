@@ -36,6 +36,8 @@ export const transitions = {
   // Provider or opeartor can mark the product shipped/delivered
   MARK_DELIVERED: 'transition/mark-delivered',
   OPERATOR_MARK_DELIVERED: 'transition/operator-mark-delivered',
+  ESHIP_PICKED_UP_FROM_PURCHASED: 'transition/eship-picked-up-from-purchased',
+  ESHIP_PICKED_UP_FROM_DELIVERED: 'transition/eship-picked-up-from-delivered',
 
   // Customer can mark the product received (e.g. picked up from provider)
   MARK_RECEIVED_FROM_PURCHASED: 'transition/mark-received-from-purchased',
@@ -152,6 +154,7 @@ export const graph = {
       on: {
         [transitions.MARK_DELIVERED]: states.DELIVERED,
         [transitions.OPERATOR_MARK_DELIVERED]: states.DELIVERED,
+        [transitions.ESHIP_PICKED_UP_FROM_PURCHASED]: states.PURCHASED,
         [transitions.MARK_RECEIVED_FROM_PURCHASED]: states.RECEIVED,
         [transitions.AUTO_CANCEL]: states.CANCELED,
         [transitions.CANCEL]: states.CANCELED,
@@ -166,6 +169,7 @@ export const graph = {
         [transitions.AUTO_MARK_RECEIVED]: states.RECEIVED,
         [transitions.DISPUTE]: states.DISPUTED,
         [transitions.OPERATOR_DISPUTE]: states.DISPUTED,
+        [transitions.ESHIP_PICKED_UP_FROM_DELIVERED]: states.DELIVERED,
       },
     },
 

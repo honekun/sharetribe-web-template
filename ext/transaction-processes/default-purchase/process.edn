@@ -59,6 +59,11 @@
    :actions [],
    :from :state/purchased,
    :to :state/delivered}
+  {:name :transition/eship-picked-up-from-purchased,
+   :actor :actor.role/operator,
+   :actions [],
+   :from :state/purchased,
+   :to :state/purchased}
   {:name :transition/mark-received,
    :actor :actor.role/customer,
    :actions [{:name :action/stripe-create-payout}],
@@ -68,10 +73,15 @@
    :at
    {:fn/plus
     [{:fn/timepoint [:time/first-entered-state :state/delivered]}
-     {:fn/period ["P14D"]}]},
+     {:fn/period ["P7D"]}]},
    :actions [{:name :action/stripe-create-payout}],
    :from :state/delivered,
    :to :state/received}
+  {:name :transition/eship-picked-up-from-delivered,
+   :actor :actor.role/operator,
+   :actions [],
+   :from :state/delivered,
+   :to :state/delivered}
   {:name :transition/dispute,
    :actor :actor.role/customer,
    :actions [{:name :action/update-protected-data}],
@@ -231,12 +241,23 @@
    :on :transition/operator-mark-delivered,
    :to :actor.role/provider,
    :template :purchase-order-operator-marked-as-delivered}
+  {:name :notification/purchase-order-in-transit-from-purchased-to-customer,
+   :on :transition/eship-picked-up-from-purchased,
+   :to :actor.role/customer,
+   :template :purchase-order-in-transit-customer}
+  {:name :notification/purchase-order-in-transit-from-delivered-to-customer,
+   :on :transition/eship-picked-up-from-delivered,
+   :to :actor.role/customer,
+   :template :purchase-order-in-transit-customer}
   {:name :notification/purchase-mark-order-received-reminder,
    :on :transition/mark-delivered,
+   ;; Two days before :transition/auto-mark-received fires, as it was under the
+   ;; old 14-day window (P12D). Moving the deadline without moving this would
+   ;; schedule the reminder five days after the order had already auto-received.
    :at
    {:fn/plus
     [{:fn/timepoint [:time/first-entered-state :state/delivered]}
-     {:fn/period ["P12D"]}]},
+     {:fn/period ["P5D"]}]},
    :to :actor.role/customer,
    :template :purchase-mark-order-received-reminder}
   {:name :notification/order-marked-as-received-from-purchased,
@@ -275,6 +296,10 @@
    :on :transition/dispute,
    :to :actor.role/provider,
    :template :purchase-order-disputed}
+  {:name :notification/order-disputed-to-customer,
+   :on :transition/dispute,
+   :to :actor.role/customer,
+   :template :purchase-order-disputed-customer}
   {:name :notification/purchase-order-operator-disputed-to-customer,
    :on :transition/operator-dispute,
    :to :actor.role/customer,

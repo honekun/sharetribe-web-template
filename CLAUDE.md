@@ -79,7 +79,9 @@ via `options.sectionComponents`.
 `ext/transaction-processes/*/process.edn` (deployed via `flex-cli process push` +
 `process update-alias`; in-flight transactions keep their old version). AV `default-purchase`:
 seller shipping window **P7D** (`transition/auto-cancel`; reminders P3D + P5D
-`purchase-shipping-reminder[-final]`); buyer confirm window stays P14D (`auto-mark-received`).
+`purchase-shipping-reminder[-final]`); buyer confirm window **P7D** (`auto-mark-received`, reminder
+P5D `purchase-mark-order-received-reminder`) — both were P14D before 2026-08-14. A reminder is
+pinned to its deadline, so moving a window means moving its reminder too.
 
 **SDK** — `sharetribe-flex-sdk`; client wrapper `src/util/sdkLoader.js`, server
 `server/api-util/sdk.js`. Tokens in HttpOnly cookies (auto-refresh). Hosted assets via
@@ -344,7 +346,9 @@ Modules: `server/api-util/eshipClient.js` (HTTP: `quote` + `createShipment`),
 (`/api/shipping/quote`) + `server/api/shipping-label/` (`/api/shipping/label`, both AV-owned in
 `customApiRoutes.js`), `server/api-util/avShipping.js` (persist helper). Client:
 `CheckoutPage/shippingQuote.duck.js` (global reducer), `CheckoutPage/AVShippingSelector/` (buckets +
-raw list + retry/Contactar AV), `ShippingOriginPage` (`/account/shipping-origin`, seller origin in
+`AVShippingNotice` + raw list + retry/Contactar AV; `IconSpinner` passed `rootClassName` so it
+replaces the icon's own 28px `.root` rather than tying on specificity),
+`ShippingOriginPage` (`/account/shipping-origin`, seller origin in
 `protectedData.shippingOrigin`), `ManageListingsPage/ShippingOriginBanner/` (missing-origin nudge),
 `util/shippingOrigin.js` (`hasCompleteShippingOrigin`). **Watchlist:** `StripePaymentForm.js` now
 hosts the selector slot + surfaces address values via `FormSpy` + gates the Pay button

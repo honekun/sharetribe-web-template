@@ -153,3 +153,66 @@ describe('SectionHeroCustom3', () => {
     expect(asFragment().firstChild).toMatchSnapshot();
   });
 });
+
+describe('SectionHeroCustom3 visually hidden h1', () => {
+  const withTitle = content => ({
+    ...defaultProps,
+    title: { fieldType: 'heading1', content },
+  });
+
+  it('renders the section title as an h1', () => {
+    render(<SectionHeroCustom3 {...withTitle('Archivo Vintach')} />);
+
+    const heading = screen.getByRole('heading', { level: 1 });
+    expect(heading).toHaveTextContent('Archivo Vintach');
+  });
+
+  it('keeps the h1 in the accessibility tree', () => {
+    render(<SectionHeroCustom3 {...withTitle('Archivo Vintach')} />);
+
+    // getByRole only matches nodes exposed to assistive tech, so this fails if the
+    // heading is ever hidden with display:none / visibility:hidden / aria-hidden.
+    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+  });
+
+  it('renders no h1 when the section title is empty', () => {
+    render(<SectionHeroCustom3 {...withTitle('')} />);
+
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+  });
+
+  it('renders no h1 when the title is whitespace only', () => {
+    render(<SectionHeroCustom3 {...withTitle('   ')} />);
+
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+  });
+
+  it('renders no h1 when the section has no title field at all', () => {
+    render(<SectionHeroCustom3 {...defaultProps} />);
+
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+  });
+
+  it('renders exactly one h1 even with two hero panels', () => {
+    render(
+      <SectionHeroCustom3
+        {...withTitle('Archivo Vintach')}
+        blocks={[mediaBlock('left', 'Vende'), mediaBlock('right', 'Compra')]}
+      />
+    );
+
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  });
+
+  it('does not disturb the block headings', () => {
+    render(
+      <SectionHeroCustom3
+        {...withTitle('Archivo Vintach')}
+        blocks={[mediaBlock('left', 'Vende'), mediaBlock('right', 'Compra')]}
+      />
+    );
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Vende' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Compra' })).toBeInTheDocument();
+  });
+});

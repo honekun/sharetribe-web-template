@@ -14,6 +14,7 @@ describe('notification configuration readiness', () => {
     [
       'AV_NOTIFICATIONS_ENABLED',
       'AV_SHIPPING_LABELS_ENABLED',
+      'AV_ESHIP_TRACKING_EMAILS_ENABLED',
       'AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED',
       'AV_BREVO_CAMPAIGNS_ENABLED',
       'AV_WHATSAPP_NOTIFICATIONS_ENABLED',
@@ -37,6 +38,7 @@ describe('notification configuration readiness', () => {
       'WHATSAPP_PHONE_NUMBER_ID',
       'WHATSAPP_ADMIN_PHONE',
     ].forEach(name => delete process.env[name]);
+    process.env.AV_ESHIP_TRACKING_EMAILS_ENABLED = 'false';
   });
 
   afterAll(() => {
@@ -217,5 +219,30 @@ describe('notification configuration readiness', () => {
     expect(getNotificationConfigReadiness().shippingLabels.missing).toEqual(
       expect.arrayContaining(['ESHIP_API_KEY', 'ESHIP_BASE_URL'])
     );
+  });
+
+  test('requires a long webhook secret and starts the poller for eShip tracking emails', () => {
+    Object.assign(process.env, {
+      AV_NOTIFICATIONS_ENABLED: 'false',
+      AV_SHIPPING_LABELS_ENABLED: 'false',
+      AV_ESHIP_TRACKING_EMAILS_ENABLED: 'true',
+      SHARETRIBE_INTEGRATION_CLIENT_ID: 'integration-id',
+      SHARETRIBE_INTEGRATION_CLIENT_SECRET: 'integration-secret',
+      DATABASE_URL: 'postgresql://localhost/database',
+      ESHIP_API_KEY: 'eship-key',
+      ESHIP_BASE_URL: 'https://apiqa.myeship.co/rest',
+      ESHIP_WEBHOOK_SECRET: 'too-short',
+    });
+
+    let readiness = getNotificationConfigReadiness();
+    expect(readiness.poller.enabled).toBe(true);
+    expect(readiness.eshipTracking.missing).toContain('ESHIP_WEBHOOK_SECRET');
+
+    process.env.ESHIP_WEBHOOK_SECRET = 'a'.repeat(32);
+    readiness = getNotificationConfigReadiness();
+    expect(readiness.eshipTracking).toEqual(
+      expect.objectContaining({ enabled: true, ready: true, missing: [] })
+    );
+    expect(readiness.ready).toBe(true);
   });
 });

@@ -5,6 +5,7 @@ const fetch = require('node-fetch');
 const {
   quote,
   createShipment,
+  getShipment,
   EshipApiError,
   EshipTimeoutError,
   describeEshipError,
@@ -124,6 +125,31 @@ describe('eshipClient.createShipment', () => {
   it('throws EshipTimeoutError when the request aborts', async () => {
     fetch.mockRejectedValue(Object.assign(new Error('aborted'), { name: 'AbortError' }));
     await expect(createShipment(args)).rejects.toBeInstanceOf(EshipTimeoutError);
+  });
+});
+
+describe('eshipClient.getShipment', () => {
+  beforeEach(() => {
+    fetch.mockReset();
+    process.env.ESHIP_API_KEY = 'test-key';
+  });
+
+  it('GETs the shipment with its event history for webhook verification', async () => {
+    fetch.mockResolvedValue(
+      okResponse({
+        object_id: 'ship-123',
+        tracking: { status: 'TRANSIT', substatus: 'picked_up' },
+      })
+    );
+
+    await expect(getShipment({ shipmentId: 'ship-123' })).resolves.toMatchObject({
+      object_id: 'ship-123',
+    });
+    const [url, opts] = fetch.mock.calls[0];
+    expect(url).toContain('/shipment?shipment_id=ship-123&eventList=true');
+    expect(opts.method).toBe('GET');
+    expect(opts).not.toHaveProperty('body');
+    expect(opts.headers.Authorization).toBe('Bearer test-key');
   });
 });
 

@@ -370,6 +370,15 @@ const server = app.listen(PORT, () => {
       '[notificationAlert] Notification poller is enabled but its configuration is incomplete'
     );
   }
+
+  // AV: keep the Instagram token alive. It lasts 60 days and can only be
+  // refreshed while still valid, so check on every boot as well as on a timer —
+  // this environment can sleep for days, and a missed window means re-minting
+  // the token by hand (which is what happened on 2026-06-26).
+  if (process.env.INSTAGRAM_ACCESS_TOKEN && process.env.DATABASE_URL) {
+    const { startInstagramTokenRefresh } = require('./services/instagramTokenRefresh');
+    startInstagramTokenRefresh();
+  }
 });
 
 // Graceful shutdown:
