@@ -40,6 +40,8 @@ archive.
 ### Technical reference
 
 - [Sharetribe hosted-assets API](reference/hosted-assets.md)
+- [Spanish marketplace-text reference](reference/marketplace-texts-es.md)
+- [Spanish Email-text reference](reference/email-texts-es.md)
 
 ## Pending work
 
