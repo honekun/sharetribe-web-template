@@ -182,7 +182,8 @@
 }
 
 /* Below --viewportMLarge (968px): disable the carousel and lay out all
-   items in a static 2-up grid (no horizontal scroll, no arrows). */
+   items in a static grid (no horizontal scroll, no arrows) — 2-up on phones,
+   3-up from 550px (see the bounded override below). */
 @media (max-width: 967px) {
   .slider {
     display: grid;
@@ -201,5 +202,13 @@
 
   .carouselArrows {
     display: none;
+  }
+}
+
+/* 550-967px: 3-up. Bounded on both sides — above 967px the section is a real
+   carousel again and its column count comes from the operator's setting. */
+@media (min-width: 550px) and (max-width: 967px) {
+  .slider {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
