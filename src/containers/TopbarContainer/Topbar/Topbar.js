@@ -25,8 +25,10 @@ import SearchIcon from './SearchIcon';
 import TopbarSearchForm from './TopbarSearchForm/TopbarSearchForm';
 import TopbarMobileMenu from './TopbarMobileMenu/TopbarMobileMenu';
 import TopbarDesktop from './TopbarDesktop/TopbarDesktop';
+import AVTopbarIconLinks from './AVTopbarIconLinks';
 
 import css from './Topbar.module.css';
+import avCss from './Topbar.av.module.css';
 import { getCurrentUserTypeRoles, showCreateListingLinkForUser } from '../../../util/userHelpers';
 import {
   resolveKeywordsInitialValue,
@@ -319,6 +321,7 @@ const TopbarComponent = props => {
     <Button
       id={MOBILE_SEARCH_BUTTON_ID}
       rootClassName={css.searchMenu}
+      className={avCss.mobileSearchPushRight}
       onClick={() => redirectToURLWithModalState(history, location, 'mobilesearch')}
       title={intl.formatMessage({ id: 'Topbar.searchIcon' })}
     >
@@ -328,7 +331,7 @@ const TopbarComponent = props => {
       />
     </Button>
   ) : (
-    <div className={css.searchMenu} />
+    <div className={classNames(css.searchMenu, avCss.mobileSearchPushRight)} />
   );
 
   const handleSkipToMainContent = e => {
@@ -364,7 +367,13 @@ const TopbarComponent = props => {
         onLogout={handleLogout}
         currentPage={resolvedCurrentPage}
       />
-      <nav className={classNames(mobileRootClassName || css.container, mobileClassName)}>
+      <nav
+        className={classNames(
+          mobileRootClassName || css.container,
+          mobileClassName,
+          avCss.mobileNav
+        )}
+      >
         <Button
           id={MOBILE_MENU_BUTTON_ID}
           rootClassName={css.menu}
@@ -379,11 +388,18 @@ const TopbarComponent = props => {
         </Button>
         <LinkedLogo
           id="logo-topbar-mobile"
+          className={avCss.mobileLogo}
           layout={'mobile'}
           alt={intl.formatMessage({ id: 'Topbar.logoIcon' })}
           linkToExternalSite={config?.topbar?.logoLink}
         />
         {mobileSearchButtonMaybe}
+        <AVTopbarIconLinks
+          className={avCss.mobileIconLinks}
+          isAuthenticated={isAuthenticated}
+          notificationCount={notificationCount}
+          inboxTab={topbarInboxTab}
+        />
       </nav>
       <div className={css.desktop}>
         <TopbarDesktop

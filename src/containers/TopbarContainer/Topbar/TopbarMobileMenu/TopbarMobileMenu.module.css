@@ -36,6 +36,23 @@
   padding: 24px;
   background-color: var(--colorWhite);
   box-shadow: var(--boxShadowTop);
+
+  /* AV: the bag / favorites / inbox icons share this row with the
+     create-listing CTA, sitting to its left. */
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* AV: icons keep their intrinsic width; the CTA takes the rest of the row. */
+.footerIconLinks {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
+
+.footer .createNewListingLink {
+  flex: 1 1 auto;
 }
 
 .avatar {
