@@ -38,6 +38,16 @@ docs/*
 docs/pending/*
 !docs/pending/*.md
 
+# Design specs and implementation plans for in-flight work.
+!docs/superpowers/
+docs/superpowers/*
+!docs/superpowers/specs/
+docs/superpowers/specs/*
+!docs/superpowers/specs/*.md
+!docs/superpowers/plans/
+docs/superpowers/plans/*
+!docs/superpowers/plans/*.md
+
 # Current operator and implementation references.
 !docs/data/
 docs/data/*
