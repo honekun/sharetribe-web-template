@@ -51,7 +51,7 @@ not the seller. That single fact drives the payout decision in §9.
 | `ESHIP_API_DEBUG`                              | no                 | `false`                        | `true` echoes the carrier's error text in the API response (`{ code, detail }`). Leave off in prod.                                                                                              |
 | `AV_SHIPPING_LABELS_ENABLED`                   | yes (explicit)     | `false`                        | Enables the label-purchase capability and its shared Integration API poller path. Independent of notification delivery; it does not enable automatic purchase by itself.                         |
 | `AV_ESHIP_TRACKING_EMAILS_ENABLED`             | yes (explicit)     | `false`                        | Accepts durable eShip tracking events and processes the `TRANSIT/picked_up` buyer email through the shared poller.                                                                               |
-| `ESHIP_WEBHOOK_SECRET`                         | yes (tracking)     | —                              | At least 32 random bytes. Shared only between the eShip dashboard URL and server; the webhook is also verified through an authenticated eShip API read.                                          |
+| `ESHIP_WEBHOOK_SECRET`                         | yes (tracking)     | —                              | At least 32 random bytes. Presented by eShip as the `X-AV-Webhook-Secret` header (preferred) or `?secret=`; the webhook is also verified through an authenticated eShip API read.                |
 | `SHIPPING_LABEL_OPERATOR_EMAILS`               | no                 | —                              | Comma-separated emails allowed to retry **any** seller's label. Sellers can always retry their own.                                                                                              |
 | `ESHIP_LABEL_AUTOBUY`                          | no                 | `false`                        | `true` → buy the label automatically on `confirm-payment` (poller). Unset/`false` → manual only: the seller buys it via the **Generar guía** button. Requires `AV_SHIPPING_LABELS_ENABLED=true`. |
 | `DATABASE_URL`                                 | yes (labels)       | —                              | Shared durable PostgreSQL ledger used by both manual and automatic label purchase. Required whenever `AV_SHIPPING_LABELS_ENABLED=true`.                                                          |
@@ -172,20 +172,37 @@ threaded through `TransactionPanel`.
 eShip sends tracking checkpoints to the public HTTPS endpoint. Its documentation provides a custom
 webhook URL but no request-signature scheme, so the integration uses two checks:
 
-1. the dashboard URL carries a high-entropy shared secret that the server compares in constant time;
-   and
+1. the request carries a high-entropy shared secret that the server compares in constant time; and
 2. the worker re-fetches the shipment with Bearer auth using
    `GET {base}/shipment?shipment_id=…&eventList=true` before trusting the checkpoint, provider, or
    tracking link.
 
-Configure the matching eShip environment under **Settings → webhook/custom tracking URL**:
+The secret may be presented **either** as a header or in the query string, and either one matching
+`ESHIP_WEBHOOK_SECRET` authenticates the request. Configure the header form under **Settings →
+webhook/custom tracking URL → Encabezados**:
+
+```text
+URL:    https://MARKETPLACE_HOST/api/shipping/eship-webhook
+Header: X-AV-Webhook-Secret: ESHIP_WEBHOOK_SECRET
+```
+
+**Prefer the header.** Render and Heroku both write the query string into their router logs (and
+into any attached log drain), and `@sentry/node` attaches `request.query_string` to every captured
+event — so a `?secret=` value comes to rest in third-party retention on any 5xx. Header values are
+not sent with `sendDefaultPii: false`, and the `secret` substring in the header name also matches
+Sentry's default server-side scrubbing.
+
+The `?secret=` form is retained as a fallback because eShip documents no guarantee that custom
+headers survive their retries or redirects:
 
 ```text
 https://MARKETPLACE_HOST/api/shipping/eship-webhook?secret=ESHIP_WEBHOOK_SECRET
 ```
 
-Do not log, paste into tickets, or expose the full URL to the browser. Rotate the secret and update
-both the host and eShip immediately if it is disclosed.
+If the header form has not been confirmed against a real checkpoint in an environment, configure
+both; delivery succeeds as long as one of them matches. Do not log either form, paste it into
+tickets, or expose it to the browser. Rotate the secret and update both the host and eShip
+immediately if it is disclosed.
 
 The endpoint accepts eShip's documented JSON shape. Only the exact normalized pair below is queued;
 all other carrier events return `202` and are ignored:

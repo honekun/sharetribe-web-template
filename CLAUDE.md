@@ -354,6 +354,17 @@ replaces the icon's own 28px `.root` rather than tying on specificity),
 hosts the selector slot + surfaces address values via `FormSpy` + gates the Pay button
 (`submitDisabledExtra`); `transactionLineItems` is async.
 
+### Tracking webhook (buyer pickup email)
+
+`POST /api/shipping/eship-webhook` (`server/api/eship-webhook.js`) takes eShip's tracking
+checkpoints, queues only `TRANSIT`/`picked_up` in PostgreSQL (migration `009`), and lets the poller
+send one native buyer email; everything else is `202`-ignored and duplicates return `200`. Auth is a
+shared secret presented **either** as the `X-AV-Webhook-Secret` header or `?secret=`, compared in
+constant time — `requestSecretMatches` accepts whichever matches, so a stale header next to a valid
+URL still delivers. Configure eShip with the header: Render/Heroku router logs and `@sentry/node`'s
+`request.query_string` both persist query strings. The route 404s unless
+`AV_ESHIP_TRACKING_EMAILS_ENABLED=true`, so enable the flag before saving the dashboard webhook.
+
 Env vars: `ESHIP_API_KEY` (server secret, required to quote), `ESHIP_BASE_URL` (required; no
 hardcoded default — set per env: QA `https://apiqa.myeship.co/rest` on test, production
 `https://api.myeship.co/rest` live), `ESHIP_MARKUP_PCT` (optional, default `0.18`),
@@ -362,8 +373,10 @@ response as `{ code: 'ESHIP_ERROR', detail }` — default/false keeps the opaque
 `SHIPPING_LABEL_OPERATOR_EMAILS` (optional; comma-separated emails allowed to retry any seller's
 label — sellers can always retry their own), `ESHIP_LABEL_AUTOBUY` (optional, default `false`;
 `true` auto-buys the label on `confirm-payment`, otherwise the seller buys it via the Generar guía
-button). Quoting and label purchase also need the Integration credentials
-(`SHARETRIBE_INTEGRATION_CLIENT_ID/SECRET`) to read seller origin and write `metadata.avLabel`.
+button), `ESHIP_WEBHOOK_SECRET` (required for the tracking email; ≥32 bytes, else the route 503s),
+`AV_ESHIP_TRACKING_EMAILS_ENABLED` (default `false`). Quoting and label purchase also need the
+Integration credentials (`SHARETRIBE_INTEGRATION_CLIENT_ID/SECRET`) to read seller origin and write
+`metadata.avLabel`.
 
 ## Listing Form Customizations (Edit Listing Wizard)
 

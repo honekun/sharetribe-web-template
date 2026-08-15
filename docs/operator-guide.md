@@ -1654,16 +1654,16 @@ capability, but purchase is **manual by default**: after payment, the seller cli
 guía**. Automatic purchase happens only when the label capability and `ESHIP_LABEL_AUTOBUY=true` are
 both enabled.
 
-| Setting                                                      | What it controls                                                                                                                                                                                                                   |
-| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **eShip API Key** (`ESHIP_API_KEY`)                          | Connects to the eShip carrier account used to quote shipping and buy labels. Without it, buyers see _Contactar a AV_ instead of priced options. Keep private.                                                                      |
-| **eShip Base URL** (`ESHIP_BASE_URL`)                        | Which eShip environment to use — the test/QA carrier system or the live one. Set by the dev team per environment.                                                                                                                  |
-| **Shipping markup** (`ESHIP_MARKUP_PCT`)                     | The margin buffer added on top of the raw carrier cost to get the buyer's shipping price. Default: 18%.                                                                                                                            |
-| **Label capability** (`AV_SHIPPING_LABELS_ENABLED`)          | Enables label-purchase storage, readiness checks, the seller action, and the shared poller path. It does not turn on auto-buy by itself.                                                                                           |
-| **Pickup email** (`AV_ESHIP_TRACKING_EMAILS_ENABLED`)        | Enables one native Sharetribe buyer email after the carrier reports `TRANSIT/picked_up`. Requires the new hosted purchase-process version, migration 009, and webhook setup.                                                       |
-| **eShip webhook secret** (`ESHIP_WEBHOOK_SECRET`)            | At least 32 random bytes shared between the server and the eShip dashboard URL. Keep private and rotate both sides together.                                                                                                       |
-| **Label retry operators** (`SHIPPING_LABEL_OPERATOR_EMAILS`) | Comma-separated support emails authorized to use the label API for any seller. There is no operator UI; cross-seller or unknown retries require the approved engineering procedure. Sellers retry their own labels in the sale UI. |
-| **Auto-buy labels** (`ESHIP_LABEL_AUTOBUY`)                  | `true` plus enabled label capability = buy automatically after confirmed payment. Default/unset/`false` = seller buys with **Generar guía**. Keep off until cancellation/refund policy is approved.                                |
+| Setting                                                      | What it controls                                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **eShip API Key** (`ESHIP_API_KEY`)                          | Connects to the eShip carrier account used to quote shipping and buy labels. Without it, buyers see _Contactar a AV_ instead of priced options. Keep private.                                                                                                                                                                    |
+| **eShip Base URL** (`ESHIP_BASE_URL`)                        | Which eShip environment to use — the test/QA carrier system or the live one. Set by the dev team per environment.                                                                                                                                                                                                                |
+| **Shipping markup** (`ESHIP_MARKUP_PCT`)                     | The margin buffer added on top of the raw carrier cost to get the buyer's shipping price. Default: 18%.                                                                                                                                                                                                                          |
+| **Label capability** (`AV_SHIPPING_LABELS_ENABLED`)          | Enables label-purchase storage, readiness checks, the seller action, and the shared poller path. It does not turn on auto-buy by itself.                                                                                                                                                                                         |
+| **Pickup email** (`AV_ESHIP_TRACKING_EMAILS_ENABLED`)        | Enables one native Sharetribe buyer email after the carrier reports `TRANSIT/picked_up`. Requires the new hosted purchase-process version, migration 009, and webhook setup.                                                                                                                                                     |
+| **eShip webhook secret** (`ESHIP_WEBHOOK_SECRET`)            | At least 32 random bytes shared between the server and the eShip dashboard, so the marketplace can tell a real carrier update from a forged one. In the eShip dashboard it is entered **either** as the `X-AV-Webhook-Secret` header (preferred — see below) or in the webhook URL. Keep private and rotate both sides together. |
+| **Label retry operators** (`SHIPPING_LABEL_OPERATOR_EMAILS`) | Comma-separated support emails authorized to use the label API for any seller. There is no operator UI; cross-seller or unknown retries require the approved engineering procedure. Sellers retry their own labels in the sale UI.                                                                                               |
+| **Auto-buy labels** (`ESHIP_LABEL_AUTOBUY`)                  | `true` plus enabled label capability = buy automatically after confirmed payment. Default/unset/`false` = seller buys with **Generar guía**. Keep off until cancellation/refund policy is approved.                                                                                                                              |
 
 > The eShip carrier account is billed directly for every label, so **the marketplace (not the
 > seller) pays the carrier**. Because of that, the buyer's shipping payment is kept by the
@@ -1673,6 +1673,15 @@ both enabled.
 > A purchased-label cancellation/refund policy and final IVA treatment are still business/accounting
 > decisions. Follow [pending work](pending/README.md) and do not improvise an automatic refund or
 > carrier-cost adjustment.
+
+**Where the pickup email comes from.** eShip notifies the marketplace when the carrier scans a
+package. In the eShip dashboard (**Ver tus Webhooks**), the notification address is the marketplace
+address followed by `/api/shipping/eship-webhook`, and the shared secret goes in the **Encabezados**
+table as key `X-AV-Webhook-Secret` with the secret as its value. Putting the secret in the URL after
+`?secret=` still works and is kept as a fallback, but the header is preferred: web hosts and error
+monitoring routinely record full URLs in their logs, and a secret in the URL ends up stored in those
+logs, while a header does not. Treat the secret like a password in either form. The dev team sets
+this up per environment; the test and production marketplaces use different secrets.
 
 ### Seller earnings estimator
 

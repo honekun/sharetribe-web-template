@@ -64,6 +64,45 @@ describe('eShip tracking webhook', () => {
     expect(createEshipTrackingStore).not.toHaveBeenCalled();
   });
 
+  test('accepts the shared secret from the webhook header when the URL carries none', async () => {
+    const store = { enqueue: jest.fn().mockResolvedValue({ id: 1, duplicate: false }) };
+    createEshipTrackingStore.mockReturnValue(store);
+    const res = createRes();
+
+    await eshipWebhook(
+      { headers: { 'x-av-webhook-secret': SECRET }, query: {}, body: validBody },
+      res
+    );
+
+    expect(store.enqueue).toHaveBeenCalledTimes(1);
+    expect(res.status).toHaveBeenCalledWith(202);
+    expect(res.json).toHaveBeenCalledWith({ ok: true, queued: true, duplicate: false });
+  });
+
+  test('rejects a wrong header secret when the URL carries none', async () => {
+    const res = createRes();
+
+    await eshipWebhook(
+      { headers: { 'x-av-webhook-secret': 'wrong' }, query: {}, body: validBody },
+      res
+    );
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(createEshipTrackingStore).not.toHaveBeenCalled();
+  });
+
+  test('keeps accepting the query secret while a stale header is still configured', async () => {
+    const res = createRes();
+
+    await eshipWebhook(
+      { headers: { 'x-av-webhook-secret': 'stale' }, query: { secret: SECRET }, body: validBody },
+      res
+    );
+
+    expect(res.status).toHaveBeenCalledWith(202);
+    expect(res.json).toHaveBeenCalledWith({ ok: true, queued: true, duplicate: false });
+  });
+
   test('acknowledges unrelated tracking statuses without enqueueing them', async () => {
     const res = createRes();
     await eshipWebhook(

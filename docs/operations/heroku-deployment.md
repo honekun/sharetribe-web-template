@@ -127,6 +127,7 @@ must have every guarded capability explicitly disabled:
 heroku config:set \
   AV_NOTIFICATIONS_ENABLED=false \
   AV_SHIPPING_LABELS_ENABLED=false \
+  AV_ESHIP_TRACKING_EMAILS_ENABLED=false \
   AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=false \
   AV_BREVO_CAMPAIGNS_ENABLED=false \
   AV_WHATSAPP_NOTIFICATIONS_ENABLED=false \
@@ -148,6 +149,7 @@ Use the matching Test values for every environment-coupled setting:
 | Stripe                   | `pk_test_...` in Heroku; matching `sk_test_...` in Sharetribe Test Console |
 | Public root URL          | The app's current `herokuapp.com` HTTPS URL                                |
 | eShip                    | QA base URL and QA key                                                     |
+| eShip tracking webhook   | QA-only `ESHIP_WEBHOOK_SECRET`, sent as the `X-AV-Webhook-Secret` header   |
 | eShip debug              | Optional in Test; must not expose secrets                                  |
 | Brevo                    | Test/pre-production resources and templates                                |
 | WhatsApp                 | Disabled                                                                   |
@@ -173,6 +175,7 @@ provider configuration are verified, enable only the Test capabilities needed fo
 heroku config:set \
   AV_NOTIFICATIONS_ENABLED=true \
   AV_SHIPPING_LABELS_ENABLED=true \
+  AV_ESHIP_TRACKING_EMAILS_ENABLED=false \
   AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=true \
   AV_BREVO_CAMPAIGNS_ENABLED=false \
   AV_WHATSAPP_NOTIFICATIONS_ENABLED=false \
@@ -182,6 +185,14 @@ heroku config:set \
 heroku ps:scale web=1 --app "$AV_HEROKU_APP"
 heroku ps --app "$AV_HEROKU_APP"
 ```
+
+The buyer pickup email stays off until its own prerequisites are met, in this order: the hosted
+`default-purchase` version carrying the `eship-picked-up-*` transitions and its Email texts are
+published, migration `009` has run, `ESHIP_WEBHOOK_SECRET` is set, and the eShip QA dashboard sends
+to `https://APP_HOST/api/shipping/eship-webhook` with the `X-AV-Webhook-Secret` header. Only then
+set `AV_ESHIP_TRACKING_EMAILS_ENABLED=true`. The endpoint returns `404` while the flag is `false`,
+so enable the flag before saving the dashboard webhook or eShip will record failed deliveries. See
+[eShip](../integrations/eship.md) §5.3.
 
 Use a non-sleeping dyno. Monitor actual memory during the bulk-import test; do not assume a dyno
 size from a documentation estimate.
@@ -258,6 +269,7 @@ With `web=0`, set all guarded capabilities to `false` so no poller can start dur
 heroku config:set \
   AV_NOTIFICATIONS_ENABLED=false \
   AV_SHIPPING_LABELS_ENABLED=false \
+  AV_ESHIP_TRACKING_EMAILS_ENABLED=false \
   AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=false \
   AV_BREVO_CAMPAIGNS_ENABLED=false \
   AV_WHATSAPP_NOTIFICATIONS_ENABLED=false \
@@ -302,6 +314,7 @@ Replace, do not mix, all environment-bound values:
 | Stripe                           | `pk_live_...`; matching secret in Sharetribe Live     |
 | `REACT_APP_MARKETPLACE_ROOT_URL` | Canonical production HTTPS URL, no trailing slash     |
 | eShip                            | Explicit production base URL and production key       |
+| `ESHIP_WEBHOOK_SECRET`           | New secret; re-point the production eShip dashboard   |
 | `ESHIP_API_DEBUG`                | `false` or unset                                      |
 | Brevo                            | Production sender/resources/secrets                   |
 | Social login                     | Production IDs/secrets and callbacks                  |
@@ -344,6 +357,7 @@ Then enable the approved launch capabilities:
 heroku config:set \
   AV_NOTIFICATIONS_ENABLED=true \
   AV_SHIPPING_LABELS_ENABLED=true \
+  AV_ESHIP_TRACKING_EMAILS_ENABLED=false \
   AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=true \
   AV_BREVO_CAMPAIGNS_ENABLED=false \
   AV_WHATSAPP_NOTIFICATIONS_ENABLED=false \
@@ -381,6 +395,9 @@ After readiness passes, update public DNS to the Heroku target and verify manage
 
 Keep `AV_BREVO_CAMPAIGNS_ENABLED=false`, `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false`, and
 `ESHIP_LABEL_AUTOBUY=false` until their pending gates are independently completed.
+`AV_ESHIP_TRACKING_EMAILS_ENABLED` is enabled separately, and only after the Live purchase-process
+version, migration `009`, the production `ESHIP_WEBHOOK_SECRET`, and the production eShip dashboard
+webhook are all in place.
 
 ## 6. Rollback rules
 
