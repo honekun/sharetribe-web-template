@@ -528,6 +528,9 @@ git diff 832f8d66f upstream/main -- src/containers/PageBuilder/BlockBuilder/Bloc
 | `containers/SearchPage/SearchPageWithGrid.js`                                           | Grouped-sizes filter injection (`injectAvFilters`)                                                              |
 | `PageBuilder/SectionBuilder/SectionBuilder.js`                                          | Custom section registration + AV `blockComponents` injection                                                    |
 | `CheckoutPage/CheckoutPageWithPayment.js`                                               | Default Stripe country (`configAV.defaultCountry`)                                                              |
+| `CheckoutPage/CheckoutPage.module.css`                                                  | 2-column layout from `--viewportMedium` (not `--viewportLarge`) + fluid `--avCheckoutRamp` sizing               |
+| `CheckoutPage/DetailsSideCard.js`                                                       | Breakdown loading overlay (`speculateInProgress`) + 4:3 image box from `avListingImage.js`                      |
+| `CheckoutPage/MobileListingImage.js`                                                    | 4:3 image box from `avListingImage.js`                                                                          |
 | `EditListingWizard/EditListingWizard.js`                                                | Default Stripe Connect payout country; blue "Bulk import" CTA (`NamedLink`) on new-listing flow                 |
 | `EditListingWizard/EditListingWizardTab.js`                                             | `currentUser` prop drilling for pricing                                                                         |
 | `EditListingWizard/EditListingDetailsPanel/EditListingDetailsForm.js`                   | Two-column grid + `PhotoGallerySection`                                                                         |

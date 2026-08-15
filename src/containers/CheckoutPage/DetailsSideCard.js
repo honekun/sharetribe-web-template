@@ -16,6 +16,7 @@ import {
   ResponsiveImage,
 } from '../../components';
 
+import { AV_LISTING_IMAGE_ASPECT_WIDTH, AV_LISTING_IMAGE_ASPECT_HEIGHT } from './avListingImage';
 import css from './CheckoutPage.module.css';
 
 // AV: localized loading overlay shown over the breakdown while a re-speculation
@@ -67,8 +68,7 @@ const DetailsSideCard = props => {
   const { price, publicData } = listing?.attributes || {};
   const unitType = publicData.unitType || 'unknown';
 
-  const { aspectWidth = 1, aspectHeight = 1, variantPrefix = 'listing-card' } =
-    layoutListingImageConfig || {};
+  const { variantPrefix = 'listing-card' } = layoutListingImageConfig || {};
   const variants = firstImage
     ? Object.keys(firstImage?.attributes?.variants).filter(k => k.startsWith(variantPrefix))
     : [];
@@ -77,8 +77,8 @@ const DetailsSideCard = props => {
     <div className={css.detailsContainerDesktop} role="complementary">
       {showListingImage && (
         <AspectRatioWrapper
-          width={aspectWidth}
-          height={aspectHeight}
+          width={AV_LISTING_IMAGE_ASPECT_WIDTH}
+          height={AV_LISTING_IMAGE_ASPECT_HEIGHT}
           className={css.detailsAspectWrapper}
         >
           <ResponsiveImage
