@@ -20,16 +20,13 @@ import {
 import TopbarContainer from '../TopbarContainer/TopbarContainer';
 import FooterContainer from '../FooterContainer/FooterContainer';
 
+import { AV_LISTING_GRID_RAMP, buildRenderSizes } from '../../util/avGridSizes';
+
 import css from './FavoritesPage.module.css';
 
-// Same sizes the search results grid passes to AVListingCard (non-map variant).
-const cardRenderSizes = [
-  '(max-width: 549px) 100vw',
-  '(max-width: 767px) 50vw',
-  '(max-width: 1439px) 26vw',
-  '(max-width: 1920px) 18vw',
-  '14vw',
-].join(', ');
+// Derived from the shared ramp so the hints cannot drift from the column counts
+// in FavoritesPage.module.css — same grid as the search results (non-map).
+const cardRenderSizes = buildRenderSizes(AV_LISTING_GRID_RAMP);
 
 export const FavoritesPageComponent = props => {
   const { currentUser, listings, queryInProgress, queryError, scrollingDisabled } = props;

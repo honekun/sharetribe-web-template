@@ -34,6 +34,8 @@ import {
   getOwnListingsById,
   discardDraft,
 } from './ManageListingsPage.duck';
+import { AV_MANAGE_GRID_RAMP, buildRenderSizes } from '../../util/avGridSizes';
+
 import css from './ManageListingsPage.module.css';
 import avCss from './ManageListingsPageAV.module.css';
 import DiscardDraftModal from './DiscardDraftModal/DiscardDraftModal';
@@ -206,13 +208,10 @@ export const ManageListingsPageComponent = props => {
   const openingErrorListingId = !!openingListingError && openingListingError.listingId;
   const discardingErrorListingId = !!discardingDraftError && discardingDraft.listingId;
 
-  const panelWidth = 62.5;
-  // Render hints for responsive image
-  const renderSizes = [
-    `(max-width: 767px) 100vw`,
-    `(max-width: 1920px) ${panelWidth / 2}vw`,
-    `${panelWidth / 3}vw`,
-  ].join(', ');
+  // AV: derived from the shared ramp so the hints track the column counts in
+  // avBrandOverrides.css. This grid stops at 3 columns rather than stepping to
+  // 4 and 5 like search and favorites.
+  const renderSizes = buildRenderSizes(AV_MANAGE_GRID_RAMP);
 
   const showManageListingsLink = showCreateListingLinkForUser(config, currentUser);
 

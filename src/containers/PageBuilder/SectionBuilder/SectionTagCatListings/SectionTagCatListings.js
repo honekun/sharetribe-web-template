@@ -6,13 +6,31 @@ import useDebouncedWindowResize from '../../../../hooks/useDebouncedWindowResize
 
 import Field, { hasDataInFields } from '../../Field';
 import AVSectionContainer from '../SectionContainer/AVSectionContainer';
+import {
+  AV_SECTION_COLLAPSE_RAMP,
+  buildSectionRenderSizes,
+  effectiveSectionColumns,
+} from '../../../../util/avGridSizes';
+
 import css from './SectionTagCatListings.module.css';
 
 const COLUMN_CONFIG = [
-  { css: css.oneColumn, responsiveImageSizes: '(max-width: 767px) 100vw, 1200px' },
-  { css: css.twoColumns, responsiveImageSizes: '(max-width: 767px) 100vw, 600px' },
-  { css: css.threeColumns, responsiveImageSizes: '(max-width: 767px) 100vw, 400px' },
-  { css: css.fourColumns, responsiveImageSizes: '(max-width: 767px) 100vw, 265px' },
+  {
+    css: css.oneColumn,
+    responsiveImageSizes: buildSectionRenderSizes(AV_SECTION_COLLAPSE_RAMP, '1200px'),
+  },
+  {
+    css: css.twoColumns,
+    responsiveImageSizes: buildSectionRenderSizes(AV_SECTION_COLLAPSE_RAMP, '600px'),
+  },
+  {
+    css: css.threeColumns,
+    responsiveImageSizes: buildSectionRenderSizes(AV_SECTION_COLLAPSE_RAMP, '400px'),
+  },
+  {
+    css: css.fourColumns,
+    responsiveImageSizes: buildSectionRenderSizes(AV_SECTION_COLLAPSE_RAMP, '265px'),
+  },
 ];
 
 const getColumnIndex = numColumns => {
@@ -25,13 +43,10 @@ const getResponsiveImageSizes = numColumns =>
   COLUMN_CONFIG[getColumnIndex(numColumns)]?.responsiveImageSizes ||
   COLUMN_CONFIG[0].responsiveImageSizes;
 
-const getEffectiveColumns = numColumns => {
-  if (typeof window === 'undefined') return numColumns;
-  const w = window.innerWidth;
-  if (w < 550) return 1;
-  if (w < 768) return Math.min(2, numColumns);
-  return numColumns;
-};
+// AV: the collapsed grid below --viewportMLarge is described by the shared
+// ramp, so this cannot drift from the CSS or from the `sizes` hints.
+const getEffectiveColumns = numColumns =>
+  effectiveSectionColumns(AV_SECTION_COLLAPSE_RAMP, numColumns);
 
 const getGapValue = slider => {
   if (!slider || typeof window === 'undefined') return 0;

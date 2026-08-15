@@ -6,14 +6,28 @@ import { AVListingCard } from '../../../../components';
 import Field, { hasDataInFields } from '../../Field';
 
 import AVSectionContainer from '../SectionContainer/AVSectionContainer';
+import { AV_SECTION_GRID_RAMP, buildSectionRenderSizes } from '../../../../util/avGridSizes';
+
 import css from './SectionRecommendedListings.module.css';
 
 // The number of columns (numColumns) affects styling and responsive images
 const COLUMN_CONFIG = [
-  { css: css.oneColumn, responsiveImageSizes: '(max-width: 767px) 100vw, 1200px' },
-  { css: css.twoColumns, responsiveImageSizes: '(max-width: 767px) 100vw, 600px' },
-  { css: css.threeColumns, responsiveImageSizes: '(max-width: 767px) 100vw, 400px' },
-  { css: css.fourColumns, responsiveImageSizes: '(max-width: 767px) 100vw, 265px' },
+  {
+    css: css.oneColumn,
+    responsiveImageSizes: buildSectionRenderSizes(AV_SECTION_GRID_RAMP, '1200px'),
+  },
+  {
+    css: css.twoColumns,
+    responsiveImageSizes: buildSectionRenderSizes(AV_SECTION_GRID_RAMP, '600px'),
+  },
+  {
+    css: css.threeColumns,
+    responsiveImageSizes: buildSectionRenderSizes(AV_SECTION_GRID_RAMP, '400px'),
+  },
+  {
+    css: css.fourColumns,
+    responsiveImageSizes: buildSectionRenderSizes(AV_SECTION_GRID_RAMP, '265px'),
+  },
 ];
 const getIndex = numColumns => numColumns - 1;
 const getColumnCSS = numColumns => {
