@@ -35,12 +35,23 @@
 /* AV: the two-column layout starts at --viewportMedium (768px) instead of
    --viewportLarge (1024px), matching the listing page's tablet gallery/info
    split. Every `@media (--viewportLarge)` in this file was widened to
-   `--viewportMedium`; since that only broadens the condition, the >=1024px
-   rendering is byte-for-byte what upstream produced. The one thing that
-   genuinely differs is width: the desktop columns are fixed (519px form +
-   132px gutter + 409px details + 96px padding = 1156px) and simply don't fit
-   below 1024px, so the 768-1023px band gets fluid proportions — see the
-   bounded block after .orderFormContainer. */
+   `--viewportMedium`, which only broadens each condition — so on its own that
+   swap leaves the >=1024px rendering exactly as upstream had it.
+
+   Sizing is a different matter, and it does change below 1156px. Upstream's
+   columns are fixed (519px form + 132px gutter + 409px details + 96px padding
+   = 1156px), so they only fit unshrunk from 1156px up. The block at the end of
+   this file re-sizes them fluidly instead; see its comment for why. The upshot
+   for reading the rules above:
+
+     <768px          single column, untouched
+     768-1155px      fluid columns — deliberately NOT upstream's proportions
+     >=1156px        exactly upstream: 519 + 132 + 409, centred
+
+   Note 1156, not 1152. The ramp itself finishes at 1152px (padding and gutter
+   reach 48px/132px there), but the form caps at 519px from ~1093px and the
+   details column then takes the remainder, so it only reaches its own 409px cap
+   at 1156px — the width where upstream's fixed total first fits. */
 .contentContainer {
   flex-grow: 1;
   display: flex;
@@ -118,9 +129,8 @@
   }
   &.noListingImage {
     margin-top: 24px;
-    @media (--viewportMedium) {
-      margin-top: 32px;
-    }
+    /* AV: upstream had 32px here and 40px at --viewportLarge; with both widened
+       to --viewportMedium the 40px won, so that is what is kept. */
     @media (--viewportMedium) {
       margin-top: 40px;
     }
@@ -138,11 +148,8 @@
   margin-bottom: 34px;
   padding: 0 24px;
 
-  @media (--viewportMedium) {
-    margin-top: 27px;
-    margin-bottom: 30px;
-  }
-
+  /* AV: upstream's 27px/30px at --viewportMedium were overridden at
+     --viewportLarge; with both widened the latter won, so only it is kept. */
   @media (--viewportMedium) {
     margin-top: 0px;
     margin-bottom: 0px;
@@ -210,11 +217,11 @@
   margin-bottom: 37px;
 
   @media (--viewportMedium) {
-    margin-bottom: 38px;
-  }
-  @media (--viewportMedium) {
     /* we don't show price breakdown since it will be visible within 2nd column (detailsContainerDesktop) */
     display: none;
+    /* AV: upstream also set 38px here before the display:none took over at
+       --viewportLarge. Inert while hidden, kept so the value isn't lost. */
+    margin-bottom: 38px;
   }
 }
 
@@ -225,10 +232,9 @@
   margin-top: 0;
   margin-bottom: 14px;
 
-  @media (--viewportMedium) {
-    margin-top: 0;
-    margin-bottom: 18px;
-  }
+  /* AV: upstream's 18px at --viewportMedium was overridden back to 14px at
+     --viewportLarge; with both widened the 14px won, which matches the base
+     value above — so this block is now a no-op, kept only to mirror upstream. */
   @media (--viewportMedium) {
     margin-top: 0;
     margin-bottom: 14px;
@@ -242,13 +248,12 @@
   padding: 0 24px;
   margin-bottom: 35px;
 
-  @media (--viewportMedium) {
-    margin-top: 2px;
-    margin-bottom: 120px;
-  }
-
+  /* AV: merged from upstream's --viewportMedium (2px/120px) and --viewportLarge
+     (0/padding 0) blocks — the margin-top the latter won, plus the
+     margin-bottom only the former set. */
   @media (--viewportMedium) {
     margin-top: 0;
+    margin-bottom: 120px;
     padding: 0;
   }
 }
@@ -431,10 +436,8 @@
   margin-right: 22px;
   padding: 3px 0;
 
-  @media (--viewportMedium) {
-    padding: 4px 0;
-  }
-
+  /* AV: upstream's 4px padding at --viewportMedium was overridden at
+     --viewportLarge; with both widened the latter won, so only it is kept. */
   @media (--viewportMedium) {
     flex-direction: row;
     margin-right: unset;
@@ -466,9 +469,6 @@
   @media (--viewportMedium) {
     margin-top: 0;
     margin-bottom: 0;
-  }
-
-  @media (--viewportMedium) {
   }
 }
 
@@ -503,8 +503,22 @@
 
    Instead every dimension ramps linearly from its 768px value to its upstream
    desktop value across 768->1152px, and the columns cap at the upstream widths.
-   At >=1152px the result is exactly upstream: 519 + 132 + 409 centered. The
-   ratio is the listing page's 3fr/2fr, so the two pages still line up.
+   The ratio is the listing page's 3fr/2fr, so the two pages still line up.
+
+   The ramp and the columns finish at different widths, which is worth keeping
+   straight. Padding and gutter reach 48px/132px once 100vw hits 1152px, where
+   the ramp clamps. The columns take longer: the form caps at 519px from around
+   1093px, after which the details column absorbs the remainder and only reaches
+   its own 409px cap at 1156px of *layout* width. So upstream's exact
+   519 + 132 + 409 resumes at 1156px — the width where that fixed total first
+   fits — and 1024-1155px is deliberately not upstream's proportions. That is
+   the whole point: removing the jump means one side of the old boundary has to
+   move.
+
+   Those two units differ by the scrollbar: 100vw counts a classic one, the
+   layout box does not. Harmless, since both ends are clamped, but it is why
+   measuring against window.innerWidth on a platform that reserves scrollbar
+   space puts the 409px cap nearer 1171px than 1156px.
 
    Declared last in the file so it wins the source-order tie against
    .contentContainer / .orderFormContainer / .detailsContainerDesktop, which
