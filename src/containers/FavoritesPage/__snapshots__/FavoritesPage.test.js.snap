@@ -26,6 +26,18 @@ exports[`FavoritesPage matches snapshot (empty state) 1`] = `
               class="tab"
             >
               <a
+                class="tabContent tabContentDarkSkin"
+                href="/listings"
+              >
+                <span>
+                  UserNav.yourListings
+                </span>
+              </a>
+            </div>
+            <div
+              class="tab"
+            >
+              <a
                 class="tabContent selectedTabContent tabContentDarkSkin selectedTabContentDarkSkin"
                 href="/favorites"
               >

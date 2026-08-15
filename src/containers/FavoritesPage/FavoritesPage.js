@@ -2,10 +2,12 @@ import React from 'react';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
 
+import { useConfiguration } from '../../context/configurationContext';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { selectFavoriteIds } from '../../ducks/favorites.duck';
+import { showCreateListingLinkForUser } from '../../util/userHelpers';
 
 import {
   AVListingCard,
@@ -30,9 +32,11 @@ const cardRenderSizes = [
 ].join(', ');
 
 export const FavoritesPageComponent = props => {
-  const { listings, queryInProgress, queryError, scrollingDisabled } = props;
+  const { currentUser, listings, queryInProgress, queryError, scrollingDisabled } = props;
+  const config = useConfiguration();
   const intl = useIntl();
   const title = intl.formatMessage({ id: 'FavoritesPage.title' });
+  const showManageListingsLink = showCreateListingLinkForUser(config, currentUser);
 
   return (
     <Page title={title} scrollingDisabled={scrollingDisabled}>
@@ -40,7 +44,7 @@ export const FavoritesPageComponent = props => {
         topbar={
           <>
             <TopbarContainer />
-            <UserNav currentPage="FavoritesPage" />
+            <UserNav currentPage="FavoritesPage" showManageListingsLink={showManageListingsLink} />
           </>
         }
         footer={<FooterContainer />}
@@ -91,7 +95,9 @@ const mapStateToProps = state => {
   // hydrated in this page's loadData, so the filter is a no-op on first render.
   const favoriteIds = selectFavoriteIds(state);
   const currentRefs = listingRefs.filter(ref => favoriteIds.includes(ref.id.uuid));
+  const { currentUser } = state.user;
   return {
+    currentUser,
     listings: getMarketplaceEntities(state, currentRefs),
     queryInProgress,
     queryError,

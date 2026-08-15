@@ -29,6 +29,13 @@ describe('FavoritesPage', () => {
     expect(screen.getByText('You have not liked any listings yet.')).toBeInTheDocument();
   });
 
+  // UserNav only builds the "your listings" tab when showManageListingsLink is
+  // passed, so a missing prop silently drops it from this page's nav bar.
+  it('renders the manage-listings tab in UserNav', () => {
+    render(<FavoritesPageComponent {...baseProps} />, { messages });
+    expect(screen.getByText('UserNav.yourListings')).toBeInTheDocument();
+  });
+
   it('matches snapshot (empty state)', () => {
     const { asFragment } = render(<FavoritesPageComponent {...baseProps} />, { messages });
     expect(asFragment()).toMatchSnapshot();
