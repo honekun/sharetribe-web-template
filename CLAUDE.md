@@ -519,6 +519,17 @@ git diff 832f8d66f upstream/main -- src/containers/PageBuilder/BlockBuilder/Bloc
 
 ### Watchlist — high merge-conflict risk
 
+**This table is the only watchlist under version control.** `.codex/reference/upstream-sync.md`
+carries a short form of the same guidance, but `.codex/` is gitignored (`.gitignore:18`), so that
+copy is machine-local: it is invisible to CI, to a fresh clone, and to anyone else's checkout, and
+it drifts from this table without anything failing. Keep this table authoritative, and treat the
+`.codex` copy as a local convenience that may already be stale.
+
+Corollary: **do not describe edits to ignored paths in a commit message.** `1cfb8d6ac` says it added
+three checkout files to `.codex/reference/upstream-sync.md`; its diffstat is `CLAUDE.md | 1 +`,
+because the other edit was silently dropped. The message records work the repository does not
+contain.
+
 | File                                                                                    | Why touched                                                                                                     |
 | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `components/CustomExtendedDataField/CustomExtendedDataField.js`                         | `groupedMultiSelect` + `colorGridPicker` branches                                                               |

@@ -15,7 +15,7 @@ current user as its author. "Admin" users (emails listed in `BULK_IMPORT_OPERATO
 2. Start the dev server: `yarn run dev`
 3. Navigate to `/admin/bulk-import`
 4. Sign in (any user able to create listings); listings will be authored to you
-5. Download the CSV template, fill it in
+5. Open the template (the page links it in Google Drive), download a copy from there, fill it in
 6. Pack your completed CSV and all image files into a single `.zip` archive
 7. Select the ZIP file and click "Start Import", then monitor progress
 
@@ -40,8 +40,13 @@ Browser (BulkImportPage)             Server (Express)
   |-- Poll every 2s ----------------> GET /api/bulk-import/status/:jobId
   |                                    |-- Return progress, results, errors
   |                                    |
-  |-- Download template ------------> GET /api/bulk-import/template
 ```
+
+Note the page does **not** call `GET /api/bulk-import/template`. That endpoint still exists and
+still generates a header-only CSV, but nothing links to it: the template button points at Google
+Drive (see [below](#example-csv)) and did previously point at a static file. It is left routed
+because it is public, tested, and harmless, but treat it as orphaned rather than as the template
+source of record.
 
 Processing is **asynchronous** so uploads do not depend on a hosting platform's HTTP request
 timeout. The server accepts the upload, returns a job ID immediately, and processes rows in the
@@ -232,8 +237,9 @@ attribute is ignored on a cross-origin href.
 The file must stay shared as "anyone with the link"; if it is un-shared or removed, the control
 silently leads to a Drive permission wall and nothing in the app will report it.
 
-`public/static/files/PLANTILLA_CARGA_MASIVA.csv` is no longer what the page links to. It is left in
-place because `docs/operator-guide.md` §8.4 still names it when describing template headers.
+`public/static/files/PLANTILLA_CARGA_MASIVA.csv` is no longer referenced by anything — not the page,
+not `docs/operator-guide.md`. It is left on disk only so an operator holding an old direct link still
+gets a file rather than a 404; delete it once that no longer matters.
 
 The import page's help bar also links a ready-to-upload **example ZIP** at
 `public/static/files/ZIP_CARGA_MASIVA.zip` (10 listings + 40 images). Its `user_id` column is left

@@ -495,11 +495,11 @@ resolving an `<email>` argument to a user id, and printing the display name back
 confirm they targeted the right seller. Passing a `<userId>` directly avoids it entirely.
 
 That is not the same as needing no Sharetribe *access*. `set` also reads
-`/transactions/minimum-transaction-size.json` to
-check the implied minimum price, which goes through `sdk.assets.search()` with the public marketplace
-client id — no secret, but network access to Sharetribe, and a `--assume-min-price` escape hatch
-when there is none. See [Where `listingMinimumPrice` comes
-from](#where-listingminimumprice-comes-from).
+`/transactions/minimum-transaction-size.json` to check the implied minimum price, which goes through
+`sdk.assetsByAlias()` — the call the server already uses for `commission.json`, not
+`assets.search()` — with the public marketplace client id. No secret, but network access to
+Sharetribe, and a `--assume-min-price` escape hatch when there is none. See
+[Where `listingMinimumPrice` comes from](#where-listingminimumprice-comes-from).
 
 ```
 yarn commission:get     <userId|email>
