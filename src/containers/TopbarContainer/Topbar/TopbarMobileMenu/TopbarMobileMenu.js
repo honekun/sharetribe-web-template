@@ -110,6 +110,9 @@ const TopbarMobileMenu = props => {
   // AV: the same bag / favorites / inbox trio the topbar shows, placed left of
   // the create-listing CTA. The topbar copy is hidden below --viewportSmall
   // (see Topbar.av.module.css), so on narrow phones this is where they live.
+  // No `bagPopupLayout`: this copy is mounted even while the menu is closed
+  // (Modal keeps portal children rendered), and a dropdown anchored inside a
+  // full-screen modal has nowhere to go. The topbar copies own the popup.
   const footerIconLinks = (
     <AVTopbarIconLinks
       className={css.footerIconLinks}

@@ -18,16 +18,22 @@ import { AVInboxLink, FavoritesLink } from './TopbarDesktop/AVLinksMenu/AVTopbar
  * during SSR, so rendering the auth-only icons before mount would produce a
  * hydration mismatch.
  *
+ * `bagPopupLayout` is forwarded to BagLink and decides whether this trio's bag
+ * icon owns the (globally stateful) dropdown — see BagLink. The mobile topbar
+ * passes 'mobile'; the mobile menu's footer copy passes nothing, because a
+ * dropdown anchored inside an open modal is not a place to put one.
+ *
  * @component
  * @param {Object} props
  * @param {string} [props.className] - layout class from the consuming topbar
  * @param {boolean} props.isAuthenticated
  * @param {number} [props.notificationCount]
  * @param {string} props.inboxTab
+ * @param {'desktop'|'mobile'} [props.bagPopupLayout]
  * @returns {JSX.Element}
  */
 const AVTopbarIconLinks = props => {
-  const { className, isAuthenticated, notificationCount = 0, inboxTab } = props;
+  const { className, isAuthenticated, notificationCount = 0, inboxTab, bagPopupLayout } = props;
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -42,7 +48,7 @@ const AVTopbarIconLinks = props => {
         <AVInboxLink notificationCount={notificationCount} inboxTab={inboxTab} />
       ) : null}
       {authenticatedOnClientSide ? <FavoritesLink /> : null}
-      <BagLink />
+      <BagLink popupLayout={bagPopupLayout} />
     </div>
   );
 };

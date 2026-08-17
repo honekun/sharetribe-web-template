@@ -399,6 +399,7 @@ const TopbarComponent = props => {
           isAuthenticated={isAuthenticated}
           notificationCount={notificationCount}
           inboxTab={topbarInboxTab}
+          bagPopupLayout="mobile"
         />
       </nav>
       <div className={css.desktop}>

@@ -15,6 +15,24 @@ describe('FavoritesLink', () => {
     const link = screen.getByRole('link', { name: 'TopbarDesktop.favoritesLink' });
     expect(link).toHaveAttribute('href', '/favorites');
   });
+
+  // Three copies of this component are mounted at once (desktop topbar, mobile
+  // topbar, mobile menu footer). Only the caller that means to be unique may
+  // set an id, or every page carries three of the same one.
+  it('carries no id unless one is given', () => {
+    render(<FavoritesLink />);
+    expect(screen.getByRole('link', { name: 'TopbarDesktop.favoritesLink' })).not.toHaveAttribute(
+      'id'
+    );
+  });
+
+  it('uses the id it is given', () => {
+    render(<FavoritesLink id="favorites-link" />);
+    expect(screen.getByRole('link', { name: 'TopbarDesktop.favoritesLink' })).toHaveAttribute(
+      'id',
+      'favorites-link'
+    );
+  });
 });
 
 describe('AVInboxLink', () => {
@@ -31,6 +49,19 @@ describe('AVInboxLink', () => {
 
     const { container: some } = render(<AVInboxLink notificationCount={3} inboxTab="orders" />);
     expect(some.querySelector('.notificationDot')).toBeInTheDocument();
+  });
+
+  it('carries no id unless one is given', () => {
+    render(<AVInboxLink notificationCount={0} inboxTab="sales" />);
+    expect(screen.getByRole('link', { name: 'TopbarDesktop.inbox' })).not.toHaveAttribute('id');
+  });
+
+  it('uses the id it is given', () => {
+    render(<AVInboxLink id="inbox-link" notificationCount={0} inboxTab="sales" />);
+    expect(screen.getByRole('link', { name: 'TopbarDesktop.inbox' })).toHaveAttribute(
+      'id',
+      'inbox-link'
+    );
   });
 });
 

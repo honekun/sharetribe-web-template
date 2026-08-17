@@ -16,15 +16,22 @@ import css from '../TopbarDesktop.module.css';
  * Purple pill link to the favorites page. Sits between the create-listing button
  * and the inbox link.
  *
+ * `id` is opt-in because this component is mounted three times — desktop
+ * topbar, mobile topbar, mobile menu footer — and a hardcoded one would put
+ * three copies of the same DOM id on every page. Only TopbarDesktop passes it,
+ * which is where upstream's single `inbox-link` has always lived.
+ *
  * @component
+ * @param {Object} props
+ * @param {string} [props.id]
  * @returns {JSX.Element}
  */
-export const FavoritesLink = () => {
+export const FavoritesLink = ({ id }) => {
   const intl = useIntl();
   const label = intl.formatMessage({ id: 'TopbarDesktop.favoritesLink' });
   return (
     <NamedLink
-      id="favorites-link"
+      id={id}
       className={css.favoritesButton}
       name="FavoritesPage"
       title={label}
@@ -53,19 +60,24 @@ export const FavoritesLink = () => {
  * AV replacement for upstream's `InboxLink`: an envelope icon rather than a text
  * label, so it sits in the icon row beside favorites and the bag.
  *
+ * `id` is opt-in for the same reason as FavoritesLink above: three copies of
+ * this component are mounted, and upstream's `inbox-link` is meant to be one
+ * element, not three.
+ *
  * @component
  * @param {Object} props
  * @param {number} props.notificationCount
  * @param {string} props.inboxTab
+ * @param {string} [props.id]
  * @returns {JSX.Element}
  */
-export const AVInboxLink = ({ notificationCount, inboxTab }) => {
+export const AVInboxLink = ({ notificationCount, inboxTab, id }) => {
   const intl = useIntl();
   const label = intl.formatMessage({ id: 'TopbarDesktop.inbox' });
   const notificationDot = notificationCount > 0 ? <div className={css.notificationDot} /> : null;
   return (
     <NamedLink
-      id="inbox-link"
+      id={id}
       className={css.inboxLink}
       name="InboxPage"
       params={{ tab: inboxTab }}
