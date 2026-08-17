@@ -6,6 +6,8 @@
 
 **Architecture:** A per-seller percentage lives in a new PostgreSQL table keyed by Sharetribe user ID — not on the Sharetribe user record, because every user field there is either seller-writable or publicly readable. Three server endpoints that build line items resolve the rate before calling `transactionLineItems`, so `lineItems.js` is never touched. A separate change to `getProviderCommissionMaybe` makes an explicit 0% keep the fixed fee and replaces a throw with a clamp, fixing a pre-existing defect where cheap listings break at payment time.
 
+**Revised 2026-08-16** after review. Three changes run through the tasks below: an indeterminate rate now **fails** the two money endpoints instead of defaulting (Tasks 2 and 5); the shared endpoint half is extracted so it can be tested, and the three endpoints get thin tests rather than none (Task 5); and the minimum listing price is read from Console by the CLI rather than copied into a new env var (Task 7). Task 1 also gains an append-only history table, so clearing an override no longer erases who set it.
+
 **Tech Stack:** Node (CommonJS server, ESM client via webpack), Express, `pg`, Jest, React + Final Form, Sharetribe Marketplace/Integration SDKs.
 
 **Spec:** `docs/superpowers/specs/2026-08-14-per-seller-commission-override-design.md`
@@ -19,7 +21,8 @@
 - **AV translations go in `src/translations/{en,es}_av.json` only** — never `en.json`/`es.json`. Run `yarn av-translation-check`.
 - **Server files start with `'use strict';`** and use CommonJS `require`/`module.exports`.
 - **AV database tables use the `av_` prefix** (matching `av_shipping_label_attempts`, `av_eship_tracking_notifications`).
-- **Falling back is never silent when indeterminate.** "No override exists" (conclusive) logs at `info`; "could not determine" (missing author id, database error) logs at `error`. These must never collapse into the same code path.
+- **Money is never moved on a guessed rate.** "No override exists" (conclusive) is the normal path. "Could not determine" (missing author id, database error) is *not* a fallback on the two money endpoints: they retry once and then return `503 { code: 'COMMISSION_UNRESOLVED' }`. Only `transaction-line-items`, which is display-only, falls back — at `warn`. These must never collapse into the same code path.
+- **The resolver reports; the caller decides.** `providerCommission.js` does no logging, never throws, and never refuses. Policy and log level live in `commissionEndpoint.js`, which is the layer that knows whether a preview or a sale is asking.
 - Test commands: `yarn test-server` (server), `yarn test -- --watchAll=false` (client).
 - Node `>=18.20.1 <23.2.0`, Yarn.
 
@@ -41,7 +44,8 @@ Creates the table and the only module that talks to it.
   - `createProviderCommissionStore(pool = getPostgresPool())`
   - `getOverride(userId)` → `Promise<{ found: true, percentage: number } | { found: false }>`; **rejects** on query failure, never resolves `{ found: false }` for an error
   - `setOverride(userId, percentage, updatedBy)` → `Promise<{ user_id, percentage, updated_at, updated_by }>`
-  - `clearOverride(userId)` → `Promise<boolean>` (true if a row was deleted)
+  - `clearOverride(userId, clearedBy)` → `Promise<boolean>` (true if a row was deleted)
+  - `getHistory(userId)` → `Promise<Array<{ percentage, changed_at, changed_by }>>`, newest first; operator/CLI only, never read by the checkout path
 
 - [ ] **Step 1: Write the migration**
 
@@ -57,9 +61,25 @@ CREATE TABLE IF NOT EXISTS av_provider_commission_overrides (
 
 COMMENT ON TABLE av_provider_commission_overrides IS
   'Per-seller provider commission percentage; an absent row means the marketplace-wide rate applies';
+
+CREATE TABLE IF NOT EXISTS av_provider_commission_override_history (
+  id          BIGSERIAL PRIMARY KEY,
+  user_id     TEXT NOT NULL,
+  percentage  NUMERIC(5,2),           -- NULL records a clear
+  changed_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  changed_by  TEXT
+);
+
+CREATE INDEX IF NOT EXISTS av_provider_commission_override_history_user_idx
+  ON av_provider_commission_override_history (user_id, changed_at DESC);
+
+COMMENT ON TABLE av_provider_commission_override_history IS
+  'Append-only trail of rate changes; a NULL percentage records a clear. Never read by checkout';
 ```
 
 Note: `user_id` is `TEXT` per the spec (it holds a Sharetribe user UUID) rather than `UUID`, so a malformed id returns "no row" instead of raising a type error. The `75` in the `CHECK` must stay in sync with `MAX_PROVIDER_COMMISSION_PERCENTAGE` in Task 2.
+
+The history table exists because the live table cannot answer "who ended this rate, and when" after a `clear`. Keeping "no override" as the absence of a row is the right model — one representable state — but a `DELETE` takes `updated_by` and `updated_at` with it, so the single operation that ends a negotiated rate is the one that leaves no trace of who ended it. No `CHECK` on `percentage` here: history records what happened, including a value the live constraint would now reject if the ceiling is ever lowered.
 
 - [ ] **Step 2: Write the failing store test**
 
@@ -98,36 +118,92 @@ describe('ProviderCommissionStore', () => {
     await expect(store.getOverride('user-1')).rejects.toThrow('connection terminated');
   });
 
+  // The write paths run in a transaction, so they take a client off the pool
+  // rather than calling pool.query directly.
+  const transactionalPool = queryImpl => {
+    const client = { query: jest.fn(queryImpl), release: jest.fn() };
+    return { pool: { connect: jest.fn().mockResolvedValue(client) }, client };
+  };
+  const sqlOf = client => client.query.mock.calls.map(call => String(call[0]));
+
   test('setOverride upserts rather than duplicating, and records the operator', async () => {
-    const pool = {
-      query: jest.fn().mockResolvedValue({
-        rows: [
-          {
-            user_id: 'user-1',
-            percentage: '5.00',
-            updated_at: '2026-08-15T00:00:00.000Z',
-            updated_by: 'alex',
-          },
-        ],
-      }),
-    };
+    const { pool, client } = transactionalPool(() => ({
+      rows: [
+        {
+          user_id: 'user-1',
+          percentage: '5.00',
+          updated_at: '2026-08-15T00:00:00.000Z',
+          updated_by: 'alex',
+        },
+      ],
+    }));
     const store = new ProviderCommissionStore(pool);
 
     const result = await store.setOverride('user-1', 5, 'alex');
 
     expect(result.percentage).toBe(5);
-    expect(pool.query.mock.calls[0][0]).toContain('ON CONFLICT (user_id) DO UPDATE');
-    expect(pool.query.mock.calls[0][1]).toEqual(['user-1', 5, 'alex']);
+    expect(sqlOf(client).join('\n')).toContain('ON CONFLICT (user_id) DO UPDATE');
+    expect(sqlOf(client).join('\n')).toContain('COMMIT');
+  });
+
+  test('setOverride appends a history row with the same operator', async () => {
+    const { pool, client } = transactionalPool(() => ({
+      rows: [{ user_id: 'user-1', percentage: '5.00', updated_by: 'alex' }],
+    }));
+    const store = new ProviderCommissionStore(pool);
+
+    await store.setOverride('user-1', 5, 'alex');
+
+    const historyCall = client.query.mock.calls.find(call =>
+      String(call[0]).includes('override_history')
+    );
+    expect(historyCall[1]).toEqual(['user-1', 5, 'alex']);
   });
 
   test('clearOverride reports whether a row was actually removed', async () => {
-    const pool = { query: jest.fn().mockResolvedValue({ rowCount: 1 }) };
-    const store = new ProviderCommissionStore(pool);
-    await expect(store.clearOverride('user-1')).resolves.toBe(true);
+    const { pool } = transactionalPool(() => ({ rowCount: 1, rows: [] }));
+    await expect(new ProviderCommissionStore(pool).clearOverride('user-1', 'alex')).resolves.toBe(
+      true
+    );
 
-    const emptyPool = { query: jest.fn().mockResolvedValue({ rowCount: 0 }) };
-    const emptyStore = new ProviderCommissionStore(emptyPool);
-    await expect(emptyStore.clearOverride('user-1')).resolves.toBe(false);
+    const empty = transactionalPool(() => ({ rowCount: 0, rows: [] }));
+    await expect(
+      new ProviderCommissionStore(empty.pool).clearOverride('user-1', 'alex')
+    ).resolves.toBe(false);
+  });
+
+  test('clearOverride records the clear as a NULL percentage, with its operator', async () => {
+    const { pool, client } = transactionalPool(() => ({ rowCount: 1, rows: [] }));
+
+    await new ProviderCommissionStore(pool).clearOverride('user-1', 'alex');
+
+    const historyCall = client.query.mock.calls.find(call =>
+      String(call[0]).includes('override_history')
+    );
+    expect(historyCall[0]).toContain('NULL');
+    expect(historyCall[1]).toEqual(['user-1', 'alex']);
+  });
+
+  test('clearing a seller who has no override writes no history', async () => {
+    const { pool, client } = transactionalPool(() => ({ rowCount: 0, rows: [] }));
+
+    await new ProviderCommissionStore(pool).clearOverride('user-1', 'alex');
+
+    expect(sqlOf(client).some(sql => sql.includes('override_history'))).toBe(false);
+  });
+
+  test('a failed write rolls back, leaving neither table changed', async () => {
+    const { pool, client } = transactionalPool(sql => {
+      if (String(sql).includes('override_history')) throw new Error('history insert failed');
+      return { rows: [{ user_id: 'user-1', percentage: '5.00' }], rowCount: 1 };
+    });
+
+    await expect(new ProviderCommissionStore(pool).setOverride('user-1', 5, 'alex')).rejects.toThrow(
+      'history insert failed'
+    );
+    expect(sqlOf(client)).toContain('ROLLBACK');
+    expect(sqlOf(client)).not.toContain('COMMIT');
+    expect(client.release).toHaveBeenCalled();
   });
 });
 ```
@@ -147,6 +223,7 @@ Create `server/services/providerCommissionStore.js`:
 const { getPostgresPool } = require('./postgres');
 
 const TABLE = 'av_provider_commission_overrides';
+const HISTORY_TABLE = 'av_provider_commission_override_history';
 
 class ProviderCommissionStore {
   constructor(pool) {
@@ -167,24 +244,70 @@ class ProviderCommissionStore {
     return { found: true, percentage: Number(row.percentage) };
   }
 
+  // Writes both tables in one transaction: a rate change and its history entry
+  // must not be able to come apart, or the trail silently misses changes.
   async setOverride(userId, percentage, updatedBy = null) {
-    const result = await this.pool.query(
-      `INSERT INTO ${TABLE} (user_id, percentage, updated_by)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (user_id) DO UPDATE
-         SET percentage = EXCLUDED.percentage,
-             updated_by = EXCLUDED.updated_by,
-             updated_at = NOW()
-       RETURNING user_id, percentage, updated_at, updated_by`,
-      [userId, percentage, updatedBy]
-    );
-    const row = result.rows[0];
-    return { ...row, percentage: Number(row.percentage) };
+    return this.withTransaction(async client => {
+      const result = await client.query(
+        `INSERT INTO ${TABLE} (user_id, percentage, updated_by)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (user_id) DO UPDATE
+           SET percentage = EXCLUDED.percentage,
+               updated_by = EXCLUDED.updated_by,
+               updated_at = NOW()
+         RETURNING user_id, percentage, updated_at, updated_by`,
+        [userId, percentage, updatedBy]
+      );
+      await client.query(
+        `INSERT INTO ${HISTORY_TABLE} (user_id, percentage, changed_by) VALUES ($1, $2, $3)`,
+        [userId, percentage, updatedBy]
+      );
+      const row = result.rows[0];
+      return { ...row, percentage: Number(row.percentage) };
+    });
   }
 
-  async clearOverride(userId) {
-    const result = await this.pool.query(`DELETE FROM ${TABLE} WHERE user_id = $1`, [userId]);
-    return result.rowCount > 0;
+  // A NULL percentage in the history table records the clear itself, which is
+  // the event the live table cannot represent once its row is gone.
+  async clearOverride(userId, clearedBy = null) {
+    return this.withTransaction(async client => {
+      const result = await client.query(`DELETE FROM ${TABLE} WHERE user_id = $1`, [userId]);
+      if (result.rowCount > 0) {
+        await client.query(
+          `INSERT INTO ${HISTORY_TABLE} (user_id, percentage, changed_by) VALUES ($1, NULL, $2)`,
+          [userId, clearedBy]
+        );
+      }
+      return result.rowCount > 0;
+    });
+  }
+
+  // Operator-facing only. The checkout path never touches this table.
+  async getHistory(userId) {
+    const result = await this.pool.query(
+      `SELECT percentage, changed_at, changed_by FROM ${HISTORY_TABLE}
+       WHERE user_id = $1 ORDER BY changed_at DESC, id DESC`,
+      [userId]
+    );
+    return result.rows.map(row => ({
+      ...row,
+      percentage: row.percentage === null ? null : Number(row.percentage),
+    }));
+  }
+
+  async withTransaction(fn) {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await fn(client);
+      await client.query('COMMIT');
+      return result;
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
   }
 }
 
@@ -238,8 +361,18 @@ The decision logic, with no I/O of its own. This is where the determinacy rules 
   - `MAX_PROVIDER_COMMISSION_PERCENTAGE` = `75`
   - `parseCommissionOverride(raw)` → `number | null`
   - `applyOverride(commission, percentage)` → commission object with `minimum_amount` removed
-  - `resolveProviderCommission(commission, sellerUserId, deps)` → `Promise<{ commission, source }>` where `source` is `'override' | 'default' | 'fallback'`
+  - `resolveProviderCommission(commission, sellerUserId, deps)` → `Promise<{ commission, source, reason }>` where `source` is `'override' | 'default' | 'indeterminate'` and `reason` is set only on the last (`'no-author' | 'store-unreadable'`)
   - `impliedMinimumPrice(percentage, fixedFee)` → `number` (used by the CLI in Task 7)
+
+The resolver reports determinacy and does not act on it. It never throws, never logs, and never
+decides to refuse — refusing is the caller's policy, because the consequence differs by caller: a
+preview that shows the marketplace rate for a moment is a display bug, while a money endpoint that
+creates a transaction at a guessed rate is a money defect. Logging moves to `commissionEndpoint.js`
+in Task 5, which is the layer that knows which operation is asking.
+
+`deps.retries` (default `0`) is how many times a *rejecting* store is re-read before the result is
+declared indeterminate. `'no-author'` is never retried — a listing payload without
+`relationships.author` is not a transient condition.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -321,64 +454,90 @@ describe('impliedMinimumPrice', () => {
 });
 
 describe('resolveProviderCommission determinacy', () => {
-  const logger = () => ({ info: jest.fn(), error: jest.fn() });
-
   test('applies the override when the store finds a row', async () => {
     const store = { getOverride: jest.fn().mockResolvedValue({ found: true, percentage: 5 }) };
-    const log = logger();
 
-    const result = await resolveProviderCommission(MARKETPLACE, 'user-1', { store, logger: log });
+    const result = await resolveProviderCommission(MARKETPLACE, 'user-1', { store });
 
     expect(result.source).toBe('override');
     expect(result.commission.percentage).toBe(5);
     expect('minimum_amount' in result.commission).toBe(false);
-    expect(log.error).not.toHaveBeenCalled();
   });
 
-  test('uses the marketplace rate silently when absence is conclusive', async () => {
+  test('uses the marketplace rate when absence is conclusive', async () => {
     const store = { getOverride: jest.fn().mockResolvedValue({ found: false }) };
-    const log = logger();
 
-    const result = await resolveProviderCommission(MARKETPLACE, 'user-1', { store, logger: log });
+    const result = await resolveProviderCommission(MARKETPLACE, 'user-1', { store });
 
     expect(result.source).toBe('default');
     expect(result.commission).toEqual(MARKETPLACE);
-    // A conclusive absence is the normal path: informational, not an error.
-    expect(log.error).not.toHaveBeenCalled();
-    expect(log.info).toHaveBeenCalled();
+    expect(result.reason).toBeUndefined();
   });
 
-  test('falls back and logs at error level when the store rejects', async () => {
+  test('reports indeterminate when the store rejects', async () => {
     // The key negative assertion: an unreadable table must NOT take the same
-    // path as a conclusive absence, even though both end at the default rate.
+    // path as a conclusive absence. Both carry the marketplace commission, but
+    // only one of them is a fact, and only the caller knows whether a guess is
+    // acceptable — so this must never come back as `default`.
     const store = { getOverride: jest.fn().mockRejectedValue(new Error('db down')) };
-    const log = logger();
 
-    const result = await resolveProviderCommission(MARKETPLACE, 'user-1', { store, logger: log });
+    const result = await resolveProviderCommission(MARKETPLACE, 'user-1', { store });
 
-    expect(result.source).toBe('fallback');
+    expect(result.source).toBe('indeterminate');
+    expect(result.reason).toBe('store-unreadable');
     expect(result.commission).toEqual(MARKETPLACE);
-    expect(log.error).toHaveBeenCalled();
   });
 
-  test('falls back and logs at error level when the seller cannot be identified', async () => {
+  test('reports indeterminate when the seller cannot be identified', async () => {
     const store = { getOverride: jest.fn() };
-    const log = logger();
 
-    const result = await resolveProviderCommission(MARKETPLACE, null, { store, logger: log });
+    const result = await resolveProviderCommission(MARKETPLACE, null, { store });
 
-    expect(result.source).toBe('fallback');
+    expect(result.source).toBe('indeterminate');
+    expect(result.reason).toBe('no-author');
     expect(store.getOverride).not.toHaveBeenCalled();
-    expect(log.error).toHaveBeenCalled();
   });
 
-  test('the fallback log names the seller so mispriced sales can be reconciled', async () => {
+  test('never throws, whatever the store does', async () => {
+    const store = {
+      getOverride: jest.fn().mockImplementation(() => {
+        throw new Error('synchronous blow-up');
+      }),
+    };
+
+    await expect(resolveProviderCommission(MARKETPLACE, 'user-1', { store })).resolves.toMatchObject(
+      { source: 'indeterminate' }
+    );
+  });
+
+  test('retries a rejecting store and succeeds on the second read', async () => {
+    const store = {
+      getOverride: jest
+        .fn()
+        .mockRejectedValueOnce(new Error('connection reset'))
+        .mockResolvedValueOnce({ found: true, percentage: 5 }),
+    };
+
+    const result = await resolveProviderCommission(MARKETPLACE, 'user-1', { store, retries: 1 });
+
+    expect(store.getOverride).toHaveBeenCalledTimes(2);
+    expect(result.source).toBe('override');
+  });
+
+  test('does not retry by default', async () => {
     const store = { getOverride: jest.fn().mockRejectedValue(new Error('db down')) };
-    const log = logger();
 
-    await resolveProviderCommission(MARKETPLACE, 'user-42', { store, logger: log });
+    await resolveProviderCommission(MARKETPLACE, 'user-1', { store });
 
-    expect(String(log.error.mock.calls[0][0])).toContain('user-42');
+    expect(store.getOverride).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not retry a missing author, which is not transient', async () => {
+    const store = { getOverride: jest.fn() };
+
+    await resolveProviderCommission(MARKETPLACE, null, { store, retries: 3 });
+
+    expect(store.getOverride).not.toHaveBeenCalled();
   });
 });
 ```
@@ -437,44 +596,51 @@ const applyOverride = (commission, percentage) => {
   return { ...rest, percentage };
 };
 
-// Resolves the commission for one seller.
+const RETRY_DELAY_MS = 200;
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+// Resolves the commission for one seller, and reports how sure it is.
 //
 // Defaulting to the marketplace rate is only safe when the ABSENCE of an
 // override is established. An unknown rate mischarges in whichever direction
 // the seller was negotiated — overrides run to 75% against a 10% marketplace
-// rate, so a fallback can undercharge the platform just as easily as it can
+// rate, so a guess can undercharge the platform just as easily as it can
 // overcharge a discounted seller.
+//
+// So an unknown rate comes back as `source: 'indeterminate'` carrying the
+// marketplace commission, and the CALLER decides. The preview uses it; the two
+// money endpoints refuse. This function has no opinion, does no logging, and
+// never throws — see server/api-util/commissionEndpoint.js for the policy and
+// the log lines.
 const resolveProviderCommission = async (commission, sellerUserId, deps = {}) => {
-  const { store, logger = console } = deps;
+  const { store, retries = 0 } = deps;
 
+  // Not retried: a listing payload with no author is not going to grow one.
   if (!sellerUserId) {
-    logger.error(
-      '[providerCommission] Indeterminate: no seller id on the listing; falling back to the marketplace rate. Transactions in this window may be mispriced.'
-    );
-    return { commission, source: 'fallback' };
+    return { commission, source: 'indeterminate', reason: 'no-author' };
   }
 
-  let result;
-  try {
-    result = await store.getOverride(sellerUserId);
-  } catch (e) {
-    logger.error(
-      `[providerCommission] Indeterminate: override lookup failed for seller ${sellerUserId}; falling back to the marketplace rate. Transactions in this window may be mispriced. Cause: ${e.message}`
-    );
-    return { commission, source: 'fallback' };
+  let lastError = null;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const result = await store.getOverride(sellerUserId);
+      return result.found
+        ? { commission: applyOverride(commission, result.percentage), source: 'override' }
+        : { commission, source: 'default' };
+    } catch (e) {
+      // The realistic failure is a dropped pooled connection, which a second
+      // attempt clears. A sustained outage is not something a retry loop should
+      // paper over while a buyer waits, so callers pass at most 1.
+      lastError = e;
+      if (attempt < retries) {
+        await sleep(RETRY_DELAY_MS);
+      }
+    }
   }
 
-  if (!result.found) {
-    logger.info(
-      `[providerCommission] seller=${sellerUserId} rate=${commission?.percentage} source=default`
-    );
-    return { commission, source: 'default' };
-  }
-
-  logger.info(
-    `[providerCommission] seller=${sellerUserId} rate=${result.percentage} source=override`
-  );
-  return { commission: applyOverride(commission, result.percentage), source: 'override' };
+  // `cause` is carried out rather than logged here, so the one log line the
+  // caller writes can name both the operation and what actually went wrong.
+  return { commission, source: 'indeterminate', reason: 'store-unreadable', cause: lastError };
 };
 
 module.exports = {
@@ -821,9 +987,11 @@ export const clampFixedFee = (percentageAmount, fixedFee, orderTotal) =>
 Create `src/config/commissionInvariant.test.js`:
 
 ```js
-// configDefault.js uses `export default defaultConfig` (line 154), not a named export.
-import defaultConfig from './configDefault';
+// Imports run outward-in, per repo convention: the further-away module first,
+// then the sibling. configDefault.js uses `export default defaultConfig`
+// (line 154), not a named export.
 import { MAX_PROVIDER_COMMISSION_PERCENTAGE } from '../util/avCommission';
+import defaultConfig from './configDefault';
 
 // The AV fixed fee is invisible to Sharetribe, so nothing on their side stops a
 // listing from being priced below what the fee needs. This test is the guard:
@@ -859,16 +1027,40 @@ In `src/config/configDefault.js:33`, change the fallback:
 
 The Console `transaction-size.json` asset must be raised to `6000` as well — it overrides this value at runtime. That is a deployment step, recorded in Task 8.
 
-- [ ] **Step 7: Run both tests to verify they pass**
+Raise it in the **same commit as the clamp** (Task 3). Earlier and it blocks listings between 5.00 and 60.00 with no clamp to justify the block; later and there is a window where the invariant is false by default.
+
+- [ ] **Step 7: Add the boot readiness check**
+
+The CI test above can only speak for the code constants. The number that actually governs a live marketplace is the Console one, and nothing in this repository can assert what it says at build time. So assert it at boot, where the real value is available:
+
+In `server/index.js`, alongside the existing notification/shipping readiness logging, once hosted config has loaded:
+
+```js
+// The invariant is checked in CI against the code fallback, but the live value
+// comes from Console and can be changed there without touching this repo. This
+// is the only place the real number is knowable, so it is where it gets
+// checked. Diagnostic, not a gate: a marketplace that cannot fetch its own
+// config has already failed louder than this.
+const headroom = listingMinimumPrice * (1 - MAX_PROVIDER_COMMISSION_PERCENTAGE / 100);
+if (headroom < FIXED_FEE) {
+  console.error(
+    `[commission] Console listingMinimumPrice ${listingMinimumPrice} leaves ${headroom} for a ` +
+      `${FIXED_FEE} fixed fee at the ${MAX_PROVIDER_COMMISSION_PERCENTAGE}% ceiling. ` +
+      'Listings at the minimum will have their fee clamped and the platform will earn less than intended.'
+  );
+}
+```
+
+- [ ] **Step 8: Run both tests to verify they pass**
 
 Run: `yarn test -- --watchAll=false --testPathPattern="avCommission|commissionInvariant"`
 Expected: PASS
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add src/util/avCommission.js src/util/avCommission.test.js \
-        src/config/commissionInvariant.test.js src/config/configDefault.js
+        src/config/commissionInvariant.test.js src/config/configDefault.js server/index.js
 git commit -m "feat(commission): add client parser/clamp and enforce the fee invariant"
 ```
 
@@ -878,31 +1070,187 @@ git commit -m "feat(commission): add client parser/clamp and enforce the fee inv
 
 Where the feature actually takes effect on money.
 
+The three endpoints do the same four things — pull the author id off the listing, await the resolver, log the resolution, and either use the result or refuse. Written inline that is the same dozen lines in three upstream files: a merge-conflict surface, and untestable without an SDK harness for each. So the shared half becomes one AV-owned module and each upstream file keeps a call plus a refusal check.
+
 **Files:**
+- Create: `server/api-util/commissionEndpoint.js`
+- Test: `server/api-util/commissionEndpoint.test.js`
 - Modify: `server/api/transaction-line-items.js`
 - Modify: `server/api/initiate-privileged.js:76`
 - Modify: `server/api/transition-privileged.js:153`
+- Test: `server/api/initiate-privileged.test.js`, `server/api/transition-privileged.test.js`, `server/api/transaction-line-items.test.js` (new, thin)
 
 **Interfaces:**
 - Consumes: `resolveProviderCommission` (Task 2), `createProviderCommissionStore` (Task 1)
-- Produces: no new exports. All three endpoints keep their existing request/response contracts.
+- Produces: `resolveCommissionForRequest(listing, commission, { operation, retries, store, logger })` → `Promise<{ commission, source, reason }>`
+- All three endpoints keep their existing request/response contracts, except that the two money endpoints gain one new failure response: `503 { code: 'COMMISSION_UNRESOLVED' }`.
 
-- [ ] **Step 1: Wire `transaction-line-items.js`**
+- [ ] **Step 1: Write the failing helper test**
 
-Only the author's **id** is needed, and it arrives in the listing's `relationships` on every one of these responses — so no `include: ['author']` and no change to what any endpoint requests from Sharetribe.
+Create `server/api-util/commissionEndpoint.test.js`. These are the cases a pure resolver test structurally cannot reach — author extraction from a real payload shape, and the log line that distinguishes a preview from a sale.
+
+```js
+'use strict';
+
+const { resolveCommissionForRequest } = require('./commissionEndpoint');
+
+const MARKETPLACE = { percentage: 10, minimum_amount: 200 };
+const logger = () => ({ info: jest.fn(), warn: jest.fn(), error: jest.fn() });
+
+// Both payload shapes these endpoints actually receive: `transaction-line-items`
+// gets the raw resource with `relationships`, while the privileged endpoints
+// denormalize the included author onto the listing.
+const withRelationship = { relationships: { author: { data: { id: { uuid: 'seller-1' } } } } };
+const withDenormalized = { author: { id: { uuid: 'seller-1' } } };
+
+describe('resolveCommissionForRequest', () => {
+  test.each([
+    ['relationship shape', withRelationship],
+    ['denormalized shape', withDenormalized],
+  ])('extracts the author id from the %s', async (_label, listing) => {
+    const store = { getOverride: jest.fn().mockResolvedValue({ found: true, percentage: 5 }) };
+
+    const result = await resolveCommissionForRequest(listing, MARKETPLACE, {
+      operation: 'preview',
+      store,
+      logger: logger(),
+    });
+
+    expect(store.getOverride).toHaveBeenCalledWith('seller-1');
+    expect(result.commission.percentage).toBe(5);
+  });
+
+  test('a listing with no author is indeterminate, not a lookup for `undefined`', async () => {
+    const store = { getOverride: jest.fn() };
+
+    const result = await resolveCommissionForRequest({}, MARKETPLACE, {
+      operation: 'preview',
+      store,
+      logger: logger(),
+    });
+
+    expect(store.getOverride).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ source: 'indeterminate', reason: 'no-author' });
+  });
+
+  test('names the operation in the log, so previews stay separable from sales', async () => {
+    const store = { getOverride: jest.fn().mockRejectedValue(new Error('db down')) };
+    const log = logger();
+
+    await resolveCommissionForRequest(withRelationship, MARKETPLACE, {
+      operation: 'initiate',
+      store,
+      logger: log,
+    });
+
+    expect(String(log.error.mock.calls[0][0])).toContain('operation=initiate');
+    expect(String(log.error.mock.calls[0][0])).toContain('seller-1');
+  });
+
+  test('an indeterminate preview is a warning; an indeterminate sale is an error', async () => {
+    const store = { getOverride: jest.fn().mockRejectedValue(new Error('db down')) };
+
+    const previewLog = logger();
+    await resolveCommissionForRequest(withRelationship, MARKETPLACE, {
+      operation: 'preview',
+      store,
+      logger: previewLog,
+    });
+    expect(previewLog.warn).toHaveBeenCalled();
+    expect(previewLog.error).not.toHaveBeenCalled();
+
+    const saleLog = logger();
+    await resolveCommissionForRequest(withRelationship, MARKETPLACE, {
+      operation: 'initiate',
+      store,
+      logger: saleLog,
+    });
+    expect(saleLog.error).toHaveBeenCalled();
+  });
+});
+```
+
+- [ ] **Step 2: Implement the helper**
+
+Create `server/api-util/commissionEndpoint.js`:
+
+```js
+'use strict';
+
+const { resolveProviderCommission } = require('./providerCommission');
+
+// The half of the commission wiring that is identical in all three line-item
+// endpoints. It lives here rather than in each of them because those are
+// upstream files: keeping the shared logic AV-owned means one place to test and
+// three one-line calls to merge.
+//
+// This module logs; providerCommission.js deliberately does not. Only this
+// layer knows which operation is asking, and that is what decides the level —
+// an indeterminate preview is a display glitch, an indeterminate sale is money.
+
+// `transaction-line-items` receives the raw listing resource; the privileged
+// endpoints denormalize the included author onto it. Accept both, the way
+// shippingQuoteService.resolveOrigin does.
+const authorIdOf = listing =>
+  listing?.author?.id?.uuid || listing?.relationships?.author?.data?.id?.uuid || null;
+
+const resolveCommissionForRequest = async (listing, commission, opts = {}) => {
+  const { operation, retries = 0, store, logger = console } = opts;
+
+  const result = await resolveProviderCommission(commission, authorIdOf(listing), {
+    store,
+    retries,
+  });
+
+  const seller = authorIdOf(listing) || 'unknown';
+  if (result.source === 'indeterminate') {
+    const line =
+      `[providerCommission] indeterminate operation=${operation} seller=${seller} ` +
+      `reason=${result.reason}` +
+      (result.cause ? ` cause=${result.cause.message}` : '');
+    // The preview may show the marketplace rate; the money paths refuse. Levels
+    // follow that, so a refused checkout is not buried under the several
+    // previews each checkout produces.
+    if (operation === 'preview') {
+      logger.warn(`${line} — showing the marketplace rate`);
+    } else {
+      logger.error(`${line} — refusing to create a transaction at a guessed rate`);
+    }
+  } else {
+    logger.info(
+      `[providerCommission] operation=${operation} seller=${seller} ` +
+        `rate=${result.commission?.percentage} source=${result.source}`
+    );
+  }
+
+  return result;
+};
+
+module.exports = { authorIdOf, resolveCommissionForRequest };
+```
+
+- [ ] **Step 3: Run the helper test**
+
+Run: `yarn test-server -- --testPathPattern=api-util/commissionEndpoint`
+Expected: PASS
+
+- [ ] **Step 4: Wire `transaction-line-items.js` (the preview — falls back)**
 
 Add the imports:
 
 ```js
-const { resolveProviderCommission } = require('../api-util/providerCommission');
+const { resolveCommissionForRequest } = require('../api-util/commissionEndpoint');
 const { createProviderCommissionStore } = require('../services/providerCommissionStore');
 ```
 
 Then, inside the `.then(async ([showListingResponse, fetchAssetsResponse]) => {` block, after `providerCommission` is destructured, replace the `transactionLineItems` call:
 
 ```js
-      const sellerUserId = listing?.relationships?.author?.data?.id?.uuid || null;
-      const resolved = await resolveProviderCommission(providerCommission, sellerUserId, {
+      // Display-only: an indeterminate rate shows the marketplace figure rather
+      // than failing the page. No money moves here.
+      const resolved = await resolveCommissionForRequest(listing, providerCommission, {
+        operation: 'preview',
+        retries: 0,
         store: createProviderCommissionStore(),
       });
 
@@ -914,16 +1262,24 @@ Then, inside the `.then(async ([showListingResponse, fetchAssetsResponse]) => {`
       );
 ```
 
-- [ ] **Step 2: Wire `initiate-privileged.js`**
+- [ ] **Step 5: Wire `initiate-privileged.js` (money — refuses)**
 
-Add the same two imports. This endpoint already includes the author, so the id is available either denormalized or as a relationship — accept both, the way `shippingQuoteService.resolveOrigin` does:
+Add the same two imports, then:
 
 ```js
-      const sellerUserId =
-        listing?.author?.id?.uuid || listing?.relationships?.author?.data?.id?.uuid || null;
-      const resolved = await resolveProviderCommission(providerCommission, sellerUserId, {
+      const resolved = await resolveCommissionForRequest(listing, providerCommission, {
+        operation: 'initiate',
+        retries: 1,
         store: createProviderCommissionStore(),
       });
+
+      // Fail closed. A transaction created at a guessed commission cannot be
+      // reliably found again afterwards — seller id and timestamp do not
+      // distinguish it from the several previews the same checkout produced —
+      // so it must not be created. See the design's Error handling section.
+      if (resolved.source === 'indeterminate') {
+        return res.status(503).json({ code: 'COMMISSION_UNRESOLVED' });
+      }
 
       lineItems = await transactionLineItems(
         listing,
@@ -934,16 +1290,20 @@ Add the same two imports. This endpoint already includes the author, so the id i
       );
 ```
 
-- [ ] **Step 3: Wire `transition-privileged.js`**
+- [ ] **Step 6: Wire `transition-privileged.js` (money — refuses)**
 
-Add the same two imports. Here `listing` comes from `getListingRelationShip(...)`, which returns the included resource, so use the same both-shapes lookup:
+The same, with `operation: 'transition'`. Here `listing` comes from `getListingRelationShip(...)`, which returns the included resource — `authorIdOf` handles that shape, which is why the extraction is not repeated here.
 
 ```js
-      const sellerUserId =
-        listing?.author?.id?.uuid || listing?.relationships?.author?.data?.id?.uuid || null;
-      const resolved = await resolveProviderCommission(providerCommission, sellerUserId, {
+      const resolved = await resolveCommissionForRequest(listing, providerCommission, {
+        operation: 'transition',
+        retries: 1,
         store: createProviderCommissionStore(),
       });
+
+      if (resolved.source === 'indeterminate') {
+        return res.status(503).json({ code: 'COMMISSION_UNRESOLVED' });
+      }
 
       lineItems = await transactionLineItems(
         listing,
@@ -954,12 +1314,35 @@ Add the same two imports. Here `listing` comes from `getListingRelationShip(...)
       );
 ```
 
-- [ ] **Step 4: Verify nothing regressed**
+- [ ] **Step 7: Add the three thin endpoint tests**
+
+These are the assertions the resolver's unit tests structurally cannot make. Each one stubs the store to reject and checks what the endpoint does about it — nothing more, so the harness stays small.
+
+The failures worth catching here, none of which a pure test can see:
+- a missing `await`, which spreads a pending promise and yields `percentage: undefined` — a silently commission-free sale;
+- the endpoint resolving the override and then passing the **original** `commission` to `transactionLineItems`, which is the most likely way this feature ships as a no-op;
+- a money endpoint that resolves `indeterminate` and proceeds anyway.
+
+```js
+test('refuses to initiate when the commission cannot be resolved', async () => {
+  // store rejects -> resolver reports indeterminate -> endpoint must not create
+  expect(res.status).toHaveBeenCalledWith(503);
+  expect(res.json).toHaveBeenCalledWith({ code: 'COMMISSION_UNRESOLVED' });
+  expect(sdk.transactions.initiate).not.toHaveBeenCalled();
+});
+
+test('passes the RESOLVED commission to transactionLineItems, not the marketplace one', async () => {
+  // store returns 5% -> the object reaching transactionLineItems has percentage 5
+  // and no minimum_amount. This is the no-op guard.
+});
+```
+
+- [ ] **Step 8: Verify nothing regressed**
 
 Run: `yarn test-server`
-Expected: PASS. The three endpoints have no test files (only AV-owned endpoints do) and this plan does not add them — the logic worth testing lives in the pure resolver from Task 2. What this run proves is that the shared helpers still behave.
+Expected: PASS.
 
-- [ ] **Step 5: Manually verify the preview endpoint end to end**
+- [ ] **Step 9: Manually verify the preview endpoint end to end**
 
 Start the app (`yarn run dev`), set an override for a test seller once Task 7 exists — or insert a row directly for now:
 
@@ -968,12 +1351,22 @@ docker compose exec -T postgres psql -U archivo_vintach -d archivo_vintach -c \
   "INSERT INTO av_provider_commission_overrides (user_id, percentage, updated_by) VALUES ('<seller-uuid>', 5, 'manual-test');"
 ```
 
-Open a listing by that seller and start checkout. Expected: the OrderBreakdown provider commission reflects 5%, and the server log shows `[providerCommission] seller=<uuid> rate=5 source=override`.
+Open a listing by that seller and start checkout. Expected: the OrderBreakdown provider commission reflects 5%, and the server log shows `[providerCommission] operation=preview seller=<uuid> rate=5 source=override`.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 10: Manually verify the refusal**
+
+Stop PostgreSQL (`docker compose stop postgres`) and retry the same checkout.
+
+Expected: the listing page still renders a breakdown at the marketplace rate with a `warn` log naming `operation=preview`, and pressing Pay returns `503 COMMISSION_UNRESOLVED` with an `error` log naming `operation=initiate`. No transaction is created. Restart PostgreSQL afterwards.
+
+This is the one behaviour that only shows up end to end: the two endpoints reading the same table and reaching opposite conclusions about what to do when it is gone.
+
+- [ ] **Step 11: Commit**
 
 ```bash
-git add server/api/transaction-line-items.js server/api/initiate-privileged.js server/api/transition-privileged.js
+git add server/api-util/commissionEndpoint.js server/api-util/commissionEndpoint.test.js \
+        server/api/transaction-line-items.js server/api/initiate-privileged.js \
+        server/api/transition-privileged.js server/api/*-privileged.test.js
 git commit -m "feat(commission): resolve per-seller commission in the line-item endpoints"
 ```
 
@@ -1014,13 +1407,17 @@ jest.mock('../../services/providerCommissionStore', () => ({
 const { handleGetMyCommission } = require('./index');
 
 const mockRes = () => {
-  const res = { statusCode: 200 };
+  const res = { statusCode: 200, headers: {} };
   res.status = jest.fn(code => {
     res.statusCode = code;
     return res;
   });
   res.json = jest.fn(body => {
     res.body = body;
+    return res;
+  });
+  res.set = jest.fn((name, value) => {
+    res.headers[name] = value;
     return res;
   });
   return res;
@@ -1085,6 +1482,19 @@ describe('GET /api/commission/me', () => {
 
     expect(res.statusCode).toBe(503);
   });
+
+  test('is never cached — the path is identical for every seller', async () => {
+    // Without this, a shared cache can serve one seller's negotiated rate to
+    // the next caller, since the URL carries nothing that distinguishes them.
+    // Asserted on the unauthenticated path too, because the header is set
+    // before any branch can return early.
+    mockCurrentUserShow.mockRejectedValue(new Error('401'));
+    const res = mockRes();
+
+    await handleGetMyCommission({}, res);
+
+    expect(res.headers['Cache-Control']).toBe('private, no-store');
+  });
 });
 ```
 
@@ -1114,6 +1524,13 @@ const { createProviderCommissionStore } = require('../../services/providerCommis
 
 const handleGetMyCommission = async (req, res) => {
   const sdk = getSdk(req, res);
+
+  // A per-seller confidential value on a path that does not vary by user is
+  // exactly the shape a shared cache mis-serves: without this, a proxy or
+  // service worker may hand one seller's negotiated rate to the next caller of
+  // /api/commission/me. `private` alone would still allow browser-disk storage,
+  // so `no-store` is the half that matters.
+  res.set('Cache-Control', 'private, no-store');
 
   let userId;
   try {
@@ -1222,11 +1639,17 @@ Expected: FAIL — the component does not fetch, so the 5% case never appears
 
 - [ ] **Step 8: Update the estimator**
 
-In `EarningsEstimator.js`, add the imports:
+In `EarningsEstimator.js`, widen the React import and add the util one. The file groups its imports
+React → `util/*` → `context/*` → CSS, so `avCommission` joins the `util/*` block rather than sitting
+directly under React:
 
 ```js
 import React, { useEffect, useState } from 'react';
+import { useIntl } from '../../../../util/reactIntl';
+import { formatMoney } from '../../../../util/currency';
+import { types as sdkTypes } from '../../../../util/sdkLoader';
 import { clampFixedFee } from '../../../../util/avCommission';
+import { useConfiguration } from '../../../../context/configurationContext';
 ```
 
 After the existing `config.earningsEstimate` destructuring, add the fetch and prefer its result:
@@ -1301,7 +1724,7 @@ git commit -m "feat(commission): add self-scoped rate endpoint and show real rat
 
 **Interfaces:**
 - Consumes: `createProviderCommissionStore` (Task 1); `parseCommissionOverride`, `impliedMinimumPrice`, `MAX_PROVIDER_COMMISSION_PERCENTAGE` (Task 2); `getIntegrationSdk` from `server/services/integrationSdk`
-- Produces: `yarn commission:get|set|clear`
+- Produces: `yarn commission:get|set|clear|history`
 
 - [ ] **Step 1: Implement the script**
 
@@ -1316,6 +1739,7 @@ if (!process.env.NODE_ENV) {
 require('../server/env').configureEnv();
 
 const os = require('os');
+const sharetribeSdk = require('sharetribe-flex-sdk');
 
 const {
   MAX_PROVIDER_COMMISSION_PERCENTAGE,
@@ -1327,17 +1751,59 @@ const { getIntegrationSdk } = require('../server/services/integrationSdk');
 const { closePostgresPool } = require('../server/services/postgres');
 
 const FIXED_FEE = parseInt(process.env.REACT_APP_PROVIDER_COMMISSION_FIXED_FEE, 10) || 0;
-const LISTING_MINIMUM_PRICE = parseInt(process.env.AV_LISTING_MINIMUM_PRICE, 10) || 6000;
 
 function printUsage() {
   console.log(`Usage:
-  yarn commission:get   <userId|email>
-  yarn commission:set   <userId|email> <percentage>
-  yarn commission:clear <userId|email>
+  yarn commission:get     <userId|email>
+  yarn commission:set     <userId|email> <percentage> [--assume-min-price=<subunits>]
+  yarn commission:clear   <userId|email>
+  yarn commission:history <userId|email>
 
 Percentage must be between 0 and ${MAX_PROVIDER_COMMISSION_PERCENTAGE}. An absent override means the
 marketplace-wide rate applies. Setting 0 means the seller pays no percentage but still pays the
 fixed fee of ${FIXED_FEE} subunits.`);
+}
+
+// The minimum listing price is a hosted asset, not a value this repo owns, so
+// `set` reads the live one rather than a local copy that can silently disagree
+// with Console. This needs the PUBLIC marketplace client id and network access
+// — no Integration credentials, which is a distinction worth keeping straight:
+// the <userId> form of every command avoids Integration entirely, but `set`
+// still has to reach Sharetribe for this one number.
+async function fetchListingMinimumPrice() {
+  const sdk = sharetribeSdk.createInstance({
+    clientId: process.env.REACT_APP_SHARETRIBE_SDK_CLIENT_ID,
+  });
+  const res = await sdk.assetsByAlias({
+    paths: ['/transactions/transaction-size.json'],
+    alias: 'latest',
+  });
+  const asset = res?.data?.data?.[0];
+  const value = asset?.type === 'jsonAsset' ? asset.attributes.data?.listingMinimumPrice : null;
+  // 0 means "no restriction" in Console and must not be read as a real floor.
+  if (typeof value !== 'number' || value <= 0) {
+    throw new Error('transaction-size.json has no usable listingMinimumPrice');
+  }
+  return value;
+}
+
+// Refusing to write is the safe outcome when the constraint cannot be checked:
+// an unchecked rate is exactly the misconfiguration this guard exists to stop.
+// The escape hatch is explicit and is echoed back, so a skipped check never
+// passes unnoticed.
+async function resolveMinimumPrice(assumed) {
+  if (assumed != null) {
+    console.log(`WARNING: skipping the Console check; assuming a minimum price of ${assumed}.`);
+    return assumed;
+  }
+  try {
+    return await fetchListingMinimumPrice();
+  } catch (e) {
+    throw new Error(
+      `Could not read the marketplace minimum listing price (${e.message}). ` +
+        'Re-run with --assume-min-price=<subunits> if you know it and cannot reach Sharetribe.'
+    );
+  }
 }
 
 // A <userId> needs no Sharetribe access at all. An <email> costs one Integration
@@ -1363,20 +1829,42 @@ function describe(userId, displayName, percentage) {
 }
 
 async function main() {
-  const [command, identifier, value] = process.argv.slice(2);
-  const known = ['get', 'set', 'clear'].includes(command);
+  const args = process.argv.slice(2);
+  const flags = args.filter(a => a.startsWith('--'));
+  const [command, identifier, value] = args.filter(a => !a.startsWith('--'));
+  const known = ['get', 'set', 'clear', 'history'].includes(command);
   if (!known || !identifier || (command === 'set' && value === undefined)) {
     printUsage();
     process.exitCode = 1;
     return;
   }
 
+  const assumeFlag = flags.find(f => f.startsWith('--assume-min-price='));
+  const assumedMinPrice = assumeFlag ? parseInt(assumeFlag.split('=')[1], 10) : null;
+
   const { userId, displayName } = await resolveUser(identifier);
   const store = createProviderCommissionStore();
+  const operator = `operator:${os.hostname()}`;
 
   if (command === 'get') {
     const result = await store.getOverride(userId);
     describe(userId, displayName, result.found ? result.percentage : null);
+    return;
+  }
+
+  if (command === 'history') {
+    const rows = await store.getHistory(userId);
+    if (rows.length === 0) {
+      console.log('No recorded changes.');
+      return;
+    }
+    console.table(
+      rows.map(r => ({
+        when: r.changed_at,
+        rate: r.percentage === null ? '(cleared)' : `${r.percentage}%`,
+        by: r.changed_by || '(unknown)',
+      }))
+    );
     return;
   }
 
@@ -1389,22 +1877,25 @@ async function main() {
     }
 
     // Refuse a rate that is legal in isolation but impossible against the
-    // configured minimum listing price — otherwise the operator creates a seller
-    // whose cheapest listings silently have their fixed fee clamped.
+    // marketplace's actual minimum listing price — otherwise the operator
+    // creates a seller whose cheapest listings silently have their fixed fee
+    // clamped. The minimum is read live, because it is a Console value that can
+    // change without this repository knowing.
+    const listingMinimumPrice = await resolveMinimumPrice(assumedMinPrice);
     const minPrice = impliedMinimumPrice(percentage, FIXED_FEE);
-    if (minPrice > LISTING_MINIMUM_PRICE) {
+    if (minPrice > listingMinimumPrice) {
       throw new Error(
-        `${percentage}% requires a minimum listing price of ${minPrice} subunits, but the marketplace minimum is ${LISTING_MINIMUM_PRICE}. Lower the rate or raise the minimum.`
+        `${percentage}% requires a minimum listing price of ${minPrice} subunits, but the marketplace minimum is ${listingMinimumPrice}. Lower the rate or raise the minimum.`
       );
     }
 
-    await store.setOverride(userId, percentage, `operator:${os.hostname()}`);
+    await store.setOverride(userId, percentage, operator);
     console.log('Override saved.');
     describe(userId, displayName, percentage);
     return;
   }
 
-  const removed = await store.clearOverride(userId);
+  const removed = await store.clearOverride(userId, operator);
   console.log(removed ? 'Override cleared.' : 'No override existed.');
   describe(userId, displayName, null);
 }
@@ -1430,6 +1921,7 @@ In `package.json`, beside the existing `notifications:*` entries:
     "commission:get": "node scripts/provider-commission.js get",
     "commission:set": "node scripts/provider-commission.js set",
     "commission:clear": "node scripts/provider-commission.js clear",
+    "commission:history": "node scripts/provider-commission.js history",
 ```
 
 - [ ] **Step 3: Exercise every branch manually**
@@ -1441,6 +1933,7 @@ yarn commission:set <seller-uuid> 80       # -> fails: not a valid percentage
 yarn commission:set <seller-uuid> 12%      # -> fails: not a valid percentage
 yarn commission:clear <seller-uuid>        # -> "Override cleared."
 yarn commission:get <seller-uuid>          # -> no override
+yarn commission:history <seller-uuid>      # -> the 5% set, then the clear, each with its operator
 ```
 
 Expected: the two invalid `set` calls exit non-zero and write nothing.
@@ -1474,13 +1967,14 @@ Add a new section to `docs/operator-guide.md` covering, in this order:
 
 1. **What it is** — a per-seller commission percentage; no row means the marketplace-wide rate.
 2. **Finding a seller's user ID** — from the Console user page URL, or pass their email to the CLI.
-3. **The commands** — `yarn commission:get|set|clear`, with a worked example.
+3. **The commands** — `yarn commission:get|set|clear|history`, with a worked example.
 4. **The semantics table** — no override / `0` / `5` / `75`, and that `0` still charges the fixed fee.
 5. **The `75` ceiling and why it exists** — at 100% the fixed fee cannot fit at any price, so every checkout by that seller would fail.
 6. **The implied minimum price** — each rate needs `fixedFee / (1 - pct/100)`; the CLI prints it.
 7. **What a clamped fee looks like** — when a listing is priced too low, the fixed fee is reduced rather than the checkout failing, so the platform earns less than intended; it is logged.
-8. **Reading the logs** — `[providerCommission] ... source=override|default|fallback`. **A `fallback` at `error` level means the rate could not be determined and transactions in that window may be mispriced.** Sustained fallbacks are a pricing incident, not noise: list the transactions created during the window and reconcile them.
-9. **Verifying a change** — start a checkout on a listing by that seller and confirm the OrderBreakdown commission row.
+8. **Reading the logs** — `[providerCommission] operation=preview|initiate|transition seller=… source=override|default|indeterminate`. **An `indeterminate` on a money operation logs at `error` and the checkout is refused with `503 COMMISSION_UNRESOLVED`; on a preview it logs at `warn` and the marketplace rate is shown.** No mispriced sale is created, so there is nothing to reconcile afterwards — but the marketplace stops selling until the overrides table is readable again, and that is a database incident affecting the event poller and shipping labels too.
+9. **Who changed a rate** — `yarn commission:history <userId|email>`. The live table cannot answer this after a `clear`; the append-only history table can.
+10. **Verifying a change** — start a checkout on a listing by that seller and confirm the OrderBreakdown commission row.
 
 - [ ] **Step 2: Splice the ES edition**
 
@@ -1492,21 +1986,19 @@ node docs/shareable/build-shareable-guide.js
 
 Then hand-translate the new section into the ES fragment, following the existing structure. See `memory/operator-guide-html` for how the two editions relate.
 
-- [ ] **Step 3: Document the env var**
+- [ ] **Step 3: No new env var**
 
-Add to `.env-template` near the existing `REACT_APP_PROVIDER_COMMISSION_FIXED_FEE` block:
+An earlier draft of this plan added `AV_LISTING_MINIMUM_PRICE=6000` to `.env-template` for the CLI
+to check against. Do not. It would have been a **third** copy of a number the marketplace already
+owns — Console's `transaction-size.json`, `configDefault.listingMinimumPriceSubUnits`, and now an env
+var — with nothing keeping them in step and the CLI trusting the one most likely to be stale. The
+CLI reads the live asset instead (Step 1), and `--assume-min-price` covers the disconnected case
+loudly rather than silently.
 
-```sh
-# Marketplace minimum listing price in subunits, used by the commission CLI to reject a
-# per-seller rate that could not cover the fixed fee. Must match the Console
-# transaction-size.json value. See docs/operator-guide.md.
-# AV_LISTING_MINIMUM_PRICE=6000
-```
-
-- [ ] **Step 4: Verify the env template check passes**
+- [ ] **Step 4: Verify the env template check still passes**
 
 Run: `yarn env-template-check`
-Expected: PASS
+Expected: PASS — nothing was added.
 
 - [ ] **Step 5: Record the deployment prerequisites**
 
@@ -1553,8 +2045,10 @@ With an override of 5% set on a test seller and a listing priced at $1,000.00 MX
 
 - OrderBreakdown shows a provider commission of $50.00 plus a $15.00 fixed fee, not $100.00
 - The transaction's `payoutTotal` is $935.00
-- The server logged `source=override` for that seller
+- The server logged `operation=initiate ... source=override` for that seller
 - Clearing the override and repeating shows $100.00 + $15.00 and logs `source=default`
+- With PostgreSQL stopped, the listing page still renders a breakdown (`warn`, `operation=preview`) but Pay returns `503 COMMISSION_UNRESOLVED` and creates no transaction
+- `yarn commission:history <seller-uuid>` lists the set and the clear, each with its operator
 
 - [ ] **Step 5: Commit any snapshot updates**
 
@@ -1569,6 +2063,10 @@ git commit -m "test(commission): update snapshots for clamped estimator fee"
 
 **Tasks 1–2 and Task 3 are independent** and can be done in either order. Everything else depends on them: Task 5 needs 1 and 2, Task 6 needs 1 and 4, Task 7 needs 1 and 2.
 
-**The one thing not to "simplify":** `getOverride` returning `{ found: boolean }` instead of `number | null` looks like ceremony. It is the entire point of the error-handling design — "this seller has no override" and "I could not read the table" must not reach the same code path, because defaulting on an *unknown* rate mischarges in whichever direction that seller was negotiated. If you collapse it, Task 2's determinacy tests will fail, and that failure is correct.
+**Task 4's `configDefault.js` change ships with Task 3's clamp**, not before it. Raised earlier it blocks listings between 5.00 and 60.00 with no clamp to justify the block; raised later it leaves a window where the invariant is false by default.
+
+**The one thing not to "simplify":** `getOverride` returning `{ found: boolean }` instead of `number | null` looks like ceremony. It is the entire point of the error-handling design — "this seller has no override" and "I could not read the table" must not reach the same code path, because defaulting on an *unknown* rate mischarges in whichever direction that seller was negotiated. The same applies to `source: 'indeterminate'` carrying a usable `commission`: it is there for the preview, and a money endpoint that quietly uses it is the defect. If you collapse either, Task 2's determinacy tests and Task 5's endpoint tests will fail, and those failures are correct.
+
+**The second thing not to "simplify":** the three thin endpoint tests in Task 5. They look like they duplicate the resolver's coverage. They do not — a pure resolver test cannot see a missing `await`, an author id read from the wrong path, or the original `commission` being passed to `transactionLineItems` instead of the resolved one. That last one is how this feature most plausibly ships as a silent no-op.
 
 **Upstream file policy:** `lineItemHelpers.js`, `configDefault.js`, and the three endpoints are upstream files already carrying AV changes. Keep every edit additive and minimal — no reformatting, no restructuring beyond what each step specifies.

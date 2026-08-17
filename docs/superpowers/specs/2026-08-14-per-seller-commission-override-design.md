@@ -22,6 +22,15 @@ to anyone querying that seller. The rate now lives in an AV-owned PostgreSQL tab
 simplified the endpoints and made the error-handling fallback rarer, so parts of the two earlier
 revisions are simpler than when they were written.
 
+**Revised 2026-08-16** after review found the second revision had not gone far enough: the error
+table still defaulted to the marketplace rate after a missing author or a failed query, and still
+created the transaction at that rate. The money endpoints now **retry once and then fail `503`** on
+an indeterminate read; only the display-only preview falls back. Approved by the marketplace owner
+on 2026-08-16 as availability-for-accuracy, the opposite of the trade the previous revision made.
+The same review pinned the [invariant's configuration source](#the-same-invariant-in-three-places)
+and removed the exemption that left the three money endpoints untested. See
+[Error handling](#error-handling).
+
 ## Problem
 
 The provider commission percentage is marketplace-wide. It comes from the hosted
@@ -58,7 +67,7 @@ trusted from the client.
 | Admin write path | CLI script only | No new HTTP surface on a money-affecting setting. Follows the existing `scripts/notification-deliveries.js` pattern. |
 | Seller-facing estimator | Shows the seller's real rate | The seller acts on that number when pricing a listing; showing the wrong one is worse than not showing one. |
 | Reading the seller server-side | One indexed query against the AV table, using the author id already on the listing | No Sharetribe call at all, and no `include: ['author']`. The listing's `relationships.author` carries the id. |
-| When the read is inconclusive | Fall back and log at `error` | Defaulting on an *unknown* rate mischarges in whichever direction the seller was negotiated. Only an established absence is safe to default. |
+| When the read is inconclusive | Preview falls back; the two money endpoints retry once and then fail `503` | Defaulting on an *unknown* rate mischarges in whichever direction the seller was negotiated. A mispriced sale cannot be reliably found again afterwards, so it must not be created. See [Error handling](#error-handling). |
 | Estimator read path | New `GET /api/commission/me`, own rate only | The rate is no longer on `currentUser`, so the estimator needs a server read. Scoped to the caller so it cannot become a way to look up anyone else. |
 
 ## Why not Sharetribe user data
@@ -100,7 +109,9 @@ reads rather than to arbitrary JSON. `null` means "use marketplace-wide".
 
 The column is `NOT NULL` with a `CHECK (percentage >= 0 AND percentage <= 75)` constraint, so the
 range is enforced by the database as well as the parser. Clearing an override deletes the row
-rather than storing a sentinel, which keeps "no override" a single representable state.
+rather than storing a sentinel, which keeps "no override" a single representable state — the
+operator trail that deletion would otherwise destroy lives in a separate append-only table, so the
+two concerns do not have to be traded against each other.
 
 The ceiling lives in one exported constant, `MAX_PROVIDER_COMMISSION_PERCENTAGE = 75`, so the
 parser, the CLI and the migration's `CHECK` cannot drift apart on it.
@@ -162,8 +173,10 @@ listingMinimumPrice x (1 - MAX_PROVIDER_COMMISSION_PERCENTAGE/100)  >=  fixedFee
 ```
 
 which this design satisfies by raising the Console minimum to `6000` and capping the override at
-`75`: `6000 x 0.25 = 1500`. Both numbers are Console/env values rather than code, so a test asserts
-the relationship holds for the configured values and fails if either moves without the other.
+`75`: `6000 x 0.25 = 1500`. Two of these three numbers live outside the repository, which is a
+problem for enforcement rather than a detail — see [Where `listingMinimumPrice` comes
+from](#where-listingminimumprice-comes-from) for which layer checks which copy, and why the CI test
+can only speak for the code-side ones.
 
 The relationship holds at equality, which is the boundary worth naming: a 75% seller pricing at
 exactly 6000 pays 4500 + 1500 and takes home nothing. Nothing breaks — the commission equals the
@@ -195,11 +208,43 @@ The alternative — keeping the throw — was rejected: it guarantees revenue bu
 misconfiguration into a failed checkout for the buyer, which is the worse failure and contradicts
 the design's own error-handling posture.
 
+### Where `listingMinimumPrice` comes from
+
+The invariant is stated against a number this repository does not own. Three of its four terms are
+code or env constants; `listingMinimumPrice` is a hosted asset an operator can change in Console
+tomorrow. Every enforcement below has to say which copy of that number it is reading, or it is
+asserting nothing.
+
+| Consumer | Reads | If it cannot read it |
+| --- | --- | --- |
+| CLI `set` | `transaction-size.json` via `sdk.assets.search()`, using the **public** `REACT_APP_SHARETRIBE_SDK_CLIENT_ID` | **Refuses to write.** An `--assume-min-price=<subunits>` flag exists for a disconnected operator and is echoed in the confirmation line, so a skipped check is never invisible. |
+| Server readiness check | The same asset, once at boot, after hosted config loads | Logs `error` and continues. It is a diagnostic, not a gate — a marketplace that cannot fetch its own config has already failed louder elsewhere. |
+| CI invariant test | The **code** constants only: `MAX_PROVIDER_COMMISSION_PERCENTAGE`, `PROVIDER_COMMISSION_FIXED_FEE`, and `configDefault.listingMinimumPriceSubUnits` | n/a |
+
+This resolves a contradiction the previous revision carried: the CLI claimed both to validate
+against the live Console minimum and to need no Sharetribe access when given a UUID. Both are true
+only once the distinction is drawn — the *asset* read needs the public client id and network access,
+which every browser session also has; the **Integration** credentials are what a `<userId>`
+invocation avoids, and those are only ever needed to resolve an `<email>` to an id.
+
+**CI cannot assert anything about the Console value, and should not pretend to.** A test that
+fetches a mutable hosted asset is a test that fails when someone else edits it, which is a build
+break rather than a finding. What CI can pin is that the code-side numbers are self-consistent — and
+for that to be meaningful, `configDefault.listingMinimumPriceSubUnits` has to stop being `500`.
+
+**The code fallback rises to `6000` alongside the clamp.** It is a watchlist file
+(`src/config/configDefault.js:25`, upstream), so the change is the single number and nothing else.
+It applies only where the Console asset is absent or `0`, which today means local development and
+any freshly provisioned environment — exactly the places where a `500` minimum silently reintroduces
+the overflow this design exists to close. It must land in the same commit as the clamp: raised
+earlier it blocks listings between 5.00 and 60.00 with no clamp to justify it, raised later it
+leaves a window where the invariant is false by default.
+
 ### The same invariant in three places
 
 | Layer | Enforcement |
 | --- | --- |
-| CLI `set` | Rejects anything the parser rejects, which now includes `> 75`. Also refuses to write a rate whose implied minimum price (`fixedFee / (1 - pct/100)`) exceeds the configured `listingMinimumPrice`, so an operator cannot create a rate that is legal in isolation but impossible against the current Console setting. |
+| CLI `set` | Rejects anything the parser rejects, which now includes `> 75`. Also refuses to write a rate whose implied minimum price (`fixedFee / (1 - pct/100)`) exceeds the `listingMinimumPrice` it read above, so an operator cannot create a rate that is legal in isolation but impossible against the current Console setting. |
 | Listing price validation | The Console `listingMinimumPrice` of `6000` is what the listing wizard already enforces. Because the cap guarantees the invariant for every accepted rate, a single global minimum covers all sellers and no per-seller price rule is needed. |
 | EarningsEstimator | Applies the same clamp when computing the breakdown, so the seller sees the fee they will actually be charged rather than a figure the checkout would reduce. At a price where the fee clamps, it shows the reduced fee and a zero payout rather than a negative one. |
 
@@ -219,6 +264,15 @@ CREATE TABLE provider_commission_overrides (
   updated_at  timestamptz  NOT NULL DEFAULT now(),
   updated_by  text
 );
+
+CREATE TABLE provider_commission_override_history (
+  id          bigserial PRIMARY KEY,
+  user_id     text        NOT NULL,
+  percentage  numeric(5,2),          -- NULL records a clear
+  changed_at  timestamptz NOT NULL DEFAULT now(),
+  changed_by  text
+);
+CREATE INDEX ON provider_commission_override_history (user_id, changed_at DESC);
 ```
 
 `user_id` is the Sharetribe user UUID as text, which is what the listing's `relationships.author`
@@ -226,15 +280,27 @@ already gives us. `updated_by` records the operator so a rate change is attribut
 money setting and "who set this, and when" should be answerable from the row itself rather than
 only from logs.
 
+The history table exists because the live table cannot answer that question after a `clear`. Storing
+"no override" as the absence of a row is the right model — it keeps a single representable state,
+and [Semantics](#semantics) explains why — but a `DELETE` takes `updated_by` and `updated_at` with
+it, so the one operation that ends a negotiated rate is the one that leaves no trace of who ended
+it. Every `set` and every `clear` appends a row here; a clear is recorded as a `NULL` percentage. The
+table is append-only and never read by the checkout path, so it cannot affect pricing.
+
 ### New module: `server/services/providerCommissionStore.js`
 
 Data access only, following `eshipTrackingStore.js` / `brevoWebhookStore.js`.
 
 ```js
-getOverride(userId)                  // async -> { found: true, percentage } | { found: false }
-setOverride(userId, pct, updatedBy)  // async; upsert
-clearOverride(userId)                // async; DELETE
+getOverride(userId)                    // async -> { found: true, percentage } | { found: false }
+setOverride(userId, pct, updatedBy)    // async; upsert + history append
+clearOverride(userId, clearedBy)       // async; DELETE + history append (percentage NULL)
+getHistory(userId)                     // async -> rows, newest first; operator/CLI only
 ```
+
+`setOverride` and `clearOverride` write both tables in one transaction, so a recorded rate change
+and its history entry cannot come apart. `clearOverride` takes the operator argument that the old
+signature did not, which is the point of the history table.
 
 `getOverride` returns a tagged result rather than `number | null`, because "this seller has no
 override" and "I could not read the table" must not collapse into the same value — that conflation
@@ -255,10 +321,31 @@ resolveProviderCommission(commission, sellerUserId, deps)  // async -> { commiss
 `resolveProviderCommission` returns the Console asset object untouched when there is no override.
 When there is one it returns `{ ...commission, percentage: <override> }` with `minimum_amount`
 omitted entirely (not set to `undefined`). It also returns the `source` that produced the value
-(`override` / `default` / `fallback`) so the caller can log it without re-deriving it.
+(`override` / `default` / `indeterminate`, the last carrying a `reason`) so the caller can log it,
+and decide on it, without re-deriving anything.
+
+It never throws on an unreadable store and never refuses on its own: refusing is the caller's
+policy, per the [determinacy table](#determinacy-decides-the-operation-decides-what-to-do-about-it).
+`retries` is a parameter (`0` for the preview, `1` for the money paths) rather than a constant,
+because the two have different tolerances for waiting.
 
 **It is async**, because it reads the store. The three endpoints therefore `await` it — the same
 shape `transactionLineItems` already took on when the eShip quote made it async.
+
+### New module: `server/api-util/commissionEndpoint.js`
+
+The three endpoints do the same four things: pull the author id off the listing, await the resolver,
+log the resolution, and either use the result or refuse. Written inline that is the same dozen lines
+in three upstream files — a merge-conflict surface, and untestable without an SDK harness for each.
+
+```js
+resolveCommissionForRequest(listing, commission, { operation, retries })
+// async -> { commission, source, reason } ; logs the resolution
+```
+
+AV-owned, so it is unit-testable on its own, and each upstream endpoint keeps a call plus a refusal
+check. This is the composition-root swap the repo's [upstream file policy](../../../CLAUDE.md)
+prefers, applied to a helper rather than a component.
 
 ### Call sites: the three endpoints
 
@@ -267,14 +354,19 @@ The resolver runs in the endpoints, before `transactionLineItems` is called. The
 
 | File | Change |
 | --- | --- |
-| `server/api/transaction-line-items.js:11` | take the author id from `listing.relationships.author`, resolve |
-| `server/api/initiate-privileged.js:76` | same |
-| `server/api/transition-privileged.js:153` | same |
+| `server/api/transaction-line-items.js:11` | take the author id from `listing.relationships.author`, resolve with `retries: 0`, use the result whatever its `source` |
+| `server/api/initiate-privileged.js:76` | same author extraction, resolve with `retries: 1`, and **return `503 { code: 'COMMISSION_UNRESOLVED' }` when `source === 'indeterminate'`** |
+| `server/api/transition-privileged.js:153` | same as `initiate-privileged` |
 
 Only the author's **id** is needed, and that arrives in the listing's `relationships` on every one
 of these responses. So no `include: ['author']`, no sparse `fields.user`, and no change to what any
 of the three endpoints requests from Sharetribe — a smaller footprint than the metadata design,
 which had to widen the `transaction-line-items` query to carry the author's profile.
+
+The three call sites differ only in `retries` and in what they do with `indeterminate`, and that
+difference is the whole of the money policy. It is small enough to read at a glance and important
+enough that [the test plan](#test-plan) covers each of the three rather than trusting the resolver's
+unit tests to imply them.
 
 ### The `lineItemHelpers.js` change for 0%
 
@@ -326,6 +418,12 @@ the same way the other AV endpoints are, and it returns only the caller's own ra
 It takes no user parameter. There is deliberately no way to ask it about anyone else, so it cannot
 become the leak the table was created to avoid.
 
+It responds with `Cache-Control: private, no-store`. The body is a per-seller confidential value on
+a path that does not vary by user, which is exactly the shape a shared cache mis-serves: without the
+header a proxy or service worker is free to hand one seller's negotiated rate to the next caller of
+`/api/commission/me`. `private` alone would still permit browser-disk storage, so `no-store` is the
+one that matters.
+
 This is a new HTTP surface, which the design otherwise avoids — the [Trust model](#trust-model)
 covers why a read-only, self-scoped endpoint is a different proposition from a write one.
 
@@ -356,16 +454,25 @@ Follows `scripts/notification-deliveries.js`: `require('../server/env').configur
 `console.table`, usage text on bad arguments.
 
 Writes go to the AV table through `providerCommissionStore`, so `set` and `clear` need
-`DATABASE_URL` but no Sharetribe credentials. The Integration SDK is still used for one thing only:
+`DATABASE_URL` but no Sharetribe **credentials**. The Integration SDK is used for one thing only:
 resolving an `<email>` argument to a user id, and printing the display name back so the operator can
-confirm they targeted the right seller. Passing a `<userId>` directly needs no Sharetribe access at
-all.
+confirm they targeted the right seller. Passing a `<userId>` directly avoids it entirely.
+
+That is not the same as needing no Sharetribe *access*. `set` also reads `transaction-size.json` to
+check the implied minimum price, which goes through `sdk.assets.search()` with the public marketplace
+client id — no secret, but network access to Sharetribe, and a `--assume-min-price` escape hatch
+when there is none. See [Where `listingMinimumPrice` comes
+from](#where-listingminimumprice-comes-from).
 
 ```
-yarn commission:get   <userId|email>
-yarn commission:set   <userId|email> <pct>
-yarn commission:clear <userId|email>
+yarn commission:get     <userId|email>
+yarn commission:set     <userId|email> <pct>
+yarn commission:clear   <userId|email>
+yarn commission:history <userId|email>
 ```
+
+`history` prints the append-only trail for one seller, which is the only way to answer "who cleared
+this, and when" once the live row is gone.
 
 `set` validates through the same parser and refuses anything it rejects — including anything above
 `MAX_PROVIDER_COMMISSION_PERCENTAGE` — rather than writing a value that would silently fall back at
@@ -385,10 +492,11 @@ implies, what a clamped fee looks like in the breakdown, and how to verify a cha
 a real checkout. Per repo convention this also means the ES translation and a fragment splice into
 `docs/shareable/operator-guide.html`.
 
-It must also cover the fallback: what an `error`-level commission-fallback log means, that
-sustained ones are a pricing incident rather than noise, and how to list the transactions created
-during the window so they can be reconciled. An operator who does not know to look for these will
-not find the mispriced sales.
+It must also cover the failure mode: that `COMMISSION_UNRESOLVED` means the overrides table could
+not be read and checkout is refused marketplace-wide until it can, that this is a database incident
+affecting the poller and shipping labels too, and that the deliberate consequence is no mispriced
+sale to hunt for afterwards. An operator who expects a degraded-but-trading marketplace needs to
+know this one stops instead.
 
 ## Trust model
 
@@ -417,50 +525,87 @@ undercharge the platform". That is wrong in both halves:
   the agreement; "we defaulted" is not a defence a seller has to accept.
 
 So the rate is only defaulted when the absence of an override is *established*, never when it is
-merely unknown.
+merely unknown. **And where "merely unknown" would otherwise mean moving money at a guessed rate,
+the operation fails instead of guessing.**
 
-### Determinacy, not failure count
+### Determinacy decides; the operation decides what to do about it
 
-| State | Determinacy | Behaviour |
-| --- | --- | --- |
-| Query returns no row | Conclusive: no override exists | Marketplace-wide, silent. The normal path. |
-| Query returns a row | Conclusive | Apply it. The `CHECK` constraint means it is already in range. |
-| Author id missing from the listing | Indeterminate — cannot identify the seller | Fall back, `error`-level log |
-| Query rejects (database unreachable, timeout) | Indeterminate | Fall back, `error`-level log, flagged for reconciliation (below) |
+Two facts combine. The resolver reports determinacy and nothing else; the caller applies the policy
+its own consequences justify. A preview that renders the wrong number is a display bug. A money
+endpoint that creates a transaction at the wrong number is a money defect, and no amount of logging
+turns one back into the other.
 
-Moving storage into the AV database shrank this table. The metadata design had to handle a missing
-`included[]` author and a malformed free-text value; neither exists now. The author id is on the
-listing itself, and the column is typed and constrained, so "present but nonsense" is not a
-reachable state.
+| State | Determinacy | Resolver returns | Preview (`transaction-line-items`) | Money (`initiate-privileged`, `transition-privileged`) |
+| --- | --- | --- | --- | --- |
+| Query returns no row | Conclusive: no override exists | `source: 'default'` | Marketplace-wide, silent. The normal path. | Same. |
+| Query returns a row | Conclusive | `source: 'override'` | Apply it. The `CHECK` constraint means it is already in range. | Same. |
+| Author id missing from the listing | Indeterminate — cannot identify the seller | `source: 'indeterminate'`, `reason: 'no-author'` | Fall back, `warn`-level log | **Fail.** Not retried: a listing payload without `relationships.author` is not a transient condition. |
+| Query rejects (database unreachable, timeout) | Indeterminate | `source: 'indeterminate'`, `reason: 'store-unreadable'` | Fall back, `warn`-level log | **Retry once, then fail.** `error`-level log. |
 
-It also made the indeterminate branch far rarer. The read is a primary-key query against the
-database this server already needs for the event poller, the shipping-label ledger and the rate
-limiter — not a call to a third-party API. If it is down the process has larger problems than
-commission accuracy, and the fallback window that [Accepted risk](#accepted-risk) describes narrows
-accordingly.
+The resolver never throws on an indeterminate read and never decides the outcome. It returns the
+marketplace-wide commission alongside `source: 'indeterminate'`, which the preview may use and the
+money endpoints must not. Keeping the policy at the call site is what makes "which of these
+creates a mispriced sale" answerable by reading three call sites rather than by tracing a flag
+through a shared helper.
+
+**Retry.** Only the store-unreadable branch is retried, once, after 200ms, and only on the money
+paths. The realistic failure is a dropped pooled connection, which a second attempt clears; a
+sustained outage is not something a retry loop should paper over while a buyer waits. The preview
+does not retry at all — it has a correct-enough answer already and the seller is not being charged.
+
+**Failing looks like this.** The two money endpoints respond `503` with
+`{ code: 'COMMISSION_UNRESOLVED' }` and create nothing. The buyer sees the checkout error path that
+already exists for a failed `initiate`; no new client state, no new translation key. A seller
+accepting an offer through `transition-privileged` hits the same wall. That is the cost, stated
+plainly: during a database outage, overridden or not, checkout and offer acceptance stop.
+
+**Why that cost is the right one to take.** The alternative was creating the transaction at the
+marketplace rate and reconciling afterwards. Reconciliation was the weak half of that plan: the only
+correlation available is seller id plus timestamp, and because the preview resolves commission too —
+several times per checkout, as the buyer edits the form — the log is dominated by resolutions that
+never became transactions. "Who did we misprice on Tuesday" would return a list that cannot be
+filtered down to the sales that actually happened without matching on time windows by hand. A
+mispriced sale that cannot be reliably identified is not a recoverable defect; it is a silent one.
+
+Moving storage into the AV database also made this branch far rarer, which is what makes the
+fail-closed posture affordable. The read is a primary-key query against the database this server
+already needs for the event poller, the shipping-label ledger and the rate limiter — not a call to a
+third-party API. If it is unreachable, the poller has stopped, labels cannot be bought and the rate
+limiter is failing too. Checkout stopping is consistent with that, not an outlier.
 
 ### Accepted risk
 
-When the authoritative lookup also fails, the transaction is still created, at the marketplace-wide
-rate, in **both** money endpoints as well as the preview. This is a deliberate choice of
-availability over pricing accuracy: an Integration outage does not stop the marketplace trading.
+The risk this design accepts is **availability, not pricing accuracy** — the opposite trade from
+the previous revision, and the reason that one was rejected is recorded above.
 
-The cost is real and is accepted knowingly — during such an outage, transactions involving an
-overridden seller are created at the wrong commission, in whichever direction that seller's
-negotiated rate differs from the marketplace rate. That is a money defect, not a cosmetic one.
+During a period when the overrides table is unreadable, checkout and offer acceptance return `503`
+for every seller, overridden or not, because the resolver cannot tell which sellers are overridden
+without reading the table. No transaction is created at a guessed rate, so there is nothing to
+reconcile afterwards.
 
-Three things make it recoverable rather than silent:
+What makes it observable:
 
-1. **Every resolution is logged**, not only applied overrides: seller id, the rate actually used,
-   and which row of the table above produced it. No other PII.
-2. **Fallbacks log at `error` level**, not `warn`, so they surface in alerting rather than sitting
-   in noise. A fallback means money may be wrong; that is not a warning.
-3. **The log line is designed to be queryable after the fact.** Because a fallback records the
-   seller and the timestamp, the affected transactions can be listed and corrected once the outage
-   is over. Without this the design would have no way to answer "who did we misprice on Tuesday?"
+1. **Every resolution is logged**, not only applied overrides: seller id, the rate actually used or
+   the reason none could be, which row of the determinacy table produced it, and the calling
+   operation (`preview` / `initiate` / `transition`). No other PII. The operation field is what
+   keeps the preview's chatter separable from the two paths that move money.
+2. **Money-path failures log at `error`; preview fallbacks log at `warn`.** A refused checkout is an
+   incident. A preview showing the marketplace rate for a moment is not, and giving both the same
+   level would bury the first under the second — the preview resolves several times per checkout as
+   the buyer edits the form.
+3. **A refused checkout is loud by construction.** It is a `503` the buyer sees, not a line in a log
+   someone has to know to query. This is the property the reconciliation plan was trying and failing
+   to reproduce.
 
-An operator noticing sustained fallback logs should treat it as a pricing incident, not a
-transient warning — the operator guide says so explicitly.
+An operator seeing `COMMISSION_UNRESOLVED` should treat it as a database incident: the poller,
+shipping labels and the rate limiter are affected by the same outage, and none of them recover by
+being retried at the application layer.
+
+**Explicitly out of scope, and why:** persisting a commission-provenance marker on the transaction
+(`protectedData.avCommission`) was considered as reconciliation support. With fail-closed there is
+no mispriced transaction to reconcile, so it would carry no information the applied rate does not
+already imply. If the posture is ever reversed to availability-first, that marker becomes a
+prerequisite rather than an option — seller id plus timestamp is not sufficient correlation.
 
 Two pre-existing behaviours, one documented and one now fixed:
 
@@ -477,6 +622,7 @@ Two pre-existing behaviours, one documented and one now fixed:
 | Prerequisite | Where | Notes |
 | --- | --- | --- |
 | Minimum listing price `6000` | Console `transaction-size.json` | Was `500`, or unset and falling back to it. Required by the [invariant](#the-invariant). |
+| Code fallback `6000` | `src/config/configDefault.js:25` | Ships with the clamp, in the same commit. Covers environments where the asset is absent or `0`, which the Console value cannot. |
 | Provider commission | Console `commission.json` | Unchanged; the override replaces it per seller |
 | Migration `010` applied | Every environment's database | Including the Render test database, via the existing `migrate-test-db` procedure |
 | `DATABASE_URL` | Every environment | Already required for the event poller, shipping labels and rate limiting |
@@ -503,18 +649,33 @@ a green light. The probe was measuring the right fact and drawing the wrong conc
 | Target | Coverage |
 | --- | --- |
 | `server/api-util/providerCommission.test.js` (new) | full parse matrix including the `75` boundary and rejection of `75.1`/`100`/`101`, passthrough with no override, `applyOverride` sets percentage and drops `minimum_amount` |
-| `providerCommission.test.js` — determinacy | one case per row of the [Error handling](#error-handling) table: no row defaults silently; a row is applied; a missing author id falls back; a **rejecting** store falls back and returns `source: 'fallback'` so the log is provably emitted. The key assertion is the negative one — that "no override" and "could not read" do not take the same path, which means asserting the store rejects rather than resolving `{ found: false }` |
-| `server/services/providerCommissionStore.test.js` (new) | round-trip set/get/clear, upsert replaces rather than duplicates, `CHECK` constraint rejects `-1` and `75.1` at the database level, `getOverride` distinguishes absent from unreadable |
+| `providerCommission.test.js` — determinacy | one case per row of the [Error handling](#error-handling) table: no row defaults silently; a row is applied; a missing author id returns `source: 'indeterminate', reason: 'no-author'`; a **rejecting** store returns `source: 'indeterminate', reason: 'store-unreadable'` without throwing. The key assertion is the negative one — that "no override" and "could not read" do not take the same path, which means asserting the store rejects rather than resolving `{ found: false }`. Plus: `retries: 1` re-reads once and succeeds if the second read does; `retries: 0` does not |
+| `server/services/providerCommissionStore.test.js` (new) | round-trip set/get/clear, upsert replaces rather than duplicates, `CHECK` constraint rejects `-1` and `75.1` at the database level, `getOverride` distinguishes absent from unreadable, and — the history cases — a `set` and a `clear` each append a row with their operator, a clear records `NULL`, and a failed write leaves neither table changed |
 | `GET /api/commission/me` | returns the caller's rate, returns `null` when they have none, rejects unauthenticated callers, and — the security-relevant case — accepts no parameter that could target another user |
 | `server/api-util/lineItemHelpers.test.js` (extend) | explicit 0% emits fixed-fee only; absent percentage with no minimum still returns `[]` (regression guard for the early-return change); percentage > 0 unchanged; **clamp cases** — fee reduced to the remainder when it would overflow, line item omitted when nothing remains, payout never negative, and no throw at any price down to the minimum |
-| Invariant test (new) | `listingMinimumPrice x (1 - MAX_PROVIDER_COMMISSION_PERCENTAGE/100) >= fixedFee` for the configured values, so raising the cap or the fee without revisiting the Console minimum fails the build rather than production |
+| Invariant test (new) | `listingMinimumPriceSubUnits x (1 - MAX_PROVIDER_COMMISSION_PERCENTAGE/100) >= fixedFee` for the three **code** constants, so raising the cap or the fee without raising the fallback fails the build. It deliberately does not fetch `transaction-size.json`: a test that reads a mutable hosted asset breaks the build when an operator edits Console, which is noise rather than a finding. The live value is checked by the CLI before each write and by the boot readiness check — see [Where `listingMinimumPrice` comes from](#where-listingminimumprice-comes-from) |
+| `configDefault.js` fallback | `listingMinimumPriceSubUnits` is `6000`, pinned so it cannot drift back to the upstream `500` in a merge without the invariant test above failing too |
 | `server/api-util/lineItems.test.js` | untouched; passing unchanged is the signal that the resolver stayed out of the line-item core |
 | `EarningsEstimator.test.js` (new, none exists today) | fetched rate preferred, falls back to config before the response arrives and if the request fails, clamped fee matches the server's for the same price and rate, payout never rendered negative |
+| `server/api-util/commissionEndpoint.js` (new) — the shared orchestration | the three endpoints' common half, extracted so it can be tested once: author id out of `listing.relationships.author`, resolver awaited, `indeterminate` mapped to a refusal or a fallback per the caller's policy. Cases: author id extracted from a real response shape; a missing `relationships` produces `no-author` rather than `undefined`; the resolved commission — not the original — is what reaches the returned config; the money policy returns a refusal where the preview policy returns line items |
+| `server/api/*-privileged.test.js` (3 new, thin) | one test each: an indeterminate read yields `503 { code: 'COMMISSION_UNRESOLVED' }` from both money endpoints and a rendered breakdown from the preview. Enough to catch the wiring the resolver's own tests cannot see |
 | Manual | a real Test-marketplace checkout with an overridden seller, confirming the OrderBreakdown commission row and the resulting `payoutTotal` |
 
-The three privileged endpoints have no test files today (only AV-owned endpoints do). Keep it that
-way rather than standing up SDK-mocking harnesses for three upstream files; the logic worth testing
-lives in the pure resolver.
+The previous revision exempted the three privileged endpoints from testing, on the grounds that they
+are upstream files and the logic worth testing lives in the pure resolver. That reasoning does not
+survive contact with what the endpoints actually do now. A pure resolver test cannot see a missing
+`await` — the resolver returning a promise that is spread into a config object produces
+`percentage: undefined` and a silently commission-free sale. It cannot see the author id being read
+from the wrong path, because it is handed an id. It cannot see an endpoint resolving the override
+and then passing the *original* `commission` to `transactionLineItems`, which is the single most
+likely way this feature ships as a no-op. And it cannot see a money endpoint that resolves
+`indeterminate` and proceeds anyway, which is the entire policy this revision adds.
+
+Extracting `commissionEndpoint.js` is what keeps the cost proportionate: the shared half becomes
+AV-owned and unit-testable, each upstream endpoint keeps a two-line call, and the three endpoint
+tests only have to assert that the call is present and its refusal honoured. Full SDK-mocking
+harnesses for three upstream files were the right thing to refuse; testing nothing was not the only
+alternative.
 
 ## Out of scope
 
