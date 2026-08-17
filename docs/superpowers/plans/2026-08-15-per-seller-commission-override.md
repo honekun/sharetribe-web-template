@@ -1415,7 +1415,7 @@ Expected: PASS
 
 - [ ] **Step 4: Return the promise chains**
 
-One word per file, and it is what makes Step 8's tests possible at all. None of the three handlers
+One word per file, and it is what makes Step 9's endpoint tests possible at all. None of the three handlers
 currently returns its chain:
 
 | File | Line | Change |
