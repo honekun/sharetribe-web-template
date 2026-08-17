@@ -27,7 +27,7 @@ The through-line: nothing renders or charges a rate that has not been establishe
 - **AV database tables use the `av_` prefix** (matching `av_shipping_label_attempts`, `av_eship_tracking_notifications`).
 - **Money is never moved on a guessed rate.** "No override exists" (conclusive) is the normal path. "Could not determine" (missing author id, database error) is *not* a fallback on the two money endpoints: they retry once and then return `503 { code: 'COMMISSION_UNRESOLVED' }`. Only `transaction-line-items`, which is display-only, falls back — at `warn`. These must never collapse into the same code path.
 - **The resolver reports; the caller decides.** `providerCommission.js` does no logging, never throws, and never refuses. Policy and log level live in `commissionEndpoint.js`, which is the layer that knows whether a preview or a sale is asking.
-- **The two money endpoints are `.then` chains, not `async` handlers.** Returning a response from inside one does not end it — the next link receives `res` as its `trustedSdk`. Refusals are thrown with `status`/`statusText`/`data` so the existing `handleError` renders exactly one of them. Do not restructure these upstream files into `async`/`await`.
+- **The two money endpoints are `.then` chains, not `async` handlers.** Returning a response from inside one does not end it — the next link receives `res` as its `trustedSdk`. Refusals are thrown with `status`/`statusText`/`data` so the existing `handleError` renders exactly one of them. Do not restructure these upstream files into `async`/`await`; the one change they do get is a `return` in front of the chain (Task 5 Step 4), which Express ignores and which is what makes the handler awaitable in a test.
 - **No guessed rate is rendered either.** The estimator shows a loading or unavailable state rather than the marketplace rate, because the seller prices against that number. An explicit `null` from `/api/commission/me` is conclusive and does render; a failure does not.
 - Test commands: `yarn test-server` (server), `yarn test -- --watchAll=false` (client).
 - Node `>=18.20.1 <23.2.0`, Yarn.
@@ -1092,50 +1092,139 @@ const fetchListingMinimumPrice = async () => {
 module.exports = { ASSET_PATH, fetchListingMinimumPrice };
 ```
 
-Test it against both mistakes, since both would otherwise pass silently:
+Create `server/api-util/listingMinimumPrice.test.js`. Both mistakes above would otherwise pass
+silently, so both get an explicit negative test:
 
 ```js
-test('reads the subunit amount', async () => { /* { type: 'subunit', amount: 6000 } -> 6000 */ });
-test('rejects a bare number, which is the shape this asset does NOT use', async () => {
-  // listingMinimumPrice: 6000 must throw, not resolve to 6000
+'use strict';
+
+// The module builds its own SDK instance, so the mock has to replace the
+// factory rather than an injected dependency.
+jest.mock('sharetribe-flex-sdk', () => ({ createInstance: jest.fn() }));
+
+const sharetribeSdk = require('sharetribe-flex-sdk');
+const { ASSET_PATH, fetchListingMinimumPrice } = require('./listingMinimumPrice');
+
+const assetResponse = data => ({
+  data: { data: [{ type: 'jsonAsset', attributes: { data } }] },
 });
-test('rejects amount 0, which Console uses to mean "no restriction"', async () => {});
-test('requests minimum-transaction-size.json', async () => {
-  expect(sdk.assetsByAlias).toHaveBeenCalledWith(
-    expect.objectContaining({ paths: ['/transactions/minimum-transaction-size.json'] })
-  );
+
+describe('fetchListingMinimumPrice', () => {
+  const ORIGINAL_CLIENT_ID = process.env.REACT_APP_SHARETRIBE_SDK_CLIENT_ID;
+  let assetsByAlias;
+
+  beforeEach(() => {
+    process.env.REACT_APP_SHARETRIBE_SDK_CLIENT_ID = 'test-client-id';
+    assetsByAlias = jest.fn();
+    sharetribeSdk.createInstance.mockReturnValue({ assetsByAlias });
+  });
+
+  afterEach(() => {
+    process.env.REACT_APP_SHARETRIBE_SDK_CLIENT_ID = ORIGINAL_CLIENT_ID;
+    jest.clearAllMocks();
+  });
+
+  test('reads the subunit amount', async () => {
+    assetsByAlias.mockResolvedValue(
+      assetResponse({ listingMinimumPrice: { type: 'subunit', amount: 6000 } })
+    );
+
+    await expect(fetchListingMinimumPrice()).resolves.toBe(6000);
+  });
+
+  test('requests minimum-transaction-size.json, not transaction-size.json', async () => {
+    assetsByAlias.mockResolvedValue(
+      assetResponse({ listingMinimumPrice: { type: 'subunit', amount: 6000 } })
+    );
+
+    await fetchListingMinimumPrice();
+
+    expect(ASSET_PATH).toBe('/transactions/minimum-transaction-size.json');
+    expect(assetsByAlias).toHaveBeenCalledWith({ paths: [ASSET_PATH], alias: 'latest' });
+  });
+
+  test('rejects a bare number, which is the shape this asset does NOT use', async () => {
+    // The whole point: reading it as a number yields undefined, and a
+    // truthiness check would turn that into "no minimum" and a silent no-op.
+    assetsByAlias.mockResolvedValue(assetResponse({ listingMinimumPrice: 6000 }));
+
+    await expect(fetchListingMinimumPrice()).rejects.toThrow(/subunit/);
+  });
+
+  test('rejects amount 0, which Console uses to mean "no restriction"', async () => {
+    assetsByAlias.mockResolvedValue(
+      assetResponse({ listingMinimumPrice: { type: 'subunit', amount: 0 } })
+    );
+
+    await expect(fetchListingMinimumPrice()).rejects.toThrow(/no minimum listing price/);
+  });
+
+  test('rejects when the asset is absent', async () => {
+    assetsByAlias.mockResolvedValue({ data: { data: [] } });
+
+    await expect(fetchListingMinimumPrice()).rejects.toThrow(/subunit/);
+  });
+
+  test('rejects without a client id rather than building a broken SDK', async () => {
+    delete process.env.REACT_APP_SHARETRIBE_SDK_CLIENT_ID;
+
+    await expect(fetchListingMinimumPrice()).rejects.toThrow(/CLIENT_ID/);
+    expect(sharetribeSdk.createInstance).not.toHaveBeenCalled();
+  });
+
+  test('propagates a network failure instead of returning a guess', async () => {
+    assetsByAlias.mockRejectedValue(new Error('ENOTFOUND'));
+
+    await expect(fetchListingMinimumPrice()).rejects.toThrow('ENOTFOUND');
+  });
 });
 ```
 
 - [ ] **Step 8: Add the boot readiness check**
 
-In `server/index.js`, alongside the existing notification/shipping readiness logging.
-
 **It cannot read "the hosted config" — `server/index.js` does not have one.** Hosted assets are fetched per request through the SDK (`fetchCommission` and friends) and merged into config on the client; there is no loaded-config object at boot to inspect. So the check makes its own call, which is the other reason the reader above is a shared module rather than CLI-local.
 
+Goes **inside the `app.listen(PORT, () => { ... })` callback** (`server/index.js:355`), after the
+Instagram-token block, so it runs with the other boot-time work rather than during module load. Every
+symbol it uses is declared in the snippet — the file's existing convention there is a lazy `require`
+inside the callback (`require('./services/eventPoller')`, `require('./services/instagramTokenRefresh')`),
+and this follows it:
+
 ```js
-// The invariant is checked in CI against the code fallback; the live value
-// comes from Console and can change there without touching this repo. This is
-// the only place the real number is knowable at runtime.
-//
-// Diagnostic, not a gate, and deliberately not awaited: a slow or failing asset
-// fetch must not delay or block startup. A marketplace that cannot reach its
-// own config has already failed louder than this.
-fetchListingMinimumPrice()
-  .then(listingMinimumPrice => {
-    const headroom = listingMinimumPrice * (1 - MAX_PROVIDER_COMMISSION_PERCENTAGE / 100);
-    if (headroom < FIXED_FEE) {
-      console.error(
-        `[commission] Console listingMinimumPrice ${listingMinimumPrice} leaves ${headroom} for a ` +
-          `${FIXED_FEE} fixed fee at the ${MAX_PROVIDER_COMMISSION_PERCENTAGE}% ceiling. ` +
-          'Listings at the minimum will have their fee clamped and the platform will earn less than intended.'
-      );
-    }
-  })
-  .catch(e => {
-    console.error(`[commission] Could not verify the minimum listing price: ${e.message}`);
-  });
+  // AV: verify the commission invariant against the LIVE minimum listing price.
+  // CI can only check the code fallback (src/config/commissionInvariant.test.js)
+  // because Console owns the real value and can change it without touching this
+  // repo, so this is the only place the real number is knowable at runtime.
+  //
+  // Diagnostic, not a gate, and deliberately not awaited: a slow or failing
+  // asset fetch must not delay or block startup. A marketplace that cannot
+  // reach its own config has already failed louder than this.
+  {
+    const { fetchListingMinimumPrice } = require('./api-util/listingMinimumPrice');
+    const { MAX_PROVIDER_COMMISSION_PERCENTAGE } = require('./api-util/providerCommission');
+    // Same expression the CLI and the invariant test use; keep the three in step.
+    const fixedFee = parseInt(process.env.REACT_APP_PROVIDER_COMMISSION_FIXED_FEE, 10) || 0;
+
+    fetchListingMinimumPrice()
+      .then(listingMinimumPrice => {
+        const headroom = listingMinimumPrice * (1 - MAX_PROVIDER_COMMISSION_PERCENTAGE / 100);
+        if (headroom < fixedFee) {
+          console.error(
+            `[commission] Console listingMinimumPrice ${listingMinimumPrice} leaves ${headroom} ` +
+              `for a ${fixedFee} fixed fee at the ${MAX_PROVIDER_COMMISSION_PERCENTAGE}% ceiling. ` +
+              'Listings at the minimum will have their fee clamped and the platform will earn ' +
+              'less than intended.'
+          );
+        }
+      })
+      .catch(e => {
+        console.error(`[commission] Could not verify the minimum listing price: ${e.message}`);
+      });
+  }
 ```
+
+The block scope is deliberate: `server/index.js` is a long module-level script, and three more
+top-level `const`s in it are three more names to collide with on the next upstream merge.
 
 - [ ] **Step 9: Run the tests to verify they pass**
 
@@ -1164,9 +1253,10 @@ The three endpoints do the same four things — pull the author id off the listi
 **Files:**
 - Create: `server/api-util/commissionEndpoint.js`
 - Test: `server/api-util/commissionEndpoint.test.js`
-- Modify: `server/api/transaction-line-items.js`
-- Modify: `server/api/initiate-privileged.js:76`
-- Modify: `server/api/transition-privileged.js:153`
+- Create: `server/api-util/testHelpers.js` (`invokeHandler`, `mockRes` — shared by the three endpoint tests)
+- Modify: `server/api/transaction-line-items.js` (return the chain at :13, then wire)
+- Modify: `server/api/initiate-privileged.js` (return the chain at :70, wire at :76)
+- Modify: `server/api/transition-privileged.js` (return the chain at :135, wire at :153)
 - Test: `server/api/initiate-privileged.test.js`, `server/api/transition-privileged.test.js`, `server/api/transaction-line-items.test.js` (new, thin)
 
 **Interfaces:**
@@ -1323,7 +1413,30 @@ module.exports = { authorIdOf, resolveCommissionForRequest };
 Run: `yarn test-server -- --testPathPattern=api-util/commissionEndpoint`
 Expected: PASS
 
-- [ ] **Step 4: Wire `transaction-line-items.js` (the preview — falls back)**
+- [ ] **Step 4: Return the promise chains**
+
+One word per file, and it is what makes Step 8's tests possible at all. None of the three handlers
+currently returns its chain:
+
+| File | Line | Change |
+| --- | --- | --- |
+| `server/api/transaction-line-items.js` | 13 | `Promise.all([...])` → `return Promise.all([...])` |
+| `server/api/initiate-privileged.js` | 70 | same |
+| `server/api/transition-privileged.js` | 135 | same |
+
+Without this there is no handle on the work: a test can call the handler, but the chain runs on the
+microtask queue with nothing to await, so an assertion made straight after the call races the
+response and — worse for the case that matters — cannot observe what happens *after* it. The
+double-response regression is precisely a post-response continuation.
+
+Express ignores a route handler's return value, so this changes no behaviour. It is the smallest
+possible edit to files this task is already modifying, which is why it is preferred over building
+deferred-response scaffolding that polls for a settled `res` and then drains microtasks a fixed
+number of turns — that approach works, but it is timing-shaped machinery in place of one keyword.
+
+Verify nothing changed: `yarn test-server` before continuing.
+
+- [ ] **Step 5: Wire `transaction-line-items.js` (the preview — falls back)**
 
 Add the imports:
 
@@ -1351,7 +1464,7 @@ Then, inside the `.then(async ([showListingResponse, fetchAssetsResponse]) => {`
       );
 ```
 
-- [ ] **Step 5: Add the refusal helper**
+- [ ] **Step 6: Add the refusal helper**
 
 `initiate-privileged.js` and `transition-privileged.js` are `.then` chains, not `async` handlers.
 `initiate-privileged.js:98` returns `getTrustedSdk(req, res, tokenStore)` and the next link at
@@ -1397,7 +1510,7 @@ test('the refusal carries what handleError needs to render a single 503', () => 
 });
 ```
 
-- [ ] **Step 6: Wire `initiate-privileged.js` (money — refuses)**
+- [ ] **Step 7: Wire `initiate-privileged.js` (money — refuses)**
 
 Add the imports, then inside the first `.then`, after `providerCommission` is destructured:
 
@@ -1431,7 +1544,7 @@ Add the imports, then inside the first `.then`, after `providerCommission` is de
 Place the check **before** `resolveAvShippingForOrder` if it is not already — there is no reason to
 buy a shipping quote for a transaction that is about to be refused.
 
-- [ ] **Step 7: Wire `transition-privileged.js` (money — refuses)**
+- [ ] **Step 8: Wire `transition-privileged.js` (money — refuses)**
 
 The same, with `operation: 'transition'`. Here `listing` comes from `getListingRelationShip(...)`, which returns the included resource — `authorIdOf` handles that shape, which is why the extraction is not repeated here.
 
@@ -1455,7 +1568,7 @@ The same, with `operation: 'transition'`. Here `listing` comes from `getListingR
       );
 ```
 
-- [ ] **Step 8: Add the three thin endpoint tests**
+- [ ] **Step 9: Add the three thin endpoint tests**
 
 These are the assertions the resolver's unit tests structurally cannot make. Each one stubs the store to reject and checks what the endpoint does about it — nothing more, so the harness stays small.
 
@@ -1465,55 +1578,66 @@ The failures worth catching here, none of which a pure test can see:
 - a money endpoint that resolves `indeterminate` and proceeds anyway;
 - **the refusal escaping into the rest of the chain.** This is why the test has to run the handler to completion and assert on the whole lifecycle rather than just on the status code: the broken version *also* calls `res.status(503)`, and then goes on to throw and try to respond a second time. Only "exactly one response, and nothing downstream ran" separates them.
 
+First the scaffolding, written once and shared. Create `server/api-util/testHelpers.js`:
+
+```js
+'use strict';
+
+// Awaiting the handler is only possible because the three endpoints return
+// their promise chain (Step 4). That matters more than convenience: the bug
+// these tests exist for happens AFTER the response, so a helper that resolved
+// on "response sent" would stop watching exactly when it needs to keep going.
+//
+// A late rejection is also captured rather than left to surface as an unhandled
+// rejection in whichever suite happens to be running when it lands.
+const invokeHandler = async (handler, req, res) => {
+  const unhandled = [];
+  const onUnhandled = reason => unhandled.push(reason);
+  process.on('unhandledRejection', onUnhandled);
+  try {
+    await handler(req, res);
+  } finally {
+    process.removeListener('unhandledRejection', onUnhandled);
+  }
+  return { unhandled };
+};
+
+// Counts responses instead of just recording the last one, which is what makes
+// "answered twice" observable. `end` and `set` exist because handleError and
+// the commission endpoint call them.
+const mockRes = () => {
+  const res = { statusCode: 200, headers: {}, body: undefined };
+  res.status = jest.fn(code => {
+    res.statusCode = code;
+    return res;
+  });
+  res.json = jest.fn(body => {
+    res.body = body;
+    return res;
+  });
+  res.end = jest.fn(() => res);
+  res.set = jest.fn((name, value) => {
+    res.headers[name] = value;
+    return res;
+  });
+  return res;
+};
+
+module.exports = { invokeHandler, mockRes };
+```
+
+Then the tests themselves:
+
 ```js
 // Await the handler's own promise, not just a tick, so anything that happens
 // after the response is included in what these assertions see.
-test('refuses to initiate when the commission cannot be resolved', async () => {
-  store.getOverride.mockRejectedValue(new Error('db down'));
 
-  await runHandler(initiatePrivileged, { req, res });
-
-  expect(res.status).toHaveBeenCalledTimes(1);
-  expect(res.status).toHaveBeenCalledWith(503);
-  expect(res.json.mock.calls[0][0]).toMatchObject({
-    status: 503,
-    statusText: 'COMMISSION_UNRESOLVED',
-  });
-  // The chain stopped at the throw: no trusted SDK, no transaction, and no
-  // shipping quote bought for an order that will not exist.
-  expect(getTrustedSdk).not.toHaveBeenCalled();
-  expect(trustedSdk.transactions.initiate).not.toHaveBeenCalled();
-  expect(trustedSdk.transactions.initiateSpeculative).not.toHaveBeenCalled();
-});
-
-test('answers exactly once — no second response after the refusal', async () => {
-  // The regression guard for `return res.status(503).json(...)` inside a .then:
-  // that version answers, then hands `res` to the next link, throws a TypeError
-  // on `res.transactions`, and has .catch answer again.
-  store.getOverride.mockRejectedValue(new Error('db down'));
-
-  await runHandler(initiatePrivileged, { req, res });
-
-  expect(res.json).toHaveBeenCalledTimes(1);
-  expect(res.end).toHaveBeenCalledTimes(1);
-});
-
-test('passes the RESOLVED commission to transactionLineItems, not the marketplace one', async () => {
-  // store returns 5% -> the object reaching transactionLineItems has percentage 5
-  // and no minimum_amount. This is the no-op guard.
-});
-```
-
-`runHandler` is the small piece of scaffolding worth writing once and sharing across the three
-files: call the handler, then await the promise it started, so a rejection that arrives after the
-response cannot escape the test as an unhandled rejection in another suite.
-
-- [ ] **Step 9: Verify nothing regressed**
+- [ ] **Step 10: Verify nothing regressed**
 
 Run: `yarn test-server`
 Expected: PASS.
 
-- [ ] **Step 10: Manually verify the preview endpoint end to end**
+- [ ] **Step 11: Manually verify the preview endpoint end to end**
 
 Start the app (`yarn run dev`), set an override for a test seller once Task 7 exists — or insert a row directly for now:
 
@@ -1524,7 +1648,7 @@ docker compose exec -T postgres psql -U archivo_vintach -d archivo_vintach -c \
 
 Open a listing by that seller and start checkout. Expected: the OrderBreakdown provider commission reflects 5%, and the server log shows `[providerCommission] operation=preview seller=<uuid> rate=5 source=override`.
 
-- [ ] **Step 11: Manually verify the refusal**
+- [ ] **Step 12: Manually verify the refusal**
 
 Stop PostgreSQL (`docker compose stop postgres`) and retry the same checkout.
 
@@ -1532,10 +1656,11 @@ Expected: the listing page still renders a breakdown at the marketplace rate wit
 
 This is the one behaviour that only shows up end to end: the two endpoints reading the same table and reaching opposite conclusions about what to do when it is gone.
 
-- [ ] **Step 12: Commit**
+- [ ] **Step 13: Commit**
 
 ```bash
 git add server/api-util/commissionEndpoint.js server/api-util/commissionEndpoint.test.js \
+        server/api-util/testHelpers.js \
         server/api/transaction-line-items.js server/api/initiate-privileged.js \
         server/api/transition-privileged.js server/api/*-privileged.test.js \
         server/api/transaction-line-items.test.js

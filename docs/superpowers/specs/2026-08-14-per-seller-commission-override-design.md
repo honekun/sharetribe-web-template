@@ -619,6 +619,11 @@ upstream file has to be restructured into `async`/`await` — which would have r
 endpoints wholesale for a three-line behaviour. The client sees the `LocalAPIError` envelope every
 other local API failure uses, with `statusText: 'COMMISSION_UNRESOLVED'` to distinguish it.
 
+The one structural change these three handlers do take is a `return` in front of their
+`Promise.all(...)` chain, which none of them has today. Express ignores a route handler's return
+value, so it changes nothing at runtime — but without it the chain runs with no handle on it, and a
+test cannot observe the part that matters here, which is what happens *after* the response.
+
 **Why that cost is the right one to take.** The alternative was creating the transaction at the
 marketplace rate and reconciling afterwards. Reconciliation was the weak half of that plan: the only
 correlation available is seller id plus timestamp, and because the preview resolves commission too —
