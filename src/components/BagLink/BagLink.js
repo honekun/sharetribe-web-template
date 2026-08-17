@@ -3,8 +3,8 @@ import classNames from 'classnames';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { useIntl } from '../../util/reactIntl';
-import useMediaQuery from '../../hooks/useMediaQuery';
 import { AV_BREAKPOINTS } from '../../util/avGridSizes';
+import useMediaQuery from '../../hooks/useMediaQuery';
 import { bagPopupClosed, bagPopupOpened, selectBagCount } from '../../ducks/bag.duck';
 import { NamedLink } from '../../components';
 import BagPopup from '../BagPopup/BagPopup';

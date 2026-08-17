@@ -1,9 +1,11 @@
 import { createSlice } from '@reduxjs/toolkit';
+
 import { readBag, writeBag } from '../util/bagStorage';
-import { addMarketplaceEntities } from './marketplaceData.duck';
 import { createImageVariantConfig } from '../util/sdkLoader';
 import { storableError } from '../util/errors';
 import * as log from '../util/log';
+
+import { addMarketplaceEntities } from './marketplaceData.duck';
 
 const MAX_BAG_ITEMS = 50;
 // AVListingCard/ResponsiveImage cards are square by default; mirror SearchPage's

@@ -1,16 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
-import { AVListingCard } from '../../../../components';
+
 import { useIntl } from '../../../../util/reactIntl';
 import useDebouncedWindowResize from '../../../../hooks/useDebouncedWindowResize';
-
-import Field, { hasDataInFields } from '../../Field';
-import AVSectionContainer from '../SectionContainer/AVSectionContainer';
 import {
   AV_SECTION_COLLAPSE_RAMP,
   buildSectionRenderSizes,
   effectiveSectionColumns,
 } from '../../../../util/avGridSizes';
+
+import { AVListingCard } from '../../../../components';
+
+import Field, { hasDataInFields } from '../../Field';
+import AVSectionContainer from '../SectionContainer/AVSectionContainer';
 
 import css from './SectionTagCatListings.module.css';
 

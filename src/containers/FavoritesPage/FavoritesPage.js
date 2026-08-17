@@ -8,6 +8,7 @@ import { isScrollingDisabled } from '../../ducks/ui.duck';
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { selectFavoriteIds } from '../../ducks/favorites.duck';
 import { showCreateListingLinkForUser } from '../../util/userHelpers';
+import { AV_LISTING_GRID_RAMP, buildRenderSizes } from '../../util/avGridSizes';
 
 import {
   AVListingCard,
@@ -17,10 +18,9 @@ import {
   UserNav,
   IconSpinner,
 } from '../../components';
+
 import TopbarContainer from '../TopbarContainer/TopbarContainer';
 import FooterContainer from '../FooterContainer/FooterContainer';
-
-import { AV_LISTING_GRID_RAMP, buildRenderSizes } from '../../util/avGridSizes';
 
 import css from './FavoritesPage.module.css';
 

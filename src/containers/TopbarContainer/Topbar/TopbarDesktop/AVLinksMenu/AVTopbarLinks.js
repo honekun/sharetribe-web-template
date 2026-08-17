@@ -2,8 +2,9 @@ import React from 'react';
 import classNames from 'classnames';
 
 import { FormattedMessage, useIntl } from '../../../../../util/reactIntl';
-import { MenuItem, NamedLink } from '../../../../../components';
 import { AV_PROFILE_LINKS } from '../../../../../extensions/topbar/links';
+
+import { MenuItem, NamedLink } from '../../../../../components';
 
 import css from '../TopbarDesktop.module.css';
 

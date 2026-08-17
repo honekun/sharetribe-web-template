@@ -1,16 +1,16 @@
 import React from 'react';
-import { useIntl } from '../../../../util/reactIntl';
 import classNames from 'classnames';
-import { AVListingCard } from '../../../../components';
 
-import Field, { hasDataInFields } from '../../Field';
-
-import AVSectionContainer from '../SectionContainer/AVSectionContainer';
+import { useIntl } from '../../../../util/reactIntl';
 import {
   AV_SECTION_GRID_RAMP,
   AV_SECTION_ONE_COLUMN_RAMP,
   buildSectionRenderSizes,
 } from '../../../../util/avGridSizes';
+import { AVListingCard } from '../../../../components';
+
+import Field, { hasDataInFields } from '../../Field';
+import AVSectionContainer from '../SectionContainer/AVSectionContainer';
 
 import css from './SectionRecommendedListings.module.css';
 
