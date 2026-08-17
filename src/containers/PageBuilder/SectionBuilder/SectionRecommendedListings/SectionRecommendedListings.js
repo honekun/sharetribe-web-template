@@ -6,15 +6,24 @@ import { AVListingCard } from '../../../../components';
 import Field, { hasDataInFields } from '../../Field';
 
 import AVSectionContainer from '../SectionContainer/AVSectionContainer';
-import { AV_SECTION_GRID_RAMP, buildSectionRenderSizes } from '../../../../util/avGridSizes';
+import {
+  AV_SECTION_GRID_RAMP,
+  AV_SECTION_ONE_COLUMN_RAMP,
+  buildSectionRenderSizes,
+} from '../../../../util/avGridSizes';
 
 import css from './SectionRecommendedListings.module.css';
 
-// The number of columns (numColumns) affects styling and responsive images
+// The number of columns (numColumns) affects styling and responsive images.
+// One column is the odd one out: the CSS keeps `.oneColumn` full-width at every
+// breakpoint, so it gets a ramp of its own rather than the 3-up one the other
+// counts collapse into between 550px and 967px. The desktop figure is the
+// `.baseColumn` max-width (--contentMaxWidthPages), which is the widest a card
+// can be once side paddings are dropped inside a container section.
 const COLUMN_CONFIG = [
   {
     css: css.oneColumn,
-    responsiveImageSizes: buildSectionRenderSizes(AV_SECTION_GRID_RAMP, '1200px'),
+    responsiveImageSizes: buildSectionRenderSizes(AV_SECTION_ONE_COLUMN_RAMP, '1120px'),
   },
   {
     css: css.twoColumns,
