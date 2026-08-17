@@ -166,7 +166,7 @@
   "BulkImportPage.zipHelp": "Maximum 50 MB per file • Format: .zip with CSV and photos (JPG or PNG)",
   "BulkImportPage.zipSelected": "Selected: {name}",
   "BulkImportPage.startImport": "Start Import",
-  "BulkImportPage.downloadTemplate": "Download template",
+  "BulkImportPage.downloadTemplate": "Open template",
   "BulkImportPage.uploading": "Uploading files...",
   "BulkImportPage.progress": "{processed} of {total} processed ({percent}%)",
   "BulkImportPage.succeeded": "{count} succeeded",

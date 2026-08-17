@@ -104,28 +104,34 @@ describe('BulkImportPage', () => {
     });
   });
 
-  it('renders download template link', async () => {
+  const TEMPLATE_URL =
+    'https://drive.google.com/file/d/1pucBkweZnTQVy4-91CN0HBvDiANbZDXc/view?usp=sharing';
+
+  it('renders the template link', async () => {
     render(<BulkImportPage />, { initialState: baseState });
 
     await waitFor(() => {
       const link = screen.getByText('BulkImportPage.downloadTemplate');
       expect(link).toBeInTheDocument();
-      expect(link.closest('a')).toHaveAttribute('href', '/static/files/PLANTILLA_CARGA_MASIVA.csv');
+      expect(link.closest('a')).toHaveAttribute('href', TEMPLATE_URL);
     });
   });
 
-  it('template link uses direct browser navigation (no fetch required)', async () => {
+  it('opens the template in a new tab without navigating away from an import', async () => {
     render(<BulkImportPage />, { initialState: baseState });
 
-    const link = await screen.findByText('BulkImportPage.downloadTemplate');
-    expect(link.closest('a')).toHaveAttribute('href', '/static/files/PLANTILLA_CARGA_MASIVA.csv');
-    expect(link.closest('a')).toHaveAttribute('download');
-    // Static file is served directly — browser navigates without a fetch
+    const link = (await screen.findByText('BulkImportPage.downloadTemplate')).closest('a');
+
+    // The template is hosted in Drive, so the page must not be replaced by it —
+    // an operator part-way through picking a ZIP would lose that state.
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+    // `download` is ignored on a cross-origin href; asserting it would pin
+    // markup the browser does not honour.
+    expect(link).not.toHaveAttribute('download');
+    // Plain navigation: the page fetches nothing on click.
     fireEvent.click(link);
-    expect(global.fetch).not.toHaveBeenCalledWith(
-      '/static/files/PLANTILLA_CARGA_MASIVA.csv',
-      expect.anything()
-    );
+    expect(global.fetch).not.toHaveBeenCalledWith(TEMPLATE_URL, expect.anything());
   });
 
   it('shows error when submitting without a ZIP file', async () => {

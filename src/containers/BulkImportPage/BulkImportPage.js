@@ -350,7 +350,13 @@ const BulkImportPageComponent = props => {
     pickFile(file);
   };
 
-  const templateDownloadUrl = '/static/files/PLANTILLA_CARGA_MASIVA.csv';
+  // The seller template lives in Drive rather than in public/static, so it can be
+  // corrected without a deploy. This is Drive's shared preview page: the operator
+  // lands there and uses Drive's own download control. It opens in a new tab, and
+  // carries no `download` attribute — that attribute is ignored on a cross-origin
+  // href, so leaving it on would only claim a behaviour the browser will not give.
+  const templateUrl =
+    'https://drive.google.com/file/d/1pucBkweZnTQVy4-91CN0HBvDiANbZDXc/view?usp=sharing';
 
   const progressPercent =
     jobData && jobData.total > 0 ? Math.round((jobData.processed / jobData.total) * 100) : 0;
@@ -369,7 +375,12 @@ const BulkImportPageComponent = props => {
         <FormattedMessage id="BulkImportPage.description" />
       </p>
 
-      <a href={templateDownloadUrl} className={css.templateButton} download>
+      <a
+        href={templateUrl}
+        className={css.templateButton}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         <DownloadIcon />
         <FormattedMessage id="BulkImportPage.downloadTemplate" />
       </a>

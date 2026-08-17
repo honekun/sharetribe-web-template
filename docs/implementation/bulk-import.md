@@ -211,9 +211,9 @@ exception use the default package size `M`.
 
 ### Example CSV
 
-This is the current seller-template format (`public/static/files/PLANTILLA_CARGA_MASIVA.csv`):
-`pub_*` attribute columns and `imagen_1..4`, with no author column (listings author to the signed-in
-user). Admins who need to import for another seller add a `user_id` column.
+This is the current seller-template format: `pub_*` attribute columns and `imagen_1..4`, with no
+author column (listings author to the signed-in user). Admins who need to import for another seller
+add a `user_id` column.
 
 ```csv
 title,description,price,pub_brand,pub_categoryLevel1,pub_categoryLevel2,pub_categoryLevel3,pub_color,pub_all_sizes,pub_genero,pub_estado,pub_estilo,pub_temporada,imagen_1,imagen_2,imagen_3,imagen_4
@@ -221,9 +221,19 @@ title,description,price,pub_brand,pub_categoryLevel1,pub_categoryLevel2,pub_cate
 "Jeans Levi's Retro","Jeans de los 90s en buen estado","$950.00",levi-s,ropa,ropa-jeans,ropa-jeans-momfit,azul,mx_28,unisex,buen-estado,retro,todo-el-ano,jeans-1.jpg,jeans-2.jpg,jeans-3.jpg,
 ```
 
-The "Download CSV Template" link on the import page serves the static operator template at
-`public/static/files/PLANTILLA_CARGA_MASIVA.csv` (web path
-`/static/files/PLANTILLA_CARGA_MASIVA.csv`).
+The template link on the import page opens the seller template in Google Drive
+(`https://drive.google.com/file/d/1pucBkweZnTQVy4-91CN0HBvDiANbZDXc/view?usp=sharing`, hardcoded in
+`BulkImportPage.js`), in a new tab. Hosting it there rather than in `public/static/files` means a
+corrected template reaches operators without a deploy — the trade is that the link now lands on
+Drive's preview page and the operator uses Drive's own download control, rather than the file
+arriving directly. The link therefore carries `target="_blank"` and no `download` attribute: that
+attribute is ignored on a cross-origin href.
+
+The file must stay shared as "anyone with the link"; if it is un-shared or removed, the control
+silently leads to a Drive permission wall and nothing in the app will report it.
+
+`public/static/files/PLANTILLA_CARGA_MASIVA.csv` is no longer what the page links to. It is left in
+place because `docs/operator-guide.md` §8.4 still names it when describing template headers.
 
 The import page's help bar also links a ready-to-upload **example ZIP** at
 `public/static/files/ZIP_CARGA_MASIVA.zip` (10 listings + 40 images). Its `user_id` column is left
