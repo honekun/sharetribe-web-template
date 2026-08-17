@@ -497,6 +497,12 @@ Preferred order when an upstream component needs to behave differently:
 3. **Never wrap upstream JSX just for layout.** A wrapper `<div>` re-indents the whole subtree and
    makes every future upstream hunk conflict. Style the existing element from `avBrandOverrides.css`
    instead.
+4. **An AV import added to an upstream file goes after that file's own import groups**, not sorted
+   into them — even though that reads as out-of-order by the convention AV-owned files follow. The
+   appended line sits outside the blocks upstream edits; sorted in, it sits inside one. Import-order
+   sweeps are scoped to files absent from `upstream/main` for the same reason, so
+   `ManageListingsPage.js`, `ProfilePage.js` and `SearchResultsPanel.js` keep their trailing
+   `avGridSizes` imports deliberately. This is a decision, not an oversight — don't "fix" it.
 
 ### Deliberate forks — diff these on every upstream sync
 

@@ -43,10 +43,11 @@ Browser (BulkImportPage)             Server (Express)
 ```
 
 Note the page does **not** call `GET /api/bulk-import/template`. That endpoint still exists and
-still generates a header-only CSV, but nothing links to it: the template button points at Google
-Drive (see [below](#example-csv)) and did previously point at a static file. It is left routed
-because it is public, tested, and harmless, but treat it as orphaned rather than as the template
-source of record.
+still generates a CSV — headers plus one example row (`server/api/bulk-import/index.js`) — but
+nothing links to it at runtime: the template button points at Google Drive (see
+[below](#example-csv)) and previously pointed at a static file. It is left routed because it is
+public, tested, and harmless, but treat it as orphaned rather than as the template source of
+record.
 
 Processing is **asynchronous** so uploads do not depend on a hosting platform's HTTP request
 timeout. The server accepts the upload, returns a job ID immediately, and processes rows in the
@@ -237,9 +238,13 @@ attribute is ignored on a cross-origin href.
 The file must stay shared as "anyone with the link"; if it is un-shared or removed, the control
 silently leads to a Drive permission wall and nothing in the app will report it.
 
-`public/static/files/PLANTILLA_CARGA_MASIVA.csv` is no longer referenced by anything — not the page,
-not `docs/operator-guide.md`. It is left on disk only so an operator holding an old direct link still
-gets a file rather than a 404; delete it once that no longer matters.
+Nothing links to `public/static/files/PLANTILLA_CARGA_MASIVA.csv` at runtime any more — not the
+page, not `docs/operator-guide.md`. It is still *named* in several places, which is why it should not
+simply be deleted on sight: `csvParser.js` calls one of its recognised header dialects after it (and
+`csvParser.test.js` pins that), `index.js` cites it as what the `/template` endpoint mirrors, and the
+column-alias table [below](#google-sheets--spanish-column-names) uses it as a column heading. The
+file is kept on disk so an operator holding an old direct link gets a file rather than a 404; retiring
+it means renaming that dialect too, not just removing the file.
 
 The import page's help bar also links a ready-to-upload **example ZIP** at
 `public/static/files/ZIP_CARGA_MASIVA.zip` (10 listings + 40 images). Its `user_id` column is left
