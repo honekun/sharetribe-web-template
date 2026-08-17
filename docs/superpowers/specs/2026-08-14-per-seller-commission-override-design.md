@@ -138,7 +138,7 @@ payoutTotal                         935.00
 | Layer | Source | Scope |
 | --- | --- | --- |
 | Provider percentage + `minimum_amount` | Console `commission.json` | Marketplace-wide; this design overrides the percentage per seller |
-| Minimum listing price | Console `transaction-size.json` (falls back to `500`) | Marketplace-wide |
+| Minimum listing price | Console `/transactions/minimum-transaction-size.json`, as `listingMinimumPrice: { type: 'subunit', amount }` (falls back to `configDefault.listingMinimumPriceSubUnits`, `500` today and `6000` after this design) | Marketplace-wide |
 | Fixed fee | `REACT_APP_PROVIDER_COMMISSION_FIXED_FEE=1500` | AV-only. Sharetribe does not know it exists, so nothing on their side accounts for it |
 
 Sharetribe's own commission is always applied and is theirs to reason about. The env layer is the
@@ -223,8 +223,8 @@ asserting nothing.
 
 | Consumer | Reads | If it cannot read it |
 | --- | --- | --- |
-| CLI `set` | `transaction-size.json` via `sdk.assets.search()`, using the **public** `REACT_APP_SHARETRIBE_SDK_CLIENT_ID` | **Refuses to write.** An `--assume-min-price=<subunits>` flag exists for a disconnected operator and is echoed in the confirmation line, so a skipped check is never invisible. |
-| Server readiness check | The same asset, once at boot, after hosted config loads | Logs `error` and continues. It is a diagnostic, not a gate — a marketplace that cannot fetch its own config has already failed louder elsewhere. |
+| CLI `set` | `/transactions/minimum-transaction-size.json` via `sdk.assetsByAlias()`, using the **public** `REACT_APP_SHARETRIBE_SDK_CLIENT_ID` | **Refuses to write.** An `--assume-min-price=<subunits>` flag exists for a disconnected operator and is echoed in the confirmation line, so a skipped check is never invisible. |
+| Server readiness check | The same asset, fetched **explicitly** once at boot | Logs `error` and continues. It is a diagnostic, not a gate. Note it cannot read "the hosted config": `server/index.js` has none — hosted assets are fetched per request through the SDK and merged client-side, so this check makes its own `assetsByAlias` call, sharing the CLI's reader. |
 | CI invariant test | The **code** constants only: `MAX_PROVIDER_COMMISSION_PERCENTAGE`, `PROVIDER_COMMISSION_FIXED_FEE`, and `configDefault.listingMinimumPriceSubUnits` | n/a |
 
 This resolves a contradiction the previous revision carried: the CLI claimed both to validate
@@ -347,10 +347,15 @@ in three upstream files — a merge-conflict surface, and untestable without an 
 ```js
 resolveCommissionForRequest(listing, commission, { operation, retries })
 // async -> { commission, source, reason } ; logs the resolution
+
+commissionUnresolvedError()
+// -> Error tagged { status: 503, statusText, data } for the money endpoints to THROW
 ```
 
 AV-owned, so it is unit-testable on its own, and each upstream endpoint keeps a call plus a refusal
-check. This is the composition-root swap the repo's [upstream file policy](../../../CLAUDE.md)
+check. The error factory lives here rather than being written out at each call site because its
+three fields are load-bearing — `handleError` renders a `503` only when all of `status`,
+`statusText` and `data` are present, and falls through to a generic `500` otherwise. This is the composition-root swap the repo's [upstream file policy](../../../CLAUDE.md)
 prefers, applied to a helper rather than a component.
 
 ### Call sites: the three endpoints
@@ -361,7 +366,7 @@ The resolver runs in the endpoints, before `transactionLineItems` is called. The
 | File | Change |
 | --- | --- |
 | `server/api/transaction-line-items.js:11` | take the author id from `listing.relationships.author`, resolve with `retries: 0`, use the result whatever its `source` |
-| `server/api/initiate-privileged.js:76` | same author extraction, resolve with `retries: 1`, and **return `503 { code: 'COMMISSION_UNRESOLVED' }` when `source === 'indeterminate'`** |
+| `server/api/initiate-privileged.js:76` | same author extraction, resolve with `retries: 1`, and **throw a `503`-tagged error when `source === 'indeterminate'`** — thrown rather than returned, because this runs inside a `.then` chain (see [Error handling](#error-handling)) |
 | `server/api/transition-privileged.js:153` | same as `initiate-privileged` |
 
 Only the author's **id** is needed, and that arrives in the listing's `relationships` on every one
@@ -489,7 +494,8 @@ Writes go to the AV table through `providerCommissionStore`, so `set` and `clear
 resolving an `<email>` argument to a user id, and printing the display name back so the operator can
 confirm they targeted the right seller. Passing a `<userId>` directly avoids it entirely.
 
-That is not the same as needing no Sharetribe *access*. `set` also reads `transaction-size.json` to
+That is not the same as needing no Sharetribe *access*. `set` also reads
+`/transactions/minimum-transaction-size.json` to
 check the implied minimum price, which goes through `sdk.assets.search()` with the public marketplace
 client id — no secret, but network access to Sharetribe, and a `--assume-min-price` escape hatch
 when there is none. See [Where `listingMinimumPrice` comes
@@ -584,11 +590,34 @@ paths. The realistic failure is a dropped pooled connection, which a second atte
 sustained outage is not something a retry loop should paper over while a buyer waits. The preview
 does not retry at all — it has a correct-enough answer already and the seller is not being charged.
 
-**Failing looks like this.** The two money endpoints respond `503` with
-`{ code: 'COMMISSION_UNRESOLVED' }` and create nothing. The buyer sees the checkout error path that
-already exists for a failed `initiate`; no new client state, no new translation key. A seller
-accepting an offer through `transition-privileged` hits the same wall. That is the cost, stated
-plainly: during a database outage, overridden or not, checkout and offer acceptance stop.
+**Failing looks like this.** The two money endpoints respond `503` and create nothing. The buyer
+sees the checkout error path that already exists for a failed `initiate`; no new client state, no new
+translation key. A seller accepting an offer through `transition-privileged` hits the same wall. That
+is the cost, stated plainly: during a database outage, overridden or not, checkout and offer
+acceptance stop.
+
+**How it fails matters as much as that it fails.** Both endpoints are `.then` chains, not
+`async` functions: the first link returns `getTrustedSdk(...)` and the next consumes it. An early
+`return res.status(503).json(...)` there does **not** end the chain — `res` is what `json()` returns,
+so the next link receives the Express response as its `trustedSdk`, calls
+`trustedSdk.transactions.initiate(...)`, throws a `TypeError` after the response is already sent, and
+lands in the `.catch` that tries to send a second one.
+
+So the refusal is **thrown, not returned**, as an error carrying the fields the existing
+`handleError` already understands:
+
+```js
+const err = new Error('Provider commission could not be resolved');
+err.status = 503;
+err.statusText = 'COMMISSION_UNRESOLVED';
+err.data = { code: 'COMMISSION_UNRESOLVED' };
+throw err;
+```
+
+`handleError` renders exactly one `503` from that, the chain is abandoned at the throw, and no
+upstream file has to be restructured into `async`/`await` — which would have rewritten two watchlist
+endpoints wholesale for a three-line behaviour. The client sees the `LocalAPIError` envelope every
+other local API failure uses, with `statusText: 'COMMISSION_UNRESOLVED'` to distinguish it.
 
 **Why that cost is the right one to take.** The alternative was creating the transaction at the
 marketplace rate and reconciling afterwards. Reconciliation was the weak half of that plan: the only
@@ -652,7 +681,7 @@ Two pre-existing behaviours, one documented and one now fixed:
 
 | Prerequisite | Where | Notes |
 | --- | --- | --- |
-| Minimum listing price `6000` | Console `transaction-size.json` | Was `500`, or unset and falling back to it. Required by the [invariant](#the-invariant). |
+| Minimum listing price `6000` | Console `/transactions/minimum-transaction-size.json` | Was `500`, or unset and falling back to it. Set `listingMinimumPrice` to `{ type: 'subunit', amount: 6000 }` — it is not a bare number. Required by the [invariant](#the-invariant). |
 | Code fallback `6000` | `src/config/configDefault.js:25` | Ships with the clamp, in the same commit. Covers environments where the asset is absent or `0`, which the Console value cannot. |
 | Provider commission | Console `commission.json` | Unchanged; the override replaces it per seller |
 | Migration `010` applied | Every environment's database | Including the Render test database, via the existing `migrate-test-db` procedure |
@@ -684,12 +713,12 @@ a green light. The probe was measuring the right fact and drawing the wrong conc
 | `server/services/providerCommissionStore.test.js` (new) | round-trip set/get/clear, upsert replaces rather than duplicates, `CHECK` constraint rejects `-1` and `75.1` at the database level, `getOverride` distinguishes absent from unreadable, and — the history cases — a `set` and a `clear` each append a row with their operator, a clear records `NULL`, and a failed write leaves neither table changed |
 | `GET /api/commission/me` | returns the caller's rate, returns `null` when they have none, rejects unauthenticated callers, and — the security-relevant case — accepts no parameter that could target another user |
 | `server/api-util/lineItemHelpers.test.js` (extend) | explicit 0% emits fixed-fee only; absent percentage with no minimum still returns `[]` (regression guard for the early-return change); percentage > 0 unchanged; **clamp cases** — fee reduced to the remainder when it would overflow, line item omitted when nothing remains, payout never negative, and no throw at any price down to the minimum |
-| Invariant test (new) | `listingMinimumPriceSubUnits x (1 - MAX_PROVIDER_COMMISSION_PERCENTAGE/100) >= fixedFee` for the three **code** constants, so raising the cap or the fee without raising the fallback fails the build. It deliberately does not fetch `transaction-size.json`: a test that reads a mutable hosted asset breaks the build when an operator edits Console, which is noise rather than a finding. The live value is checked by the CLI before each write and by the boot readiness check — see [Where `listingMinimumPrice` comes from](#where-listingminimumprice-comes-from) |
+| Invariant test (new) | `listingMinimumPriceSubUnits x (1 - MAX_PROVIDER_COMMISSION_PERCENTAGE/100) >= fixedFee` for the three **code** constants, so raising the cap or the fee without raising the fallback fails the build. It deliberately does not fetch the hosted asset: a test that reads a mutable hosted asset breaks the build when an operator edits Console, which is noise rather than a finding. The live value is checked by the CLI before each write and by the boot readiness check — see [Where `listingMinimumPrice` comes from](#where-listingminimumprice-comes-from) |
 | `configDefault.js` fallback | `listingMinimumPriceSubUnits` is `6000`, pinned so it cannot drift back to the upstream `500` in a merge without the invariant test above failing too |
 | `server/api-util/lineItems.test.js` | untouched; passing unchanged is the signal that the resolver stayed out of the line-item core |
 | `EarningsEstimator.test.js` (new, none exists today) | the fetched rate is used once it arrives; **no breakdown is rendered while the request is in flight or after it fails** — the negative assertion, since a fallback here misprices the seller's own decision; an explicit `null` body is treated as conclusive and renders the marketplace rate; clamped fee matches the server's for the same price and rate; payout never rendered negative |
 | `server/api-util/commissionEndpoint.js` (new) — the shared orchestration | the three endpoints' common half, extracted so it can be tested once: author id out of `listing.relationships.author`, resolver awaited, `indeterminate` mapped to a refusal or a fallback per the caller's policy. Cases: author id extracted from a real response shape; a missing `relationships` produces `no-author` rather than `undefined`; the resolved commission — not the original — is what reaches the returned config; the money policy returns a refusal where the preview policy returns line items |
-| `server/api/*-privileged.test.js` (3 new, thin) | one test each: an indeterminate read yields `503 { code: 'COMMISSION_UNRESOLVED' }` from both money endpoints and a rendered breakdown from the preview. Enough to catch the wiring the resolver's own tests cannot see |
+| `server/api/*-privileged.test.js` (3 new, thin) | one test each, run to completion rather than to the first assertion: an indeterminate read yields **exactly one** `503` from both money endpoints, with no trusted SDK obtained and no transaction attempted, and a rendered breakdown from the preview. Asserting the status alone would pass on the broken shape too, which answers *and then* throws into a second response — the lifecycle is the assertion |
 | Manual | a real Test-marketplace checkout with an overridden seller, confirming the OrderBreakdown commission row and the resulting `payoutTotal` |
 
 The previous revision exempted the three privileged endpoints from testing, on the grounds that they

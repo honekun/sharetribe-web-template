@@ -6,7 +6,9 @@
 
 **Architecture:** A per-seller percentage lives in a new PostgreSQL table keyed by Sharetribe user ID — not on the Sharetribe user record, because every user field there is either seller-writable or publicly readable. Three server endpoints that build line items resolve the rate before calling `transactionLineItems`, so `lineItems.js` is never touched. A separate change to `getProviderCommissionMaybe` makes an explicit 0% keep the fixed fee and replaces a throw with a clamp, fixing a pre-existing defect where cheap listings break at payment time.
 
-**Revised 2026-08-16** after review. Four changes run through the tasks below: an indeterminate rate now **fails** the two money endpoints instead of defaulting (Tasks 2 and 5); the estimator likewise stops falling back to the marketplace rate and shows a loading or unavailable state instead (Task 6); the shared endpoint half is extracted so it can be tested, and the three endpoints get thin tests rather than none (Task 5); and the minimum listing price is read from Console by the CLI rather than copied into a new env var (Task 7). Task 1 also gains an append-only history table, so clearing an override no longer erases who set it.
+**Revised 2026-08-16** after review. Five changes run through the tasks below: an indeterminate rate now **fails** the two money endpoints instead of defaulting (Tasks 2 and 5); the estimator likewise stops falling back to the marketplace rate and shows a loading or unavailable state instead (Task 6); the shared endpoint half is extracted so it can be tested, and the three endpoints get thin tests rather than none (Task 5); and the minimum listing price is read from Console by the CLI rather than copied into a new env var (Task 7). Task 1 also gains an append-only history table, so clearing an override no longer erases who set it.
+
+A second review pass added the fifth: the refusal is **thrown, not returned**, because both money endpoints are `.then` chains where a returned response is fed to the next link as the trusted SDK (Task 5), and the live minimum-price read is corrected — the asset is `/transactions/minimum-transaction-size.json` carrying `{ type: 'subunit', amount }`, not `transaction-size.json` carrying a number, and `server/index.js` has no hosted config to read it from, so the check fetches it itself through a shared reader (Tasks 4 and 7).
 
 The through-line: nothing renders or charges a rate that has not been established. `null` — "no override, the marketplace rate is genuinely this seller's" — is an answer and may be priced against. An unreadable table is not, on either side of the wire.
 
@@ -25,6 +27,7 @@ The through-line: nothing renders or charges a rate that has not been establishe
 - **AV database tables use the `av_` prefix** (matching `av_shipping_label_attempts`, `av_eship_tracking_notifications`).
 - **Money is never moved on a guessed rate.** "No override exists" (conclusive) is the normal path. "Could not determine" (missing author id, database error) is *not* a fallback on the two money endpoints: they retry once and then return `503 { code: 'COMMISSION_UNRESOLVED' }`. Only `transaction-line-items`, which is display-only, falls back — at `warn`. These must never collapse into the same code path.
 - **The resolver reports; the caller decides.** `providerCommission.js` does no logging, never throws, and never refuses. Policy and log level live in `commissionEndpoint.js`, which is the layer that knows whether a preview or a sale is asking.
+- **The two money endpoints are `.then` chains, not `async` handlers.** Returning a response from inside one does not end it — the next link receives `res` as its `trustedSdk`. Refusals are thrown with `status`/`statusText`/`data` so the existing `handleError` renders exactly one of them. Do not restructure these upstream files into `async`/`await`.
 - **No guessed rate is rendered either.** The estimator shows a loading or unavailable state rather than the marketplace rate, because the seller prices against that number. An explicit `null` from `/api/commission/me` is conclusive and does render; a failure does not.
 - Test commands: `yarn test-server` (server), `yarn test -- --watchAll=false` (client).
 - Node `>=18.20.1 <23.2.0`, Yarn.
@@ -869,9 +872,12 @@ The clamp handles overflow at checkout; this prevents most of it from arising. T
 
 **Files:**
 - Modify: `src/config/configDefault.js:33`
+- Modify: `server/index.js` (boot readiness check)
 - Create: `src/config/commissionInvariant.test.js`
 - Create: `src/util/avCommission.js`
 - Test: `src/util/avCommission.test.js`
+- Create: `server/api-util/listingMinimumPrice.js` (shared with the CLI in Task 7)
+- Test: `server/api-util/listingMinimumPrice.test.js`
 
 **Interfaces:**
 - Consumes: `MAX_PROVIDER_COMMISSION_PERCENTAGE` conceptually from Task 2 (the value `75`, re-declared client-side — client code may not import from `server/`)
@@ -1028,42 +1034,122 @@ In `src/config/configDefault.js:33`, change the fallback:
   listingMinimumPriceSubUnits: 6000,
 ```
 
-The Console `transaction-size.json` asset must be raised to `6000` as well — it overrides this value at runtime. That is a deployment step, recorded in Task 8.
+The Console asset must be raised to `6000` as well — it overrides this value at runtime. That is `/transactions/minimum-transaction-size.json`, and the field is `listingMinimumPrice: { type: 'subunit', amount: 6000 }`, not a bare number. Deployment step, recorded in Task 8.
 
 Raise it in the **same commit as the clamp** (Task 3). Earlier and it blocks listings between 5.00 and 60.00 with no clamp to justify the block; later and there is a window where the invariant is false by default.
 
-- [ ] **Step 7: Add the boot readiness check**
+- [ ] **Step 7: Add the shared asset reader**
 
-The CI test above can only speak for the code constants. The number that actually governs a live marketplace is the Console one, and nothing in this repository can assert what it says at build time. So assert it at boot, where the real value is available:
+The CI test above can only speak for the code constants. The number that governs a live marketplace is the Console one, and nothing in this repository can assert what it says at build time.
 
-In `server/index.js`, alongside the existing notification/shipping readiness logging, once hosted config has loaded:
+Two consumers need it — the boot check below and the CLI in Task 7 — so it goes in one AV-owned module. Create `server/api-util/listingMinimumPrice.js`:
 
 ```js
-// The invariant is checked in CI against the code fallback, but the live value
-// comes from Console and can be changed there without touching this repo. This
-// is the only place the real number is knowable, so it is where it gets
-// checked. Diagnostic, not a gate: a marketplace that cannot fetch its own
-// config has already failed louder than this.
-const headroom = listingMinimumPrice * (1 - MAX_PROVIDER_COMMISSION_PERCENTAGE / 100);
-if (headroom < FIXED_FEE) {
-  console.error(
-    `[commission] Console listingMinimumPrice ${listingMinimumPrice} leaves ${headroom} for a ` +
-      `${FIXED_FEE} fixed fee at the ${MAX_PROVIDER_COMMISSION_PERCENTAGE}% ceiling. ` +
-      'Listings at the minimum will have their fee clamped and the platform will earn less than intended.'
-  );
-}
+'use strict';
+
+const sharetribeSdk = require('sharetribe-flex-sdk');
+
+// Two things about this asset are easy to get wrong, and both fail silently:
+//
+//  1. The path is `/transactions/minimum-transaction-size.json`, NOT
+//     `transaction-size.json`. See configDefault.js `assets.transactionSize`.
+//  2. The value is `{ type: 'subunit', amount }`, NOT a bare number. See
+//     configHelpers.js `getListingMinimumPrice`, which reads it the same way.
+//
+// Reading it as a number returns undefined, which a truthiness check turns into
+// "no minimum", which turns a guard into a no-op.
+const ASSET_PATH = '/transactions/minimum-transaction-size.json';
+
+// Only the PUBLIC marketplace client id and network access — no Integration
+// credentials. Worth keeping that distinction straight: the <userId> form of
+// every CLI command avoids Integration entirely, but reading this asset still
+// has to reach Sharetribe.
+const fetchListingMinimumPrice = async () => {
+  const clientId = process.env.REACT_APP_SHARETRIBE_SDK_CLIENT_ID;
+  if (!clientId) {
+    throw new Error('REACT_APP_SHARETRIBE_SDK_CLIENT_ID is not set');
+  }
+  const sdk = sharetribeSdk.createInstance({ clientId });
+  const res = await sdk.assetsByAlias({ paths: [ASSET_PATH], alias: 'latest' });
+
+  const asset = res?.data?.data?.[0];
+  const value = asset?.type === 'jsonAsset' ? asset.attributes.data?.listingMinimumPrice : null;
+
+  // Mirrors configHelpers.getListingMinimumPrice: anything that is not an
+  // explicit subunit amount is treated as unset rather than guessed at.
+  if (value?.type !== 'subunit' || typeof value.amount !== 'number') {
+    throw new Error(`${ASSET_PATH} has no listingMinimumPrice of type 'subunit'`);
+  }
+  // 0 means "no restriction" in Console. That is an answer, but not one the
+  // invariant can be checked against, so callers are told rather than handed a
+  // floor of zero.
+  if (value.amount <= 0) {
+    throw new Error(`${ASSET_PATH} sets no minimum listing price (amount ${value.amount})`);
+  }
+  return value.amount;
+};
+
+module.exports = { ASSET_PATH, fetchListingMinimumPrice };
 ```
 
-- [ ] **Step 8: Run both tests to verify they pass**
+Test it against both mistakes, since both would otherwise pass silently:
+
+```js
+test('reads the subunit amount', async () => { /* { type: 'subunit', amount: 6000 } -> 6000 */ });
+test('rejects a bare number, which is the shape this asset does NOT use', async () => {
+  // listingMinimumPrice: 6000 must throw, not resolve to 6000
+});
+test('rejects amount 0, which Console uses to mean "no restriction"', async () => {});
+test('requests minimum-transaction-size.json', async () => {
+  expect(sdk.assetsByAlias).toHaveBeenCalledWith(
+    expect.objectContaining({ paths: ['/transactions/minimum-transaction-size.json'] })
+  );
+});
+```
+
+- [ ] **Step 8: Add the boot readiness check**
+
+In `server/index.js`, alongside the existing notification/shipping readiness logging.
+
+**It cannot read "the hosted config" — `server/index.js` does not have one.** Hosted assets are fetched per request through the SDK (`fetchCommission` and friends) and merged into config on the client; there is no loaded-config object at boot to inspect. So the check makes its own call, which is the other reason the reader above is a shared module rather than CLI-local.
+
+```js
+// The invariant is checked in CI against the code fallback; the live value
+// comes from Console and can change there without touching this repo. This is
+// the only place the real number is knowable at runtime.
+//
+// Diagnostic, not a gate, and deliberately not awaited: a slow or failing asset
+// fetch must not delay or block startup. A marketplace that cannot reach its
+// own config has already failed louder than this.
+fetchListingMinimumPrice()
+  .then(listingMinimumPrice => {
+    const headroom = listingMinimumPrice * (1 - MAX_PROVIDER_COMMISSION_PERCENTAGE / 100);
+    if (headroom < FIXED_FEE) {
+      console.error(
+        `[commission] Console listingMinimumPrice ${listingMinimumPrice} leaves ${headroom} for a ` +
+          `${FIXED_FEE} fixed fee at the ${MAX_PROVIDER_COMMISSION_PERCENTAGE}% ceiling. ` +
+          'Listings at the minimum will have their fee clamped and the platform will earn less than intended.'
+      );
+    }
+  })
+  .catch(e => {
+    console.error(`[commission] Could not verify the minimum listing price: ${e.message}`);
+  });
+```
+
+- [ ] **Step 9: Run the tests to verify they pass**
 
 Run: `yarn test -- --watchAll=false --testPathPattern="avCommission|commissionInvariant"`
+Run: `yarn test-server -- --testPathPattern=listingMinimumPrice`
 Expected: PASS
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add src/util/avCommission.js src/util/avCommission.test.js \
-        src/config/commissionInvariant.test.js src/config/configDefault.js server/index.js
+        src/config/commissionInvariant.test.js src/config/configDefault.js \
+        server/api-util/listingMinimumPrice.js server/api-util/listingMinimumPrice.test.js \
+        server/index.js
 git commit -m "feat(commission): add client parser/clamp and enforce the fee invariant"
 ```
 
@@ -1265,9 +1351,55 @@ Then, inside the `.then(async ([showListingResponse, fetchAssetsResponse]) => {`
       );
 ```
 
-- [ ] **Step 5: Wire `initiate-privileged.js` (money — refuses)**
+- [ ] **Step 5: Add the refusal helper**
 
-Add the same two imports, then:
+`initiate-privileged.js` and `transition-privileged.js` are `.then` chains, not `async` handlers.
+`initiate-privileged.js:98` returns `getTrustedSdk(req, res, tokenStore)` and the next link at
+`:99` consumes it; `transition-privileged.js:176` and `:178` are the same shape.
+
+**An early `return res.status(503).json(...)` inside the first link does not stop the chain.**
+`res.json()` returns `res`, so the next link runs with `trustedSdk === res`, calls
+`res.transactions.initiate(...)`, throws `TypeError: Cannot read properties of undefined`, and
+lands in the `.catch` — which calls `handleError` and attempts a second response on a request
+that has already been answered. A refused checkout would surface as a crash log plus
+`ERR_HTTP_HEADERS_SENT`.
+
+Throwing abandons the chain, which is what is wanted. Add to
+`server/api-util/commissionEndpoint.js`:
+
+```js
+// Both money endpoints are .then chains: returning a response from the first
+// link does not end them, it feeds `res` to the next link as if it were the
+// trusted SDK. Throwing does end them. These fields are exactly what
+// api-util/sdk.js `handleError` looks for, so the existing .catch renders one
+// 503 and nothing has to be restructured into async/await -- which would have
+// rewritten two watchlist files for a three-line behaviour.
+const commissionUnresolvedError = () => {
+  const err = new Error('Provider commission could not be resolved');
+  err.status = 503;
+  err.statusText = 'COMMISSION_UNRESOLVED';
+  err.data = { code: 'COMMISSION_UNRESOLVED' };
+  return err;
+};
+```
+
+Export it alongside `resolveCommissionForRequest`, and cover it in
+`commissionEndpoint.test.js`:
+
+```js
+test('the refusal carries what handleError needs to render a single 503', () => {
+  const err = commissionUnresolvedError();
+  // handleError's first branch requires all three, or it falls through to a 500.
+  expect(err.status).toBe(503);
+  expect(err.statusText).toBe('COMMISSION_UNRESOLVED');
+  expect(err.data).toEqual({ code: 'COMMISSION_UNRESOLVED' });
+  expect(err).toBeInstanceOf(Error);
+});
+```
+
+- [ ] **Step 6: Wire `initiate-privileged.js` (money — refuses)**
+
+Add the imports, then inside the first `.then`, after `providerCommission` is destructured:
 
 ```js
       const resolved = await resolveCommissionForRequest(listing, providerCommission, {
@@ -1280,8 +1412,11 @@ Add the same two imports, then:
       // reliably found again afterwards — seller id and timestamp do not
       // distinguish it from the several previews the same checkout produced —
       // so it must not be created. See the design's Error handling section.
+      //
+      // Thrown, not returned: this is inside a .then chain, and returning a
+      // response here would hand `res` to the next link as the trusted SDK.
       if (resolved.source === 'indeterminate') {
-        return res.status(503).json({ code: 'COMMISSION_UNRESOLVED' });
+        throw commissionUnresolvedError();
       }
 
       lineItems = await transactionLineItems(
@@ -1293,7 +1428,10 @@ Add the same two imports, then:
       );
 ```
 
-- [ ] **Step 6: Wire `transition-privileged.js` (money — refuses)**
+Place the check **before** `resolveAvShippingForOrder` if it is not already — there is no reason to
+buy a shipping quote for a transaction that is about to be refused.
+
+- [ ] **Step 7: Wire `transition-privileged.js` (money — refuses)**
 
 The same, with `operation: 'transition'`. Here `listing` comes from `getListingRelationShip(...)`, which returns the included resource — `authorIdOf` handles that shape, which is why the extraction is not repeated here.
 
@@ -1305,7 +1443,7 @@ The same, with `operation: 'transition'`. Here `listing` comes from `getListingR
       });
 
       if (resolved.source === 'indeterminate') {
-        return res.status(503).json({ code: 'COMMISSION_UNRESOLVED' });
+        throw commissionUnresolvedError();
       }
 
       lineItems = await transactionLineItems(
@@ -1317,21 +1455,47 @@ The same, with `operation: 'transition'`. Here `listing` comes from `getListingR
       );
 ```
 
-- [ ] **Step 7: Add the three thin endpoint tests**
+- [ ] **Step 8: Add the three thin endpoint tests**
 
 These are the assertions the resolver's unit tests structurally cannot make. Each one stubs the store to reject and checks what the endpoint does about it — nothing more, so the harness stays small.
 
 The failures worth catching here, none of which a pure test can see:
 - a missing `await`, which spreads a pending promise and yields `percentage: undefined` — a silently commission-free sale;
 - the endpoint resolving the override and then passing the **original** `commission` to `transactionLineItems`, which is the most likely way this feature ships as a no-op;
-- a money endpoint that resolves `indeterminate` and proceeds anyway.
+- a money endpoint that resolves `indeterminate` and proceeds anyway;
+- **the refusal escaping into the rest of the chain.** This is why the test has to run the handler to completion and assert on the whole lifecycle rather than just on the status code: the broken version *also* calls `res.status(503)`, and then goes on to throw and try to respond a second time. Only "exactly one response, and nothing downstream ran" separates them.
 
 ```js
+// Await the handler's own promise, not just a tick, so anything that happens
+// after the response is included in what these assertions see.
 test('refuses to initiate when the commission cannot be resolved', async () => {
-  // store rejects -> resolver reports indeterminate -> endpoint must not create
+  store.getOverride.mockRejectedValue(new Error('db down'));
+
+  await runHandler(initiatePrivileged, { req, res });
+
+  expect(res.status).toHaveBeenCalledTimes(1);
   expect(res.status).toHaveBeenCalledWith(503);
-  expect(res.json).toHaveBeenCalledWith({ code: 'COMMISSION_UNRESOLVED' });
-  expect(sdk.transactions.initiate).not.toHaveBeenCalled();
+  expect(res.json.mock.calls[0][0]).toMatchObject({
+    status: 503,
+    statusText: 'COMMISSION_UNRESOLVED',
+  });
+  // The chain stopped at the throw: no trusted SDK, no transaction, and no
+  // shipping quote bought for an order that will not exist.
+  expect(getTrustedSdk).not.toHaveBeenCalled();
+  expect(trustedSdk.transactions.initiate).not.toHaveBeenCalled();
+  expect(trustedSdk.transactions.initiateSpeculative).not.toHaveBeenCalled();
+});
+
+test('answers exactly once — no second response after the refusal', async () => {
+  // The regression guard for `return res.status(503).json(...)` inside a .then:
+  // that version answers, then hands `res` to the next link, throws a TypeError
+  // on `res.transactions`, and has .catch answer again.
+  store.getOverride.mockRejectedValue(new Error('db down'));
+
+  await runHandler(initiatePrivileged, { req, res });
+
+  expect(res.json).toHaveBeenCalledTimes(1);
+  expect(res.end).toHaveBeenCalledTimes(1);
 });
 
 test('passes the RESOLVED commission to transactionLineItems, not the marketplace one', async () => {
@@ -1340,12 +1504,16 @@ test('passes the RESOLVED commission to transactionLineItems, not the marketplac
 });
 ```
 
-- [ ] **Step 8: Verify nothing regressed**
+`runHandler` is the small piece of scaffolding worth writing once and sharing across the three
+files: call the handler, then await the promise it started, so a rejection that arrives after the
+response cannot escape the test as an unhandled rejection in another suite.
+
+- [ ] **Step 9: Verify nothing regressed**
 
 Run: `yarn test-server`
 Expected: PASS.
 
-- [ ] **Step 9: Manually verify the preview endpoint end to end**
+- [ ] **Step 10: Manually verify the preview endpoint end to end**
 
 Start the app (`yarn run dev`), set an override for a test seller once Task 7 exists — or insert a row directly for now:
 
@@ -1356,20 +1524,21 @@ docker compose exec -T postgres psql -U archivo_vintach -d archivo_vintach -c \
 
 Open a listing by that seller and start checkout. Expected: the OrderBreakdown provider commission reflects 5%, and the server log shows `[providerCommission] operation=preview seller=<uuid> rate=5 source=override`.
 
-- [ ] **Step 10: Manually verify the refusal**
+- [ ] **Step 11: Manually verify the refusal**
 
 Stop PostgreSQL (`docker compose stop postgres`) and retry the same checkout.
 
-Expected: the listing page still renders a breakdown at the marketplace rate with a `warn` log naming `operation=preview`, and pressing Pay returns `503 COMMISSION_UNRESOLVED` with an `error` log naming `operation=initiate`. No transaction is created. Restart PostgreSQL afterwards.
+Expected: the listing page still renders a breakdown at the marketplace rate with a `warn` log naming `operation=preview`, and pressing Pay returns `503` with `statusText: 'COMMISSION_UNRESOLVED'` and an `error` log naming `operation=initiate`. No transaction is created, and the server log shows **no** `ERR_HTTP_HEADERS_SENT` or `TypeError` after it — that pair is the signature of the refusal leaking into the next `.then`. Restart PostgreSQL afterwards.
 
 This is the one behaviour that only shows up end to end: the two endpoints reading the same table and reaching opposite conclusions about what to do when it is gone.
 
-- [ ] **Step 11: Commit**
+- [ ] **Step 12: Commit**
 
 ```bash
 git add server/api-util/commissionEndpoint.js server/api-util/commissionEndpoint.test.js \
         server/api/transaction-line-items.js server/api/initiate-privileged.js \
-        server/api/transition-privileged.js server/api/*-privileged.test.js
+        server/api/transition-privileged.js server/api/*-privileged.test.js \
+        server/api/transaction-line-items.test.js
 git commit -m "feat(commission): resolve per-seller commission in the line-item endpoints"
 ```
 
@@ -1816,7 +1985,7 @@ git commit -m "feat(commission): add self-scoped rate endpoint and show real rat
 - Modify: `package.json` (scripts block, near the existing `notifications:*` entries)
 
 **Interfaces:**
-- Consumes: `createProviderCommissionStore` (Task 1); `parseCommissionOverride`, `impliedMinimumPrice`, `MAX_PROVIDER_COMMISSION_PERCENTAGE` (Task 2); `getIntegrationSdk` from `server/services/integrationSdk`
+- Consumes: `createProviderCommissionStore` (Task 1); `parseCommissionOverride`, `impliedMinimumPrice`, `MAX_PROVIDER_COMMISSION_PERCENTAGE` (Task 2); `fetchListingMinimumPrice` (Task 4); `getIntegrationSdk` from `server/services/integrationSdk`
 - Produces: `yarn commission:get|set|clear|history`
 
 - [ ] **Step 1: Implement the script**
@@ -1832,8 +2001,8 @@ if (!process.env.NODE_ENV) {
 require('../server/env').configureEnv();
 
 const os = require('os');
-const sharetribeSdk = require('sharetribe-flex-sdk');
 
+const { fetchListingMinimumPrice } = require('../server/api-util/listingMinimumPrice');
 const {
   MAX_PROVIDER_COMMISSION_PERCENTAGE,
   impliedMinimumPrice,
@@ -1855,29 +2024,6 @@ function printUsage() {
 Percentage must be between 0 and ${MAX_PROVIDER_COMMISSION_PERCENTAGE}. An absent override means the
 marketplace-wide rate applies. Setting 0 means the seller pays no percentage but still pays the
 fixed fee of ${FIXED_FEE} subunits.`);
-}
-
-// The minimum listing price is a hosted asset, not a value this repo owns, so
-// `set` reads the live one rather than a local copy that can silently disagree
-// with Console. This needs the PUBLIC marketplace client id and network access
-// — no Integration credentials, which is a distinction worth keeping straight:
-// the <userId> form of every command avoids Integration entirely, but `set`
-// still has to reach Sharetribe for this one number.
-async function fetchListingMinimumPrice() {
-  const sdk = sharetribeSdk.createInstance({
-    clientId: process.env.REACT_APP_SHARETRIBE_SDK_CLIENT_ID,
-  });
-  const res = await sdk.assetsByAlias({
-    paths: ['/transactions/transaction-size.json'],
-    alias: 'latest',
-  });
-  const asset = res?.data?.data?.[0];
-  const value = asset?.type === 'jsonAsset' ? asset.attributes.data?.listingMinimumPrice : null;
-  // 0 means "no restriction" in Console and must not be read as a real floor.
-  if (typeof value !== 'number' || value <= 0) {
-    throw new Error('transaction-size.json has no usable listingMinimumPrice');
-  }
-  return value;
 }
 
 // Refusing to write is the safe outcome when the constraint cannot be checked:
@@ -2083,7 +2229,7 @@ Then hand-translate the new section into the ES fragment, following the existing
 
 An earlier draft of this plan added `AV_LISTING_MINIMUM_PRICE=6000` to `.env-template` for the CLI
 to check against. Do not. It would have been a **third** copy of a number the marketplace already
-owns — Console's `transaction-size.json`, `configDefault.listingMinimumPriceSubUnits`, and now an env
+owns — Console's `minimum-transaction-size.json`, `configDefault.listingMinimumPriceSubUnits`, and now an env
 var — with nothing keeping them in step and the CLI trusting the one most likely to be stale. The
 CLI reads the live asset instead (Step 1), and `--assume-min-price` covers the disconnected case
 loudly rather than silently.
@@ -2097,7 +2243,7 @@ Expected: PASS — nothing was added.
 
 Add to `docs/operations/release-checklist.md`:
 
-- Console `transaction-size.json` → `listingMinimumPrice` raised to `6000` **before** release. The code default now matches, but Console overrides it at runtime.
+- Console `/transactions/minimum-transaction-size.json` → `listingMinimumPrice` set to `{ type: 'subunit', amount: 6000 }` **before** release. The code default now matches, but Console overrides it at runtime.
 - Migration `010` applied to every environment, including the Render test database via the `migrate-test-db` procedure.
 - Note that existing listings priced below `6000` keep transacting and rely on the clamp — auditing and repricing them is a separate operational task, not a release blocker.
 
