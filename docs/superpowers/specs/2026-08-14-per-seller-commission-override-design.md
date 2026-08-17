@@ -31,6 +31,12 @@ The same review pinned the [invariant's configuration source](#the-same-invarian
 and removed the exemption that left the three money endpoints untested. See
 [Error handling](#error-handling).
 
+A follow-up in the same review found the client half had kept the posture the server had just
+abandoned: the [estimator](#client-earningsestimator) fell back to the marketplace rate before its
+request resolved and if it failed, so an overridden seller priced against a rate that was not
+theirs. It now shows a loading or unavailable state instead. Nothing renders a guessed rate any
+more, on either side.
+
 ## Problem
 
 The provider commission percentage is marketplace-wide. It comes from the hosted
@@ -65,7 +71,7 @@ trusted from the client.
 | Minimum listing price | Raise the Console value to `6000` | The invariant needs `minPrice x (1 - maxPct/100) >= 1500`. At the current `500` no rate satisfies it, not even 0%. |
 | Meaning of `0` | Zero percentage, fixed fee still applies | Client decision. Consistent with the fixed-fee rule at every other value. Requires a contained change in `getProviderCommissionMaybe` (see below). |
 | Admin write path | CLI script only | No new HTTP surface on a money-affecting setting. Follows the existing `scripts/notification-deliveries.js` pattern. |
-| Seller-facing estimator | Shows the seller's real rate | The seller acts on that number when pricing a listing; showing the wrong one is worse than not showing one. |
+| Seller-facing estimator | Shows the seller's real rate, or none at all | The seller acts on that number when pricing a listing; showing the wrong one is worse than not showing one — so the estimator shows a loading or unavailable state rather than defaulting to the marketplace rate. |
 | Reading the seller server-side | One indexed query against the AV table, using the author id already on the listing | No Sharetribe call at all, and no `include: ['author']`. The listing's `relationships.author` carries the id. |
 | When the read is inconclusive | Preview falls back; the two money endpoints retry once and then fail `503` | Defaulting on an *unknown* rate mischarges in whichever direction the seller was negotiated. A mispriced sale cannot be reliably found again afterwards, so it must not be created. See [Error handling](#error-handling). |
 | Estimator read path | New `GET /api/commission/me`, own rate only | The rate is no longer on `currentUser`, so the estimator needs a server read. Scoped to the caller so it cannot become a way to look up anyone else. |
@@ -430,16 +436,41 @@ covers why a read-only, self-scoped endpoint is a different proposition from a w
 `EditListingPricingPanel.js:122` and `EditListingPricingAndStockPanel.js:108` already have
 `currentUser` but do not pass it into their forms, and the AndStock form renders
 `<EarningsEstimator price marketplaceCurrency />` with nothing else. Rather than prop-drill through
-two panels and two forms, `EarningsEstimator` fetches its own rate on mount and falls back to
-`config.earningsEstimate.providerCommissionPercentage` until the response arrives or if it fails.
-One file changes and both call sites are fixed.
+two panels and two forms, `EarningsEstimator` fetches its own rate on mount. One file changes and
+both call sites are fixed.
+
+**It does not fall back to the marketplace rate.** An earlier version of this section had it show
+`config.earningsEstimate.providerCommissionPercentage` until the response arrived and if the request
+failed. That is the same defect as the one [Error handling](#error-handling) closes on the server,
+moved to the client: an overridden seller would be shown a rate that is not theirs, in the one place
+they are deciding what to charge. The design's own [Decisions](#decisions) entry says showing the
+wrong rate is worse than not showing one; the fallback said the opposite.
+
+So the estimator has three states, and only the third shows money:
+
+| State | When | Renders |
+| --- | --- | --- |
+| Pending | request in flight | the estimator frame with a loading line in place of the breakdown |
+| Unavailable | request failed, or returned non-`2xx` | a short "estimate unavailable, try again shortly" line. No numbers |
+| Resolved | body carries a number **or** `null` | the full breakdown. `null` is conclusive — the marketplace rate really is this seller's rate |
+
+`null` doing real work here is the same distinction the server's store makes between "no override"
+and "could not read": one is an answer, the other is the absence of one, and only the first may be
+priced against.
+
+The cost is a brief loading state on every pricing panel, and no estimate at all while the endpoint
+is down. That is the honest reading of what is known, and the pricing form still works — the
+estimator is advisory, so an unavailable estimate never blocks saving a listing.
 
 It also applies the same clamp as the server, so the fee it shows is the fee that will be charged.
 Its current arithmetic (`EarningsEstimator.js:37`) adds the percentage and the fixed amount
 unconditionally, which would overstate the deduction — and show a negative payout — at any price
 where the server clamps.
 
-No new "negotiated rate" label or translation keys; the estimator simply shows the correct number.
+No "negotiated rate" label: a seller with an override sees their own number in the ordinary
+breakdown, not a badge announcing it. Two new keys are needed for the states above
+(`EarningsEstimator.rateLoading`, `EarningsEstimator.rateUnavailable`), in the
+`{en,es}_av.json` overlays per repo convention.
 
 ### Duplicated parser
 
@@ -656,7 +687,7 @@ a green light. The probe was measuring the right fact and drawing the wrong conc
 | Invariant test (new) | `listingMinimumPriceSubUnits x (1 - MAX_PROVIDER_COMMISSION_PERCENTAGE/100) >= fixedFee` for the three **code** constants, so raising the cap or the fee without raising the fallback fails the build. It deliberately does not fetch `transaction-size.json`: a test that reads a mutable hosted asset breaks the build when an operator edits Console, which is noise rather than a finding. The live value is checked by the CLI before each write and by the boot readiness check — see [Where `listingMinimumPrice` comes from](#where-listingminimumprice-comes-from) |
 | `configDefault.js` fallback | `listingMinimumPriceSubUnits` is `6000`, pinned so it cannot drift back to the upstream `500` in a merge without the invariant test above failing too |
 | `server/api-util/lineItems.test.js` | untouched; passing unchanged is the signal that the resolver stayed out of the line-item core |
-| `EarningsEstimator.test.js` (new, none exists today) | fetched rate preferred, falls back to config before the response arrives and if the request fails, clamped fee matches the server's for the same price and rate, payout never rendered negative |
+| `EarningsEstimator.test.js` (new, none exists today) | the fetched rate is used once it arrives; **no breakdown is rendered while the request is in flight or after it fails** — the negative assertion, since a fallback here misprices the seller's own decision; an explicit `null` body is treated as conclusive and renders the marketplace rate; clamped fee matches the server's for the same price and rate; payout never rendered negative |
 | `server/api-util/commissionEndpoint.js` (new) — the shared orchestration | the three endpoints' common half, extracted so it can be tested once: author id out of `listing.relationships.author`, resolver awaited, `indeterminate` mapped to a refusal or a fallback per the caller's policy. Cases: author id extracted from a real response shape; a missing `relationships` produces `no-author` rather than `undefined`; the resolved commission — not the original — is what reaches the returned config; the money policy returns a refusal where the preview policy returns line items |
 | `server/api/*-privileged.test.js` (3 new, thin) | one test each: an indeterminate read yields `503 { code: 'COMMISSION_UNRESOLVED' }` from both money endpoints and a rendered breakdown from the preview. Enough to catch the wiring the resolver's own tests cannot see |
 | Manual | a real Test-marketplace checkout with an overridden seller, confirming the OrderBreakdown commission row and the resulting `payoutTotal` |

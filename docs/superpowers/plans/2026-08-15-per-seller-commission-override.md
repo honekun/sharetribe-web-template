@@ -6,7 +6,9 @@
 
 **Architecture:** A per-seller percentage lives in a new PostgreSQL table keyed by Sharetribe user ID — not on the Sharetribe user record, because every user field there is either seller-writable or publicly readable. Three server endpoints that build line items resolve the rate before calling `transactionLineItems`, so `lineItems.js` is never touched. A separate change to `getProviderCommissionMaybe` makes an explicit 0% keep the fixed fee and replaces a throw with a clamp, fixing a pre-existing defect where cheap listings break at payment time.
 
-**Revised 2026-08-16** after review. Three changes run through the tasks below: an indeterminate rate now **fails** the two money endpoints instead of defaulting (Tasks 2 and 5); the shared endpoint half is extracted so it can be tested, and the three endpoints get thin tests rather than none (Task 5); and the minimum listing price is read from Console by the CLI rather than copied into a new env var (Task 7). Task 1 also gains an append-only history table, so clearing an override no longer erases who set it.
+**Revised 2026-08-16** after review. Four changes run through the tasks below: an indeterminate rate now **fails** the two money endpoints instead of defaulting (Tasks 2 and 5); the estimator likewise stops falling back to the marketplace rate and shows a loading or unavailable state instead (Task 6); the shared endpoint half is extracted so it can be tested, and the three endpoints get thin tests rather than none (Task 5); and the minimum listing price is read from Console by the CLI rather than copied into a new env var (Task 7). Task 1 also gains an append-only history table, so clearing an override no longer erases who set it.
+
+The through-line: nothing renders or charges a rate that has not been established. `null` — "no override, the marketplace rate is genuinely this seller's" — is an answer and may be priced against. An unreadable table is not, on either side of the wire.
 
 **Tech Stack:** Node (CommonJS server, ESM client via webpack), Express, `pg`, Jest, React + Final Form, Sharetribe Marketplace/Integration SDKs.
 
@@ -23,6 +25,7 @@
 - **AV database tables use the `av_` prefix** (matching `av_shipping_label_attempts`, `av_eship_tracking_notifications`).
 - **Money is never moved on a guessed rate.** "No override exists" (conclusive) is the normal path. "Could not determine" (missing author id, database error) is *not* a fallback on the two money endpoints: they retry once and then return `503 { code: 'COMMISSION_UNRESOLVED' }`. Only `transaction-line-items`, which is display-only, falls back — at `warn`. These must never collapse into the same code path.
 - **The resolver reports; the caller decides.** `providerCommission.js` does no logging, never throws, and never refuses. Policy and log level live in `commissionEndpoint.js`, which is the layer that knows whether a preview or a sale is asking.
+- **No guessed rate is rendered either.** The estimator shows a loading or unavailable state rather than the marketplace rate, because the seller prices against that number. An explicit `null` from `/api/commission/me` is conclusive and does render; a failure does not.
 - Test commands: `yarn test-server` (server), `yarn test -- --watchAll=false` (client).
 - Node `>=18.20.1 <23.2.0`, Yarn.
 
@@ -1374,7 +1377,7 @@ git commit -m "feat(commission): resolve per-seller commission in the line-item 
 
 ### Task 6: `GET /api/commission/me` and the EarningsEstimator
 
-The seller prices against the estimator's number, so it has to be their real rate and their real fee.
+The seller prices against the estimator's number, so it has to be their real rate and their real fee — or, when the rate cannot be established, no number at all. The endpoint answering `503` and the estimator refusing to guess are two halves of the same rule.
 
 **Files:**
 - Create: `server/api/commission/index.js`
@@ -1385,7 +1388,8 @@ The seller prices against the estimator's number, so it has to be their real rat
 
 **Interfaces:**
 - Consumes: `createProviderCommissionStore` (Task 1), `clampFixedFee` (Task 4), `getSdk` from `server/api-util/sdk`
-- Produces: `GET /api/commission/me` → `{ providerCommissionPercentage: number | null }`
+- Produces: `GET /api/commission/me` → `{ providerCommissionPercentage: number | null }`, or `503 { code: 'COMMISSION_UNAVAILABLE' }` when the store cannot be read. `null` is an answer ("no override, marketplace rate applies"); the `503` is the absence of one, and the estimator must not treat them alike.
+- Produces: `EarningsEstimator.rateLoading` / `EarningsEstimator.rateUnavailable` in both `_av` translation overlays
 
 - [ ] **Step 1: Write the failing endpoint test**
 
@@ -1547,7 +1551,9 @@ const handleGetMyCommission = async (req, res) => {
       providerCommissionPercentage: result.found ? result.percentage : null,
     });
   } catch (e) {
-    // Do not guess. The estimator falls back to the marketplace rate on its own.
+    // Do not guess. 503 is what makes the estimator show "unavailable" rather
+    // than a rate that might not be this seller's — a 200 carrying the
+    // marketplace rate here would be indistinguishable from a real answer.
     console.error(`[commission] Override lookup failed for ${userId}: ${e.message}`);
     return res.status(503).json({ code: 'COMMISSION_UNAVAILABLE' });
   }
@@ -1594,40 +1600,75 @@ const { screen, waitFor } = testingLibrary;
 const { Money } = sdkTypes;
 
 describe('EarningsEstimator', () => {
+  const price = () => new Money(100000, 'MXN');
+  const respondWith = body =>
+    jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve(body) }));
+
   afterEach(() => {
     global.fetch = undefined;
   });
 
-  test('falls back to the marketplace rate before the response arrives', () => {
+  // The negative assertions come first because they are the point. A seller
+  // prices against this number; showing them the marketplace rate when they
+  // negotiated a different one is the same defect the server endpoints refuse,
+  // moved to the client. No breakdown at all is the correct output here.
+  test('shows no breakdown while the rate is still loading', () => {
     global.fetch = jest.fn(() => new Promise(() => {}));
-    render(<EarningsEstimator price={new Money(100000, 'MXN')} marketplaceCurrency="MXN" />);
+    render(<EarningsEstimator price={price()} marketplaceCurrency="MXN" />);
 
-    expect(screen.getByText(/10%/)).toBeInTheDocument();
+    expect(screen.getByText('EarningsEstimator.rateLoading')).toBeInTheDocument();
+    expect(screen.queryByText(/10%/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\$/)).not.toBeInTheDocument();
   });
 
-  test('prefers the fetched override once it arrives', async () => {
-    global.fetch = jest.fn(() =>
-      Promise.resolve({ ok: true, json: () => Promise.resolve({ providerCommissionPercentage: 5 }) })
+  test('shows no breakdown when the request fails', async () => {
+    global.fetch = jest.fn(() => Promise.reject(new Error('offline')));
+    render(<EarningsEstimator price={price()} marketplaceCurrency="MXN" />);
+
+    await waitFor(() =>
+      expect(screen.getByText('EarningsEstimator.rateUnavailable')).toBeInTheDocument()
     );
-    render(<EarningsEstimator price={new Money(100000, 'MXN')} marketplaceCurrency="MXN" />);
+    expect(screen.queryByText(/10%/)).not.toBeInTheDocument();
+  });
+
+  test('shows no breakdown on a non-2xx response', async () => {
+    global.fetch = jest.fn(() => Promise.resolve({ ok: false, status: 503 }));
+    render(<EarningsEstimator price={price()} marketplaceCurrency="MXN" />);
+
+    await waitFor(() =>
+      expect(screen.getByText('EarningsEstimator.rateUnavailable')).toBeInTheDocument()
+    );
+  });
+
+  test('uses the fetched override once it arrives', async () => {
+    global.fetch = respondWith({ providerCommissionPercentage: 5 });
+    render(<EarningsEstimator price={price()} marketplaceCurrency="MXN" />);
 
     await waitFor(() => expect(screen.getByText(/5%/)).toBeInTheDocument());
   });
 
-  test('keeps the marketplace rate when the request fails', async () => {
-    global.fetch = jest.fn(() => Promise.reject(new Error('offline')));
-    render(<EarningsEstimator price={new Money(100000, 'MXN')} marketplaceCurrency="MXN" />);
+  // `null` is an answer, not a missing one: this seller genuinely pays the
+  // marketplace rate. It must not be treated like a failed request.
+  test('treats an explicit null as conclusive and shows the marketplace rate', async () => {
+    global.fetch = respondWith({ providerCommissionPercentage: null });
+    render(<EarningsEstimator price={price()} marketplaceCurrency="MXN" />);
 
     await waitFor(() => expect(screen.getByText(/10%/)).toBeInTheDocument());
+    expect(screen.queryByText('EarningsEstimator.rateUnavailable')).not.toBeInTheDocument();
   });
 
   test('never renders a negative payout when the fee clamps', async () => {
-    global.fetch = jest.fn(() =>
-      Promise.resolve({ ok: true, json: () => Promise.resolve({ providerCommissionPercentage: 75 }) })
-    );
+    global.fetch = respondWith({ providerCommissionPercentage: 75 });
     render(<EarningsEstimator price={new Money(1000, 'MXN')} marketplaceCurrency="MXN" />);
 
     await waitFor(() => expect(screen.queryByText(/-\$/)).not.toBeInTheDocument());
+  });
+
+  test('still asks for a price before it asks for a rate', () => {
+    global.fetch = jest.fn(() => new Promise(() => {}));
+    render(<EarningsEstimator price={null} marketplaceCurrency="MXN" />);
+
+    expect(screen.getByText('EarningsEstimator.enterPrice')).toBeInTheDocument();
   });
 });
 ```
@@ -1652,33 +1693,66 @@ import { clampFixedFee } from '../../../../util/avCommission';
 import { useConfiguration } from '../../../../context/configurationContext';
 ```
 
-After the existing `config.earningsEstimate` destructuring, add the fetch and prefer its result:
+After the existing `config.earningsEstimate` destructuring, add the fetch. Note what it does *not*
+do: there is no fallback to `providerCommissionPercentage` while the request is outstanding or after
+it fails. A seller prices against this number, and showing them the marketplace rate when they
+negotiated a different one is the client-side twin of the defect the money endpoints now refuse.
 
 ```js
   // The rate is not on currentUser — it lives in an AV table, deliberately, so
-  // that one seller's negotiated rate is not readable by anyone else. Fetch our
-  // own and fall back to the marketplace rate until it arrives or if it fails.
-  const [ownPercentage, setOwnPercentage] = useState(null);
+  // that one seller's negotiated rate is not readable by anyone else.
+  //
+  // Three states, and only 'resolved' may show money. `null` is a resolved
+  // state, not a missing one: it means this seller really does pay the
+  // marketplace rate, which is a different fact from "we could not find out".
+  const [rate, setRate] = useState({ status: 'pending', percentage: null });
 
   useEffect(() => {
     let cancelled = false;
     fetch('/api/commission/me', { credentials: 'include' })
-      .then(res => (res.ok ? res.json() : null))
+      .then(res => {
+        if (!res.ok) throw new Error(`commission/me responded ${res.status}`);
+        return res.json();
+      })
       .then(data => {
-        if (!cancelled && data && typeof data.providerCommissionPercentage === 'number') {
-          setOwnPercentage(data.providerCommissionPercentage);
-        }
+        if (cancelled) return;
+        const own = data?.providerCommissionPercentage;
+        setRate({
+          status: 'resolved',
+          // null (no override) resolves to the marketplace rate; anything that
+          // is neither a number nor null is a malformed body, not an answer.
+          percentage: typeof own === 'number' ? own : own === null ? null : undefined,
+        });
       })
       .catch(() => {
-        // Marketplace rate stays in place; nothing to do.
+        if (!cancelled) setRate({ status: 'unavailable', percentage: null });
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const effectivePercentage = ownPercentage != null ? ownPercentage : providerCommissionPercentage;
+  const effectivePercentage =
+    rate.percentage != null ? rate.percentage : providerCommissionPercentage;
 ```
+
+Then render the two non-resolved states before any arithmetic, next to the existing `enterPrice`
+early return (which stays first — asking for a price is a better prompt than a spinner):
+
+```js
+  if (rate.status !== 'resolved' || rate.percentage === undefined) {
+    const id =
+      rate.status === 'pending' ? 'EarningsEstimator.rateLoading' : 'EarningsEstimator.rateUnavailable';
+    return (
+      <div className={css.root}>
+        <div className={css.title}>{intl.formatMessage({ id: 'EarningsEstimator.title' })}</div>
+        <p className={css.placeholder}>{intl.formatMessage({ id })}</p>
+      </div>
+    );
+  }
+```
+
+The estimator is advisory, so this never blocks saving a listing — the pricing form is unaffected.
 
 Then replace the `marketplaceCut` calculation so it clamps exactly as the server does:
 
@@ -1700,15 +1774,34 @@ Finally, replace the two remaining uses of `providerCommissionPercentage` in the
 
 `fmt` is defined below these lines in the current file — move the `const fmt = ...` declaration above this block, or inline `formatMoney(intl, new Money(fixedFeeCharged, currency))`.
 
-- [ ] **Step 9: Run the estimator test to verify it passes**
+- [ ] **Step 9: Add the two state keys**
+
+Both overlays, kept symmetric — `src/translations/en_av.json` and `src/translations/es_av.json`.
+Never `en.json`/`es.json`.
+
+```json
+"EarningsEstimator.rateLoading": "Calculating your fees…",
+"EarningsEstimator.rateUnavailable": "We can't show your estimate right now. Try again in a moment."
+```
+
+```json
+"EarningsEstimator.rateLoading": "Calculando tus comisiones…",
+"EarningsEstimator.rateUnavailable": "No podemos mostrar tu estimado ahora. Inténtalo en un momento."
+```
+
+Run: `yarn av-translation-check`
+Expected: PASS, with two more symmetric keys than before.
+
+- [ ] **Step 10: Run the estimator test to verify it passes**
 
 Run: `yarn test -- --watchAll=false --testPathPattern=EarningsEstimator`
 Expected: PASS
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
 git add server/api/commission server/customApiRoutes.js \
+        src/translations/en_av.json src/translations/es_av.json \
         src/containers/EditListingPage/EditListingWizard/EditListingPricingPanel/EarningsEstimator.js \
         src/containers/EditListingPage/EditListingWizard/EditListingPricingPanel/EarningsEstimator.test.js
 git commit -m "feat(commission): add self-scoped rate endpoint and show real rate in the estimator"
@@ -2037,7 +2130,8 @@ yarn format-ci
 yarn av-translation-check
 ```
 
-Expected: both PASS. This plan adds no new translation keys, so the second is a regression check.
+Expected: both PASS. The only new keys are `EarningsEstimator.rateLoading` and
+`EarningsEstimator.rateUnavailable` from Task 6, in the `_av` overlays.
 
 - [ ] **Step 4: End-to-end manual verification**
 
