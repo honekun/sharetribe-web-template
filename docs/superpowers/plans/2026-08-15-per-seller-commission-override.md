@@ -1615,6 +1615,10 @@ const mockRes = () => {
     res.body = body;
     return res;
   });
+  res.send = jest.fn(body => {
+    res.body = body;
+    return res;
+  });
   res.end = jest.fn(() => res);
   res.set = jest.fn((name, value) => {
     res.headers[name] = value;
@@ -1623,14 +1627,83 @@ const mockRes = () => {
   return res;
 };
 
-module.exports = { invokeHandler, mockRes };
+const assertSingleCommissionRefusal = async ({ handler, req, res, downstream = [] }) => {
+  const { unhandled } = await invokeHandler(handler, req, res);
+
+  expect(res.status).toHaveBeenCalledTimes(1);
+  expect(res.status).toHaveBeenCalledWith(503);
+  expect(res.json).toHaveBeenCalledTimes(1);
+  expect(res.body).toMatchObject({
+    status: 503,
+    statusText: 'COMMISSION_UNRESOLVED',
+    data: { code: 'COMMISSION_UNRESOLVED' },
+  });
+  expect(res.end).toHaveBeenCalledTimes(1);
+  expect(unhandled).toEqual([]);
+  downstream.forEach(mock => expect(mock).not.toHaveBeenCalled());
+};
+
+module.exports = { assertSingleCommissionRefusal, invokeHandler, mockRes };
 ```
 
-Then the tests themselves:
+Then add the endpoint tests. Mock dependencies before requiring each handler, as the existing server
+tests do. Build one otherwise-valid request/SDK response fixture per endpoint; the commission result
+is the only variable under test.
 
 ```js
-// Await the handler's own promise, not just a tick, so anything that happens
-// after the response is included in what these assertions see.
+const {
+  assertSingleCommissionRefusal,
+  invokeHandler,
+  mockRes,
+} = require('../api-util/testHelpers');
+
+test('refuses exactly once when the commission is indeterminate', async () => {
+  mockResolveCommissionForRequest.mockResolvedValue({
+    commission: MARKETPLACE_COMMISSION,
+    source: 'indeterminate',
+    reason: 'store-unreadable',
+  });
+  const res = mockRes();
+
+  await assertSingleCommissionRefusal({
+    handler,
+    req: validRequest,
+    res,
+    downstream: [
+      mockResolveAvShippingForOrder,
+      mockTransactionLineItems,
+      mockGetTrustedSdk,
+      mockTrustedTransactionCall,
+    ],
+  });
+});
+
+test('passes the resolved commission to transactionLineItems', async () => {
+  const resolvedCommission = { percentage: 5 };
+  mockResolveCommissionForRequest.mockResolvedValue({
+    commission: resolvedCommission,
+    source: 'override',
+  });
+  const res = mockRes();
+
+  const { unhandled } = await invokeHandler(handler, validRequest, res);
+
+  expect(mockTransactionLineItems.mock.calls[0][2]).toBe(resolvedCommission);
+  expect(unhandled).toEqual([]);
+});
+```
+
+Apply that pattern as follows:
+
+- `transaction-line-items.test.js`: the resolved-rate test is required; preview indeterminate is
+  allowed to continue with `MARKETPLACE_COMMISSION`, so assert a `200`, not a refusal.
+- `initiate-privileged.test.js`: include both tests above. Its refusal `downstream` list includes
+  shipping resolution, `transactionLineItems`, `getTrustedSdk`, and both trusted initiate methods.
+- `transition-privileged.test.js`: include both tests above with the equivalent transition methods.
+
+Do not use a timer or “flush promises” loop. Every test awaits the chain returned in Step 4, then
+asserts `unhandled` is empty. That is what makes a post-response continuation or second response a
+deterministic failure rather than a race.
 
 - [ ] **Step 10: Verify nothing regressed**
 
