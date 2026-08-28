@@ -89,3 +89,43 @@ describe('mergeConfig listingFields — brand', () => {
     expect(withoutConsoleBrand[0]).toEqual({ option: 'other', label: 'Otra...' });
   });
 });
+
+describe('mergeConfig listingFields — the brand-only boundary', () => {
+  const hostedColorField = {
+    key: 'color',
+    scope: 'public',
+    schemaType: 'multi-enum',
+    enumOptions: [{ option: 'av-test-color', label: 'AV Test Color' }],
+  };
+
+  it('ignores Console options for color', () => {
+    const merged = mergeConfig(hostedConfig([hostedColorField]), defaultConfig);
+    const color = merged.listing.listingFields.find(field => field.key === 'color');
+
+    expect(color.enumOptions).not.toContainEqual({
+      option: 'av-test-color',
+      label: 'AV Test Color',
+    });
+    expect(color.enumOptions).toContainEqual({ option: 'rojo', label: 'Rojo' });
+  });
+
+  it('ignores Console options for all_sizes', () => {
+    const merged = mergeConfig(
+      hostedConfig([
+        {
+          key: 'all_sizes',
+          scope: 'public',
+          schemaType: 'multi-enum',
+          enumOptions: [{ option: 'av-test-size', label: 'AV Test Size' }],
+        },
+      ]),
+      defaultConfig
+    );
+    const sizes = merged.listing.listingFields.find(field => field.key === 'all_sizes');
+
+    expect(sizes.enumOptions).not.toContainEqual({
+      option: 'av-test-size',
+      label: 'AV Test Size',
+    });
+  });
+});
