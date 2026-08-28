@@ -117,6 +117,56 @@ export const moveListingFieldToEnd = (listingFields, keyToMove) => {
   return [...remainingFields, ...matchedFields];
 };
 
+// The `brand` listing field is defined in code (configListingAV.js) *and* in the
+// Sharetribe Console. `configHelpers.mergeListingConfig` merges the two sources at
+// field granularity and prefers the code-defined object, which would discard
+// Console's options entirely. Merge them here instead, before that union runs, so
+// an operator can add a brand in Console without a deploy while the field's own
+// config stays code-owned.
+//
+// Console wins per option: its entry (and so its label) replaces a code entry with
+// the same key. The result is sorted by label with `other` pinned first.
+export const brandFieldKey = 'brand';
+
+// Both keys must be strings. `configHelpers.validSchemaOptions` marks the *whole*
+// field invalid if a single option fails this, and `validListingFields` then drops
+// `brand` from the config altogether — no filter, no wizard input, no label. One
+// malformed Console row must not be able to do that.
+const isUsableOption = option =>
+  typeof option?.option === 'string' && typeof option?.label === 'string';
+
+// Not `numeric: true`: numeric collation orders "7 For All Mankind" before "525"
+// and would reorder the hand-authored code list. Plain locale collation reproduces
+// that list exactly, so the sort only ever places Console additions.
+const byLabel = (a, b) => a.label.localeCompare(b.label, 'es', { sensitivity: 'base' });
+
+export const mergeHostedBrandOptions = (defaultListingFields, hostedListingFields) => {
+  if (!Array.isArray(defaultListingFields) || !Array.isArray(hostedListingFields)) {
+    return defaultListingFields;
+  }
+
+  const codeBrand = defaultListingFields.find(field => field?.key === brandFieldKey);
+  const hostedBrand = hostedListingFields.find(field => field?.key === brandFieldKey);
+  const hostedOptions = hostedBrand?.enumOptions;
+
+  if (!codeBrand || !Array.isArray(hostedOptions) || hostedOptions.length === 0) {
+    return defaultListingFields;
+  }
+
+  const codeOptions = Array.isArray(codeBrand.enumOptions) ? codeBrand.enumOptions : [];
+  const byOption = new Map(
+    [...codeOptions, ...hostedOptions].filter(isUsableOption).map(option => [option.option, option])
+  );
+
+  const merged = [...byOption.values()].sort(byLabel);
+  const other = merged.filter(option => option.option === 'other');
+  const rest = merged.filter(option => option.option !== 'other');
+
+  return defaultListingFields.map(field =>
+    field === codeBrand ? { ...field, enumOptions: [...other, ...rest] } : field
+  );
+};
+
 // AV shipping config lives in a CommonJS sibling (configAVShipping.js) so the
 // server can require the same source. Re-export for ergonomic client imports.
 const avShipping = require('./configAVShipping');

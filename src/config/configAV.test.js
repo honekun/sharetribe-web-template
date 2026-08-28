@@ -1,10 +1,12 @@
 import {
+  brandFieldKey,
   canShowOriginalPrice,
   canShowWelcomePopup,
   defaultCountry,
   getStoreTypeTags,
   isNavPageHiddenForUser,
   isNavPageHiddenForUserType,
+  mergeHostedBrandOptions,
   moveListingFieldToEnd,
   sellerUserTypes,
   storeSellerHiddenNavPages,
@@ -197,5 +199,155 @@ describe('moveListingFieldToEnd', () => {
     const fields = [{ key: 'color' }, { key: 'all_sizes' }];
 
     expect(moveListingFieldToEnd(fields, 'tags')).toEqual(fields);
+  });
+});
+
+describe('mergeHostedBrandOptions', () => {
+  const codeFields = () => [
+    { key: 'color', schemaType: 'multi-enum', enumOptions: [{ option: 'rojo', label: 'Rojo' }] },
+    {
+      key: 'brand',
+      scope: 'public',
+      schemaType: 'enum',
+      enumOptions: [
+        { option: 'other', label: 'Otra...' },
+        { option: 'zara', label: 'Zara' },
+        { option: 'prada', label: 'Prada' },
+      ],
+      saveConfig: { label: 'Marca', isRequired: true },
+      filterConfig: { indexForSearch: true, filterType: 'SelectMultipleFilter' },
+    },
+  ];
+
+  const hostedFields = enumOptions => [
+    { key: 'brand', scope: 'public', schemaType: 'enum', enumOptions },
+  ];
+
+  const brandOf = fields => fields.find(field => field.key === 'brand');
+  const optionsOf = fields => brandOf(fields).enumOptions.map(option => option.option);
+
+  it('adds a Console-only brand', () => {
+    const merged = mergeHostedBrandOptions(
+      codeFields(),
+      hostedFields([{ option: 'gucci', label: 'Gucci' }])
+    );
+
+    expect(optionsOf(merged)).toContain('gucci');
+  });
+
+  it('keeps a code-only brand', () => {
+    const merged = mergeHostedBrandOptions(
+      codeFields(),
+      hostedFields([{ option: 'gucci', label: 'Gucci' }])
+    );
+
+    expect(optionsOf(merged)).toContain('prada');
+  });
+
+  it('prefers the Console label when both define the same option', () => {
+    const merged = mergeHostedBrandOptions(
+      codeFields(),
+      hostedFields([{ option: 'zara', label: 'ZARA' }])
+    );
+
+    expect(brandOf(merged).enumOptions).toContainEqual({ option: 'zara', label: 'ZARA' });
+  });
+
+  it('leaves the code-owned field config untouched', () => {
+    const merged = mergeHostedBrandOptions(
+      codeFields(),
+      hostedFields([{ option: 'gucci', label: 'Gucci' }])
+    );
+
+    expect(brandOf(merged).saveConfig).toEqual({ label: 'Marca', isRequired: true });
+    expect(brandOf(merged).filterConfig.filterType).toEqual('SelectMultipleFilter');
+    expect(brandOf(merged).schemaType).toEqual('enum');
+  });
+
+  it('sorts merged options by label with `other` pinned first', () => {
+    const merged = mergeHostedBrandOptions(
+      codeFields(),
+      hostedFields([{ option: 'gucci', label: 'Gucci' }])
+    );
+
+    expect(optionsOf(merged)).toEqual(['other', 'gucci', 'prada', 'zara']);
+  });
+
+  it('sorts accent-insensitively', () => {
+    const merged = mergeHostedBrandOptions(
+      codeFields(),
+      hostedFields([{ option: 'ala-a', label: 'Alaïa' }])
+    );
+
+    expect(optionsOf(merged)).toEqual(['other', 'ala-a', 'prada', 'zara']);
+  });
+
+  it('drops an option whose `option` or `label` is not a string', () => {
+    const merged = mergeHostedBrandOptions(
+      codeFields(),
+      hostedFields([
+        { option: 42, label: 'Numeric key' },
+        { option: 'no-label', label: null },
+        { option: 'gucci', label: 'Gucci' },
+      ])
+    );
+
+    expect(optionsOf(merged)).toEqual(['other', 'gucci', 'prada', 'zara']);
+  });
+
+  it('leaves other fields alone', () => {
+    const merged = mergeHostedBrandOptions(
+      codeFields(),
+      hostedFields([{ option: 'gucci', label: 'Gucci' }])
+    );
+
+    expect(merged.find(field => field.key === 'color').enumOptions).toEqual([
+      { option: 'rojo', label: 'Rojo' },
+    ]);
+  });
+
+  it('does not mutate its inputs', () => {
+    const code = codeFields();
+    const hosted = hostedFields([{ option: 'gucci', label: 'Gucci' }]);
+
+    mergeHostedBrandOptions(code, hosted);
+
+    expect(optionsOf(code)).toEqual(['other', 'zara', 'prada']);
+    expect(hosted[0].enumOptions).toEqual([{ option: 'gucci', label: 'Gucci' }]);
+  });
+
+  describe('identity guards', () => {
+    it('returns the input unchanged when the hosted brand field is absent', () => {
+      const code = codeFields();
+
+      expect(mergeHostedBrandOptions(code, [{ key: 'color' }])).toBe(code);
+    });
+
+    it('returns the input unchanged when the code brand field is absent', () => {
+      const code = [{ key: 'color', schemaType: 'multi-enum', enumOptions: [] }];
+
+      expect(
+        mergeHostedBrandOptions(code, hostedFields([{ option: 'gucci', label: 'Gucci' }]))
+      ).toBe(code);
+    });
+
+    it('returns the input unchanged when hosted enumOptions is empty or missing', () => {
+      const code = codeFields();
+
+      expect(mergeHostedBrandOptions(code, hostedFields([]))).toBe(code);
+      expect(mergeHostedBrandOptions(code, [{ key: 'brand', schemaType: 'enum' }])).toBe(code);
+    });
+
+    it('returns the input unchanged when either argument is not an array', () => {
+      const code = codeFields();
+
+      expect(mergeHostedBrandOptions(code, undefined)).toBe(code);
+      expect(mergeHostedBrandOptions(code, null)).toBe(code);
+      expect(mergeHostedBrandOptions(undefined, hostedFields([]))).toBeUndefined();
+    });
+  });
+
+  it('exposes the brand field key', () => {
+    expect(brandFieldKey).toEqual('brand');
   });
 });
