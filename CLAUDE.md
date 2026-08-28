@@ -101,7 +101,12 @@ pinned to its deadline, so moving a window means moving its reminder too.
   MyAddresses, Favorites, and the inbox sidebar's Orders tab keyed `InboxPage:orders` — from
   `vendedor-tienda`; the inbox envelope itself stays, and Topbar resolves `inboxTab` away from a
   hidden tab; **visibility only**, every route stays registered and reachable by URL);
-  `moveListingFieldToEnd()` (keeps `tags` last; called from `configHelpers`). The four gates are
+  `moveListingFieldToEnd()` (keeps `tags` last; called from `configHelpers`);
+  `brandFieldKey`/`mergeHostedBrandOptions()` (folds the Console `brand` field's
+  `enumOptions` into the code-defined field from `configListingAV.js` before
+  `configHelpers`' field-level union discards them — Console wins per option, the
+  field's own config stays code-owned, result sorted by label with `other` first;
+  `brand` only, `color`/`all_sizes` are untouched); The four gates are
   intentionally separate.
 
 **Styling** — CSS Modules (`*.module.css`, `className={css.root}`). Globals in `src/styles/`:
@@ -544,7 +549,7 @@ contain.
 | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `components/CustomExtendedDataField/CustomExtendedDataField.js`                         | `groupedMultiSelect` + `colorGridPicker` branches                                                               |
 | `components/FieldCurrencyInput/FieldCurrencyInput.js`                                   | Price inputs forced to `en-US` (`$1,325.00`) to match `formatMoney` display — was locale-dependent `1.325,00 $` |
-| `util/configHelpers.js`                                                                 | Listing field merge (code wins over Console)                                                                    |
+| `util/configHelpers.js`                                                                 | Listing field merge (code wins over Console, except `brand` options — `configAV.mergeHostedBrandOptions`)       |
 | `containers/SearchPage/FilterComponent.js`                                              | Custom filter type branches (delegates to `searchFilters/avFilters`)                                            |
 | `containers/SearchPage/SearchPageWithGrid.js`                                           | Grouped-sizes filter injection (`injectAvFilters`)                                                              |
 | `PageBuilder/SectionBuilder/SectionBuilder.js`                                          | Custom section registration + AV `blockComponents` injection                                                    |

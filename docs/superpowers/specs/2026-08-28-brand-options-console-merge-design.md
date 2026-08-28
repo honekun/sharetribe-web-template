@@ -1,7 +1,7 @@
 # Merge Console `brand` options into the code-defined brand field
 
 **Date:** 2026-08-28
-**Status:** Approved; implementation plan at `docs/superpowers/plans/2026-08-28-brand-options-console-merge.md`
+**Status:** Implemented
 
 ## Problem
 
