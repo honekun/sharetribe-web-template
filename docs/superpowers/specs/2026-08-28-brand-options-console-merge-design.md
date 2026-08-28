@@ -1,7 +1,7 @@
 # Merge Console `brand` options into the code-defined brand field
 
 **Date:** 2026-08-28
-**Status:** Approved, ready for implementation planning
+**Status:** Approved; implementation plan at `docs/superpowers/plans/2026-08-28-brand-options-console-merge.md`
 
 ## Problem
 
@@ -78,8 +78,11 @@ Behaviour, in order:
    it.
 3. **Sanitize.** Drop any entry whose `option` or `label` is not a string. This is load-bearing, not
    defensive polish — see Failure modes below.
-4. **Sort.** `localeCompare(a.label, b.label, 'es', { sensitivity: 'base', numeric: true })`, then
-   move `other` to the front.
+4. **Sort.** `localeCompare(a.label, b.label, 'es', { sensitivity: 'base' })`, then move `other` to
+   the front. Verified against the current 625-option list: this comparator reproduces the
+   hand-authored order exactly (zero entries move), so the sort only ever places Console
+   additions. `numeric: true` is deliberately **not** used — it collates `7 For All Mankind`
+   before `525` and would gratuitously reorder the existing list.
 5. **Return** a new array. Never mutate `avListingFields` or either input.
 
 ### Call site — `src/util/configHelpers.js:1387`
@@ -112,6 +115,7 @@ Every failure degrades to today's behaviour rather than to a broken one.
 | Condition | Result |
 | --- | --- |
 | Hosted asset not loaded yet (SSR before assets resolve) | Guard 1 returns the code list unchanged. |
+| Console option collides with a code option | Console's label wins. Measured baseline: today `zara` resolves to the code label `Zara` even when Console defines its own. |
 | Console `brand` field deleted or renamed | Guard 1; code list unchanged. |
 | Console `brand` has a non-enum `schemaType`, or no options | Guard 1; code list unchanged. |
 | A Console option has a non-string `option` or `label` | Guard 3 drops that entry. **Without it the whole field is lost:** `validSchemaOptions` (`configHelpers.js:511`) requires every entry to have string `option` *and* `label`; one bad entry makes the field invalid, and `validListingFields` (`configHelpers.js:898-902`) then drops `brand` from the config entirely — no filter, no wizard input, no label anywhere. |
@@ -142,11 +146,10 @@ Both are pre-existing and explicitly out of scope.
   pinning the "brand only" boundary.
 - **`extensions/searchFilters/avBrandSearch.test.js`** — a Console-only brand resolves to
   `pub_brand`.
-- **Full suite** (`yarn test -- --watchAll=false`). Re-sorting changes the existing list's order
-  even with an empty Console field: entries such as `& Other Stories`, `1.STATE`, `1/8 Takamura`,
-  `525` and `7 For All Mankind` sort differently under `localeCompare` with `numeric: true` than in
-  the hand-authored order. Snapshots covering the brand list will need regenerating, and the run is
-  what tells us which.
+- **Full suite** (`yarn test -- --watchAll=false`). No snapshot churn is expected: the chosen
+  comparator was measured to be a no-op over the existing 625-option list, so with an empty or
+  absent Console field the rendered brand list is byte-identical to today's. A snapshot that *does*
+  change is a signal something is wrong, not something to regenerate.
 
 ## Files touched
 
