@@ -3,8 +3,11 @@ import {
   canShowWelcomePopup,
   defaultCountry,
   getStoreTypeTags,
+  isNavPageHiddenForUser,
+  isNavPageHiddenForUserType,
   moveListingFieldToEnd,
   sellerUserTypes,
+  storeSellerHiddenNavPages,
   storeSellerUserType,
   storeTypeFieldKey,
   welcomePopupUserTypes,
@@ -123,6 +126,60 @@ describe('configAV', () => {
       expect(canShowWelcomePopup(null)).toBe(false);
       expect(canShowWelcomePopup({})).toBe(false);
       expect(canShowWelcomePopup(seller(undefined))).toBe(false);
+    });
+  });
+
+  describe('nav visibility', () => {
+    it('hides the buyer-side entries from store sellers', () => {
+      expect(storeSellerHiddenNavPages).toEqual([
+        'MyAddressesPage',
+        'FavoritesPage',
+        'InboxPage:orders',
+      ]);
+      storeSellerHiddenNavPages.forEach(page => {
+        expect(isNavPageHiddenForUser(userWith(storeSellerUserType), page)).toBe(true);
+      });
+    });
+
+    // Only the orders tab goes. The inbox itself is where a store seller reads
+    // messages about their sales, so the envelope and the sales tab stay.
+    it('hides the inbox orders tab but not the inbox itself', () => {
+      const store = userWith(storeSellerUserType);
+      expect(isNavPageHiddenForUser(store, 'InboxPage:orders')).toBe(true);
+      expect(isNavPageHiddenForUser(store, 'InboxPage')).toBe(false);
+      expect(isNavPageHiddenForUser(store, 'InboxPage:sales')).toBe(false);
+    });
+
+    it('leaves every other page visible to store sellers', () => {
+      const store = userWith(storeSellerUserType);
+      expect(isNavPageHiddenForUser(store, 'MyPurchasesPage')).toBe(false);
+      expect(isNavPageHiddenForUser(store, 'MySalesPage')).toBe(false);
+      expect(isNavPageHiddenForUser(store, 'MyBalancePage')).toBe(false);
+      expect(isNavPageHiddenForUser(store, 'ManageListingsPage')).toBe(false);
+    });
+
+    // The gate is per userType, not per role: other sellers still buy on the
+    // marketplace, so nothing is hidden from them.
+    it('hides nothing from other user types', () => {
+      ['vendedor', 'vendedor-stock', 'comprador', undefined].forEach(userType => {
+        storeSellerHiddenNavPages.forEach(page => {
+          expect(isNavPageHiddenForUser(userWith(userType), page)).toBe(false);
+        });
+      });
+    });
+
+    it('hides nothing when there is no signed-in user', () => {
+      storeSellerHiddenNavPages.forEach(page => {
+        expect(isNavPageHiddenForUser(null, page)).toBe(false);
+        expect(isNavPageHiddenForUser(undefined, page)).toBe(false);
+        expect(isNavPageHiddenForUser({}, page)).toBe(false);
+      });
+    });
+
+    it('takes a bare userType as well as a user', () => {
+      expect(isNavPageHiddenForUserType(storeSellerUserType, 'FavoritesPage')).toBe(true);
+      expect(isNavPageHiddenForUserType('vendedor', 'FavoritesPage')).toBe(false);
+      expect(isNavPageHiddenForUserType(storeSellerUserType, 'MySalesPage')).toBe(false);
     });
   });
 });

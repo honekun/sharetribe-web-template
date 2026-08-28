@@ -209,7 +209,7 @@ const TopbarMobileMenu = props => {
             </NamedLink>
           </li>
           {manageListingsLinkMaybe}
-          {renderAvMobileMenuLinks(currentPageClass)}
+          {renderAvMobileMenuLinks(currentPageClass, currentUser)}
           <li className={classNames(css.navigationLink, currentPageClass('ProfileSettingsPage'))}>
             <NamedLink name="ProfileSettingsPage">
               <FormattedMessage id="TopbarMobileMenu.profileSettingsLink" />

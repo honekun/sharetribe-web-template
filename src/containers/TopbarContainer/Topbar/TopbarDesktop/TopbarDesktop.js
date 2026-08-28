@@ -76,7 +76,7 @@ const ProfileMenu = ({ currentPage, currentUser, onLogout, showManageListingsLin
             </NamedLink>
           </MenuItem>
         ) : null}
-        {renderAvProfileMenuItems(currentPage)}
+        {renderAvProfileMenuItems(currentPage, currentUser)}
         <MenuItem key="ProfileSettingsPage">
           <NamedLink
             className={classNames(css.menuLink, currentPageClass('ProfileSettingsPage'))}

@@ -34,6 +34,7 @@ import {
   resolveKeywordsInitialValue,
   resolveKeywordsSearchParams,
 } from '../../../extensions/searchFilters/avBrandSearch';
+import { isNavPageHiddenForUser } from '../../../config/configAV';
 
 const MAX_MOBILE_SCREEN_WIDTH = 1599;
 
@@ -238,6 +239,13 @@ const TopbarComponent = props => {
     ? 'sales'
     : 'orders';
 
+  // AV: a store seller's inbox sidebar has no Orders tab
+  // (configAV.isNavPageHiddenForUser), so the envelope must not open on one —
+  // it would leave them on a tab with no nav entry to leave it by.
+  const resolvedInboxTab = isNavPageHiddenForUser(currentUser, `InboxPage:${topbarInboxTab}`)
+    ? 'sales'
+    : topbarInboxTab;
+
   const { mobilemenu, mobilesearch, keywords, address, origin, bounds, pub_brand } = parse(
     location.search,
     {
@@ -269,7 +277,7 @@ const TopbarComponent = props => {
       currentPage={resolvedCurrentPage}
       customLinks={customLinks}
       showCreateListingsLink={showCreateListingsLink}
-      inboxTab={topbarInboxTab}
+      inboxTab={resolvedInboxTab}
       intl={intl}
     />
   );
@@ -398,7 +406,7 @@ const TopbarComponent = props => {
           className={avCss.mobileIconLinks}
           isAuthenticated={isAuthenticated}
           notificationCount={notificationCount}
-          inboxTab={topbarInboxTab}
+          inboxTab={resolvedInboxTab}
           bagPopupLayout="mobile"
         />
       </nav>
@@ -418,7 +426,7 @@ const TopbarComponent = props => {
           customLinks={customLinks}
           showSearchForm={showSearchForm}
           showCreateListingsLink={showCreateListingsLink}
-          inboxTab={topbarInboxTab}
+          inboxTab={resolvedInboxTab}
         />
       </div>
       <Modal

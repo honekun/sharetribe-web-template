@@ -38,6 +38,20 @@ describe('renderAvMobileMenuLinks', () => {
     expect(asked).toEqual(['BagPage', ...AV_PROFILE_LINKS.map(l => l.pageName)]);
   });
 
+  it('omits the favorites row for a store seller, keeping the bag row', () => {
+    const storeSeller = {
+      attributes: { profile: { publicData: { userType: 'vendedor-tienda' } } },
+    };
+    const items = renderAvMobileMenuLinks(noActivePage, storeSeller);
+
+    expect(items.map(item => item.key)).toEqual([
+      'BagPage',
+      'MyPurchasesPage',
+      'MySalesPage',
+      'MyBalancePage',
+    ]);
+  });
+
   it('applies the active class the helper returns', () => {
     const items = renderAvMobileMenuLinks(page => (page === 'BagPage' ? 'currentPage' : null));
 

@@ -1891,6 +1891,31 @@ used alongside the regular keys.
 | Account sidebar  | `LayoutWrapperAccountSettingsSideNav.profileTabTitleTienda` | `Store Profile`            | `Perfil de Tienda`                  | Sidebar tab label for store sellers.              |
 | Store tags       | `StoreTypeTags.ariaLabel`                                   | `Store type tags`          | `Etiquetas de tipo de tienda`       | Screen-reader label for the store-type tag chips. |
 
+### Store sellers (tienda) hidden menu entries
+
+Store sellers sell through the marketplace rather than buying on it, so three buyer-side entries are
+left out of their menus:
+
+| Entry                 | Where it is normally shown                                                       |
+| --------------------- | -------------------------------------------------------------------------------- |
+| **Mis direcciones**   | Account settings sidebar (`/account/my-addresses`).                              |
+| **Favoritos**         | Profile dropdown, mobile menu, the account tab strip, and the topbar heart icon. |
+| **Compras** (Orders)  | The left sidebar inside the inbox (`/inbox/orders`).                             |
+
+The **inbox itself stays visible** for store sellers — the topbar envelope, the mobile menu's inbox
+row, and the **Ventas** (Sales) tab all work as usual, because that is where they read messages about
+their own sales. Only the Orders tab is dropped from the inbox sidebar, and the envelope always opens
+on Ventas for them.
+
+This is a **display rule only** — nothing is deleted or blocked. All three destinations stay
+reachable by typing the URL, and anything already saved (an address, favorites, past orders) is
+untouched and reappears if the account's user type is changed back. There is no per-user switch: the
+rule follows the `vendedor-tienda` user type, so changing what a given account sees means changing
+its user type in Console.
+
+If a store seller reports that they cannot find their favorites or the Compras tab, this is the
+expected behaviour, not a fault.
+
 ### Landing and PageBuilder sections
 
 | Area                | Key / pattern                        | English default               | Spanish default                                        | Operator note                                                                        |
@@ -2410,7 +2435,7 @@ The common configured account types are:
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `comprador`       | Buyer/customer account.                                                                                                                           |
 | `vendedor`        | Individual seller; receives the seller onboarding experience.                                                                                     |
-| `vendedor-tienda` | Store seller; receives store wording and may appear in the Marcas menu when `localDesign` is truthy.                                              |
+| `vendedor-tienda` | Store seller; receives store wording, hides the buyer-side menu entries, and may appear in the Marcas menu when `localDesign` is truthy.          |
 | `vendedor-stock`  | Legacy/special seller value recognized by some seller UI rules; do not assign it unless the current product configuration explicitly requires it. |
 
 For a user-support or moderation request:

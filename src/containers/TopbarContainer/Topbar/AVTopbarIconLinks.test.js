@@ -33,6 +33,30 @@ describe('AVTopbarIconLinks', () => {
     ).not.toBeInTheDocument();
   });
 
+  // The trio is mounted by the mobile topbar and the mobile menu footer, neither
+  // of which passes currentUser — the icons read the gate themselves. A store
+  // seller loses the heart but keeps the inbox and the bag.
+  it('drops only the favorites icon for a signed-in store seller', async () => {
+    render(<AVTopbarIconLinks isAuthenticated notificationCount={2} inboxTab="sales" />, {
+      initialState: {
+        user: {
+          currentUser: {
+            attributes: { profile: { publicData: { userType: 'vendedor-tienda' } } },
+          },
+        },
+      },
+    });
+
+    expect(await screen.findByRole('link', { name: 'TopbarDesktop.inbox' })).toHaveAttribute(
+      'href',
+      '/inbox/sales'
+    );
+    expect(screen.getByRole('link', { name: 'BagLink.label' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'TopbarDesktop.favoritesLink' })
+    ).not.toBeInTheDocument();
+  });
+
   it('applies the layout className from the consuming topbar', () => {
     const { container } = render(
       <AVTopbarIconLinks className="layoutClass" isAuthenticated={false} inboxTab="orders" />

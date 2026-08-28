@@ -8,6 +8,12 @@ import { AVInboxLink, FavoritesLink, renderAvProfileMenuItems } from './AVTopbar
 
 const { screen } = testingLibrary;
 
+const storeSellerState = {
+  user: {
+    currentUser: { attributes: { profile: { publicData: { userType: 'vendedor-tienda' } } } },
+  },
+};
+
 describe('FavoritesLink', () => {
   it('links to the favorites page with an accessible label', () => {
     render(<FavoritesLink />);
@@ -32,6 +38,15 @@ describe('FavoritesLink', () => {
       'id',
       'favorites-link'
     );
+  });
+
+  // Gated in the component so all three mount points hide it at once.
+  it('renders nothing for a store seller', () => {
+    const { container } = render(<FavoritesLink id="favorites-link" />, {
+      initialState: storeSellerState,
+    });
+
+    expect(container).toBeEmptyDOMElement();
   });
 });
 
@@ -63,6 +78,19 @@ describe('AVInboxLink', () => {
       'inbox-link'
     );
   });
+
+  // Only the inbox sidebar's Orders tab is hidden from store sellers; the
+  // envelope itself is how they reach messages about their sales.
+  it('stays visible for a store seller', () => {
+    render(<AVInboxLink notificationCount={3} inboxTab="sales" />, {
+      initialState: storeSellerState,
+    });
+
+    expect(screen.getByRole('link', { name: 'TopbarDesktop.inbox' })).toHaveAttribute(
+      'href',
+      '/inbox/sales'
+    );
+  });
 });
 
 describe('renderAvProfileMenuItems', () => {
@@ -81,5 +109,18 @@ describe('renderAvProfileMenuItems', () => {
     const classNamesByPage = items.map(item => item.props.children.props.className);
     expect(classNamesByPage[0]).toContain('currentPage');
     classNamesByPage.slice(1).forEach(cls => expect(cls).not.toContain('currentPage'));
+  });
+
+  it('omits the favorites item for a store seller', () => {
+    const storeSeller = {
+      attributes: { profile: { publicData: { userType: 'vendedor-tienda' } } },
+    };
+    const items = renderAvProfileMenuItems('ProfileSettingsPage', storeSeller);
+
+    expect(items.map(item => item.key)).toEqual([
+      'MyPurchasesPage',
+      'MySalesPage',
+      'MyBalancePage',
+    ]);
   });
 });

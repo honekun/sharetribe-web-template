@@ -97,8 +97,12 @@ pinned to its deadline, so moving a window means moving its reminder too.
   `REACT_APP_AV_DEFAULT_COUNTRY`); `sellerUserTypes` + `canShowOriginalPrice()` (originalPrice
   gate); `storeSellerUserType`/`storeTypeFieldKey`/`getStoreTypeTags()` (StoreTypeTags gate/labels);
   `welcomePopupUserTypes`/`canShowWelcomePopup()`/`welcomePopupSuppressedPaths` (AVWelcomePopup
-  gate); `moveListingFieldToEnd()` (keeps `tags` last; called from `configHelpers`). The three gates
-  are intentionally separate.
+  gate); `storeSellerHiddenNavPages`/`isNavPageHiddenForUser()` (hides the buyer-side menu entries —
+  MyAddresses, Favorites, and the inbox sidebar's Orders tab keyed `InboxPage:orders` — from
+  `vendedor-tienda`; the inbox envelope itself stays, and Topbar resolves `inboxTab` away from a
+  hidden tab; **visibility only**, every route stays registered and reachable by URL);
+  `moveListingFieldToEnd()` (keeps `tags` last; called from `configHelpers`). The four gates are
+  intentionally separate.
 
 **Styling** — CSS Modules (`*.module.css`, `className={css.root}`). Globals in `src/styles/`:
 `marketplaceDefaults.css`, `avBrandOverrides.css`, `customMediaQueries.css`. Theme vars
@@ -548,13 +552,14 @@ contain.
 | `CheckoutPage/CheckoutPage.module.css`                                                  | 2-column layout from `--viewportMedium` (not `--viewportLarge`) + fluid `--avCheckoutRamp` sizing               |
 | `CheckoutPage/DetailsSideCard.js`                                                       | Breakdown loading overlay (`speculateInProgress`) + 4:3 image box from `avListingImage.js`                      |
 | `CheckoutPage/MobileListingImage.js`                                                    | 4:3 image box from `avListingImage.js`                                                                          |
-| `TopbarContainer/Topbar/Topbar.js`                                                      | Mobile bag/favorites/inbox icon group + absolutely-centred logo (`Topbar.av.module.css`)                        |
+| `TopbarContainer/Topbar/Topbar.js`                                                      | Mobile bag/favorites/inbox icon group + absolutely-centred logo (`Topbar.av.module.css`); `inboxTab` gate       |
+| `containers/InboxPage/InboxPage.js`                                                     | Orders tab hidden for `vendedor-tienda` (`configAV.isNavPageHiddenForUser`)                                     |
 | `EditListingWizard/EditListingWizard.js`                                                | Default Stripe Connect payout country; blue "Bulk import" CTA (`NamedLink`) on new-listing flow                 |
 | `EditListingWizard/EditListingWizardTab.js`                                             | `currentUser` prop drilling for pricing                                                                         |
 | `EditListingWizard/EditListingDetailsPanel/EditListingDetailsForm.js`                   | Two-column grid + `PhotoGallerySection`                                                                         |
 | `EditListingWizard/EditListingPricingPanel/EditListingPricing{Panel,Form}.js`           | `originalPrice` field (gated by `configAV`)                                                                     |
 | `ManageListingsPage/ManageListingsPage.js`                                              | "Create listing" `NamedLink` heading                                                                            |
-| `components/UserNav/UserNav.js`                                                         | Active-state expanded to all account pages                                                                      |
+| `components/UserNav/UserNav.js`                                                         | Active-state expanded to all account pages; AV tabs from `useAvProfileLinks()`                                  |
 | `containers/ProfilePage/ProfilePage.js`                                                 | `ListingCard` → `AVListingCard` swap                                                                            |
 | `containers/AuthenticationPage/UserFieldDisplayName.js`                                 | Per-userType display-name label (store sellers)                                                                 |
 | `containers/ListingPage/SectionHero.js`                                                 | `StoreTypeTags` overlay on the gallery hero                                                                     |
@@ -562,7 +567,7 @@ contain.
 | `PageBuilder/SectionBuilder/SectionColumns/SectionColumns.js`                           | `AVSectionContainer` + `2/3 cols` token                                                                         |
 | `PageBuilder/SectionBuilder/SectionCarousel/SectionCarousel.js`                         | `AVSectionContainer` + `useDebouncedWindowResize`                                                               |
 | `components/CustomExtendedDataSection/CustomExtendedDataSection.js`                     | Custom `color`/`all_sizes` display dispatch (key→component map)                                                 |
-| `components/LayoutComposer/LayoutSideNavigation/LayoutWrapperAccountSettingsSideNav.js` | Account tabs from `getAccountSettingsTabs()` extension                                                          |
+| `components/LayoutComposer/LayoutSideNavigation/LayoutWrapperAccountSettingsSideNav.js` | Account tabs from `getAccountSettingsTabs()` extension, fed `currentUser` from the store                        |
 
 Also high-conflict on sync: `SearchResultsPanel.js` (AVListingCard swap), `CMSPage.js` (section
 injection), `TopbarDesktop.js`/`TopbarMobileMenu.js`/`UserNav.js` (nav links),

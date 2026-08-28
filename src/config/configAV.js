@@ -77,6 +77,30 @@ export const getStoreTypeTags = (author, config = {}) => {
   });
 };
 
+// Menu entries hidden from store sellers. A `vendedor-tienda` sells through the
+// marketplace rather than buying on it, so the buyer-side entries are noise in
+// their menus: the saved shipping address (account side nav), favorites
+// (profile menu, mobile menu, UserNav, and the topbar heart), and the inbox
+// sidebar's Orders tab.
+//
+// Entries are keyed by route name, except the inbox, whose two tabs are one
+// route — `InboxPage:orders` follows the `InboxPage:<tab>` key TopbarMobileMenu
+// already uses for its active-page class. The inbox itself stays visible: a
+// store seller still needs the envelope to reach messages about their sales.
+//
+// A *visibility* gate only, and separate from the three gates above for the
+// same reason those are separate from each other. Every route stays registered
+// and every page keeps working, so an address, favorite or order saved before
+// the account became a store seller is dropped from the menus but is never
+// orphaned or unreachable by URL.
+export const storeSellerHiddenNavPages = ['MyAddressesPage', 'FavoritesPage', 'InboxPage:orders'];
+
+export const isNavPageHiddenForUserType = (userType, pageName) =>
+  userType === storeSellerUserType && storeSellerHiddenNavPages.includes(pageName);
+
+export const isNavPageHiddenForUser = (currentUser, pageName) =>
+  isNavPageHiddenForUserType(currentUser?.attributes?.profile?.publicData?.userType, pageName);
+
 // Keep `tags` as the last visible listing field so it doesn't interrupt the field
 // flow. Called from `configHelpers.mergeListingConfig` on the merged field list.
 export const moveListingFieldToEnd = (listingFields, keyToMove) => {

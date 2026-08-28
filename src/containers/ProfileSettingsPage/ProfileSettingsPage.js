@@ -165,7 +165,6 @@ export const ProfileSettingsPageComponent = props => {
     currentPage: 'ProfileSettingsPage',
     showPaymentMethods,
     showPayoutDetails,
-    userType,
   };
 
   return (
