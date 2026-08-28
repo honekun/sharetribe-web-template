@@ -466,6 +466,9 @@ describe('bulk import router', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.headers['Content-Type']).toContain('text/csv');
+    expect(res.headers['Content-Disposition']).toBe(
+      'attachment; filename="bulk-import-template.csv"'
+    );
     expect(res.body).toContain('imagen_1,imagen_2,imagen_3,imagen_4');
   });
 

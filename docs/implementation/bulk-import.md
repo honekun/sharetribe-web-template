@@ -15,7 +15,7 @@ current user as its author. "Admin" users (emails listed in `BULK_IMPORT_OPERATO
 2. Start the dev server: `yarn run dev`
 3. Navigate to `/admin/bulk-import`
 4. Sign in (any user able to create listings); listings will be authored to you
-5. Open the template (the page links it in Google Drive), download a copy from there, fill it in
+5. Download the CSV template from the page and fill it in
 6. Pack your completed CSV and all image files into a single `.zip` archive
 7. Select the ZIP file and click "Start Import", then monitor progress
 
@@ -40,14 +40,15 @@ Browser (BulkImportPage)             Server (Express)
   |-- Poll every 2s ----------------> GET /api/bulk-import/status/:jobId
   |                                    |-- Return progress, results, errors
   |                                    |
+  |-- Download template ------------> GET /api/bulk-import/template
+  |                                    |-- Return generated CSV + example row
 ```
 
-Note the page does **not** call `GET /api/bulk-import/template`. That endpoint still exists and
-still generates a CSV — headers plus one example row (`server/api/bulk-import/index.js`) — but
-nothing links to it at runtime: the template button points at Google Drive (see
-[below](#example-csv)) and previously pointed at a static file. It is left routed because it is
-public, tested, and harmless, but treat it as orphaned rather than as the template source of
-record.
+The template button links directly to the public `GET /api/bulk-import/template` endpoint. It
+generates a CSV with the current machine headers and one valid example row
+(`server/api/bulk-import/index.js`). Because the URL is same-origin and the response sets
+`Content-Disposition: attachment`, the browser downloads it without replacing an in-progress import
+page or depending on an external file permission.
 
 Processing is **asynchronous** so uploads do not depend on a hosting platform's HTTP request
 timeout. The server accepts the upload, returns a job ID immediately, and processes rows in the
@@ -227,24 +228,18 @@ title,description,price,pub_brand,pub_categoryLevel1,pub_categoryLevel2,pub_cate
 "Jeans Levi's Retro","Jeans de los 90s en buen estado","$950.00",levi-s,ropa,ropa-jeans,ropa-jeans-momfit,azul,mx_28,unisex,buen-estado,retro,todo-el-ano,jeans-1.jpg,jeans-2.jpg,jeans-3.jpg,
 ```
 
-The template link on the import page opens the seller template in Google Drive
-(`https://drive.google.com/file/d/1pucBkweZnTQVy4-91CN0HBvDiANbZDXc/view?usp=sharing`, hardcoded in
-`BulkImportPage.js`), in a new tab. Hosting it there rather than in `public/static/files` means a
-corrected template reaches operators without a deploy — the trade is that the link now lands on
-Drive's preview page and the operator uses Drive's own download control, rather than the file
-arriving directly. The link therefore carries `target="_blank"` and no `download` attribute: that
-attribute is ignored on a cross-origin href.
-
-The file must stay shared as "anyone with the link"; if it is un-shared or removed, the control
-silently leads to a Drive permission wall and nothing in the app will report it.
+The template link on the import page points to `/api/bulk-import/template`. The route generates the
+same `pub_*` and `imagen_*` format shown above, is public, and is covered by a round-trip test that
+parses and validates its example row. Updating the generated template requires a deploy, but the
+operator workflow no longer depends on a separately shared Drive file.
 
 Nothing links to `public/static/files/PLANTILLA_CARGA_MASIVA.csv` at runtime any more — not the
-page, not `docs/operator-guide.md`. It is still *named* in several places, which is why it should not
-simply be deleted on sight: `csvParser.js` calls one of its recognised header dialects after it (and
-`csvParser.test.js` pins that), `index.js` cites it as what the `/template` endpoint mirrors, and the
-column-alias table [below](#google-sheets--spanish-column-names) uses it as a column heading. The
-file is kept on disk so an operator holding an old direct link gets a file rather than a 404; retiring
-it means renaming that dialect too, not just removing the file.
+page, not `docs/operator-guide.md`. It is still _named_ in several places, which is why it should
+not simply be deleted on sight: `csvParser.js` calls one of its recognised header dialects after it
+(and `csvParser.test.js` pins that), `index.js` cites it as what the `/template` endpoint mirrors,
+and the column-alias table [below](#google-sheets--spanish-column-names) uses it as a column
+heading. The file is kept on disk so an operator holding an old direct link gets a file rather than
+a 404; retiring it means renaming that dialect too, not just removing the file.
 
 The import page's help bar also links a ready-to-upload **example ZIP** at
 `public/static/files/ZIP_CARGA_MASIVA.zip` (10 listings + 40 images). Its `user_id` column is left

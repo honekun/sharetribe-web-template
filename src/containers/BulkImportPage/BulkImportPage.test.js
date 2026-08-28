@@ -104,8 +104,7 @@ describe('BulkImportPage', () => {
     });
   });
 
-  const TEMPLATE_URL =
-    'https://drive.google.com/file/d/1pucBkweZnTQVy4-91CN0HBvDiANbZDXc/view?usp=sharing';
+  const TEMPLATE_URL = '/api/bulk-import/template';
 
   it('renders the template link', async () => {
     render(<BulkImportPage />, { initialState: baseState });
@@ -117,21 +116,15 @@ describe('BulkImportPage', () => {
     });
   });
 
-  it('opens the template in a new tab without navigating away from an import', async () => {
+  it('downloads the same-origin template without navigating away from an import', async () => {
     render(<BulkImportPage />, { initialState: baseState });
 
     const link = (await screen.findByText('BulkImportPage.downloadTemplate')).closest('a');
 
-    // The template is hosted in Drive, so the page must not be replaced by it —
-    // an operator part-way through picking a ZIP would lose that state.
-    expect(link).toHaveAttribute('target', '_blank');
-    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
-    // `download` is ignored on a cross-origin href; asserting it would pin
-    // markup the browser does not honour.
-    expect(link).not.toHaveAttribute('download');
-    // Plain navigation: the page fetches nothing on click.
-    fireEvent.click(link);
-    expect(global.fetch).not.toHaveBeenCalledWith(TEMPLATE_URL, expect.anything());
+    // The route is same-origin and sends Content-Disposition: attachment. The
+    // attribute makes the intended browser behaviour explicit as well.
+    expect(link).toHaveAttribute('download');
+    expect(link).not.toHaveAttribute('target');
   });
 
   it('shows error when submitting without a ZIP file', async () => {
