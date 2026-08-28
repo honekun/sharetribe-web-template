@@ -106,7 +106,7 @@ pinned to its deadline, so moving a window means moving its reminder too.
   `enumOptions` into the code-defined field from `configListingAV.js` before
   `configHelpers`' field-level union discards them — Console wins per option, the
   field's own config stays code-owned, result sorted by label with `other` first;
-  `brand` only, `color`/`all_sizes` are untouched); The four gates are
+  `brand` only, `color`/`all_sizes` are untouched). The four gates are
   intentionally separate.
 
 **Styling** — CSS Modules (`*.module.css`, `className={css.root}`). Globals in `src/styles/`:

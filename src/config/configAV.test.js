@@ -295,6 +295,19 @@ describe('mergeHostedBrandOptions', () => {
     expect(optionsOf(merged)).toEqual(['other', 'gucci', 'prada', 'zara']);
   });
 
+  it('drops an option whose `option` or `label` is an empty or whitespace-only string', () => {
+    const merged = mergeHostedBrandOptions(
+      codeFields(),
+      hostedFields([
+        { option: '', label: '' },
+        { option: 'no-label', label: '   ' },
+        { option: 'gucci', label: 'Gucci' },
+      ])
+    );
+
+    expect(optionsOf(merged)).toEqual(['other', 'gucci', 'prada', 'zara']);
+  });
+
   it('leaves other fields alone', () => {
     const merged = mergeHostedBrandOptions(
       codeFields(),

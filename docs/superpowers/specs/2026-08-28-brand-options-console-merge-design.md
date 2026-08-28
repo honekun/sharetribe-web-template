@@ -133,6 +133,15 @@ Both are pre-existing and explicitly out of scope.
 - **Console's `brand` field config stays ignored.** Only its options are read; its
   `filterConfig`/`showConfig`/`saveConfig` continue to be discarded by the field-level union. An
   operator changing the field's label in Console will see no effect.
+- **A brand added twice under different slugs silently splits.** Nothing stops an operator adding
+  `{ option: 'h-m', label: 'H&M' }` in Console when the code list already has a differently-slugged
+  entry for the same brand. Both survive the merge (different keys), so `findBrandOption` in
+  `src/extensions/searchFilters/avBrandSearch.js` returns whichever comes first — and with equal
+  labels the sort ties, so insertion order makes the code entry win. Listings saved under the
+  Console slug then become unreachable from the search box and from every `?pub_brand=` link the
+  app generates. Before this change a Console-only brand simply wasn't selectable, so this hazard
+  is new. Operator rule: check the code list in `src/config/configListingAV.js` before adding a
+  brand in Console — adding one that already exists under a different slug splits your inventory.
 
 ## Testing
 
@@ -157,5 +166,5 @@ Both are pre-existing and explicitly out of scope.
 | --- | --- |
 | `src/config/configAV.js` | New `brandFieldKey` + `mergeHostedBrandOptions`. |
 | `src/config/configAV.test.js` | Unit tests for the helper. |
-| `src/util/configHelpers.js` | One line at 1387: wrap `defaultListingFields`. |
+| `src/util/configHelpers.js` | Two added comment lines plus the `union(...)` call expanded from one line to five (unavoidable — the one-liner exceeds Prettier's 100-char width) to wrap `defaultListingFields` in `mergeHostedBrandOptions`. |
 | `CLAUDE.md` | Update the `configAV.js` summary and the `util/configHelpers.js` watchlist row, which currently reads "code wins over Console". |

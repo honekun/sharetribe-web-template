@@ -88,6 +88,34 @@ describe('mergeConfig listingFields — brand', () => {
     expect(withoutConsoleBrand).toEqual(withConsoleBrand);
     expect(withoutConsoleBrand[0]).toEqual({ option: 'other', label: 'Otra...' });
   });
+
+  // A malformed Console option must not be able to take the whole field down.
+  // validSchemaOptions marks the entire field invalid if one entry lacks a string
+  // option/label, and validListingFields then drops `brand` from the config —
+  // no filter, no wizard input, no label. A null entry is worse still: without
+  // the guard it throws out of mergeConfig, which runs in the render body of
+  // ClientApp/ServerApp, so the app fails to boot at all.
+  it('keeps brand despite malformed Console options', () => {
+    const merged = mergeConfig(
+      hostedConfig([
+        {
+          key: 'brand',
+          scope: 'public',
+          schemaType: 'enum',
+          enumOptions: [
+            { option: 42, label: 'Numeric key' },
+            null,
+            { option: 'ok-brand', label: 'OK Brand' },
+          ],
+        },
+      ]),
+      defaultConfig
+    );
+    const brand = merged.listing.listingFields.find(field => field.key === 'brand');
+
+    expect(brand).toBeDefined();
+    expect(brand.enumOptions).toContainEqual({ option: 'ok-brand', label: 'OK Brand' });
+  });
 });
 
 describe('mergeConfig listingFields — the brand-only boundary', () => {

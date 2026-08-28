@@ -128,17 +128,27 @@ export const moveListingFieldToEnd = (listingFields, keyToMove) => {
 // the same key. The result is sorted by label with `other` pinned first.
 export const brandFieldKey = 'brand';
 
-// Both keys must be strings. `configHelpers.validSchemaOptions` marks the *whole*
-// field invalid if a single option fails this, and `validListingFields` then drops
-// `brand` from the config altogether — no filter, no wizard input, no label. One
-// malformed Console row must not be able to do that.
+// Both keys must be non-blank strings. `configHelpers.validSchemaOptions` marks the
+// *whole* field invalid if a single option fails this, and `validListingFields` then
+// drops `brand` from the config altogether — no filter, no wizard input, no label. One
+// malformed Console row must not be able to do that. An empty/whitespace-only string
+// is rejected too: it would otherwise survive as a blank option that sorts to the
+// front (an empty label collates first) and shows up as a blank row in the wizard's
+// searchable-select, the search filter, and a `?pub_brand=` link with no value.
 const isUsableOption = option =>
-  typeof option?.option === 'string' && typeof option?.label === 'string';
+  typeof option?.option === 'string' &&
+  option.option.trim() !== '' &&
+  typeof option?.label === 'string' &&
+  option.label.trim() !== '';
 
+// Hoisted so the comparator isn't re-resolving a collator on every call: measured at
+// 1.5–7ms for 625 options versus 0.05–0.09ms hoisted (~25x), and this runs on both the
+// SSR per-request path and the client-boot path.
 // Not `numeric: true`: numeric collation orders "7 For All Mankind" before "525"
 // and would reorder the hand-authored code list. Plain locale collation reproduces
 // that list exactly, so the sort only ever places Console additions.
-const byLabel = (a, b) => a.label.localeCompare(b.label, 'es', { sensitivity: 'base' });
+const brandLabelCollator = new Intl.Collator('es', { sensitivity: 'base' });
+const byLabel = (a, b) => brandLabelCollator.compare(a.label, b.label);
 
 export const mergeHostedBrandOptions = (defaultListingFields, hostedListingFields) => {
   if (!Array.isArray(defaultListingFields) || !Array.isArray(hostedListingFields)) {
