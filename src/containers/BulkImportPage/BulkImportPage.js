@@ -338,9 +338,17 @@ const BulkImportPageComponent = props => {
     setZipFile(null);
   };
 
+  // A .zip carries the CSV plus the photos; a bare .csv is imported as if no photos
+  // were present, so every listing gets the placeholder image.
+  const isAcceptedUpload = name => {
+    const lower = (name || '').toLowerCase();
+    return lower.endsWith('.zip') || lower.endsWith('.csv');
+  };
+
   const pickFile = file => {
-    if (file && file.name.toLowerCase().endsWith('.zip')) {
+    if (file && isAcceptedUpload(file.name)) {
       setZipFile(file);
+      setUploadError(null);
     } else if (file) {
       setUploadError(intl.formatMessage({ id: 'BulkImportPage.errorNoZip' }));
     }
@@ -462,7 +470,7 @@ const BulkImportPageComponent = props => {
             id="zipFile"
             ref={fileInputRef}
             type="file"
-            accept=".zip"
+            accept=".zip,.csv"
             className={css.visuallyHidden}
             onChange={e => pickFile(e.target.files[0] || null)}
           />

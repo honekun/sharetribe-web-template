@@ -165,6 +165,28 @@ describe('validateRows', () => {
     }
   );
 
+  it('flags every row for the placeholder and drops filenames when images are ignored', () => {
+    // CSV-only uploads carry no images at all, so a filename the operator typed
+    // cannot be resolved and is deliberately discarded rather than rejected.
+    const result = validateRows(
+      [validRow({ image_front: 'front.jpg', image_back: 'nunca-subida.jpg' })],
+      new Map(),
+      { ignoreImages: true }
+    );
+
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0].usePlaceholderImage).toBe(true);
+    expect(result.rows[0].imageSlots).toEqual({});
+  });
+
+  it('still reports non-image problems when images are ignored', () => {
+    const result = validateRows([validRow({ price: 'abc' })], new Map(), { ignoreImages: true });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/"price" debe ser un número positivo/);
+  });
+
   it('still rejects a partially filled row that names an image missing from the ZIP', () => {
     const result = validateRows([validRow({ image_front: 'missing.jpg' })], imageMap);
     expect(result.valid).toBe(false);

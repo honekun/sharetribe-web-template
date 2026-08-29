@@ -11,7 +11,7 @@ const {
   hasActiveJobForUser,
   countActiveJobs,
 } = require('./jobStore');
-const { extractZip } = require('./zipExtractor');
+const { extractZip, MAX_CSV_BYTES } = require('./zipExtractor');
 const { authorizeAction, requireActionToken, requireUserSession } = require('./auth');
 const { getLimits } = require('./limits');
 const { checkAndRecord } = require('./rateLimiter');
@@ -25,15 +25,32 @@ const MAX_ZIP_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 MB compressed ZIP
 // Caps total imports running concurrently across all users (memory protection).
 const MAX_GLOBAL_CONCURRENT_JOBS = 3;
 
-const isZipUpload = file => {
-  const originalName = file?.originalname || '';
+// Two upload shapes are accepted:
+//  - a .zip holding one CSV plus the listing images, and
+//  - a bare .csv, imported as if no images were present (every row falls back to
+//    the bundled placeholder — see placeholderImage.js).
+// Browsers and spreadsheet apps are inconsistent about the MIME type they attach
+// to a CSV, so the extension decides and the MIME type is only a sanity check.
+const ZIP_MIME_TYPES = [
+  'application/zip',
+  'application/x-zip-compressed',
+  'application/octet-stream',
+];
+const CSV_MIME_TYPES = [
+  'text/csv',
+  'application/csv',
+  // Excel's own export type, and what some browsers fall back to.
+  'application/vnd.ms-excel',
+  'text/plain',
+  'application/octet-stream',
+];
+
+const classifyUpload = file => {
+  const originalName = (file?.originalname || '').toLowerCase();
   const mimeType = file?.mimetype || '';
-  return (
-    originalName.toLowerCase().endsWith('.zip') &&
-    ['application/zip', 'application/x-zip-compressed', 'application/octet-stream'].includes(
-      mimeType
-    )
-  );
+  if (originalName.endsWith('.zip') && ZIP_MIME_TYPES.includes(mimeType)) return 'zip';
+  if (originalName.endsWith('.csv') && CSV_MIME_TYPES.includes(mimeType)) return 'csv';
+  return null;
 };
 
 // Multer config: memory storage, single ZIP file with a compressed-size cap.
@@ -45,8 +62,8 @@ const upload = multer({
     files: 1,
   },
   fileFilter: (req, file, cb) => {
-    if (!isZipUpload(file)) {
-      return cb(new Error('El archivo subido debe ser un .zip con tipo de contenido ZIP.'));
+    if (!classifyUpload(file)) {
+      return cb(new Error('El archivo subido debe ser un .zip o un .csv.'));
     }
     return cb(null, true);
   },
@@ -78,31 +95,49 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, (req, r
     if (!req.file) {
       return res
         .status(400)
-        .json({ error: 'No se subió ningún archivo ZIP. Usa el nombre de campo "zipFile".' });
+        .json({ error: 'No se subió ningún archivo. Usa el nombre de campo "zipFile".' });
     }
 
     // Per-tier limits: admins get the larger caps, everyone else the standard tier.
     const limits = getLimits(req.bulkImportUser.isAdmin);
 
-    // Per-tier compressed-ZIP size cap (multer only enforces the admin ceiling).
-    if (req.file.size > limits.maxZipBytes) {
-      const mb = Math.round(limits.maxZipBytes / 1024 / 1024);
-      return res.status(400).json({ error: `El ZIP supera tu límite de ${mb} MB.` });
-    }
+    // A bare CSV carries no images, so it skips extraction and every row falls back
+    // to the placeholder. multer's fileFilter has already rejected anything that is
+    // neither a .zip nor a .csv; an unnamed upload is treated as a ZIP, as before.
+    const isCsvUpload = classifyUpload(req.file) === 'csv';
 
-    // Extract and validate ZIP contents
     let csvBuffer, imageMap;
-    try {
-      ({ csvBuffer, imageMap } = extractZip(req.file.buffer));
-    } catch (err) {
-      return res.status(400).json({ error: err.message });
-    }
+    if (isCsvUpload) {
+      // Same ceiling the ZIP extractor applies to a CSV inside an archive.
+      if (req.file.size > MAX_CSV_BYTES) {
+        const mb = Math.round(MAX_CSV_BYTES / 1024 / 1024);
+        return res.status(400).json({ error: `El archivo CSV supera el máximo de ${mb} MB.` });
+      }
+      if (!req.file.buffer || req.file.buffer.length === 0) {
+        return res.status(400).json({ error: 'El archivo CSV está vacío.' });
+      }
+      csvBuffer = req.file.buffer;
+      imageMap = new Map();
+    } else {
+      // Per-tier compressed-ZIP size cap (multer only enforces the admin ceiling).
+      if (req.file.size > limits.maxZipBytes) {
+        const mb = Math.round(limits.maxZipBytes / 1024 / 1024);
+        return res.status(400).json({ error: `El ZIP supera tu límite de ${mb} MB.` });
+      }
 
-    // Per-tier image-count cap.
-    if (imageMap.size > limits.maxImages) {
-      return res.status(400).json({
-        error: `Demasiadas imágenes (${imageMap.size}). Tu límite es ${limits.maxImages}.`,
-      });
+      // Extract and validate ZIP contents
+      try {
+        ({ csvBuffer, imageMap } = extractZip(req.file.buffer));
+      } catch (err) {
+        return res.status(400).json({ error: err.message });
+      }
+
+      // Per-tier image-count cap.
+      if (imageMap.size > limits.maxImages) {
+        return res.status(400).json({
+          error: `Demasiadas imágenes (${imageMap.size}). Tu límite es ${limits.maxImages}.`,
+        });
+      }
     }
 
     // Parse CSV
@@ -127,6 +162,9 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, (req, r
       currentUserId: req.bulkImportUser.userId,
       allowAuthorOverride: req.bulkImportUser.isAdmin,
       headerMap,
+      // A CSV-only upload has no images to resolve, so any filename it names is
+      // dropped rather than reported as missing.
+      ignoreImages: isCsvUpload,
     });
     if (!validation.valid) {
       return res.status(400).json({
@@ -257,4 +295,4 @@ router.get('/template', (req, res) => {
 });
 
 module.exports = router;
-module.exports._test = { isZipUpload, MAX_ZIP_UPLOAD_BYTES };
+module.exports._test = { classifyUpload, MAX_ZIP_UPLOAD_BYTES };

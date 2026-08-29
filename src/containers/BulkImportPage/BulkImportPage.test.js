@@ -77,14 +77,63 @@ describe('BulkImportPage', () => {
     expect(window.localStorage.getItem('bulkImportApiKey')).toBeNull();
   });
 
-  it('renders ZIP file input', async () => {
+  it('renders a file input that takes a ZIP or a bare CSV', async () => {
     render(<BulkImportPage />, { initialState: baseState });
 
     await waitFor(() => {
       const input = screen.getByLabelText('BulkImportPage.zipLabel');
       expect(input).toBeInTheDocument();
       expect(input.type).toBe('file');
-      expect(input.accept).toBe('.zip');
+      expect(input.accept).toBe('.zip,.csv');
+    });
+  });
+
+  it('accepts a bare CSV and posts it to the start endpoint', async () => {
+    global.fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, token: 'action-token' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ jobId: 'job-csv', total: 2 }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'job-csv',
+          status: 'completed',
+          total: 2,
+          processed: 2,
+          succeeded: 2,
+          failed: 0,
+          errors: [],
+          results: [],
+        }),
+      });
+
+    render(<BulkImportPage />, { initialState: baseState });
+
+    const input = await screen.findByLabelText('BulkImportPage.zipLabel');
+    const csv = new File(['title,description,price'], 'listings.csv', { type: 'text/csv' });
+    fireEvent.change(input, { target: { files: [csv] } });
+
+    // The selected-file line names the CSV, so no "select a file" error is shown.
+    expect(screen.queryByText('BulkImportPage.errorNoZip')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('BulkImportPage.startImport'));
+
+    await waitFor(() => {
+      expect(screen.getByText('BulkImportPage.completed')).toBeInTheDocument();
+    });
+
+    const startCall = global.fetch.mock.calls.find(([url]) => url.includes('/start'));
+    expect(startCall[1].body.get('zipFile')).toBe(csv);
+  });
+
+  it('rejects a file that is neither a ZIP nor a CSV', async () => {
+    render(<BulkImportPage />, { initialState: baseState });
+
+    const input = await screen.findByLabelText('BulkImportPage.zipLabel');
+    const txt = new File(['nope'], 'notes.txt', { type: 'text/plain' });
+    fireEvent.change(input, { target: { files: [txt] } });
+
+    await waitFor(() => {
+      expect(screen.getByText('BulkImportPage.errorNoZip')).toBeInTheDocument();
     });
   });
 

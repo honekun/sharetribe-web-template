@@ -1,7 +1,7 @@
 # Bulk Listing ZIP Importer
 
-Tool for creating multiple marketplace listings at once from a single ZIP file containing a CSV and,
-optionally, the listing images. Available at `/admin/bulk-import`.
+Tool for creating multiple marketplace listings at once, from either a `.zip` holding a CSV plus the
+listing images, or a bare `.csv` on its own. Available at `/admin/bulk-import`.
 
 Any signed-in user can bulk-import listings **for themselves** — every listing is created with the
 current user as its author. "Admin" users (emails listed in `BULK_IMPORT_OPERATOR_EMAILS`) may add a
@@ -16,8 +16,8 @@ current user as its author. "Admin" users (emails listed in `BULK_IMPORT_OPERATO
 3. Navigate to `/admin/bulk-import`
 4. Sign in (any user able to create listings); listings will be authored to you
 5. Download the CSV template from the page and fill it in
-6. Pack your completed CSV and any image files into a single `.zip` archive (images are optional —
-   rows without one are published with the bundled placeholder)
+6. Pack your completed CSV and any image files into a single `.zip` archive — or upload the `.csv`
+   on its own when you have no photos yet (every listing then gets the bundled placeholder)
 7. Select the ZIP file and click "Start Import", then monitor progress
 
 ---
@@ -70,13 +70,26 @@ the next row.
 
 ---
 
-## ZIP File Structure
+## Upload formats
+
+| Upload    | Contents                              | Images                                                              |
+| --------- | ------------------------------------- | ------------------------------------------------------------------- |
+| `.zip`    | Exactly one CSV + the referenced images | Resolved by filename; a name missing from the ZIP is an error       |
+| `.csv`    | The spreadsheet alone (max 5 MB)      | None — image columns are ignored and every row gets the placeholder |
+
+Both arrive on the same `zipFile` multipart field and are told apart by extension (`classifyUpload`
+in `index.js`, which also sanity-checks the MIME type — spreadsheets send anything from `text/csv`
+to `application/vnd.ms-excel`). A bare CSV skips `extractZip` altogether, so the archive rules below
+and the per-tier ZIP-size and image-count caps do not apply to it; the row cap, hourly rate limit,
+and both concurrency guards still do.
+
+### ZIP File Structure
 
 The uploaded ZIP must contain exactly one CSV file and every image file its CSV references. Images
 may be placed in subdirectories — they are matched by filename only (basename), not by path. A ZIP
 with no images at all is valid: each row then gets the placeholder.
 
-### Example layout
+#### Example layout
 
 ```
 listings.zip
@@ -91,7 +104,7 @@ listings.zip
     └── jacket_details.jpg
 ```
 
-### ZIP validation rules
+#### ZIP validation rules
 
 The server validates the ZIP before starting any import. All checks run synchronously and return
 HTTP 400 if they fail.
@@ -185,7 +198,8 @@ still a validation error, so typos are caught rather than silently replaced. Fil
 
 ### Placeholder image
 
-A row whose four image columns are **all** blank is imported with the placeholder asset bundled at
+A row whose four image columns are **all** blank — or **every** row of a bare-CSV upload — is
+imported with the placeholder asset bundled at
 `server/api/bulk-import/assets/bulk-import-placeholder.jpg` as its single image. Those listings:
 
 - get **no** `publicData.imageSlots` (the placeholder is not a front/back/horizontal photo, and must
@@ -358,8 +372,13 @@ Start a new import job.
 
 **Form fields**:
 
-- `zipFile` (file, required) — a `.zip` archive containing one CSV and all referenced images (max 50
-  MB compressed)
+- `zipFile` (file, required) — either a `.zip` archive containing one CSV and all referenced images
+  (max 50 MB compressed), or a bare `.csv` (max 5 MB). The field name is `zipFile` for both; it
+  predates CSV support and is kept so existing callers keep working.
+
+A bare CSV is imported **as if no images were present**: the image columns are ignored entirely —
+even filled-in ones — and every row falls back to the bundled placeholder. Upload a ZIP if you want
+the filenames resolved.
 
 **Response** (HTTP 202):
 
@@ -373,9 +392,11 @@ Start a new import job.
 
 **Error responses**:
 
-- `400` — No ZIP file uploaded
+- `400` — No file uploaded
+- `400` — The upload is neither a `.zip` nor a `.csv` (rejected by multer's file filter)
 - `400` — ZIP validation failed (corrupt archive, no CSV, multiple CSVs, duplicate image filenames,
   path traversal, too many entries, empty CSV)
+- `400` — Bare CSV over 5 MB, or empty
 - `400` — CSV validation failed; `details` array lists all per-row and per-column errors (missing
   required columns, empty required fields, invalid price, image filename not found in ZIP, invalid
   geolocation)

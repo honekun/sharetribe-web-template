@@ -1131,6 +1131,11 @@ is ignored — only the filename matters). The legacy `image_front`/`image_back`
 > row that names a file which is not in the ZIP is still an error, so a typo is caught rather than
 > quietly turned into a placeholder.
 
+**No photos at all?** You can skip the ZIP entirely and upload just the filled-in `.csv` (up to
+5 MB). Every listing in it is created with the placeholder image, exactly as if you had left the
+image columns blank. Note that in this mode the image columns are **ignored even when filled in** —
+there are no photos to match them against — so upload a ZIP whenever you do have the pictures.
+
 **Finding the listings that still need photos.** Placeholder listings are tagged behind the scenes,
 so you can list them at any time by opening:
 

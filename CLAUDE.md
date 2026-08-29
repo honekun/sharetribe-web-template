@@ -178,7 +178,10 @@ more/less; rendered via OrderPanel `detailsSlot`.
 import open to any signed-in user — listings author to the current user;
 `BULK_IMPORT_OPERATOR_EMAILS` flags "admin" users who may add a `user_id` column to author for
 others. Tiered limits + per-user hourly rate limit + magic-byte image sniffing; blue CTA on
-`/l/new`. **Images are optional:** a row with all four image columns blank is imported with the
+`/l/new`. **Upload is a `.zip` (CSV + images) or a bare `.csv`** — same `zipFile` multipart field,
+told apart by `classifyUpload()`; the CSV path skips `extractZip` and passes `ignoreImages` to
+`validateRows`, so its image columns are dropped even when filled and every row takes the
+placeholder. **Images are optional:** a row with all four image columns blank is imported with the
 bundled `server/api/bulk-import/assets/bulk-import-placeholder.jpg` (loader: `placeholderImage.js`)
 and stamped `publicData.avPlaceholderImage: true` + `avPlaceholderImageId`; a row that *names* a file
 missing from the ZIP is still an error. The flag is code-managed only — never a Console listing field

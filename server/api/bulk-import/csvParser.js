@@ -152,10 +152,20 @@ function parseCsv(buffer) {
  *    name the column the operator actually typed (e.g. "imagen_1", not
  *    "image_front"). Optional; falls back to the canonical name when absent.
  *
+ * ignoreImages (default false) drops the image columns entirely and flags every
+ * row for the placeholder. Set for a bare-CSV upload, which carries no images at
+ * all: a filename the operator typed cannot be resolved either way, so it is
+ * discarded rather than reported as missing.
+ *
  * Returns { valid: boolean, rows: Array, errors: Array<string> }
  */
 function validateRows(rows, imageMap, authorOptions = {}) {
-  const { currentUserId = null, allowAuthorOverride = false, headerMap = {} } = authorOptions;
+  const {
+    currentUserId = null,
+    allowAuthorOverride = false,
+    headerMap = {},
+    ignoreImages = false,
+  } = authorOptions;
   // Show the operator the actual CSV column header they typed rather than the
   // internal canonical key.
   const label = col => headerMap[col] || col;
@@ -233,9 +243,10 @@ function validateRows(rows, imageMap, authorOptions = {}) {
     }
 
     // Image filename validation. No image column is required; whichever slots the
-    // operator filled must resolve to a file that is actually in the ZIP.
+    // operator filled must resolve to a file that is actually in the ZIP. A
+    // bare-CSV upload skips this altogether (ignoreImages).
     const imageSlots = {};
-    for (const col of IMAGE_COLUMNS) {
+    for (const col of ignoreImages ? [] : IMAGE_COLUMNS) {
       const filename = row[col];
       if (filename && filename.trim() !== '') {
         const trimmed = filename.trim();
