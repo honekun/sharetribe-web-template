@@ -1112,19 +1112,37 @@ my-listings.zip
 #### Image columns
 
 Each listing has four labeled image slots in order: `imagen_1` = front, `imagen_2` = back,
-`imagen_3` = horizontal (wide-angle), `imagen_4` = details. The first three are required, details is
-optional.
+`imagen_3` = horizontal (wide-angle), `imagen_4` = details. **All four are optional.**
 
 | Column     | Slot       | Required | Description                                   |
 | ---------- | ---------- | -------- | --------------------------------------------- |
-| `imagen_1` | Front      | Yes      | Filename of the front-facing image            |
-| `imagen_2` | Back       | Yes      | Filename of the back-facing image             |
-| `imagen_3` | Horizontal | Yes      | Filename of the horizontal / wide-angle image |
+| `imagen_1` | Front      | No       | Filename of the front-facing image            |
+| `imagen_2` | Back       | No       | Filename of the back-facing image             |
+| `imagen_3` | Horizontal | No       | Filename of the horizontal / wide-angle image |
 | `imagen_4` | Details    | No       | Filename of the close-up details image        |
 
 Filenames are **case-sensitive** and must match exactly the filename inside the ZIP (the folder path
 is ignored — only the filename matters). The legacy `image_front`/`image_back`/`image_horizontal`/
 `image_details` headers are also accepted.
+
+> **Rows with no photos.** Leave every image column blank and the listing is still created — it is
+> published with a standard Archivo Vintach placeholder image, ready for you to replace with real
+> photos from **Editar publicación**. This applies only to a row with **all four** columns empty: a
+> row that names a file which is not in the ZIP is still an error, so a typo is caught rather than
+> quietly turned into a placeholder.
+
+**Finding the listings that still need photos.** Placeholder listings are tagged behind the scenes,
+so you can list them at any time by opening:
+
+```
+/s?pub_avPlaceholderImage=true
+```
+
+The tag clears itself the moment the placeholder image is removed from a listing and real photos
+take its place — there is nothing to tick off by hand, and the tag is not editable in Console or in
+the listing form. (One-time setup per marketplace, done by a developer:
+`flex-cli search set --key avPlaceholderImage --scope public --type boolean -m <marketplace-id>`.
+Until that runs, the URL above returns nothing.)
 
 #### Extended data columns (`pub_*` prefix)
 
@@ -1481,7 +1499,7 @@ This is the "missing values" check. It runs in two stages.
 | `title`                         | Not empty.                                                                                                         |
 | `description`                   | Not empty.                                                                                                         |
 | `price`                         | Reads as a **positive** number. A `$` sign and thousands separators are fine; `0`, negatives, and text are not.    |
-| Required image columns          | `image_front`, `image_back`, and `image_horizontal` each have a filename. (`image_details` / image 4 is optional.) |
+| Image columns                   | None are required. A row that leaves all four blank is imported with the placeholder image.                       |
 | Image filenames                 | Every filename referenced in the row **exists in the ZIP**. A typo or wrong extension fails here.                  |
 | `pub_*` keys                    | A `pub_*`/`pd_*` column does not use a reserved name (`__proto__`, `constructor`, `prototype`).                    |
 | `location_lat` / `location_lng` | If present, both are valid numbers.                                                                                |
@@ -1508,7 +1526,6 @@ at 1). For example, for a CSV using the accepted Spanish alias headers:
 Falta información para completar en tu archivo CSV. Completa la información en la plantilla y vuelve a exportar.
 Fila 2: "Nombre de Producto*" está vacío.
 Fila 2: "Precio Venta (MXN)*" debe ser un número positivo, se recibió "abc".
-Fila 5: "Nombre imagen 1*" es obligatorio.
 Fila 7: La imagen "vestido-frente.jpg" (Nombre imagen 1*) no se encontró en los archivos subidos.
 ```
 
@@ -1524,22 +1541,22 @@ can find and fix the offending column without translating anything.
 
 **Why this helps.** Internally the tool refers to the four image columns as `image_front`,
 `image_back`, `image_horizontal`, and `image_details`. If your spreadsheet's first image column is
-headed `Nombre imagen 1*`, an older error might have told you `"image_front" es obligatorio` — a
-name that appears **nowhere** in your file. Now the same error reads
-`"Nombre imagen 1*" es obligatorio`, pointing straight at the column you need to fix.
+headed `Nombre imagen 1*`, an older error might have named `image_front` — a name that appears
+**nowhere** in your file. Now the error quotes `Nombre imagen 1*`, pointing straight at the column
+you need to fix.
 
-**How your header appears, by template.** The same missing first-image error is phrased using
-whichever header your file uses:
+**How your header appears, by template.** The same unresolved-image error is phrased using whichever
+header your file uses:
 
-| Header dialect in your CSV  | First-image column header | Error you see                                  |
-| --------------------------- | ------------------------- | ---------------------------------------------- |
-| Current downloaded template | `imagen_1`                | `Fila N: "imagen_1" es obligatorio.`           |
-| Accepted Spanish alias      | `Nombre imagen 1*`        | `Fila N: "Nombre imagen 1*" es obligatorio.`   |
-| Google Sheets export        | `Imagen 1: Frontal*`      | `Fila N: "Imagen 1: Frontal*" es obligatorio.` |
-| Internal English names      | `image_front`             | `Fila N: "image_front" es obligatorio.`        |
+| Header dialect in your CSV  | First-image column header | Error you see                                             |
+| --------------------------- | ------------------------- | --------------------------------------------------------- |
+| Current downloaded template | `imagen_1`                | `Fila N: La imagen "x.jpg" (imagen_1) no se encontró…`    |
+| Accepted Spanish alias      | `Nombre imagen 1*`        | `Fila N: La imagen "x.jpg" (Nombre imagen 1*) no se…`     |
+| Google Sheets export        | `Imagen 1: Frontal*`      | `Fila N: La imagen "x.jpg" (Imagen 1: Frontal*) no se…`   |
+| Internal English names      | `image_front`             | `Fila N: La imagen "x.jpg" (image_front) no se encontró…` |
 
-This applies to **all** the per-row value errors — empty title/description, invalid price, a missing
-or unresolved image, and an invalid `stock` — not just the image columns.
+This applies to **all** the per-row value errors — empty title/description, invalid price, an
+unresolved image, and an invalid `stock` — not just the image columns.
 
 **Two edge cases where you'll still see the field's generic name:**
 

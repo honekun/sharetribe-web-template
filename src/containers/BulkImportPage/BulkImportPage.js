@@ -33,6 +33,9 @@ const ROW_ERROR_CODE_KEYS = {
   'user-not-found': 'BulkImportPage.rowError.userNotFound',
   'row-timeout': 'BulkImportPage.rowError.rowTimeout',
   'no-author': 'BulkImportPage.rowError.noAuthor',
+  // The bundled placeholder used for image-less rows is missing or corrupt.
+  'placeholder-missing': 'BulkImportPage.rowError.placeholderUnavailable',
+  'placeholder-invalid': 'BulkImportPage.rowError.placeholderUnavailable',
 };
 const HTTP_STATUS_KEYS = {
   400: 'BulkImportPage.rowError.http400',

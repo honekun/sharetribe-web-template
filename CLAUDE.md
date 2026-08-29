@@ -178,7 +178,14 @@ more/less; rendered via OrderPanel `detailsSlot`.
 import open to any signed-in user — listings author to the current user;
 `BULK_IMPORT_OPERATOR_EMAILS` flags "admin" users who may add a `user_id` column to author for
 others. Tiered limits + per-user hourly rate limit + magic-byte image sniffing; blue CTA on
-`/l/new`. See `docs/implementation/bulk-import.md`).
+`/l/new`. **Images are optional:** a row with all four image columns blank is imported with the
+bundled `server/api/bulk-import/assets/bulk-import-placeholder.jpg` (loader: `placeholderImage.js`)
+and stamped `publicData.avPlaceholderImage: true` + `avPlaceholderImageId`; a row that *names* a file
+missing from the ZIP is still an error. The flag is code-managed only — never a Console listing field
+— queryable via a CLI search schema (`flex-cli search set --key avPlaceholderImage --scope public
+--type boolean`), and cleared by `util/avPlaceholderListing.js` from `EditListingPage.duck.js` once
+the placeholder image is no longer among a listing's images. See
+`docs/implementation/bulk-import.md`).
 
 ### Custom PageBuilder sections (`SectionBuilder/`)
 
@@ -561,6 +568,7 @@ contain.
 | `containers/InboxPage/InboxPage.js`                                                     | Orders tab hidden for `vendedor-tienda` (`configAV.isNavPageHiddenForUser`)                                     |
 | `EditListingWizard/EditListingWizard.js`                                                | Default Stripe Connect payout country; blue "Bulk import" CTA (`NamedLink`) on new-listing flow                 |
 | `EditListingWizard/EditListingWizardTab.js`                                             | `currentUser` prop drilling for pricing                                                                         |
+| `EditListingPage/EditListingPage.duck.js`                                               | `clearPlaceholderFlagMaybe` in `updateListingThunk` (bulk-import placeholder flag)                              |
 | `EditListingWizard/EditListingDetailsPanel/EditListingDetailsForm.js`                   | Two-column grid + `PhotoGallerySection`                                                                         |
 | `EditListingWizard/EditListingPricingPanel/EditListingPricing{Panel,Form}.js`           | `originalPrice` field (gated by `configAV`)                                                                     |
 | `ManageListingsPage/ManageListingsPage.js`                                              | "Create listing" `NamedLink` heading                                                                            |

@@ -417,10 +417,10 @@ describe('BulkImportPage', () => {
         json: async () => ({
           id: 'job-err',
           status: 'completed',
-          total: 2,
-          processed: 2,
+          total: 3,
+          processed: 3,
           succeeded: 0,
-          failed: 2,
+          failed: 3,
           errors: [
             {
               row: 1,
@@ -442,6 +442,14 @@ describe('BulkImportPage', () => {
               title: 'Server hiccup',
               error: 'Request failed with status code 500',
               status: 500,
+            },
+            // Worker-thrown synthetic code: the bundled placeholder image could
+            // not be loaded for an image-less row.
+            {
+              row: 3,
+              title: 'Sin fotos',
+              error: 'No se encontró la imagen de reemplazo',
+              code: 'placeholder-missing',
             },
           ],
           results: [],
@@ -469,6 +477,9 @@ describe('BulkImportPage', () => {
     // Row without a structured code falls back to the HTTP-status message + hint.
     expect(screen.getByText('BulkImportPage.rowError.http500')).toBeInTheDocument();
     expect(screen.getByText('HTTP 500')).toBeInTheDocument();
+
+    // Placeholder-asset failure maps to its own message rather than the generic one.
+    expect(screen.getByText('BulkImportPage.rowError.placeholderUnavailable')).toBeInTheDocument();
   });
 
   it('resets the form after a completed import', async () => {

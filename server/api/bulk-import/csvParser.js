@@ -57,8 +57,10 @@ const COLUMN_ALIASES = {
 };
 
 const REQUIRED_COLUMNS = ['title', 'price', 'description'];
+// Images are optional. A row that references no image at all is imported with the
+// bundled placeholder (see importWorker/placeholderImage); a row that names a file
+// is still required to have that file present in the ZIP.
 const IMAGE_COLUMNS = ['image_front', 'image_back', 'image_horizontal', 'image_details'];
-const REQUIRED_IMAGE_COLUMNS = ['image_front', 'image_back', 'image_horizontal'];
 const MAX_ROWS = 100;
 const RESERVED_PD_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 // Public-data columns are recognised by either prefix: `pub_` (the search-param
@@ -230,15 +232,8 @@ function validateRows(rows, imageMap, authorOptions = {}) {
       }
     }
 
-    // Required image columns
-    for (const col of REQUIRED_IMAGE_COLUMNS) {
-      const filename = row[col];
-      if (!filename || filename.trim() === '') {
-        rowErrors.push(`Fila ${rowNum}: "${label(col)}" es obligatorio.`);
-      }
-    }
-
-    // Image filename validation
+    // Image filename validation. No image column is required; whichever slots the
+    // operator filled must resolve to a file that is actually in the ZIP.
     const imageSlots = {};
     for (const col of IMAGE_COLUMNS) {
       const filename = row[col];
@@ -341,6 +336,8 @@ function validateRows(rows, imageMap, authorOptions = {}) {
       lat,
       lng,
       imageSlots,
+      // A row that names no image at all gets the bundled placeholder at import time.
+      usePlaceholderImage: Object.keys(imageSlots).length === 0,
       publicData,
     };
   });
