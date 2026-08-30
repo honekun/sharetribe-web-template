@@ -97,8 +97,17 @@ pinned to its deadline, so moving a window means moving its reminder too.
   `REACT_APP_AV_DEFAULT_COUNTRY`); `sellerUserTypes` + `canShowOriginalPrice()` (originalPrice
   gate); `storeSellerUserType`/`storeTypeFieldKey`/`getStoreTypeTags()` (StoreTypeTags gate/labels);
   `welcomePopupUserTypes`/`canShowWelcomePopup()`/`welcomePopupSuppressedPaths` (AVWelcomePopup
-  gate); `moveListingFieldToEnd()` (keeps `tags` last; called from `configHelpers`). The three gates
-  are intentionally separate.
+  gate); `storeSellerHiddenNavPages`/`isNavPageHiddenForUser()` (hides the buyer-side menu entries —
+  MyAddresses, Favorites, and the inbox sidebar's Orders tab keyed `InboxPage:orders` — from
+  `vendedor-tienda`; the inbox envelope itself stays, and Topbar resolves `inboxTab` away from a
+  hidden tab; **visibility only**, every route stays registered and reachable by URL);
+  `moveListingFieldToEnd()` (keeps `tags` last; called from `configHelpers`);
+  `brandFieldKey`/`mergeHostedBrandOptions()` (folds the Console `brand` field's
+  `enumOptions` into the code-defined field from `configListingAV.js` before
+  `configHelpers`' field-level union discards them — Console wins per option, the
+  field's own config stays code-owned, result sorted by label with `other` first;
+  `brand` only, `color`/`all_sizes` are untouched). The four gates are
+  intentionally separate.
 
 **Styling** — CSS Modules (`*.module.css`, `className={css.root}`). Globals in `src/styles/`:
 `marketplaceDefaults.css`, `avBrandOverrides.css`, `customMediaQueries.css`. Theme vars
@@ -169,7 +178,17 @@ more/less; rendered via OrderPanel `detailsSlot`.
 import open to any signed-in user — listings author to the current user;
 `BULK_IMPORT_OPERATOR_EMAILS` flags "admin" users who may add a `user_id` column to author for
 others. Tiered limits + per-user hourly rate limit + magic-byte image sniffing; blue CTA on
-`/l/new`. See `docs/implementation/bulk-import.md`).
+`/l/new`. **Upload is a `.zip` (CSV + images) or a bare `.csv`** — same `zipFile` multipart field,
+told apart by `classifyUpload()`; the CSV path skips `extractZip` and passes `ignoreImages` to
+`validateRows`, so its image columns are dropped even when filled and every row takes the
+placeholder. **Images are optional:** a row with all four image columns blank is imported with the
+bundled `server/api/bulk-import/assets/bulk-import-placeholder.jpg` (loader: `placeholderImage.js`)
+and stamped `publicData.avPlaceholderImage: true` + `avPlaceholderImageId`; a row that *names* a file
+missing from the ZIP is still an error. The flag is code-managed only — never a Console listing field
+— queryable via a CLI search schema (`flex-cli search set --key avPlaceholderImage --scope public
+--type boolean`), and cleared by `util/avPlaceholderListing.js` from `EditListingPage.duck.js` once
+the placeholder image is no longer among a listing's images. See
+`docs/implementation/bulk-import.md`).
 
 ### Custom PageBuilder sections (`SectionBuilder/`)
 
@@ -354,6 +373,17 @@ replaces the icon's own 28px `.root` rather than tying on specificity),
 hosts the selector slot + surfaces address values via `FormSpy` + gates the Pay button
 (`submitDisabledExtra`); `transactionLineItems` is async.
 
+### Tracking webhook (buyer pickup email)
+
+`POST /api/shipping/eship-webhook` (`server/api/eship-webhook.js`) takes eShip's tracking
+checkpoints, queues only `TRANSIT`/`picked_up` in PostgreSQL (migration `009`), and lets the poller
+send one native buyer email; everything else is `202`-ignored and duplicates return `200`. Auth is a
+shared secret presented **either** as the `X-AV-Webhook-Secret` header or `?secret=`, compared in
+constant time — `requestSecretMatches` accepts whichever matches, so a stale header next to a valid
+URL still delivers. Configure eShip with the header: Render/Heroku router logs and `@sentry/node`'s
+`request.query_string` both persist query strings. The route 404s unless
+`AV_ESHIP_TRACKING_EMAILS_ENABLED=true`, so enable the flag before saving the dashboard webhook.
+
 Env vars: `ESHIP_API_KEY` (server secret, required to quote), `ESHIP_BASE_URL` (required; no
 hardcoded default — set per env: QA `https://apiqa.myeship.co/rest` on test, production
 `https://api.myeship.co/rest` live), `ESHIP_MARKUP_PCT` (optional, default `0.18`),
@@ -362,8 +392,10 @@ response as `{ code: 'ESHIP_ERROR', detail }` — default/false keeps the opaque
 `SHIPPING_LABEL_OPERATOR_EMAILS` (optional; comma-separated emails allowed to retry any seller's
 label — sellers can always retry their own), `ESHIP_LABEL_AUTOBUY` (optional, default `false`;
 `true` auto-buys the label on `confirm-payment`, otherwise the seller buys it via the Generar guía
-button). Quoting and label purchase also need the Integration credentials
-(`SHARETRIBE_INTEGRATION_CLIENT_ID/SECRET`) to read seller origin and write `metadata.avLabel`.
+button), `ESHIP_WEBHOOK_SECRET` (required for the tracking email; ≥32 bytes, else the route 503s),
+`AV_ESHIP_TRACKING_EMAILS_ENABLED` (default `false`). Quoting and label purchase also need the
+Integration credentials (`SHARETRIBE_INTEGRATION_CLIENT_ID/SECRET`) to read seller origin and write
+`metadata.avLabel`.
 
 ## Listing Form Customizations (Edit Listing Wizard)
 
@@ -484,6 +516,12 @@ Preferred order when an upstream component needs to behave differently:
 3. **Never wrap upstream JSX just for layout.** A wrapper `<div>` re-indents the whole subtree and
    makes every future upstream hunk conflict. Style the existing element from `avBrandOverrides.css`
    instead.
+4. **An AV import added to an upstream file goes after that file's own import groups**, not sorted
+   into them — even though that reads as out-of-order by the convention AV-owned files follow. The
+   appended line sits outside the blocks upstream edits; sorted in, it sits inside one. Import-order
+   sweeps are scoped to files absent from `upstream/main` for the same reason, so
+   `ManageListingsPage.js`, `ProfilePage.js` and `SearchResultsPanel.js` keep their trailing
+   `avGridSizes` imports deliberately. This is a decision, not an oversight — don't "fix" it.
 
 ### Deliberate forks — diff these on every upstream sync
 
@@ -506,21 +544,38 @@ git diff 832f8d66f upstream/main -- src/containers/PageBuilder/BlockBuilder/Bloc
 
 ### Watchlist — high merge-conflict risk
 
+**This table is the only watchlist under version control.** `.codex/reference/upstream-sync.md`
+carries a short form of the same guidance, but `.codex/` is gitignored (`.gitignore:18`), so that
+copy is machine-local: it is invisible to CI, to a fresh clone, and to anyone else's checkout, and
+it drifts from this table without anything failing. Keep this table authoritative, and treat the
+`.codex` copy as a local convenience that may already be stale.
+
+Corollary: **do not describe edits to ignored paths in a commit message.** `1cfb8d6ac` says it added
+three checkout files to `.codex/reference/upstream-sync.md`; its diffstat is `CLAUDE.md | 1 +`,
+because the other edit was silently dropped. The message records work the repository does not
+contain.
+
 | File                                                                                    | Why touched                                                                                                     |
 | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `components/CustomExtendedDataField/CustomExtendedDataField.js`                         | `groupedMultiSelect` + `colorGridPicker` branches                                                               |
 | `components/FieldCurrencyInput/FieldCurrencyInput.js`                                   | Price inputs forced to `en-US` (`$1,325.00`) to match `formatMoney` display — was locale-dependent `1.325,00 $` |
-| `util/configHelpers.js`                                                                 | Listing field merge (code wins over Console)                                                                    |
+| `util/configHelpers.js`                                                                 | Listing field merge (code wins over Console, except `brand` options — `configAV.mergeHostedBrandOptions`)       |
 | `containers/SearchPage/FilterComponent.js`                                              | Custom filter type branches (delegates to `searchFilters/avFilters`)                                            |
 | `containers/SearchPage/SearchPageWithGrid.js`                                           | Grouped-sizes filter injection (`injectAvFilters`)                                                              |
 | `PageBuilder/SectionBuilder/SectionBuilder.js`                                          | Custom section registration + AV `blockComponents` injection                                                    |
 | `CheckoutPage/CheckoutPageWithPayment.js`                                               | Default Stripe country (`configAV.defaultCountry`)                                                              |
+| `CheckoutPage/CheckoutPage.module.css`                                                  | 2-column layout from `--viewportMedium` (not `--viewportLarge`) + fluid `--avCheckoutRamp` sizing               |
+| `CheckoutPage/DetailsSideCard.js`                                                       | Breakdown loading overlay (`speculateInProgress`) + 4:3 image box from `avListingImage.js`                      |
+| `CheckoutPage/MobileListingImage.js`                                                    | 4:3 image box from `avListingImage.js`                                                                          |
+| `TopbarContainer/Topbar/Topbar.js`                                                      | Mobile bag/favorites/inbox icon group + absolutely-centred logo (`Topbar.av.module.css`); `inboxTab` gate       |
+| `containers/InboxPage/InboxPage.js`                                                     | Orders tab hidden for `vendedor-tienda` (`configAV.isNavPageHiddenForUser`)                                     |
 | `EditListingWizard/EditListingWizard.js`                                                | Default Stripe Connect payout country; blue "Bulk import" CTA (`NamedLink`) on new-listing flow                 |
 | `EditListingWizard/EditListingWizardTab.js`                                             | `currentUser` prop drilling for pricing                                                                         |
+| `EditListingPage/EditListingPage.duck.js`                                               | `clearPlaceholderFlagMaybe` in `updateListingThunk` (bulk-import placeholder flag)                              |
 | `EditListingWizard/EditListingDetailsPanel/EditListingDetailsForm.js`                   | Two-column grid + `PhotoGallerySection`                                                                         |
 | `EditListingWizard/EditListingPricingPanel/EditListingPricing{Panel,Form}.js`           | `originalPrice` field (gated by `configAV`)                                                                     |
 | `ManageListingsPage/ManageListingsPage.js`                                              | "Create listing" `NamedLink` heading                                                                            |
-| `components/UserNav/UserNav.js`                                                         | Active-state expanded to all account pages                                                                      |
+| `components/UserNav/UserNav.js`                                                         | Active-state expanded to all account pages; AV tabs from `useAvProfileLinks()`                                  |
 | `containers/ProfilePage/ProfilePage.js`                                                 | `ListingCard` → `AVListingCard` swap                                                                            |
 | `containers/AuthenticationPage/UserFieldDisplayName.js`                                 | Per-userType display-name label (store sellers)                                                                 |
 | `containers/ListingPage/SectionHero.js`                                                 | `StoreTypeTags` overlay on the gallery hero                                                                     |
@@ -528,7 +583,7 @@ git diff 832f8d66f upstream/main -- src/containers/PageBuilder/BlockBuilder/Bloc
 | `PageBuilder/SectionBuilder/SectionColumns/SectionColumns.js`                           | `AVSectionContainer` + `2/3 cols` token                                                                         |
 | `PageBuilder/SectionBuilder/SectionCarousel/SectionCarousel.js`                         | `AVSectionContainer` + `useDebouncedWindowResize`                                                               |
 | `components/CustomExtendedDataSection/CustomExtendedDataSection.js`                     | Custom `color`/`all_sizes` display dispatch (key→component map)                                                 |
-| `components/LayoutComposer/LayoutSideNavigation/LayoutWrapperAccountSettingsSideNav.js` | Account tabs from `getAccountSettingsTabs()` extension                                                          |
+| `components/LayoutComposer/LayoutSideNavigation/LayoutWrapperAccountSettingsSideNav.js` | Account tabs from `getAccountSettingsTabs()` extension, fed `currentUser` from the store                        |
 
 Also high-conflict on sync: `SearchResultsPanel.js` (AVListingCard swap), `CMSPage.js` (section
 injection), `TopbarDesktop.js`/`TopbarMobileMenu.js`/`UserNav.js` (nav links),

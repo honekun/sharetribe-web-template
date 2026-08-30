@@ -26,6 +26,8 @@ import {
 } from '../../ducks/stripeConnectAccount.duck';
 import { fetchCurrentUser } from '../../ducks/user.duck';
 import { executeFileUpload } from '../../util/fileHelpers';
+// AV: clears the bulk-import placeholder flag once real photos replace the placeholder.
+import { clearPlaceholderFlagMaybe } from '../../util/avPlaceholderListing';
 
 const { UUID } = sdkTypes;
 
@@ -281,6 +283,16 @@ export const updateListingThunk = createAsyncThunk(
     // If images should be saved, create array out of the image UUIDs for the API call
     const imageProperty = typeof images !== 'undefined' ? { images: imageIds(images) } : {};
     const ownListingUpdateValues = { id, ...imageProperty, ...rest };
+    // AV: a bulk-imported listing stops being a placeholder listing the moment the
+    // placeholder image is no longer among the submitted images.
+    const placeholderPatch = clearPlaceholderFlagMaybe({
+      existingPublicData: getState().marketplaceData.entities.ownListing?.[id.uuid]?.attributes
+        ?.publicData,
+      imageIds: imageProperty.images,
+    });
+    if (placeholderPatch) {
+      ownListingUpdateValues.publicData = { ...rest.publicData, ...placeholderPatch };
+    }
     const imageVariantInfo = getImageVariantInfo(config.layout.listingImage);
     const queryParams = {
       expand: true,

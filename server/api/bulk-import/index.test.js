@@ -5,6 +5,7 @@ jest.mock('./importWorker', () => ({
 }));
 
 jest.mock('./zipExtractor', () => ({
+  ...jest.requireActual('./zipExtractor'),
   extractZip: jest.fn(),
 }));
 
@@ -20,7 +21,7 @@ const { getSdk } = require('../../api-util/sdk');
 const router = require('./index');
 const { _test: authTest } = require('./auth');
 const { _test: rateLimiterTest } = require('./rateLimiter');
-const { isZipUpload, MAX_ZIP_UPLOAD_BYTES } = router._test;
+const { classifyUpload, MAX_ZIP_UPLOAD_BYTES } = router._test;
 
 const ORIGINAL_ENV = process.env;
 
@@ -118,6 +119,81 @@ describe('bulk import router', () => {
     expect(res.body.jobId).toBeDefined();
     expect(res.body.total).toBe(1);
     expect(processImportJob).toHaveBeenCalledTimes(1);
+  });
+
+  describe('bare CSV upload', () => {
+    const csvFile = (buffer, name = 'listings.csv') => ({
+      buffer,
+      size: buffer.length,
+      originalname: name,
+      mimetype: 'text/csv',
+    });
+
+    it('starts a job from a CSV alone, with every row on the placeholder', () => {
+      const req = {
+        file: csvFile(validCsvBuffer),
+        bulkImportUser: { userId: 'operator-user-id', isAdmin: true },
+      };
+      const res = createMockRes();
+
+      startHandler(req, res);
+
+      expect(res.statusCode).toBe(202);
+      expect(res.body.total).toBe(1);
+      // The ZIP extractor is never reached for a bare CSV.
+      expect(extractZip).not.toHaveBeenCalled();
+
+      const [, rows, imageMap] = processImportJob.mock.calls[0];
+      expect(imageMap.size).toBe(0);
+      // The CSV names four images; none exist, so the row falls back to the
+      // placeholder instead of failing validation.
+      expect(rows[0].usePlaceholderImage).toBe(true);
+      expect(rows[0].imageSlots).toEqual({});
+    });
+
+    it('rejects a CSV over the 5 MB cap', () => {
+      const req = {
+        file: csvFile(Buffer.alloc(5 * 1024 * 1024 + 1, 'a')),
+        bulkImportUser: { userId: 'operator-user-id', isAdmin: true },
+      };
+      const res = createMockRes();
+
+      startHandler(req, res);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error).toMatch(/5 MB/);
+      expect(processImportJob).not.toHaveBeenCalled();
+    });
+
+    it('rejects an empty CSV', () => {
+      const req = {
+        file: csvFile(Buffer.alloc(0)),
+        bulkImportUser: { userId: 'operator-user-id', isAdmin: true },
+      };
+      const res = createMockRes();
+
+      startHandler(req, res);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error).toMatch(/vacío/);
+      expect(processImportJob).not.toHaveBeenCalled();
+    });
+
+    it('still enforces the per-tier row cap on a CSV upload', () => {
+      const header = 'title,description,price';
+      const rows = Array.from({ length: 26 }, (_, i) => `"Item ${i}","Descripción","100.00"`);
+      const req = {
+        file: csvFile(Buffer.from([header, ...rows].join('\n'))),
+        // Standard tier: 25 rows.
+        bulkImportUser: { userId: 'seller-user-id', isAdmin: false },
+      };
+      const res = createMockRes();
+
+      startHandler(req, res);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error).toMatch(/Tu límite es 25/);
+    });
   });
 
   it('issues an action token and flags admins for a session in the operator emails', async () => {
@@ -224,7 +300,7 @@ describe('bulk import router', () => {
     startHandler(req, res);
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.error).toMatch(/No se subió ningún archivo ZIP/);
+    expect(res.body.error).toMatch(/No se subió ningún archivo/);
   });
 
   it('returns 400 when zipExtractor throws (e.g. corrupt archive or no CSV)', () => {
@@ -466,6 +542,9 @@ describe('bulk import router', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.headers['Content-Type']).toContain('text/csv');
+    expect(res.headers['Content-Disposition']).toBe(
+      'attachment; filename="bulk-import-template.csv"'
+    );
     expect(res.body).toContain('imagen_1,imagen_2,imagen_3,imagen_4');
   });
 
@@ -509,21 +588,38 @@ describe('bulk import router', () => {
 
   describe('upload validation', () => {
     it('accepts .zip files with common ZIP MIME types', () => {
-      expect(isZipUpload({ originalname: 'import.zip', mimetype: 'application/zip' })).toBe(true);
+      expect(classifyUpload({ originalname: 'import.zip', mimetype: 'application/zip' })).toBe(
+        'zip'
+      );
       expect(
-        isZipUpload({
+        classifyUpload({
           originalname: 'import.ZIP',
           mimetype: 'application/x-zip-compressed',
         })
-      ).toBe(true);
+      ).toBe('zip');
       expect(
-        isZipUpload({ originalname: 'import.zip', mimetype: 'application/octet-stream' })
-      ).toBe(true);
+        classifyUpload({ originalname: 'import.zip', mimetype: 'application/octet-stream' })
+      ).toBe('zip');
     });
 
-    it('rejects non-ZIP extensions and MIME types', () => {
-      expect(isZipUpload({ originalname: 'import.csv', mimetype: 'application/zip' })).toBe(false);
-      expect(isZipUpload({ originalname: 'import.zip', mimetype: 'text/csv' })).toBe(false);
+    it('accepts a bare .csv with the MIME types spreadsheets actually send', () => {
+      // Excel sends application/vnd.ms-excel for a CSV; some browsers send text/plain.
+      expect(classifyUpload({ originalname: 'listings.csv', mimetype: 'text/csv' })).toBe('csv');
+      expect(
+        classifyUpload({ originalname: 'listings.CSV', mimetype: 'application/vnd.ms-excel' })
+      ).toBe('csv');
+      expect(classifyUpload({ originalname: 'listings.csv', mimetype: 'text/plain' })).toBe('csv');
+      expect(
+        classifyUpload({ originalname: 'listings.csv', mimetype: 'application/octet-stream' })
+      ).toBe('csv');
+    });
+
+    it('rejects mismatched extensions and unsupported file types', () => {
+      expect(
+        classifyUpload({ originalname: 'import.csv', mimetype: 'application/zip' })
+      ).toBeNull();
+      expect(classifyUpload({ originalname: 'import.zip', mimetype: 'text/csv' })).toBeNull();
+      expect(classifyUpload({ originalname: 'notes.txt', mimetype: 'text/plain' })).toBeNull();
     });
 
     it('caps compressed ZIP uploads at 50 MB', () => {

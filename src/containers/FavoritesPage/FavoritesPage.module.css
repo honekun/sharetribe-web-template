@@ -10,25 +10,30 @@
   margin-bottom: 24px;
 }
 
-/* Same display rules as SearchResultsPanel .listingCards (non-map grid) — copied
-   verbatim so future search-grid tweaks are easy to mirror here. */
+/* Same effective column counts as the other AV listing grids (search results,
+   profile, manage listings): 2 / 3 from 550px / 4 from 1440px / 5 from 1921px.
+   Those three get their columns from `avBrandOverrides.css` overrides rather
+   than their own modules, so the counts are mirrored here by hand — keep them
+   in sync when the search grid changes. */
 .listingCards {
   padding: 0 0 72px 0;
 
   display: grid;
-  grid-template-columns: repeat(1, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
   width: 100%;
   margin: 0;
   list-style: none;
 
+  /* 3-up from 550px rather than only from --viewportLarge, so the 550-967px
+     band matches the 1024px+ column count instead of dipping to 2. */
   @media (min-width: 550px) {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 
   @media (--viewportMedium) {
     padding: 0 0 96px 0;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 
   @media (--viewportLarge) {

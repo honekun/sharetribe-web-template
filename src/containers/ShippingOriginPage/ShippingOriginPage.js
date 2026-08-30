@@ -7,15 +7,15 @@ import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { ensureCurrentUser } from '../../util/data';
 import { showCreateListingLinkForUser, showPaymentDetailsForUser } from '../../util/userHelpers';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
-
-import { H3, Page, UserNav, LayoutSideNavigation } from '../../components';
-import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
-import FooterContainer from '../../containers/FooterContainer/FooterContainer';
-
 import { shippingOriginFromValues, valuesFromShippingOrigin } from '../../util/shippingOrigin';
 
+import { H3, Page, UserNav, LayoutSideNavigation } from '../../components';
+
+import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
+import FooterContainer from '../../containers/FooterContainer/FooterContainer';
 import ShippingOriginForm from './ShippingOriginForm';
 import { saveShippingOrigin, saveShippingOriginClear } from './ShippingOriginPage.duck';
+
 import css from './ShippingOriginPage.module.css';
 
 /**

@@ -1,6 +1,7 @@
 import React from 'react';
-import { useIntl } from '../../util/reactIntl';
 import { useHistory, useLocation } from 'react-router-dom';
+
+import { useIntl } from '../../util/reactIntl';
 import { parse, stringify } from '../../util/urlHelpers';
 import { pathByRouteName } from '../../util/routes';
 import { useRouteConfiguration } from '../../context/routeConfigurationContext';

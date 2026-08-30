@@ -1,11 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
+
 import { useIntl } from '../../../../util/reactIntl';
-import AVCategoryCard from '../../../../components/AVCategoryCard/AVCategoryCard';
 import useDebouncedWindowResize from '../../../../hooks/useDebouncedWindowResize';
+import {
+  AV_SECTION_COLLAPSE_2UP_RAMP,
+  effectiveSectionColumns,
+} from '../../../../util/avGridSizes';
+
+import AVCategoryCard from '../../../../components/AVCategoryCard/AVCategoryCard';
 
 import Field, { hasDataInFields } from '../../Field';
 import AVSectionContainer from '../SectionContainer/AVSectionContainer';
+
 import css from './SectionSelectedCat.module.css';
 
 const COLUMN_CONFIG = [
@@ -22,13 +29,10 @@ const getColumnIndex = numColumns => {
 const getColumnClass = numColumns =>
   COLUMN_CONFIG[getColumnIndex(numColumns)]?.css || COLUMN_CONFIG[0].css;
 
-const getEffectiveColumns = numColumns => {
-  if (typeof window === 'undefined') return numColumns;
-  const w = window.innerWidth;
-  if (w < 550) return 1;
-  if (w < 768) return Math.min(2, numColumns);
-  return numColumns;
-};
+// AV: the collapsed grid below --viewportMLarge is described by the shared
+// ramp, so this cannot drift from the CSS or from the `sizes` hints.
+const getEffectiveColumns = numColumns =>
+  effectiveSectionColumns(AV_SECTION_COLLAPSE_2UP_RAMP, numColumns);
 
 const getGapValue = slider => {
   if (!slider || typeof window === 'undefined') return 0;

@@ -1,7 +1,11 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { renderWithProviders as render, testingLibrary } from '../../util/testHelpers';
-import { createListing } from '../../util/testData';
+import {
+  getHostedConfiguration,
+  renderWithProviders as render,
+  testingLibrary,
+} from '../../util/testHelpers';
+import { createCurrentUser, createListing } from '../../util/testData';
 import FavoritesPage, { FavoritesPageComponent } from './FavoritesPage';
 
 const { screen } = testingLibrary;
@@ -15,11 +19,32 @@ const messages = {
   'FavoritesPage.queryError': 'Loading favorites failed. Please try again.',
 };
 
+// The page only renders for a signed-in user, so every case carries one — with
+// a userType, since that is what the manage-listings tab is derived from.
+const currentUser = createCurrentUser('user-id', {
+  profile: { publicData: { userType: 'a' } },
+});
+
 const baseProps = {
+  currentUser,
   listings: [],
   queryInProgress: false,
   queryError: null,
   scrollingDisabled: false,
+};
+
+// Same hosted config the harness uses, but with user type 'a' barred from
+// posting listings — the case that must not show the tab.
+const configWithoutPostListings = () => {
+  const hosted = getHostedConfiguration();
+  return {
+    ...hosted,
+    userTypes: {
+      userTypes: hosted.userTypes.userTypes.map(ut =>
+        ut.userType === 'a' ? { ...ut, accountLinksVisibility: { postListings: false } } : ut
+      ),
+    },
+  };
 };
 
 describe('FavoritesPage', () => {
@@ -27,6 +52,24 @@ describe('FavoritesPage', () => {
     render(<FavoritesPageComponent {...baseProps} />, { messages });
     expect(screen.getByText('My favorites')).toBeInTheDocument();
     expect(screen.getByText('You have not liked any listings yet.')).toBeInTheDocument();
+  });
+
+  // UserNav only builds the "your listings" tab when showManageListingsLink is
+  // passed, so a missing prop silently drops it from this page's nav bar. The
+  // two cases together show the prop is derived from the user rather than
+  // hardcoded: same page, same markup, opposite result purely from the user
+  // type's postListings permission.
+  it('renders the manage-listings tab for a user whose type may post listings', () => {
+    render(<FavoritesPageComponent {...baseProps} />, { messages });
+    expect(screen.getByText('UserNav.yourListings')).toBeInTheDocument();
+  });
+
+  it('omits the manage-listings tab for a user whose type may not post listings', () => {
+    render(<FavoritesPageComponent {...baseProps} />, {
+      messages,
+      config: configWithoutPostListings(),
+    });
+    expect(screen.queryByText('UserNav.yourListings')).not.toBeInTheDocument();
   });
 
   it('matches snapshot (empty state)', () => {

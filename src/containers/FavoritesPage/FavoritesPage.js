@@ -2,10 +2,13 @@ import React from 'react';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
 
+import { useConfiguration } from '../../context/configurationContext';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { selectFavoriteIds } from '../../ducks/favorites.duck';
+import { showCreateListingLinkForUser } from '../../util/userHelpers';
+import { AV_LISTING_GRID_RAMP, buildRenderSizes } from '../../util/avGridSizes';
 
 import {
   AVListingCard,
@@ -15,24 +18,22 @@ import {
   UserNav,
   IconSpinner,
 } from '../../components';
+
 import TopbarContainer from '../TopbarContainer/TopbarContainer';
 import FooterContainer from '../FooterContainer/FooterContainer';
 
 import css from './FavoritesPage.module.css';
 
-// Same sizes the search results grid passes to AVListingCard (non-map variant).
-const cardRenderSizes = [
-  '(max-width: 549px) 100vw',
-  '(max-width: 767px) 50vw',
-  '(max-width: 1439px) 26vw',
-  '(max-width: 1920px) 18vw',
-  '14vw',
-].join(', ');
+// Derived from the shared ramp so the hints cannot drift from the column counts
+// in FavoritesPage.module.css — same grid as the search results (non-map).
+const cardRenderSizes = buildRenderSizes(AV_LISTING_GRID_RAMP);
 
 export const FavoritesPageComponent = props => {
-  const { listings, queryInProgress, queryError, scrollingDisabled } = props;
+  const { currentUser, listings, queryInProgress, queryError, scrollingDisabled } = props;
+  const config = useConfiguration();
   const intl = useIntl();
   const title = intl.formatMessage({ id: 'FavoritesPage.title' });
+  const showManageListingsLink = showCreateListingLinkForUser(config, currentUser);
 
   return (
     <Page title={title} scrollingDisabled={scrollingDisabled}>
@@ -40,7 +41,7 @@ export const FavoritesPageComponent = props => {
         topbar={
           <>
             <TopbarContainer />
-            <UserNav currentPage="FavoritesPage" />
+            <UserNav currentPage="FavoritesPage" showManageListingsLink={showManageListingsLink} />
           </>
         }
         footer={<FooterContainer />}
@@ -91,7 +92,9 @@ const mapStateToProps = state => {
   // hydrated in this page's loadData, so the filter is a no-op on first render.
   const favoriteIds = selectFavoriteIds(state);
   const currentRefs = listingRefs.filter(ref => favoriteIds.includes(ref.id.uuid));
+  const { currentUser } = state.user;
   return {
+    currentUser,
     listings: getMarketplaceEntities(state, currentRefs),
     queryInProgress,
     queryError,

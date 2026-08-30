@@ -33,6 +33,9 @@ const ROW_ERROR_CODE_KEYS = {
   'user-not-found': 'BulkImportPage.rowError.userNotFound',
   'row-timeout': 'BulkImportPage.rowError.rowTimeout',
   'no-author': 'BulkImportPage.rowError.noAuthor',
+  // The bundled placeholder used for image-less rows is missing or corrupt.
+  'placeholder-missing': 'BulkImportPage.rowError.placeholderUnavailable',
+  'placeholder-invalid': 'BulkImportPage.rowError.placeholderUnavailable',
 };
 const HTTP_STATUS_KEYS = {
   400: 'BulkImportPage.rowError.http400',
@@ -335,9 +338,17 @@ const BulkImportPageComponent = props => {
     setZipFile(null);
   };
 
+  // A .zip carries the CSV plus the photos; a bare .csv is imported as if no photos
+  // were present, so every listing gets the placeholder image.
+  const isAcceptedUpload = name => {
+    const lower = (name || '').toLowerCase();
+    return lower.endsWith('.zip') || lower.endsWith('.csv');
+  };
+
   const pickFile = file => {
-    if (file && file.name.toLowerCase().endsWith('.zip')) {
+    if (file && isAcceptedUpload(file.name)) {
       setZipFile(file);
+      setUploadError(null);
     } else if (file) {
       setUploadError(intl.formatMessage({ id: 'BulkImportPage.errorNoZip' }));
     }
@@ -350,7 +361,10 @@ const BulkImportPageComponent = props => {
     pickFile(file);
   };
 
-  const templateDownloadUrl = '/static/files/PLANTILLA_CARGA_MASIVA.csv';
+  // Same-origin, public endpoint: the response supplies Content-Disposition and
+  // includes the current machine headers plus an example row. Keeping the URL
+  // local also avoids making the operator's workflow depend on Drive permissions.
+  const templateUrl = '/api/bulk-import/template';
 
   const progressPercent =
     jobData && jobData.total > 0 ? Math.round((jobData.processed / jobData.total) * 100) : 0;
@@ -369,7 +383,7 @@ const BulkImportPageComponent = props => {
         <FormattedMessage id="BulkImportPage.description" />
       </p>
 
-      <a href={templateDownloadUrl} className={css.templateButton} download>
+      <a href={templateUrl} className={css.templateButton} download>
         <DownloadIcon />
         <FormattedMessage id="BulkImportPage.downloadTemplate" />
       </a>
@@ -456,7 +470,7 @@ const BulkImportPageComponent = props => {
             id="zipFile"
             ref={fileInputRef}
             type="file"
-            accept=".zip"
+            accept=".zip,.csv"
             className={css.visuallyHidden}
             onChange={e => pickFile(e.target.files[0] || null)}
           />

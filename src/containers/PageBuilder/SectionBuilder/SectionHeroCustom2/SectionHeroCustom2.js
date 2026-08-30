@@ -1,10 +1,11 @@
 import React from 'react';
 import classNames from 'classnames';
 
-import Field, { hasDataInFields } from '../../Field';
 import { parseSectionCtaClass } from '../../../../extensions/pageBuilder/av/sectionStyles';
 
+import Field, { hasDataInFields } from '../../Field';
 import AVSectionContainer from '../SectionContainer/AVSectionContainer';
+
 import css from './SectionHeroCustom2.module.css';
 
 /**

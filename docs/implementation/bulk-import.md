@@ -1,7 +1,7 @@
 # Bulk Listing ZIP Importer
 
-Tool for creating multiple marketplace listings at once from a single ZIP file containing a CSV and
-all required images. Available at `/admin/bulk-import`.
+Tool for creating multiple marketplace listings at once, from either a `.zip` holding a CSV plus the
+listing images, or a bare `.csv` on its own. Available at `/admin/bulk-import`.
 
 Any signed-in user can bulk-import listings **for themselves** — every listing is created with the
 current user as its author. "Admin" users (emails listed in `BULK_IMPORT_OPERATOR_EMAILS`) may add a
@@ -15,8 +15,9 @@ current user as its author. "Admin" users (emails listed in `BULK_IMPORT_OPERATO
 2. Start the dev server: `yarn run dev`
 3. Navigate to `/admin/bulk-import`
 4. Sign in (any user able to create listings); listings will be authored to you
-5. Download the CSV template, fill it in
-6. Pack your completed CSV and all image files into a single `.zip` archive
+5. Download the CSV template from the page and fill it in
+6. Pack your completed CSV and any image files into a single `.zip` archive — or upload the `.csv`
+   on its own when you have no photos yet (every listing then gets the bundled placeholder)
 7. Select the ZIP file and click "Start Import", then monitor progress
 
 ---
@@ -41,7 +42,14 @@ Browser (BulkImportPage)             Server (Express)
   |                                    |-- Return progress, results, errors
   |                                    |
   |-- Download template ------------> GET /api/bulk-import/template
+  |                                    |-- Return generated CSV + example row
 ```
+
+The template button links directly to the public `GET /api/bulk-import/template` endpoint. It
+generates a CSV with the current machine headers and one valid example row
+(`server/api/bulk-import/index.js`). Because the URL is same-origin and the response sets
+`Content-Disposition: attachment`, the browser downloads it without replacing an in-progress import
+page or depending on an external file permission.
 
 Processing is **asynchronous** so uploads do not depend on a hosting platform's HTTP request
 timeout. The server accepts the upload, returns a job ID immediately, and processes rows in the
@@ -50,7 +58,8 @@ background. The client polls for status updates.
 ### Worker Flow (per CSV row, sequential)
 
 1. Upload images in slot order (`front` → `back` → `horizontal` → `details`) via Integration SDK
-   `images.upload()`
+   `images.upload()`. A row that references no image at all uploads the bundled placeholder instead
+   (`placeholderImage.js`) as its single image, and is stamped `publicData.avPlaceholderImage: true`
 2. Create listing via Integration SDK `listings.create()` with author relationship
 3. Set stock via Integration SDK `stock.compareAndSet()` (only when `stock > 0`)
 4. Publish listing via Integration SDK `listings.open()` (only when `publish` column is `yes`)
@@ -61,12 +70,26 @@ the next row.
 
 ---
 
-## ZIP File Structure
+## Upload formats
 
-The uploaded ZIP must contain exactly one CSV file and all image files referenced by that CSV.
-Images may be placed in subdirectories — they are matched by filename only (basename), not by path.
+| Upload    | Contents                              | Images                                                              |
+| --------- | ------------------------------------- | ------------------------------------------------------------------- |
+| `.zip`    | Exactly one CSV + the referenced images | Resolved by filename; a name missing from the ZIP is an error       |
+| `.csv`    | The spreadsheet alone (max 5 MB)      | None — image columns are ignored and every row gets the placeholder |
 
-### Example layout
+Both arrive on the same `zipFile` multipart field and are told apart by extension (`classifyUpload`
+in `index.js`, which also sanity-checks the MIME type — spreadsheets send anything from `text/csv`
+to `application/vnd.ms-excel`). A bare CSV skips `extractZip` altogether, so the archive rules below
+and the per-tier ZIP-size and image-count caps do not apply to it; the row cap, hourly rate limit,
+and both concurrency guards still do.
+
+### ZIP File Structure
+
+The uploaded ZIP must contain exactly one CSV file and every image file its CSV references. Images
+may be placed in subdirectories — they are matched by filename only (basename), not by path. A ZIP
+with no images at all is valid: each row then gets the placeholder.
+
+#### Example layout
 
 ```
 listings.zip
@@ -81,7 +104,7 @@ listings.zip
     └── jacket_details.jpg
 ```
 
-### ZIP validation rules
+#### ZIP validation rules
 
 The server validates the ZIP before starting any import. All checks run synchronously and return
 HTTP 400 if they fail.
@@ -163,14 +186,60 @@ The current template numbers the four labeled slots `imagen_1`–`imagen_4`. The
 
 | Column                          | Slot       | Description                                       |
 | ------------------------------- | ---------- | ------------------------------------------------- |
-| `imagen_1` (`image_front`)      | Front      | Filename of the front image. Required.            |
-| `imagen_2` (`image_back`)       | Back       | Filename of the back image. Required.             |
-| `imagen_3` (`image_horizontal`) | Horizontal | Filename of the horizontal/wide image. Required.  |
+| `imagen_1` (`image_front`)      | Front      | Filename of the front image. Optional.            |
+| `imagen_2` (`image_back`)       | Back       | Filename of the back image. Optional.             |
+| `imagen_3` (`image_horizontal`) | Horizontal | Filename of the horizontal/wide image. Optional.  |
 | `imagen_4` (`image_details`)    | Details    | Filename of the details/close-up image. Optional. |
 
-Image filenames must exactly match the basenames of image files inside the ZIP (case-sensitive, path
-is ignored). Every row must define the front, back, and horizontal images. These map to the
+**All image columns are optional.** Whichever ones a row fills must exactly match the basenames of
+image files inside the ZIP (case-sensitive, path is ignored) — a filename that is not in the ZIP is
+still a validation error, so typos are caught rather than silently replaced. Filled slots map to the
 `publicData.imageSlots` system used by the listing detail page.
+
+### Placeholder image
+
+A row whose four image columns are **all** blank — or **every** row of a bare-CSV upload — is
+imported with the placeholder asset bundled at
+`server/api/bulk-import/assets/bulk-import-placeholder.jpg` as its single image. Those listings:
+
+- get **no** `publicData.imageSlots` (the placeholder is not a front/back/horizontal photo, and must
+  not be captioned as one), and
+- are stamped `publicData.avPlaceholderImage: true` and `publicData.avPlaceholderImageId` (the
+  uploaded placeholder's image UUID).
+
+#### The `avPlaceholderImage` flag
+
+The flag is **code-managed only** — deliberately not a Console listing field, so nobody edits it by
+hand and it never renders in the seller's wizard or on the listing page. It is queryable because its
+search schema is set through the CLI, once per marketplace (Test and Live separately):
+
+```sh
+flex-cli search set --key avPlaceholderImage --scope public --type boolean -m <marketplace-id>
+flex-cli search                                                            -m <marketplace-id>  # verify
+```
+
+Then `pub_avPlaceholderImage=true` works in `/s?…` URLs and in `sdk.listings.query`.
+
+Its lifecycle:
+
+| When                                        | What happens                                                     |
+| ------------------------------------------- | ---------------------------------------------------------------- |
+| Bulk import, row with no images             | `avPlaceholderImage: true` + `avPlaceholderImageId: <image uuid>` |
+| Listing update whose images still include that id | Left as-is — the placeholder is still on the listing        |
+| Listing update whose images no longer include it  | `avPlaceholderImage: false`, `avPlaceholderImageId: null`   |
+| Listing update carrying no images (pricing, delivery, …) | Left as-is                                          |
+
+The clearing lives in `src/util/avPlaceholderListing.js` (`clearPlaceholderFlagMaybe`), called from
+`EditListingPage.duck.js`'s `updateListingThunk` so every wizard panel is covered by one seam. A
+listing flagged before the id was recorded clears on any photo edit, since there is nothing to
+compare against.
+
+To change the artwork, replace the file keeping the basename `bulk-import-placeholder`; `.jpg`,
+`.jpeg`, `.png` and `.webp` are all accepted. The loader (`placeholderImage.js`) reads it once per
+process and checks its magic bytes against its extension — the Integration SDK infers the upload's
+MIME type from the filename, so a PNG named `.jpg` would break every upload. A missing or mismatched
+asset fails only the rows that need it (`placeholder-missing` / `placeholder-invalid`), never the
+whole job.
 
 ### Extended Data Columns (`pub_*`)
 
@@ -211,9 +280,9 @@ exception use the default package size `M`.
 
 ### Example CSV
 
-This is the current seller-template format (`public/static/files/PLANTILLA_CARGA_MASIVA.csv`):
-`pub_*` attribute columns and `imagen_1..4`, with no author column (listings author to the signed-in
-user). Admins who need to import for another seller add a `user_id` column.
+This is the current seller-template format: `pub_*` attribute columns and `imagen_1..4`, with no
+author column (listings author to the signed-in user). Admins who need to import for another seller
+add a `user_id` column.
 
 ```csv
 title,description,price,pub_brand,pub_categoryLevel1,pub_categoryLevel2,pub_categoryLevel3,pub_color,pub_all_sizes,pub_genero,pub_estado,pub_estilo,pub_temporada,imagen_1,imagen_2,imagen_3,imagen_4
@@ -221,9 +290,18 @@ title,description,price,pub_brand,pub_categoryLevel1,pub_categoryLevel2,pub_cate
 "Jeans Levi's Retro","Jeans de los 90s en buen estado","$950.00",levi-s,ropa,ropa-jeans,ropa-jeans-momfit,azul,mx_28,unisex,buen-estado,retro,todo-el-ano,jeans-1.jpg,jeans-2.jpg,jeans-3.jpg,
 ```
 
-The "Download CSV Template" link on the import page serves the static operator template at
-`public/static/files/PLANTILLA_CARGA_MASIVA.csv` (web path
-`/static/files/PLANTILLA_CARGA_MASIVA.csv`).
+The template link on the import page points to `/api/bulk-import/template`. The route generates the
+same `pub_*` and `imagen_*` format shown above, is public, and is covered by a round-trip test that
+parses and validates its example row. Updating the generated template requires a deploy, but the
+operator workflow no longer depends on a separately shared Drive file.
+
+Nothing links to `public/static/files/PLANTILLA_CARGA_MASIVA.csv` at runtime any more — not the
+page, not `docs/operator-guide.md`. It is still _named_ in several places, which is why it should
+not simply be deleted on sight: `csvParser.js` calls one of its recognised header dialects after it
+(and `csvParser.test.js` pins that), `index.js` cites it as what the `/template` endpoint mirrors,
+and the column-alias table [below](#google-sheets--spanish-column-names) uses it as a column
+heading. The file is kept on disk so an operator holding an old direct link gets a file rather than
+a 404; retiring it means renaming that dialect too, not just removing the file.
 
 The import page's help bar also links a ready-to-upload **example ZIP** at
 `public/static/files/ZIP_CARGA_MASIVA.zip` (10 listings + 40 images). Its `user_id` column is left
@@ -294,8 +372,13 @@ Start a new import job.
 
 **Form fields**:
 
-- `zipFile` (file, required) — a `.zip` archive containing one CSV and all referenced images (max 50
-  MB compressed)
+- `zipFile` (file, required) — either a `.zip` archive containing one CSV and all referenced images
+  (max 50 MB compressed), or a bare `.csv` (max 5 MB). The field name is `zipFile` for both; it
+  predates CSV support and is kept so existing callers keep working.
+
+A bare CSV is imported **as if no images were present**: the image columns are ignored entirely —
+even filled-in ones — and every row falls back to the bundled placeholder. Upload a ZIP if you want
+the filenames resolved.
 
 **Response** (HTTP 202):
 
@@ -309,12 +392,13 @@ Start a new import job.
 
 **Error responses**:
 
-- `400` — No ZIP file uploaded
+- `400` — No file uploaded
+- `400` — The upload is neither a `.zip` nor a `.csv` (rejected by multer's file filter)
 - `400` — ZIP validation failed (corrupt archive, no CSV, multiple CSVs, duplicate image filenames,
   path traversal, too many entries, empty CSV)
+- `400` — Bare CSV over 5 MB, or empty
 - `400` — CSV validation failed; `details` array lists all per-row and per-column errors (missing
-  required columns, empty required fields, invalid price, missing
-  `image_front`/`image_back`/`image_horizontal`, image filename not found in ZIP, invalid
+  required columns, empty required fields, invalid price, image filename not found in ZIP, invalid
   geolocation)
 - `400` — A non-admin upload set a `user_id` column (author override is admin-only)
 - `400` — Over a per-tier limit (ZIP bytes, image count, or row count exceeds your tier — see
@@ -436,11 +520,13 @@ server/
       limits.js                    # Tiered limits (standard vs admin)
       rateLimiter.js               # Per-user rolling-hour import counter
       imageValidator.js            # Magic-byte image sniffing (shared with zipExtractor)
+      placeholderImage.js          # Loads the bundled fallback image for rows with no photos
+      assets/                      # bulk-import-placeholder.jpg (replaceable artwork)
       csvParser.js                 # CSV parsing + validation (parseCsv, validateRows)
       importWorker.js              # Async per-row listing creation (processImportJob)
       jobStore.js                  # In-memory job state (Map + 1hr TTL); per-job ownerId, per-user + global concurrency helpers
       zipExtractor.js              # ZIP extraction + validation (extractZip)
-      *.test.js                    # Co-located unit tests (auth/limits/rateLimiter/imageValidator/csvParser/jobStore/importWorker/zipExtractor)
+      *.test.js                    # Co-located unit tests (auth/limits/rateLimiter/imageValidator/placeholderImage/csvParser/jobStore/importWorker/zipExtractor)
 
 src/
   containers/
@@ -454,7 +540,9 @@ The feature also connects to these shared files:
 
 - `server/index.js` mounts the `/api/bulk-import` router.
 - `src/routing/routeConfiguration.js` registers `/admin/bulk-import`.
-- `src/translations/en.json` and `src/translations/es.json` provide the UI strings.
+- `src/translations/en_av.json` and `src/translations/es_av.json` provide the UI strings.
+- `src/util/avPlaceholderListing.js` + `src/containers/EditListingPage/EditListingPage.duck.js`
+  clear the `avPlaceholderImage` flag once the placeholder image leaves the listing.
 
 ---
 

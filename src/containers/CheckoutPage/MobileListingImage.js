@@ -3,13 +3,13 @@ import classNames from 'classnames';
 
 import { AspectRatioWrapper, AvatarMedium, ResponsiveImage } from '../../components';
 
+import { AV_LISTING_IMAGE_ASPECT_WIDTH, AV_LISTING_IMAGE_ASPECT_HEIGHT } from './avListingImage';
 import css from './CheckoutPage.module.css';
 
 const MobileListingImage = props => {
   const { listingTitle, author, firstImage, layoutListingImageConfig, showListingImage } = props;
 
-  const { aspectWidth = 1, aspectHeight = 1, variantPrefix = 'listing-card' } =
-    layoutListingImageConfig || {};
+  const { variantPrefix = 'listing-card' } = layoutListingImageConfig || {};
   const variants = firstImage
     ? Object.keys(firstImage?.attributes?.variants).filter(k => k.startsWith(variantPrefix))
     : [];
@@ -18,8 +18,8 @@ const MobileListingImage = props => {
     <>
       {showListingImage && (
         <AspectRatioWrapper
-          width={aspectWidth}
-          height={aspectHeight}
+          width={AV_LISTING_IMAGE_ASPECT_WIDTH}
+          height={AV_LISTING_IMAGE_ASPECT_HEIGHT}
           className={css.listingImageMobile}
         >
           <ResponsiveImage

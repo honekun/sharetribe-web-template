@@ -55,6 +55,7 @@ import NotFoundPage from '../../containers/NotFoundPage/NotFoundPage';
 import InboxSearchForm from './InboxSearchForm/InboxSearchForm';
 
 import { stateDataShape, getStateData } from './InboxPage.stateData';
+import { isNavPageHiddenForUser } from '../../config/configAV';
 import css from './InboxPage.module.css';
 
 // Check if the transaction line-items use booking-related units
@@ -335,7 +336,13 @@ export const InboxPageComponent = props => {
   const hasTransactions =
     !fetchInProgress && hasOrderOrSaleTransactions(transactions, isOrders, currentUser);
 
-  const ordersTabMaybe = isCustomerUserType
+  // AV: store sellers sell through the marketplace rather than buying on it, so
+  // the Orders tab is left out of their inbox sidebar. Visibility only — the
+  // /inbox/orders route still renders for anyone who opens it directly.
+  const showOrdersTab =
+    isCustomerUserType && !isNavPageHiddenForUser(currentUser, 'InboxPage:orders');
+
+  const ordersTabMaybe = showOrdersTab
     ? [
         {
           text: (

@@ -50,7 +50,14 @@ import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
 import NotFoundPage from '../../containers/NotFoundPage/NotFoundPage';
 
+import { AV_LISTING_GRID_RAMP, buildRenderSizes } from '../../util/avGridSizes';
+
 import css from './ProfilePage.module.css';
+
+// AV: this grid uses the same ramp as search and favorites (see
+// avBrandOverrides.css `ProfilePage_listings__`). Without a hint the browser
+// assumes 100vw and fetches up to 5x the width the card actually gets.
+const profileCardRenderSizes = buildRenderSizes(AV_LISTING_GRID_RAMP);
 
 const MAX_MOBILE_SCREEN_WIDTH = 768;
 const MIN_LENGTH_FOR_LONG_WORDS = 20;
@@ -314,6 +321,7 @@ export const MainContent = props => {
               <li className={css.listing} key={l.id.uuid}>
                 <AVListingCard
                   listing={l}
+                  renderSizes={profileCardRenderSizes}
                   showAuthorInfo={false}
                   showTallCards={false}
                   showListingTitle={true}

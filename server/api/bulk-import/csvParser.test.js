@@ -135,26 +135,63 @@ describe('validateRows', () => {
     expect(result.errors[0]).toMatch(/no se encontró en los archivos subidos/);
   });
 
+  // --- Optional images / placeholder fallback ---
+
+  it('accepts a row with every image column blank and flags it for the placeholder', () => {
+    const result = validateRows(
+      [validRow({ image_front: '', image_back: '', image_horizontal: '', image_details: '' })],
+      imageMap
+    );
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0].usePlaceholderImage).toBe(true);
+    expect(result.rows[0].imageSlots).toEqual({});
+  });
+
+  it('accepts a row with no image columns at all and flags it for the placeholder', () => {
+    const result = validateRows([validRow()], imageMap);
+    expect(result.valid).toBe(true);
+    expect(result.rows[0].usePlaceholderImage).toBe(true);
+  });
+
   it.each(['image_front', 'image_back', 'image_horizontal'])(
-    'rejects missing required image column %s',
+    'accepts a row that fills only %s and does not flag it for the placeholder',
     key => {
-      const result = validateRows(
-        [
-          validRow({
-            image_front: 'front.jpg',
-            image_back: 'back.jpg',
-            image_horizontal: 'front.jpg',
-            [key]: '',
-          }),
-        ],
-        imageMap
-      );
-      expect(result.valid).toBe(false);
-      expect(result.errors).toEqual(
-        expect.arrayContaining([expect.stringContaining(`"${key}" es obligatorio.`)])
-      );
+      const result = validateRows([validRow({ [key]: 'front.jpg' })], imageMap);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toEqual([]);
+      expect(result.rows[0].usePlaceholderImage).toBe(false);
+      expect(result.rows[0].imageSlots).toEqual({ [key.replace('image_', '')]: 'front.jpg' });
     }
   );
+
+  it('flags every row for the placeholder and drops filenames when images are ignored', () => {
+    // CSV-only uploads carry no images at all, so a filename the operator typed
+    // cannot be resolved and is deliberately discarded rather than rejected.
+    const result = validateRows(
+      [validRow({ image_front: 'front.jpg', image_back: 'nunca-subida.jpg' })],
+      new Map(),
+      { ignoreImages: true }
+    );
+
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0].usePlaceholderImage).toBe(true);
+    expect(result.rows[0].imageSlots).toEqual({});
+  });
+
+  it('still reports non-image problems when images are ignored', () => {
+    const result = validateRows([validRow({ price: 'abc' })], new Map(), { ignoreImages: true });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/"price" debe ser un número positivo/);
+  });
+
+  it('still rejects a partially filled row that names an image missing from the ZIP', () => {
+    const result = validateRows([validRow({ image_front: 'missing.jpg' })], imageMap);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/no se encontró en los archivos subidos/);
+  });
 
   it('rejects invalid geolocation', () => {
     const result = validateRows(
@@ -912,20 +949,20 @@ describe('validateRows', () => {
     });
 
     it('names the operator template column in errors, not the canonical key', () => {
-      // A row missing the first image: the error must reference the header the
-      // operator actually typed ("Nombre imagen 1*"), never the internal
+      // A row naming an image that is not in the ZIP: the error must reference the
+      // header the operator actually typed ("Nombre imagen 1*"), never the internal
       // canonical key ("image_front").
       const csv = Buffer.from(
         [
           'Marca*,Nombre de Producto*,Descripción*,Precio Venta (MXN)*,Género*,Nombre imagen 1*,Nombre imagen 2,Nombre imagen 3',
-          'Prada,Chamarra,azul,3500,Mujer,,img2.jpg,img3.jpg',
+          'Prada,Chamarra,azul,3500,Mujer,ausente.jpg,img2.jpg,img3.jpg',
         ].join('\n')
       );
       const { rows, headerMap } = parseCsv(csv);
       const result = validateRows(rows, tmplImageMap, { headerMap });
       expect(result.valid).toBe(false);
       expect(result.errors).toEqual(
-        expect.arrayContaining([expect.stringContaining('"Nombre imagen 1*" es obligatorio.')])
+        expect.arrayContaining([expect.stringContaining('(Nombre imagen 1*)')])
       );
       expect(result.errors.join(' ')).not.toMatch(/image_front/);
     });
@@ -981,25 +1018,14 @@ describe('validateRows', () => {
     expect(result.errors.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('collects multiple validation errors for missing required images', () => {
+  it('flags every image-less row for the placeholder without reporting errors', () => {
     const result = validateRows(
-      [
-        validRow({
-          image_front: '',
-          image_back: '',
-          image_horizontal: '',
-        }),
-      ],
+      [validRow({ image_front: '', image_back: '', image_horizontal: '' }), validRow()],
       imageMap
     );
-    expect(result.valid).toBe(false);
-    expect(result.errors).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining('"image_front" es obligatorio.'),
-        expect.stringContaining('"image_back" es obligatorio.'),
-        expect.stringContaining('"image_horizontal" es obligatorio.'),
-      ])
-    );
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
+    expect(result.rows.map(r => r.usePlaceholderImage)).toEqual([true, true]);
   });
 
   // --- Author resolution (current user vs admin user_id override) ---

@@ -3,7 +3,7 @@ import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import classNames from 'classnames';
 import { ACCOUNT_SETTINGS_PAGES } from '../../routing/routeConfiguration';
 import { LinkTabNavHorizontal } from '../../components';
-import { AV_PROFILE_LINKS } from '../../extensions/topbar/links';
+import { useAvProfileLinks } from '../../extensions/topbar/avNavVisibility';
 
 import css from './UserNav.module.css';
 
@@ -34,7 +34,10 @@ const UserNav = props => {
       ]
     : [];
 
-  const avTabs = AV_PROFILE_LINKS.map(({ pageName, labels }) => ({
+  // AV: the registry minus whatever this user's type hides — the hook reads
+  // currentUser from the store because all thirteen pages rendering UserNav
+  // would otherwise have to drill the prop.
+  const avTabs = useAvProfileLinks().map(({ pageName, labels }) => ({
     text: <FormattedMessage id={labels.userNav} />,
     selected: currentPage === pageName,
     linkProps: { name: pageName },

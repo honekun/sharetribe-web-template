@@ -186,7 +186,7 @@
   "BulkImportPage.completed": "Importación completada",
   "BulkImportPage.description": "Carga varias prendas a la vez con una plantilla y tus fotos en ZIP.",
   "BulkImportPage.dividerOr": "o",
-  "BulkImportPage.downloadTemplate": "Abrir plantilla",
+  "BulkImportPage.downloadTemplate": "Descargar plantilla",
   "BulkImportPage.dropzoneSubtitle": "Arrastra tu archivo aquí o selecciónalo desde tu computadora.",
   "BulkImportPage.dropzoneTitle": "Sube tu archivo ZIP",
   "BulkImportPage.errorJobUnavailable": "Esta importación ya no está disponible: pudo haber expirado o el servidor se reinició. Revisa tus publicaciones o inicia una nueva importación.",

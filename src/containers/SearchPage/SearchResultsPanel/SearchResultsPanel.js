@@ -4,6 +4,12 @@ import classNames from 'classnames';
 import { propTypes } from '../../../util/types';
 import { AVListingCard, PaginationLinks } from '../../../components';
 
+import {
+  AV_LISTING_GRID_RAMP,
+  AV_MAP_VARIANT_RAMP,
+  buildRenderSizes,
+} from '../../../util/avGridSizes';
+
 import css from './SearchResultsPanel.module.css';
 
 /**
@@ -47,30 +53,11 @@ const SearchResultsPanel = props => {
       />
     ) : null;
 
-  const cardRenderSizes = isMapVariant => {
-    if (isMapVariant) {
-      // Panel width relative to the viewport
-      const panelMediumWidth = 50;
-      const panelLargeWidth = 62.5;
-      return [
-        '(max-width: 767px) 100vw',
-        `(max-width: 1023px) ${panelMediumWidth}vw`,
-        `(max-width: 1920px) ${panelLargeWidth / 2}vw`,
-        `${panelLargeWidth / 3}vw`,
-      ].join(', ');
-    } else {
-      // Panel width relative to the viewport
-      const panelMediumWidth = 50;
-      const panelLargeWidth = 62.5;
-      return [
-        '(max-width: 549px) 100vw',
-        '(max-width: 767px) 50vw',
-        `(max-width: 1439px) 26vw`,
-        `(max-width: 1920px) 18vw`,
-        `14vw`,
-      ].join(', ');
-    }
-  };
+  // AV: both variants derive their hints from the shared ramps, so the `sizes`
+  // and the column counts in avBrandOverrides.css move together. The map variant
+  // stays 2-up until --viewportXLarge because it shares its width with the map.
+  const cardRenderSizes = isMapVariant =>
+    buildRenderSizes(isMapVariant ? AV_MAP_VARIANT_RAMP : AV_LISTING_GRID_RAMP);
 
   return (
     <div className={classes}>

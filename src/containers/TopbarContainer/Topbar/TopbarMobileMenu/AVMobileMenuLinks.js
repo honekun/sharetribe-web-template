@@ -2,8 +2,9 @@ import React from 'react';
 import classNames from 'classnames';
 
 import { FormattedMessage } from '../../../../util/reactIntl';
+import { filterAvProfileLinks } from '../../../../extensions/topbar/avNavVisibility';
+
 import { NamedLink } from '../../../../components';
-import { AV_PROFILE_LINKS } from '../../../../extensions/topbar/links';
 
 import css from './TopbarMobileMenu.module.css';
 
@@ -35,16 +36,21 @@ export const AVMobileBagSection = () => (
  * Returns an array of `<li>` rather than a component so the rows stay direct
  * children of upstream's `<ul>`.
  *
+ * Entries hidden for the user's type are dropped, matching the desktop profile
+ * menu. `currentUser` is an argument rather than a hook for the same reason it
+ * is there: this returns an array of `<li>`, not a component.
+ *
  * @param {Function} currentPageClass - TopbarMobileMenu's own active-page helper
+ * @param {Object} [currentUser] - CurrentUser API entity, for the visibility gate
  * @returns {Array<JSX.Element>}
  */
-export const renderAvMobileMenuLinks = currentPageClass => [
+export const renderAvMobileMenuLinks = (currentPageClass, currentUser) => [
   <li key="BagPage" className={classNames(css.navigationLink, currentPageClass('BagPage'))}>
     <NamedLink name="BagPage">
       <FormattedMessage id="TopbarMobileMenu.bagLink" />
     </NamedLink>
   </li>,
-  ...AV_PROFILE_LINKS.map(({ pageName, labels }) => (
+  ...filterAvProfileLinks(currentUser).map(({ pageName, labels }) => (
     <li key={pageName} className={classNames(css.navigationLink, currentPageClass(pageName))}>
       <NamedLink name={pageName}>
         <FormattedMessage id={labels.mobile} />

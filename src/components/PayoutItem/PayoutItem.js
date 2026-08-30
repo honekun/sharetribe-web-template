@@ -1,11 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+
 import { useIntl } from '../../util/reactIntl';
 import { formatMoney } from '../../util/currency';
 import { formatDateIntoPartials } from '../../util/dates';
 import { createSlug } from '../../util/urlHelpers';
-import { NamedLink } from '../../components';
 import { getStatusFromLastTransition } from '../../transactions/transactionHelpers';
+
+import { NamedLink } from '../../components';
 
 import css from './PayoutItem.module.css';
 

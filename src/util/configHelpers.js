@@ -1,5 +1,5 @@
 import { subUnitDivisors } from '../config/settingsCurrency';
-import { moveListingFieldToEnd } from '../config/configAV';
+import { mergeHostedBrandOptions, moveListingFieldToEnd } from '../config/configAV';
 import { getSupportedProcessesInfo, isBookingProcessAlias } from '../transactions/transaction';
 import { sanitizeText } from './sanitize';
 import { EXTENDED_DATA_SCHEMA_TYPES } from './types';
@@ -1383,9 +1383,15 @@ const mergeListingConfig = (hostedConfig, defaultConfigs, categoriesInUse) => {
   // listingTypes: always use hosted assets (managed via Sharetribe Console).
   // listingFields: always merge hosted + code-defined defaults so large enum fields
   // (brands, color, all_sizes) can be managed in code rather than in Console.
+  // AV: `brand` additionally merges Console's own enumOptions into the code-defined
+  // field (Console wins per option) so brands can be added without a deploy.
   const listingTypes = hostedListingTypes;
   const listingFields = moveListingFieldToEnd(
-    union(hostedListingFields, defaultListingFields, 'key'),
+    union(
+      hostedListingFields,
+      mergeHostedBrandOptions(defaultListingFields, hostedListingFields),
+      'key'
+    ),
     'tags'
   );
 

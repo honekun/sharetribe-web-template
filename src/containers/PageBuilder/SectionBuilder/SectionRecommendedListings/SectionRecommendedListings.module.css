@@ -32,6 +32,19 @@
   }
 }
 
+/* 550-967px: 3-up regardless of the operator's column setting, matching the
+   other AV listing grids in this band. Declared after the .twoColumns /
+   .threeColumns / .fourColumns rules so it wins the source-order tie at equal
+   specificity. `.oneColumn` is deliberately excluded — a single-column section
+   is an intentional layout choice, not a default. */
+@media (min-width: 550px) and (max-width: 967px) {
+  .twoColumns,
+  .threeColumns,
+  .fourColumns {
+    grid-template-columns: repeat(3, calc((100% - 2 * 32px) / 3));
+  }
+}
+
 .noSidePaddings {
   padding-left: 0;
   padding-right: 0;

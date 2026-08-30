@@ -8,11 +8,22 @@ const { EVENT_TYPE_PICKED_UP } = require('../services/eshipTrackingService');
 
 const router = express.Router();
 const SHIPMENT_ID_PATTERN = /^[A-Za-z0-9_-]{1,100}$/;
+// Preferred over ?secret=: platform router logs and Sentry both record the query
+// string, and the "secret" substring also matches Sentry's default scrubbing.
+const SECRET_HEADER = 'x-av-webhook-secret';
 
 function secretMatches(provided, configured) {
   const supplied = Buffer.from(String(provided || ''));
   const expected = Buffer.from(String(configured || ''));
   return supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected);
+}
+
+// Either presentation is accepted, so a dashboard configured with both a header
+// and a legacy ?secret= keeps delivering while the URL form is rolled off.
+function requestSecretMatches(req, configured) {
+  return [req?.headers?.[SECRET_HEADER], req?.query?.secret].some(provided =>
+    secretMatches(provided, configured)
+  );
 }
 
 function parseEventTimestamp(timestamp, timezone) {
@@ -47,7 +58,7 @@ async function eshipWebhook(req, res) {
   if (!configuredSecret || Buffer.byteLength(configuredSecret, 'utf8') < 32) {
     return res.status(503).json({ ok: false, error: 'eship_webhook_not_configured' });
   }
-  if (!secretMatches(req.query?.secret, configuredSecret)) {
+  if (!requestSecretMatches(req, configuredSecret)) {
     return res.status(401).json({ ok: false, error: 'invalid_webhook_secret' });
   }
 
@@ -89,3 +100,5 @@ module.exports.eshipWebhook = eshipWebhook;
 module.exports.isPickedUpEvent = isPickedUpEvent;
 module.exports.parseEventTimestamp = parseEventTimestamp;
 module.exports.secretMatches = secretMatches;
+module.exports.requestSecretMatches = requestSecretMatches;
+module.exports.SECRET_HEADER = SECRET_HEADER;
