@@ -1,7 +1,12 @@
-# Bulk Listing ZIP Importer
+# Bulk Listing Importer
 
 Tool for creating multiple marketplace listings at once, from either a `.zip` holding a CSV plus the
 listing images, or a bare `.csv` on its own. Available at `/admin/bulk-import`.
+
+The active seller page intentionally exposes the simpler bare-CSV flow: open the generated template,
+complete it, then select or drop the CSV. Selecting a valid CSV starts the import immediately. The
+previous ZIP/CSV interface remains preserved in `BulkImportPageV2.js`, but is not routed. The server
+API continues to accept both formats for integrations and a possible future UI.
 
 Any signed-in user can bulk-import listings **for themselves** — every listing is created with the
 current user as its author. "Admin" users (emails listed in `BULK_IMPORT_OPERATOR_EMAILS`) may add a
@@ -15,10 +20,10 @@ current user as its author. "Admin" users (emails listed in `BULK_IMPORT_OPERATO
 2. Start the dev server: `yarn run dev`
 3. Navigate to `/admin/bulk-import`
 4. Sign in (any user able to create listings); listings will be authored to you
-5. Download the CSV template from the page and fill it in
-6. Pack your completed CSV and any image files into a single `.zip` archive — or upload the `.csv`
-   on its own when you have no photos yet (every listing then gets the bundled placeholder)
-7. Select the ZIP file and click "Start Import", then monitor progress
+5. Click "Open template" to download the generated CSV and fill it in
+6. Select or drop the completed `.csv`; the import starts immediately
+7. Monitor progress. Listings created through this bare-CSV flow receive the bundled placeholder
+   image, which can be replaced later
 
 ---
 
@@ -31,9 +36,9 @@ Browser (BulkImportPage)             Server (Express)
   |                                    |-- Verify Sharetribe session (any signed-in user)
   |                                    |-- Return short-lived action token + isAdmin flag
   |                                    |
-  |-- FormData(zipFile) -----------> POST /api/bulk-import/start
+  |-- FormData(zipFile = CSV) -----> POST /api/bulk-import/start
   |                                    |-- Verify session + X-Bulk-Import-Token
-  |                                    |-- Extract & validate ZIP (zipExtractor)
+  |                                    |-- Classify CSV/ZIP; extract ZIP when needed
   |                                    |-- Parse CSV, validate rows
   |                                    |-- Start async worker
   |                                    |-- Return { jobId } (HTTP 202)
@@ -45,7 +50,7 @@ Browser (BulkImportPage)             Server (Express)
   |                                    |-- Return generated CSV + example row
 ```
 
-The template button links directly to the public `GET /api/bulk-import/template` endpoint. It
+The "Open template" button links directly to the public `GET /api/bulk-import/template` endpoint. It
 generates a CSV with the current machine headers and one valid example row
 (`server/api/bulk-import/index.js`). Because the URL is same-origin and the response sets
 `Content-Disposition: attachment`, the browser downloads it without replacing an in-progress import
@@ -72,10 +77,13 @@ the next row.
 
 ## Upload formats
 
-| Upload    | Contents                              | Images                                                              |
-| --------- | ------------------------------------- | ------------------------------------------------------------------- |
-| `.zip`    | Exactly one CSV + the referenced images | Resolved by filename; a name missing from the ZIP is an error       |
-| `.csv`    | The spreadsheet alone (max 5 MB)      | None — image columns are ignored and every row gets the placeholder |
+The active browser UI accepts `.csv` only. The `/start` API and preserved `BulkImportPageV2`
+implementation retain both supported upload shapes:
+
+| Upload | Contents                                | Images                                                              |
+| ------ | --------------------------------------- | ------------------------------------------------------------------- |
+| `.zip` | Exactly one CSV + the referenced images | Resolved by filename; a name missing from the ZIP is an error       |
+| `.csv` | The spreadsheet alone (max 5 MB)        | None — image columns are ignored and every row gets the placeholder |
 
 Both arrive on the same `zipFile` multipart field and are told apart by extension (`classifyUpload`
 in `index.js`, which also sanity-checks the MIME type — spreadsheets send anything from `text/csv`
@@ -449,6 +457,7 @@ Limits are **tiered**. Standard = any signed-in user (imports for themselves); a
 | Limit                | Standard | Admin |
 | -------------------- | -------- | ----- |
 | Max rows per CSV     | 25       | 100   |
+| Max bare CSV size    | 5 MB     | 5 MB  |
 | Max images in ZIP    | 100      | 400   |
 | Max ZIP upload size  | 20 MB    | 50 MB |
 | Max imports per hour | 3        | 20    |
@@ -531,8 +540,10 @@ server/
 src/
   containers/
     BulkImportPage/
-      BulkImportPage.js            # Upload form + progress UI (React, local state only — no Redux duck)
-      BulkImportPage.module.css    # Styles
+      BulkImportPage.js            # Active simplified CSV flow + progress UI
+      BulkImportPage.module.css    # Active responsive styles
+      BulkImportPageV2.js          # Preserved, unrouted ZIP/CSV interface
+      BulkImportPageV2.module.css  # Preserved V2 styles
       BulkImportPage.test.js       # Co-located UI tests
 ```
 
