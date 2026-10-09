@@ -176,6 +176,9 @@ heroku config:set \
 `REACT_APP_CSP` to `block` after the CSP review in the release checklist. The three `REACT_APP_*`
 values are compiled into the browser bundle, so set them before a build, not after.
 
+While the app runs against Test, keep it out of search engines with `AV_NOINDEX=true` (runtime only,
+no rebuild needed); remove it in the Live configuration (§5.4).
+
 ### 3.3 Deploy and migrate
 
 Deploy the selected branch to the app and confirm the build log includes `yarn build`:
@@ -260,7 +263,11 @@ In Sharetribe Console with **Live** selected:
 7. Prepare the eShip production key/base URL and keep API debug disabled.
 8. Prepare separate production Brevo sender, templates, list, webhook, and secret if enabled.
 9. Add the production domain to Heroku and enable managed certificates, but do not move public DNS
-   until the Live build and health gates pass.
+   until the Live build and health gates pass. Done 2026-10-09: `archivovintach.com` and
+   `www.archivovintach.com` are attached and ACM is on. The canonical host is
+   **`https://www.archivovintach.com`** because DNS stays at GoDaddy, which cannot point the apex at
+   Heroku (no ALIAS/ANAME); the apex is forwarded to `www` instead and its certificate stays pending
+   by design. Read the current DNS targets with `heroku domains`.
 
 Users, listings, transactions, Stripe Connect accounts, Integration events, and Test database rows
 must not be copied into Live.
@@ -306,6 +313,21 @@ heroku pg:backups:info --app "$AV_HEROKU_APP"
 Record the completed backup ID. This is a Test rollback/audit backup; never restore it over a Live
 database after production activity begins.
 
+Carry the Instagram token across the reset. The working token lives in `av_instagram_token` and is
+refreshed in place, so `INSTAGRAM_ACCESS_TOKEN` is an older seed that may have expired; after the
+reset the app reseeds from that variable. Copy the live value first, without printing it:
+
+```sh
+heroku config:set --app "$AV_HEROKU_APP" INSTAGRAM_ACCESS_TOKEN="$(
+  heroku pg:psql --app "$AV_HEROKU_APP" \
+    --command "SELECT 'TOKEN:' || access_token FROM av_instagram_token WHERE token_name='default';" |
+    grep -oE 'TOKEN:[^ |]+' | sed 's/^TOKEN://'
+)" >/dev/null
+```
+
+Skip this only if Live uses a different Instagram account (then mint a new token, see
+[Instagram](../integrations/instagram.md)).
+
 ### 5.3 Reset the reused PostgreSQL add-on
 
 > **Destructive cutover step.** `pg:reset` deletes every table and row while retaining the same
@@ -337,6 +359,7 @@ Replace, do not mix, all environment-bound values:
 | Brevo                            | Production sender/resources/secrets                   |
 | Social login                     | Production IDs/secrets and callbacks                  |
 | CSP                              | `block`, after the Test CSP gate                      |
+| `AV_NOINDEX`                     | Unset (Test phase sets it `true`)                     |
 | Notification/label flags         | All remain `false` until migration and baseline smoke |
 
 Use `heroku config --app "$AV_HEROKU_APP"` only in an approved private terminal. Cross-check the
@@ -399,7 +422,18 @@ active poller leaders            → exactly 1 when a start flag is enabled
 
 ### 5.7 Open production traffic and smoke test
 
-After readiness passes, update public DNS to the Heroku target and verify managed TLS. Then:
+After readiness passes, update public DNS and verify managed TLS. At GoDaddy:
+
+- point `www` with a **CNAME** to the `www.archivovintach.com` DNS target from `heroku domains`;
+- replace the apex website with **domain forwarding** (301, forward-only) to
+  `https://www.archivovintach.com`, and confirm `https://archivovintach.com` still answers over
+  HTTPS — the current site sends HSTS with `includeSubDomains`, so returning visitors' browsers
+  refuse plain HTTP;
+- leave the Google Workspace MX, SPF, and verification TXT records untouched;
+- set `REACT_APP_MARKETPLACE_ROOT_URL=https://www.archivovintach.com` (and the Sharetribe Live
+  Marketplace URL to match) before the Live build.
+
+Then:
 
 - verify apex/www redirects, canonical URLs, SSR, CMS, search, login, and both languages;
 - create one real seller and complete real Stripe Connect onboarding;

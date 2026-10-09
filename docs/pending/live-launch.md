@@ -13,21 +13,21 @@ Brevo hosted templates are a known missing piece and are tracked in §6.
 
 ## 1. Snapshot
 
-| Area                   | State on 2026-10-09                                                                                                                                                                                             |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Release branch         | `pre-release` is deployed to Heroku. `origin/main` is 46 commits behind it; PR #111 (`pre-release` → `main`) is open and is the release merge.                                                                  |
-| Heroku app             | `archivo-vintach-marketplace`, stack `heroku-26` (upgraded 2026-10-09), one `web` Basic dyno, `heroku-postgresql` `essential-0`. Only the `herokuapp.com` domain is attached. Runbook phase: **1 (Test mode)**. |
-| Heroku providers       | Sharetribe Test credentials, `pk_test_…`, eShip QA base URL.                                                                                                                                                    |
-| Heroku guarded flags   | `AV_SHIPPING_LABELS_ENABLED=true` (2026-10-09, after migrations 001–009); the other six explicitly `false`. Welcome email has not been exercised on Heroku.                                                     |
-| Server tests           | 54 suites / 654 tests pass.                                                                                                                                                                                     |
-| Client tests           | 180 suites / 1920 tests pass with `CI=true`; a single early failure did not recur in eight later full runs (§2.3).                                                                                              |
-| `config-check`         | Passes.                                                                                                                                                                                                         |
-| `env-template-check`   | Passes.                                                                                                                                                                                                         |
-| `av-translation-check` | Passes (336 symmetric keys).                                                                                                                                                                                    |
-| `format-ci`            | Passes (the earlier 43 failures were a stale local `node_modules`).                                                                                                                                             |
-| `yarn audit`           | Was 1 critical, 35 high, 48 moderate, 6 low; after the 2026-10-09 upgrade 0 critical, 1 high (install-time only), 10 moderate (§2.2).                                                                           |
-| Upstream               | Fork is based on v12.1.0; `upstream/main` is v12.4.0 + 126 commits. Merge decided for **after launch** (see [pending README](README.md)).                                                                       |
-| CI                     | No CI pipeline exists (`.github/` has only issue templates). Every gate is run by hand.                                                                                                                         |
+| Area                   | State on 2026-10-09                                                                                                                                                                                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Release branch         | `pre-release` is deployed to Heroku. `origin/main` is 46 commits behind it; PR #111 (`pre-release` → `main`) is open and is the release merge.                                                                                                                                  |
+| Heroku app             | `archivo-vintach-marketplace`, stack `heroku-26`, one `web` Basic dyno (idle 224 MB / 512 MB), `heroku-postgresql` `essential-0` with daily backups. `www.archivovintach.com` and `archivovintach.com` attached, ACM on, DNS not yet pointed. Runbook phase: **1 (Test mode)**. |
+| Heroku providers       | Sharetribe Test credentials, `pk_test_…`, eShip QA base URL.                                                                                                                                                                                                                    |
+| Heroku guarded flags   | `AV_SHIPPING_LABELS_ENABLED=true` (2026-10-09, after migrations 001–009); the other six explicitly `false`. Welcome email has not been exercised on Heroku.                                                                                                                     |
+| Server tests           | 54 suites / 654 tests pass.                                                                                                                                                                                                                                                     |
+| Client tests           | 180 suites / 1920 tests pass with `CI=true`; a single early failure did not recur in eight later full runs (§2.3).                                                                                                                                                              |
+| `config-check`         | Passes.                                                                                                                                                                                                                                                                         |
+| `env-template-check`   | Passes.                                                                                                                                                                                                                                                                         |
+| `av-translation-check` | Passes (336 symmetric keys).                                                                                                                                                                                                                                                    |
+| `format-ci`            | Passes (the earlier 43 failures were a stale local `node_modules`).                                                                                                                                                                                                             |
+| `yarn audit`           | Was 1 critical, 35 high, 48 moderate, 6 low; after the 2026-10-09 upgrade 0 critical, 1 high (install-time only), 10 moderate (§2.2).                                                                                                                                           |
+| Upstream               | Fork is based on v12.1.0; `upstream/main` is v12.4.0 + 126 commits. Merge decided for **after launch** (see [pending README](README.md)).                                                                                                                                       |
+| CI                     | No CI pipeline exists (`.github/` has only issue templates). Every gate is run by hand.                                                                                                                                                                                         |
 
 ## 2. Blockers — fix before the Heroku Test gate
 
@@ -56,6 +56,9 @@ report-only mode. Live must carry the same four values.
 
 - [ ] Render staging: set `SERVER_SHARETRIBE_TRUST_PROXY` to Render's proxy hop count. The limiter
       now keys on `req.ip`, so without it every staging visitor shares one rate-limit bucket.
+- [ ] Render staging: set `REACT_APP_SHARETRIBE_USING_SSL=true` and `AV_NOINDEX=true`, then rebuild.
+      Its sitemap still advertises `http://` URLs (so its auth cookies are not `Secure` either), and
+      it is fully crawlable.
 - [ ] `REACT_APP_SENTRY_DSN` — create a Sentry project and set its DSN before launch; production has
       no error monitoring without it.
 - [ ] Brevo welcome: `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`, and `BREVO_TEMPLATE_SELLER_WELCOME`
@@ -218,11 +221,12 @@ Checked on 2026-10-09:
   Guadalajara quote through `server/api-util/eshipClient.js` returned four Estafeta/FedEx rates.
 - The production base URL `https://api.myeship.co/rest` is live (`POST /quotation` without a key
   returns `401`).
-- Heroku's Test database had **never been migrated** (`readiness.database.migrated: false`), so the
-  label and tracking tables did not exist. Migrations 001–009 were run and
-  `AV_SHIPPING_LABELS_ENABLED=true` set; readiness is `200` with one poller leader and no poll
-  errors. `ESHIP_LABEL_AUTOBUY` stays `false`, so **Generar guía → Descargar guía** can now be
-  tested against QA.
+- Migrations 001–009 were run on Heroku's Test database (idempotent; readiness had shown
+  `migrated: false` only because it skips the database check while no database-backed feature is on,
+  and part of the schema already existed) and `AV_SHIPPING_LABELS_ENABLED=true` set. Readiness now
+  confirms the schema and returns `200` with one poller leader and no poll errors.
+  `ESHIP_LABEL_AUTOBUY` stays `false`, so **Generar guía → Descargar guía** can now be tested
+  against QA.
 
 Remaining:
 
@@ -259,24 +263,73 @@ Known missing: the hosted Brevo templates.
 
 ## 7. Heroku and domain
 
+Checked and prepared on 2026-10-09:
+
+- **Backups work on `essential-0`**: `pg:backups:capture` completed (`b001`, `b002`), and a daily
+  backup is now scheduled at 04:00 America/Mexico_City (none existed). The schedule belongs to the
+  add-on, so it carries into Live. Database: PG 18.3, 8.6 MB of 1 GB, 0/20 connections.
+- **Memory**: `log-runtime-metrics` is on. After warm-up the Basic dyno idles at **224 MB of 512
+  MB**; no R14/R15 in recent logs. Decision: keep Basic and monitor. Worst case is three concurrent
+  admin imports (each up to a 50 MB ZIP plus 100 MB extracted), which would exceed the quota; Basic
+  also has no preboot, so every deploy drops in-flight imports.
+- **Domains**: `www.archivovintach.com` (canonical) and `archivovintach.com` are attached and ACM is
+  enabled. DNS is at GoDaddy (`domaincontrol.com`), which has no ALIAS/ANAME, so `www` is a CNAME to
+  Heroku and the apex is forwarded to it (runbook §4 step 9 and §5.7). Today both still serve the
+  GoDaddy placeholder site, with HSTS `includeSubDomains`.
+- **Instagram**: the feed works on Heroku (12 posts); the stored token expires 2026-11-28 and
+  auto-refreshes under 20 days. `INSTAGRAM_ACCESS_TOKEN` is an older seed than the stored token, so
+  the runbook (§5.2) now copies the stored token into it before `pg:reset`.
+
+Remaining:
+
 - [ ] Run the Heroku Test gate in full (release checklist §2). Migrations, readiness, and poller
-      leadership are verified (2026-10-09, §5); welcome email and the manual label flow are not yet.
-- [ ] Dyno size: Basic is 512 MB. Measure memory during a maximum-size bulk import; move to
-      Standard-2X if it approaches the limit.
-- [ ] PostgreSQL `essential-0`: confirm `pg:backups:capture` works on this plan **before** the
-      cutover (runbook §5.2 depends on it) and that 1 GB / 20 connections fits the expected volume.
-- [ ] Add the production domain(s), enable ACM, prepare apex/`www` DNS; set
-      `REACT_APP_MARKETPLACE_ROOT_URL` to the canonical HTTPS URL at cutover.
-- [ ] Instagram feed: generate a token for the production account and confirm migration 008 stores
-      it ([Instagram](../integrations/instagram.md)).
+      leadership are verified; welcome email and the manual label flow are not yet.
+- [ ] Watch `sample#memory_total` and R14 during a large bulk import; revisit Standard-2X (1 GB,
+      preboot) or a lower concurrent-import cap if it nears 512 MB.
+- [ ] At cutover, point GoDaddy DNS as in runbook §5.7: `www` CNAME to its `heroku domains` target,
+      apex forwarding to `https://www.archivovintach.com` over HTTPS, MX/SPF untouched. Confirm
+      `heroku certs:auto` shows `www` issued.
+- [ ] Set `REACT_APP_MARKETPLACE_ROOT_URL=https://www.archivovintach.com` and the Sharetribe Live
+      Marketplace URL to match, before the Live build.
+- [ ] Add a DMARC record (`_dmarc.archivovintach.com` has none) when authenticating the Brevo and
+      Sharetribe sending domain (§6).
+- [ ] Before `pg:reset`, carry the Instagram token across (runbook §5.2), or mint one if Live uses a
+      different account.
 
 ## 8. Content, SEO, and operations
 
-- [ ] Social profile links in `configDefault.js` (`siteInstagramPage`, `siteFacebookPage`) are
-      `null`; set them for structured data and sharing previews.
-- [ ] `robots.txt` and the sitemap are served from the production root URL; staging on Render should
-      not be indexed (consider `BASIC_AUTH_USERNAME/PASSWORD` on Render after launch).
-- [ ] Bulk-import sample `NEOCHILANGO.zip` and the CSV template use option keys valid in Live.
+Checked and fixed on 2026-10-09:
+
+- **Indexing.** Render staging is crawlable (normal `robots.txt`, `http://` sitemap) — the earlier
+  belief that it was not came from a cold-start placeholder — and so is the Heroku Test app. After
+  cutover the `*.herokuapp.com` name would also stay reachable as a duplicate of `www`. New
+  `server/api-util/searchIndexing.js` (mounted in `server/index.js` before `/robots.txt`) sends
+  `X-Robots-Tag: noindex, nofollow` and a `Disallow: /` robots file when `AV_NOINDEX=true` or when
+  the request host is not the `REACT_APP_MARKETPLACE_ROOT_URL` host. Verified locally for the
+  canonical host, the herokuapp host, and the flag.
+- **Structured data.** The Organization `sameAs` list was empty because `siteFacebookPage` and
+  `siteInstagramPage` were `null`; both now carry the profiles the hosted footer already links.
+  There is no X/Twitter account, and TikTok is not part of that schema. The other SEO tags (title,
+  Open Graph, Twitter card, 1200×800 share image, favicons, manifest, canonical) are present.
+- **Bulk-import samples.** `NEOCHILANGO.zip`, `ZIP_CARGA_MASIVA.zip`, `PLANTILLA_CARGA_MASIVA.csv`,
+  and both `docs/data` test CSVs parse cleanly and use only option keys that exist in Test.
+- **Operator guide §8.5** told operators to type values that do not exist: categories
+  `home_antiques` and `ropa-debano` (Test: `home-antiques`, `ropa-de-bano`), and temporada display
+  names such as `Otoño` (keys are `otono`, …, plus the missing `todo-el-ano`). Bulk import stores
+  such values as typed, so those listings fall outside their category and filters. The category
+  table is regenerated from Test (150 ids; it lacked 46, mostly level 3) and the temporada table
+  corrected. The local generator (`.claude/commands/scripts/generate_bulk_import.py`, untracked) had
+  the same category errors plus non-existent sizes (`mx_36`, `curvy_6x`); fixed, and a 100-row
+  sample now validates.
+
+Remaining:
+
+- [ ] Deploy the indexing guard and the `sameAs` change, then set `AV_NOINDEX=true` on Heroku until
+      cutover. At cutover remove it (runbook §5.4); the herokuapp host stays noindexed on its own.
+- [ ] Render: `AV_NOINDEX=true` (see §2.1).
+- [ ] Console (Test and Live): write a real Spanish meta description for the landing page — it is
+      currently `Archivo Vintach Marketplace` — and remove the trailing space in the footer's TikTok
+      URL.
 - [ ] Spanish shareable operator guide is still a draft (see [pending README](README.md)); decide
       whether operators get the English edition at launch.
 - [ ] Assign the launch roles from the runbook §1 (operator, approver, rollback owner, monitoring

@@ -1183,127 +1183,180 @@ Use these exact option keys (the second column) in your CSV — not the display 
 
 Use these IDs in `pub_categoryLevel1`, `pub_categoryLevel2`, and `pub_categoryLevel3`.
 
-| Category                    | ID to use                      |
-| --------------------------- | ------------------------------ |
-| **Level 1**                 |                                |
-| Ropa                        | `ropa`                         |
-| Bolsas                      | `bolsas`                       |
-| Zapatos                     | `zapatos`                      |
-| Accesorios                  | `accesorios`                   |
-| Home Antiques               | `home_antiques`                |
-| **Level 2 — Ropa**          |                                |
-| Tops                        | `ropa-tops`                    |
-| Camisetas                   | `ropa-camisetas`               |
-| Camisas                     | `ropa-camisas`                 |
-| Pantalones                  | `ropa-pantalones`              |
-| Jeans                       | `ropa-jeans`                   |
-| Faldas                      | `ropa-faldas`                  |
-| Vestidos                    | `ropa-vestidos`                |
-| Chamarras / Abrigos / Sacos | `ropa-sacos-chamarras`         |
-| Sudaderas                   | `ropa-sudaderas`               |
-| Shorts                      | `ropa-shorts`                  |
-| Ropa deportiva              | `ropa-deportiva`               |
-| Trajes / Sets               | `ropa-trajes`                  |
-| Jumpsuits                   | `ropa-jumpsuits`               |
-| Lencería / Pijama           | `ropa-lenceria`                |
-| De baño                     | `ropa-debano`                  |
-| Maternidad                  | `ropa-maternidad`              |
-| **Level 2 — Bolsas**        |                                |
-| De mano                     | `bolsas-mano`                  |
-| Cruzadas                    | `bolsas-cruzadas`              |
-| Clutch                      | `bolsas-clutch`                |
-| Formales                    | `bolsas-formales`              |
-| Mochilas casuales           | `bolsas-mochilas_casuales`     |
-| Mochilas de deporte         | `bolsas-mochilas_deporte`      |
-| Totes                       | `bolsas-totes`                 |
-| Riñoneras                   | `bolsas-rinoneras`             |
-| Carteras                    | `bolsas-carteras`              |
-| Monederos                   | `bolsas-monederos`             |
-| **Level 2 — Zapatos**       |                                |
-| Tacones                     | `zapatos-tacones`              |
-| Sandalias                   | `zapatos-sandalias`            |
-| Sandalias con tacón         | `zapatos-sandalias_tacon`      |
-| Zapatillas y Flats          | `zapatos-zapatillas_flats`     |
-| Mocasines                   | `zapatos-mocasines`            |
-| Plataformas                 | `zapatos-plataformas`          |
-| Tenis casuales              | `zapatos-tenis_casuales`       |
-| Tenis deportivos            | `zapatos-tenis_deportivos`     |
-| Botas                       | `zapatos-botas`                |
-| Botas vaqueras              | `zapatos-botas_vaqueras`       |
-| Botas con tacón             | `zapatos-botas_tacon`          |
-| Botas de montaña            | `zapatos-botas_montana`        |
-| Botín                       | `zapatos-botin`                |
-| Botín con tacón             | `zapatos-botin_tacon`          |
-| **Level 2 — Accesorios**    |                                |
-| Gorras / Gorros             | `accesorios-gorras_gorros`     |
-| Sombreros                   | `accesorios-sombreros`         |
-| Lentes                      | `accesorios-lentes`            |
-| Cinturones                  | `accesorios-cinturones`        |
-| Bufandas / Pañuelos         | `accesorios-bufandas_panuelos` |
-| Joyerías                    | `accesorios-joyerias`          |
-| Guantes                     | `accesorios-guantes`           |
-| Otros                       | `accesorios-otros`             |
-| **Level 3 — Tops**          |                                |
-| Blusas                      | `ropa-tops-blusas`             |
-| T-shirts                    | `ropa-tops-tshirts`            |
-| Crop-tops                   | `ropa-tops-croptops`           |
-| Manga larga                 | `ropa-tops-mangalarga`         |
-| Manga corta                 | `ropa-tops-mangacorta`         |
-| Strapless                   | `ropa-tops-strapless`          |
-| Bodys                       | `ropa-tops-bodys`              |
-| **Level 3 — Camisetas**     |                                |
-| Manga corta                 | `ropa-camisetas-mangacorta`    |
-| Manga larga                 | `ropa-camisetas-mangalarga`    |
-| Sin mangas                  | `ropa-camisetas-sinmangas`     |
-| Oversized                   | `ropa-camisetas-oversized`     |
-| Gráficas / Estampadas       | `ropa-camisetas-graficas`      |
-| Básicas                     | `ropa-camisetas-basicas`       |
-| **Level 3 — Camisas**       |                                |
-| Manga corta                 | `ropa-camisas-mangacorta`      |
-| Manga larga                 | `ropa-camisas-mangalarga`      |
-| Vaqueras                    | `ropa-camisas-vaqueras`        |
-| Formales                    | `ropa-camisas-formales`        |
-| Casuales                    | `ropa-camisas-casuales`        |
-| Seda                        | `ropa-camisas-seda`            |
-| **Level 3 — Pantalones**    |                                |
-| Formales                    | `ropa-pantalones-formales`     |
-| Casuales                    | `ropa-pantalones-casuales`     |
-| Leggings                    | `ropa-pantalones-leggings`     |
-| Sweatpants                  | `ropa-pantalones-sweatpants`   |
-| Vintage                     | `ropa-pantalones-vintage`      |
-| Cargo                       | `ropa-pantalones-cargo`        |
-| **Level 3 — Jeans**         |                                |
-| Mom fit                     | `ropa-jeans-momfit`            |
-| Boyfriend jeans             | `ropa-jeans-boyfriend`         |
-| Baggy / Oversized           | `ropa-jeans-baggy`             |
-| Rectos                      | `ropa-jeans-rectos`            |
-| Wide leg                    | `ropa-jeans-wideleg`           |
-| Carpenter / Cargo           | `ropa-jeans-cargo`             |
-| Acampanados / Flare         | `ropa-jeans-acampanados`       |
-| Slim fit                    | `ropa-jeans-slimfit`           |
-| Skinny jeans                | `ropa-jeans-skinny`            |
-| **Level 3 — Faldas**        |                                |
-| Larga                       | `ropa-faldas-larga`            |
-| Midi                        | `ropa-faldas-midi`             |
-| Mini                        | `ropa-faldas-mini`             |
-| Denim                       | `ropa-faldas-denim`            |
-| Seda                        | `ropa-faldas-seda`             |
-| **Level 3 — Vestidos**      |                                |
-| Vestidos formales           | `ropa-vestidos-formales`       |
-| Vestidos casuales           | `ropa-vestidos-casuales`       |
-| Largos                      | `ropa-vestidos-largos`         |
-| Midi                        | `ropa-vestidos-midi`           |
-| Mini                        | `ropa-vestidos-mini`           |
-| Manga larga                 | `ropa-vestidos-mangalarga`     |
-| Manga corta                 | `ropa-vestidos-mangacorta`     |
-| Sin manga                   | `ropa-vestidos-sinmanga`       |
-| Novia / Bridal              | `ropa-vestidos-novia`          |
-| **Level 3 — Joyerías**      |                                |
-| Collares                    | `accesorios-joyerias-collares` |
-| Aretes                      | `accesorios-joyerias-aretes`   |
-| Anillos                     | `accesorios-joyerias-anillos`  |
-| Pulseras                    | `accesorios-joyerias-pulseras` |
-| Relojes                     | `accesorios-joyerias-relojes`  |
+| Category                                  | ID to use                                   |
+| ----------------------------------------- | ------------------------------------------- |
+| **Level 1**                               |                                             |
+| Ropa                                      | `ropa`                                      |
+| Bolsas                                    | `bolsas`                                    |
+| Zapatos                                   | `zapatos`                                   |
+| Accesorios                                | `accesorios`                                |
+| Home Antiques                             | `home-antiques`                             |
+| **Level 2 — Ropa**                        |                                             |
+| Tops                                      | `ropa-tops`                                 |
+| Camisetas                                 | `ropa-camisetas`                            |
+| Camisas                                   | `ropa-camisas`                              |
+| Chamarras / Abrigos / Sacos               | `ropa-sacos-chamarras`                      |
+| Sudaderas                                 | `ropa-sudaderas`                            |
+| Pantalones                                | `ropa-pantalones`                           |
+| Jeans                                     | `ropa-jeans`                                |
+| Faldas                                    | `ropa-faldas`                               |
+| Vestidos                                  | `ropa-vestidos`                             |
+| Ropa deportiva                            | `ropa-deportiva`                            |
+| Shorts                                    | `ropa-shorts`                               |
+| Trajes / Sets                             | `ropa-trajes`                               |
+| Jumpsuits                                 | `ropa-jumpsuits`                            |
+| Lencería / pijama                         | `ropa-lenceria`                             |
+| De baño                                   | `ropa-de-bano`                              |
+| Maternidad                                | `ropa-maternidad`                           |
+| **Level 2 — Bolsas**                      |                                             |
+| De mano                                   | `bolsas-mano`                               |
+| Cruzadas                                  | `bolsas-cruzadas`                           |
+| Clutch                                    | `bolsas-clutch`                             |
+| Formales                                  | `bolsas-formales`                           |
+| Mochilas casuales                         | `bolsas-mochilas_casuales`                  |
+| Mochilas de deporte                       | `bolsas-mochilas_deporte`                   |
+| Totes                                     | `bolsas-totes`                              |
+| Riñoneras                                 | `bolsas-rinoneras`                          |
+| Carteras                                  | `bolsas-carteras`                           |
+| Monederos                                 | `bolsas-monederos`                          |
+| **Level 2 — Zapatos**                     |                                             |
+| Tacones                                   | `zapatos-tacones`                           |
+| Sandalias                                 | `zapatos-sandalias`                         |
+| Sandalias con tacón                       | `zapatos-sandalias_tacon`                   |
+| Zapatillas y Flats                        | `zapatos-zapatillas_flats`                  |
+| Mocasines                                 | `zapatos-mocasines`                         |
+| Plataformas                               | `zapatos-plataformas`                       |
+| Tenis casuales                            | `zapatos-tenis_casuales`                    |
+| Tenis deportivos                          | `zapatos-tenis_deportivos`                  |
+| Botas                                     | `zapatos-botas`                             |
+| Botas vaqueras                            | `zapatos-botas_vaqueras`                    |
+| Botas con tacón                           | `zapatos-botas_tacon`                       |
+| Botas de montaña                          | `zapatos-botas_montana`                     |
+| Botín                                     | `zapatos-botin`                             |
+| Botín con tacón                           | `zapatos-botin_tacon`                       |
+| **Level 2 — Accesorios**                  |                                             |
+| Gorras / Gorros                           | `accesorios-gorras_gorros`                  |
+| Sombreros                                 | `accesorios-sombreros`                      |
+| Lentes                                    | `accesorios-lentes`                         |
+| Cinturones                                | `accesorios-cinturones`                     |
+| Bufandas / Pañuelos                       | `accesorios-bufandas_panuelos`              |
+| Joyerías                                  | `accesorios-joyerias`                       |
+| Guantes                                   | `accesorios-guantes`                        |
+| Otros                                     | `accesorios-otros`                          |
+| **Level 2 — Home Antiques**               |                                             |
+| Antigueadades                             | `home-antiques-antiguedades`                |
+| **Level 3 — Tops**                        |                                             |
+| Blusas                                    | `ropa-tops-blusas`                          |
+| T-shirts                                  | `ropa-tops-tshirts`                         |
+| Crop-tops                                 | `ropa-tops-croptops`                        |
+| Manga larga                               | `ropa-tops-mangalarga`                      |
+| Manga corta                               | `ropa-tops-mangacorta`                      |
+| Strapless                                 | `ropa-tops-strapless`                       |
+| Bodys                                     | `ropa-tops-bodys`                           |
+| **Level 3 — Camisetas**                   |                                             |
+| Manga corta                               | `ropa-camisetas-mangacorta`                 |
+| Manga larga                               | `ropa-camisetas-mangalarga`                 |
+| Sin mangas                                | `ropa-camisetas-sinmangas`                  |
+| Oversized                                 | `ropa-camisetas-oversized`                  |
+| Gráficas / Estampadas                     | `ropa-camisetas-graficas`                   |
+| Básicas                                   | `ropa-camisetas-basicas`                    |
+| **Level 3 — Camisas**                     |                                             |
+| Manga corta                               | `ropa-camisas-mangacorta`                   |
+| Manga larga                               | `ropa-camisas-mangalarga`                   |
+| Vaqueras                                  | `ropa-camisas-vaqueras`                     |
+| Formales                                  | `ropa-camisas-formales`                     |
+| Casuales                                  | `ropa-camisas-casuales`                     |
+| Seda                                      | `ropa-camisas-seda`                         |
+| **Level 3 — Chamarras / Abrigos / Sacos** |                                             |
+| Chamarras de piel                         | `ropa-sacos-chamarras-chamarras-de-piel`    |
+| Chamarras de plumas                       | `ropa-sacos-chamarras-chamarras-de-plumas`  |
+| Sacos                                     | `ropa-sacos-chamarras-sacos`                |
+| Bomber/Biker jackets                      | `ropa-sacos-chamarras-bomber-biker-jackets` |
+| Abrigos formales                          | `ropa-sacos-chamarras-abrigos-formales`     |
+| Trench coats                              | `ropa-sacos-chamarras-trench-coats`         |
+| Mini jackets                              | `ropa-sacos-chamarras-mini-jackets`         |
+| Denim jackets                             | `ropa-sacos-chamarras-denim-jackets`        |
+| Varsity jackets                           | `ropa-sacos-chamarras-varsity-jackets`      |
+| Impermeable                               | `ropa-sacos-chamarras-impermeable`          |
+| Rompevientos                              | `ropa-sacos-chamarras-rompevientos`         |
+| Capa                                      | `ropa-sacos-chamarras-capa`                 |
+| Chalecos                                  | `ropa-sacos-chamarras-chalecos`             |
+| Chalecos denim                            | `ropa-sacos-chamarras-chalecos-denim`       |
+| **Level 3 — Sudaderas**                   |                                             |
+| Hoodies sin cierre                        | `ropa-sudaderas-hoodies-sin-cierre`         |
+| Hoodies con cierre                        | `ropa-sudaderas-hoodies-con-cierre`         |
+| Sudaderas deportivas                      | `ropa-sudaderas-sudaderas-deportivas`       |
+| Sudaderas de montaña                      | `ropa-sudaderas-sudaderas-de-montana`       |
+| Sudaderas casuales                        | `ropa-sudaderas-sudaderas-casuales`         |
+| **Level 3 — Pantalones**                  |                                             |
+| Formales                                  | `ropa-pantalones-formales`                  |
+| Casuales                                  | `ropa-pantalones-casuales`                  |
+| Leggings                                  | `ropa-pantalones-leggings`                  |
+| Sweatpants                                | `ropa-pantalones-sweatpants`                |
+| Vintage                                   | `ropa-pantalones-vintage`                   |
+| Cargo                                     | `ropa-pantalones-cargo`                     |
+| Leather                                   | `ropa-pantalones-leather`                   |
+| **Level 3 — Jeans**                       |                                             |
+| Mom fit                                   | `ropa-jeans-momfit`                         |
+| Boyfriend jeans                           | `ropa-jeans-boyfriend`                      |
+| Baggy / Oversized                         | `ropa-jeans-baggy`                          |
+| Rectos                                    | `ropa-jeans-rectos`                         |
+| Wide leg                                  | `ropa-jeans-wideleg`                        |
+| Carpenter / Cargo                         | `ropa-jeans-cargo`                          |
+| Acampanados / Flare                       | `ropa-jeans-acampanados`                    |
+| Slim fit                                  | `ropa-jeans-slimfit`                        |
+| Skinny jeans                              | `ropa-jeans-skinny`                         |
+| **Level 3 — Faldas**                      |                                             |
+| Larga                                     | `ropa-faldas-larga`                         |
+| Midi                                      | `ropa-faldas-midi`                          |
+| Mini                                      | `ropa-faldas-mini`                          |
+| Denim                                     | `ropa-faldas-denim`                         |
+| Seda                                      | `ropa-faldas-seda`                          |
+| Leather                                   | `ropa-faldas-leather`                       |
+| **Level 3 — Vestidos**                    |                                             |
+| Vestidos formales                         | `ropa-vestidos-formales`                    |
+| Vestidos casuales                         | `ropa-vestidos-casuales`                    |
+| Largos                                    | `ropa-vestidos-largos`                      |
+| Midi                                      | `ropa-vestidos-midi`                        |
+| Mini                                      | `ropa-vestidos-mini`                        |
+| Manga larga                               | `ropa-vestidos-mangalarga`                  |
+| Manga corta                               | `ropa-vestidos-mangacorta`                  |
+| Sin manga                                 | `ropa-vestidos-sinmanga`                    |
+| Novia / Bridal                            | `ropa-vestidos-novia`                       |
+| **Level 3 — Ropa deportiva**              |                                             |
+| Tops                                      | `ropa-deportiva-tops`                       |
+| Bikers                                    | `ropa-deportiva-bikers`                     |
+| Shorts                                    | `ropa-deportiva-shorts`                     |
+| Leggings                                  | `ropa-deportiva-leggings`                   |
+| Sportbra                                  | `ropa-deportiva-sportbra`                   |
+| De montaña                                | `ropa-deportiva-de-montana`                 |
+| Ski                                       | `ropa-deportiva-ski`                        |
+| **Level 3 — Shorts**                      |                                             |
+| Mini                                      | `ropa-shorts-mini`                          |
+| Baggy/Oversized                           | `ropa-shorts-baggy-oversized`               |
+| Bermudas                                  | `ropa-shorts-bermudas`                      |
+| **Level 3 — Trajes / Sets**               |                                             |
+| Traje                                     | `ropa-trajes-traje`                         |
+| Falda/Top                                 | `ropa-trajes-falda-top`                     |
+| Pantalón/Top                              | `ropa-trajes-pantalon-top`                  |
+| Short/Top                                 | `ropa-trajes-short-top`                     |
+| **Level 3 — Jumpsuits**                   |                                             |
+| Mini                                      | `ropa-jumpsuits-mini`                       |
+| Largo                                     | `ropa-jumpsuits-largo`                      |
+| **Level 3 — Lencería / pijama**           |                                             |
+| Sets                                      | `ropa-lenceria-sets`                        |
+| Pijamas                                   | `ropa-lenceria-pijamas`                     |
+| Top/Bra                                   | `ropa-lenceria-top-bra`                     |
+| **Level 3 — De baño**                     |                                             |
+| Bikinis                                   | `ropa-de-bano-bikinis`                      |
+| Traje completo                            | `ropa-de-bano-traje-completo`               |
+| Salidas                                   | `ropa-de-bano-salidas`                      |
+| **Level 3 — Joyerías**                    |                                             |
+| Collares                                  | `accesorios-joyerias-collares`              |
+| Aretes                                    | `accesorios-joyerias-aretes`                |
+| Anillos                                   | `accesorios-joyerias-anillos`               |
+| Pulseras                                  | `accesorios-joyerias-pulseras`              |
+| Relojes                                   | `accesorios-joyerias-relojes`               |
 
 #### Color option keys
 
@@ -1362,14 +1415,16 @@ Use these IDs in `pub_categoryLevel1`, `pub_categoryLevel2`, and `pub_categoryLe
 
 #### Temporada option keys
 
-The `Temporada` column is optional. Use one of these values exactly (with the accent on `Otoño`):
+The `Temporada` column is optional. Use the key, not the display name — lowercase, no accent. A
+value such as `Otoño` is stored as typed and matches no option:
 
-| Display name | Value to use |
-| ------------ | ------------ |
-| Primavera    | `Primavera`  |
-| Verano       | `Verano`     |
-| Otoño        | `Otoño`      |
-| Invierno     | `Invierno`   |
+| Display name | Value to use  |
+| ------------ | ------------- |
+| Primavera    | `primavera`   |
+| Verano       | `verano`      |
+| Otoño        | `otono`       |
+| Invierno     | `invierno`    |
+| Todo el Año  | `todo-el-ano` |
 
 #### Talla option keys
 
