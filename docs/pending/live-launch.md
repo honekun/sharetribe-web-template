@@ -338,12 +338,28 @@ Remaining:
 
 ## 9. Documentation drift found in this review
 
-- `CLAUDE.md` listed Node `>=18.20.1 <23.2.0`. Corrected; `engines.node` is now pinned to `24.x`
-  because Heroku warns on upstream's wide `^22.22.0 || >=24.0.0` range and caps it at the active LTS
-  anyway.
-- The release checklist and runbook ran `yarn test-ci` without `CI=true`. Locally that leaves the
-  client half in Jest watch mode, which only runs tests for changed files and never exits — the
-  1,918 client tests were silently skipped. Corrected to `CI=true yarn test-ci`, and `format-ci` /
-  `av-translation-check` were added to the code gate.
-- `.env-template` labels `INSTAGRAM_ACCESS_TOKEN` with the WhatsApp comment ("Meta Cloud API
-  credentials for sending WhatsApp notifications"). Cosmetic; fix with the next template edit.
+All corrected on 2026-10-09; nothing in this section remains open.
+
+- `CLAUDE.md` listed Node `>=18.20.1 <23.2.0`. `engines.node` is now pinned to `24.x` because Heroku
+  warns on upstream's wide `^22.22.0 || >=24.0.0` range and caps it at the active LTS anyway.
+- The release checklist, runbook, and `CLAUDE.md` ran `yarn test-ci` without `CI=true`. Locally that
+  leaves the client half in Jest watch mode, which only runs tests for changed files and never exits
+  — the client tests were silently skipped. All now say `CI=true yarn test-ci`, and `format-ci` /
+  `av-translation-check` joined the code gate.
+- `.env-template` labelled `INSTAGRAM_ACCESS_TOKEN` with the WhatsApp comment; it now explains that
+  the variable is only the seed for the Postgres-stored, self-refreshing token.
+- Commission was documented as 10 %; Console charges **22 %** (operator guide, `CLAUDE.md`, code
+  fallback, this checklist).
+- A `comprador` user type was documented (operator guide §14.3, runbook, this checklist); Console
+  has only `vendedor` and `vendedor-tienda`. `vendedor-stock` remains as a legacy value in the
+  original-price rule only.
+- Operator guide §8.5 gave category ids and temporada values that do not exist (§8 above); the
+  category table is now generated from Test.
+- The operator guide did not say the Hot List needs `tags` to be searchable, and §9 did not cover
+  HTTPS, proxy hops, CSP, or `AV_NOINDEX`; both added.
+- This checklist itself first claimed Render staging was not indexable and that Heroku's database
+  had never been migrated; both came from misread signals (a cold-start page, and a readiness check
+  that skips the database while it is not required) and are corrected in §5 and §8.
+
+A sweep for broken relative links in `docs/`, `CLAUDE.md`, and `README.md`, and for environment
+variables documented but unknown to the code or `.env-template`, found none.

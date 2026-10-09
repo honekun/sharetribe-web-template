@@ -33,7 +33,7 @@ yarn test -- --watchAll=false              # Run all tests once
 yarn test -- --testPathPattern=auth        # Match "auth" in path
 yarn test -- --testNamePattern="login"     # Match "login" in name
 yarn test-server                           # Server tests only
-yarn test-ci                               # CI: server then client (--runInBand)
+CI=true yarn test-ci                       # Server then client (--runInBand); without CI=true the client half watches
 
 yarn run format / format-ci                # Prettier (write / check)
 yarn run config                            # Config validation/setup wizard

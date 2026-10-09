@@ -954,6 +954,10 @@ for the full features.
 The Hot List is a curated carousel of featured listings. Any published listing tagged with
 `hot-list` automatically appears in it.
 
+> This only works when the `tags` listing field is searchable (Console → Listing fields → `tags` →
+> include in search). If it is not, the tag filter is ignored and the carousel shows arbitrary
+> listings instead of the tagged ones.
+
 ### Adding a listing to the Hot List
 
 **Via Sharetribe Console:**
@@ -1761,6 +1765,15 @@ monitoring routinely record full URLs in their logs, and a secret in the URL end
 logs, while a header does not. Treat the secret like a password in either form. The dev team sets
 this up per environment; the test and production marketplaces use different secrets.
 
+### Security and search indexing
+
+| Setting                                            | What it controls                                                                                                                                       |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **HTTPS** (`REACT_APP_SHARETRIBE_USING_SSL`)       | `true` on every deployed site: redirects HTTP to HTTPS and marks login cookies secure.                                                                 |
+| **Proxy hops** (`SERVER_SHARETRIBE_TRUST_PROXY`)   | `1` on Heroku, so the server sees each visitor's real address (rate limits, consent records). Never `true`.                                            |
+| **Content Security Policy** (`REACT_APP_CSP`)      | `report` while testing, `block` in production.                                                                                                         |
+| **Hide from search engines** (`AV_NOINDEX`)        | `true` on staging and on the Heroku app before launch; unset in production. Any address other than the main site address is always hidden from search. |
+
 ### Seller earnings estimator
 
 | Setting                            | What it controls                                                                                                          |
@@ -2530,14 +2543,15 @@ full Test-environment transaction pass.
 
 ### 14.3 User Management
 
-The common configured account types are:
+Console defines two user types. There is no buyer type: any signed-in user can buy.
 
-| User type         | Operational meaning                                                                                                                               |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `comprador`       | Buyer/customer account.                                                                                                                           |
-| `vendedor`        | Individual seller; receives the seller onboarding experience.                                                                                     |
-| `vendedor-tienda` | Store seller; receives store wording, hides the buyer-side menu entries, and may appear in the Marcas menu when `localDesign` is truthy.          |
-| `vendedor-stock`  | Legacy/special seller value recognized by some seller UI rules; do not assign it unless the current product configuration explicitly requires it. |
+| User type         | Console label | Operational meaning                                                                                                                      |
+| ----------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `vendedor`        | Persona       | Individual seller; receives the seller onboarding experience and may set an original ("was") price.                                     |
+| `vendedor-tienda` | Tienda        | Store seller; receives store wording, hides the buyer-side menu entries, and may appear in the Marcas menu when `localDesign` is truthy. |
+
+`vendedor-stock` is still recognized by the original-price rule in code (`configAV.sellerUserTypes`),
+but no Console user type uses it; do not assign it.
 
 For a user-support or moderation request:
 
