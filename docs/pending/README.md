@@ -12,6 +12,11 @@ Last reviewed: 2026-10-09.
 - Close the [Live launch readiness](live-launch.md) gaps first: missing Heroku production variables,
   dependency advisories, repository gates, and the Sharetribe Live, Stripe, eShip, and Brevo setup
   the release checklist assumes is already done.
+- Merge upstream v12.4.0 **after launch** (decided 2026-10-09; the fork is on v12.1.0). Do it on a
+  branch, validate on Render/Test, then release normally. It brings Sentry 11, which clears the
+  seven remaining `@opentelemetry/*` audit advisories, plus `user.duck` hardening, the inquiry
+  checkout speculation fix, sitemap empty-detection, and imgix in CSP. Re-apply `engines.node`
+  `24.x` if upstream's range comes back.
 - Complete the [production release checklist](../operations/release-checklist.md). It is an
   operational checklist, so its unchecked environment steps remain in that runbook.
 - Synchronize the retained [Spanish shareable draft](../shareable/pending/operator-guide-es.html)
