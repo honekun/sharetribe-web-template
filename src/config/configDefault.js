@@ -68,7 +68,7 @@ const defaultConfig = {
   // These code defaults are only used if the asset is unavailable.
   earningsEstimate: {
     providerCommissionPercentage:
-      parseFloat(process.env.REACT_APP_PROVIDER_COMMISSION_PERCENTAGE) || 10,
+      parseFloat(process.env.REACT_APP_PROVIDER_COMMISSION_PERCENTAGE) || 22,
     providerCommissionFixedAmountInSubunits:
       parseInt(process.env.REACT_APP_PROVIDER_COMMISSION_FIXED_FEE, 10) || 0,
     stripeFeePercentage: parseFloat(process.env.REACT_APP_STRIPE_FEE_PERCENTAGE) || 2.9,
