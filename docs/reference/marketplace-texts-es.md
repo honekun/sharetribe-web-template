@@ -22,6 +22,15 @@ of them were also present in Console and are intentionally absent from the paste
 Four additional stale upstream keys were excluded while the dynamic transaction, configuration, and
 PageBuilder key families were retained unless their runtime producer was conclusively absent.
 
+**Re-reconciled 2026-10-09** against Test asset version `LMTAMVWDpn9FK3sOT1KtTQ`, which by then held
+exactly the reference's 1,992 keys. Three values edited in Test since the first pass were taken from
+Test (`AVShippingSelector.noticeTitle`, `AVShippingSelector.noticeText`,
+`BulkImportPage.downloadTemplate`), and the 16 keys of the simplified bulk-import page
+(`BulkImportPage.simple*`, `BulkImportPage.rowError.placeholderUnavailable`) were added from
+`es_av.json`, bringing the file to 2,008 keys. Pasting it into Console makes those values
+Console-owned: a later change to `es_av.json` for the same key will not show until Console is
+updated too.
+
 Test and Live are separate Sharetribe environments. Review and publish this object in Test first,
 then copy the approved content to Live through the normal content-release process. Preserve ICU
 placeholders such as `{count}`, plural/select expressions, and link variables exactly.

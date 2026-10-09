@@ -37,6 +37,7 @@ yarn test-ci                               # CI: server then client (--runInBand
 
 yarn run format / format-ci                # Prettier (write / check)
 yarn run config                            # Config validation/setup wizard
+yarn run config:compare <baseId> <targetId> # Diff hosted Console config of two envs (public client IDs)
 yarn run translate                         # Translation management
 yarn av-translation-check                  # en_av.json / es_av.json key symmetry
 ```
@@ -425,9 +426,10 @@ Integration credentials (`SHARETRIBE_INTEGRATION_CLIENT_ID/SECRET`) to read sell
   `commissionInvariant.test.js` pins it against the rate and fee; Console's minimum overrides it.
   Bulk import applies the same floor via `server/api-util/listingMinimumPrice.js`
   (`resolveListingMinimumPrice`; its test keeps the fallback in step with `configDefault.js`).
-- **EarningsEstimator** — fee breakdown below price input (simple price only). Fees from
-  `config.earningsEstimate` (`configDefault.js`), env overrides
-  `REACT_APP_PROVIDER_COMMISSION_PERCENTAGE` (10), `REACT_APP_STRIPE_FEE_PERCENTAGE` (2.9),
+- **EarningsEstimator** — fee breakdown below price input (simple price only). The percentage comes
+  from Console `commission.json` at runtime (22 %); `config.earningsEstimate` (`configDefault.js`)
+  holds the fallbacks and env overrides `REACT_APP_PROVIDER_COMMISSION_PERCENTAGE` (22),
+  `REACT_APP_STRIPE_FEE_PERCENTAGE` (2.9),
   `REACT_APP_STRIPE_FEE_FIXED_AMOUNT` (30¢).
 
 ## Testing Conventions

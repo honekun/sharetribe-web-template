@@ -104,49 +104,92 @@ names.
 ## 3. Sharetribe Live environment
 
 Nothing is copied automatically from Test. Users, listings, transactions, and Stripe accounts never
-move.
+move. Once Live has a Marketplace API client ID, check every Console item below at once with
+`yarn run config:compare <testClientId> <liveClientId>` (`scripts/compare-hosted-config.js`; public
+client IDs only, read-only). Branding image URLs and page listing/user IDs are expected to differ;
+anything else is a setup gap.
+
+Verified or prepared in Test on 2026-10-09:
+
+- **Commission is 22 %**, not 10 % (Test `commission.json`). The earnings estimator reads it from
+  Console; the code fallback is now 22 % too. The \$20 minimum still covers the \$15 fee (floor
+  \$19.24).
+- **User types** are `vendedor` and `vendedor-tienda` only; there is no buyer type.
+- **Search schemas:** `color` and `all_sizes` (code-defined, shown as search filters) and
+  `avPlaceholderImage` had **no schema**, so the Marketplace API silently ignored those filters and
+  returned every listing. Created in Test; color/size filters now narrow results (e.g. 281 → 30).
+  The `userType` user schema is created by Console automatically.
+- **`default-purchase`** in Test (v3) matched the repository exactly. Upstream v12.4.0's five
+  purchase-template fixes were applied to the repository (now byte-identical to upstream), including
+  the reminder date's `YYYY` → `yyyy` week-year bug, pushed to Test as **v4**, and `release-1` moved
+  to it.
+- **Email texts reference** corrected: all 36 `YYYY` date skeletons, `rechazó to` → `rechazó tu`,
+  and two operator-declined texts that said _aceptó_.
+- **Marketplace texts reference** re-reconciled with Test (2,008 keys).
+
+Remaining (Console or owner actions):
 
 - [ ] Sharetribe subscription is on a plan that permits Live, and the Live environment is opened.
 - [ ] Marketplace settings: name, Marketplace URL (production domain), localization (`es`, `MXN`,
-      `MX`), branding (logo, favicon, colours, social share image), and the outgoing-email sender
-      and reply-to mailbox. The dispute acknowledgement relies on replies reaching a monitored
-      Archivo Vintach mailbox.
-- [ ] User types `comprador`, `vendedor`, `vendedor-tienda` and user fields (`userType`,
-      `tipoTienda`, plus every protected field the app reads). Keep the phone field out — WhatsApp
-      is release-locked.
-- [ ] Listing type `av-listing` → `default-purchase/release-1`, unit type `item`, stock enabled.
-- [ ] Categories and listing fields (color, género, estado, estilo, tallas, marca, temporada, tags)
-      exactly as in Test. Bulk-import option keys in the operator guide §8.5 must match Live.
-- [ ] `transactions/commission.json` (10 %) and **Minimum transaction size `$20.00`** (`2000`
-      subunits), the value set in Test on 2026-10-09. Console overrides the code fallback, so a
-      lower Live value would let sellers list items whose sale cannot cover the \$15 fixed fee.
-- [ ] Push the transaction processes and create aliases in Live with `flex-cli`: `default-purchase`
-      (P7D windows, native dispute acknowledgement, `eship-picked-up-*` transitions). Push
-      `default-inquiry`/`default-negotiation`/`default-booking` only if their listing types are
-      enabled.
-- [ ] Search schemas: `flex-cli search set --key avPlaceholderImage --scope public --type boolean`
-      for listings, and a **user** schema for `userType` (public enum). Without the user schema,
-      `/api/topbar/local-design-users` falls back to scanning users and stops at 2,000.
-- [ ] Marketplace texts: paste [`marketplace-texts-es.json`](../reference/marketplace-texts-es.json)
-      after re-reconciling it against the current Test asset (the reference dates from 2026-08-14).
-- [ ] Email texts: paste [`email-texts-es.json`](../reference/email-texts-es.json), including the 20
-      AV-only keys (`PurchaseShippingReminderFinal.*`, `PurchaseOrderDisputedCustomer.*`,
-      `PurchaseOrderInTransitCustomer.*`, `BookingMoneyPaid.*`). Fold in upstream v12.4.0's
-      Spanish/English Email-text corrections first — the code merge waits until after launch, but
-      Live texts are pasted once. Send previews with `flex-cli notifications send` for each purchase
-      template.
-- [ ] Content pages: landing, about, **terms of service**, **privacy policy** (must cover Brevo
-      marketing consent, Stripe, eShip address sharing), footer, top bar, and any CMS pages.
-      Re-enter the PageBuilder section tokens and listing/user UUIDs used by AV sections — Test
-      UUIDs do not exist in Live, so the hand-picked carousels (`av-selections`, `av-recommendeds`,
-      `avSelectedUsers`) must be rebuilt after real listings exist. The landing page already
-      references user UUIDs that no longer exist in Test (`av-landing-user-failed` 404s for
-      `69e25982…` and `69eb22db…`); the page still renders, but fix them in Test Console too.
+      first day Monday), branding (logo, favicon, colours, social share image), and the
+      outgoing-email sender and reply-to mailbox. The dispute acknowledgement relies on replies
+      reaching a monitored Archivo Vintach mailbox.
+- [ ] User types `vendedor` ("Persona") and `vendedor-tienda` ("Tienda"); user fields `tipoTienda`
+      (private enum) and `localDesign` (metadata enum), both limited to `vendedor-tienda`. Keep the
+      phone field out — WhatsApp is release-locked.
+- [ ] Listing type `av-listing` → `default-purchase/release-1`, unit type `item`, stock enabled;
+      location, shipping, and pickup off.
+- [ ] Categories (5 top-level, 150 total) and Console listing fields (`genero`, `brand`, `estado`,
+      `estilo`, `temporada`, `tags`) exactly as in Test. Bulk-import option keys in the operator
+      guide §8.5 must match Live.
+- [ ] **`tags`: turn on "include in search" (indexForSearch) in Console, in Test and Live.** It is
+      off, so the `pub_tags` query behind the tag carousels and the Hot List (`av-tag-listings`) is
+      ignored and those sections show arbitrary listings. The CLI cannot change a Console-owned
+      field.
+- [ ] `transactions/commission.json` **22 %** and **Minimum transaction size `$20.00`** (`2000`
+      subunits), as in Test.
+- [ ] Push the process to Live and create its alias (confirm the Live marketplace ID in Console →
+      Build → Advanced; Test is `archivovintach-test`):
+
+      ```sh
+      flex-cli process create --process default-purchase \
+        --path ext/transaction-processes/default-purchase -m LIVE_ID
+      flex-cli process create-alias --process default-purchase --alias release-1 --version 1 -m LIVE_ID
+      ```
+
+      If Live already has a `default-purchase`, use `process push` and `update-alias` to the new
+      version instead. Push `default-inquiry`/`default-negotiation`/`default-booking` only if a
+      listing type uses them.
+
+- [ ] Search schemas in Live:
+
+      ```sh
+      flex-cli search set --key color --scope public --type multi-enum --schema-for listing -m LIVE_ID
+      flex-cli search set --key all_sizes --scope public --type multi-enum --schema-for listing -m LIVE_ID
+      flex-cli search set --key avPlaceholderImage --scope public --type boolean --schema-for listing -m LIVE_ID
+      ```
+
+- [ ] Marketplace texts: paste
+      [`marketplace-texts-es.json`](../reference/marketplace-texts-es.json).
+- [ ] Email texts: paste the corrected [`email-texts-es.json`](../reference/email-texts-es.json)
+      into Live **and re-paste it into Test** (Test still has 19 `YYYY` values). Send previews with
+      `flex-cli notifications send` for each purchase template.
+- [ ] Content pages: landing, `acerca-archivo-vintach`, `como-funciona`, `como-vender-persona`,
+      `contacto`, `faqs`, **terms of service**, and **privacy policy** (must cover Brevo marketing
+      consent, Stripe, and eShip address sharing), plus footer and top bar. Test UUIDs do not exist
+      in Live, so the hand-picked sections must be rebuilt after real listings exist.
+- [ ] Fix Test's landing page, which has 8 references that no longer resolve: 3 listings in
+      `av-selections-nuevo-drop` (`69e27e64…`, `69e25c40…`, `69e27942…`), 3 in
+      `av-selections-favoritos` (`69e25a4d…`, `69e25b5e…`, `69e25b9d…`), and 2 users in
+      `av-selected-users-closets-destacados` (`69e25982…`, `69eb22db…`). A listing that is closed
+      rather than deleted also reports as missing.
 - [ ] Marketplace API application (client ID + secret) and Integration API application, both from
       **Live**.
 - [ ] Social login (Google, Facebook): production apps, Live callback URLs on the production domain.
 - [ ] At least one operator admin account and the `BULK_IMPORT_OPERATOR_EMAILS` /
       `SHIPPING_LABEL_OPERATOR_EMAILS` users created in Live.
+- [ ] Run `yarn run config:compare <testClientId> <liveClientId>` and resolve every unexpected
+      difference.
 
 ## 4. Stripe
 

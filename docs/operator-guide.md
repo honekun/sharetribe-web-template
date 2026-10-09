@@ -1710,7 +1710,7 @@ this up per environment; the test and production marketplaces use different secr
 
 | Setting                            | What it controls                                                                                                          |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| **Provider commission percentage** | The marketplace fee percentage charged to sellers. Shown in the earnings estimator when sellers set a price. Default: 10% |
+| **Provider commission percentage** | The marketplace fee percentage charged to sellers. Shown in the earnings estimator when sellers set a price. Read from Console (`commission.json`, 22 % in Test and Live); 22 % is also the code fallback. |
 | **Stripe fee percentage**          | The Stripe processing fee percentage. Default: 2.9%                                                                       |
 | **Stripe fixed fee**               | The fixed Stripe fee per transaction in centavos. Default: 30 (= MXN \$0.30)                                              |
 | **Provider fixed fee**             | Fixed fee in centavos charged to the seller on every sale, on top of the percentage. Production: 1500 (= MXN \$15.00)     |
@@ -1719,7 +1719,7 @@ These values are used to show sellers an estimate of their net earnings while cr
 The actual fees charged are configured separately in Console → Build → Transactions.
 
 **Minimum listing price.** Console → Build → Transactions → Minimum transaction size must leave room
-for the provider fixed fee: at 10 % plus \$15.00 that is at least \$16.67, and Archivo Vintach uses
+for the provider fixed fee: at 22 % plus \$15.00 that is at least \$19.24, and Archivo Vintach uses
 **\$20.00** in both Test and Live. The listing form and bulk import both refuse prices below it. If
 the minimum is ever set too low, a sale still completes, but the fixed fee is reduced to whatever is
 left after the percentage (down to zero) and the server logs `Provider fixed fee clamped`. Raising

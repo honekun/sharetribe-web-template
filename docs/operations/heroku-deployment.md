@@ -231,7 +231,7 @@ Use [test accounts](test-accounts.md) and the full [release checklist](release-c
 minimum, verify:
 
 - SSR, CMS pages, search, filters, signup, verification, login, and both languages;
-- `comprador`, `vendedor`, and `vendedor-tienda` behavior;
+- buyer (any signed-in user), `vendedor`, and `vendedor-tienda` behavior;
 - Stripe Connect Test onboarding;
 - listing create/edit/publish/moderation and original-price behavior;
 - seller shipping origin, eShip QA quote, payment, shipping line item, and transaction data;
