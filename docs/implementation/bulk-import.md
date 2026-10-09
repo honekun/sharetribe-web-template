@@ -21,8 +21,9 @@ current user as its author. "Admin" users (emails listed in `BULK_IMPORT_OPERATO
 3. Navigate to `/admin/bulk-import`
 4. Sign in (any user able to create listings); listings will be authored to you
 5. Click "Open template" to download the generated CSV and fill it in
-6. Select or drop the completed `.csv`; the import starts immediately
-7. Monitor progress. Listings created through this bare-CSV flow receive the bundled placeholder
+6. Select or drop the completed `.csv`, or a `.zip` with the CSV and its photos; the import starts
+   immediately. The page's file input and `pickFile` accept both extensions and refuse anything else
+7. Monitor progress. Listings created through the bare-CSV flow receive the bundled placeholder
    image, which can be replaced later
 
 ---

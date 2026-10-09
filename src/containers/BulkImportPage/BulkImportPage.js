@@ -239,10 +239,13 @@ export const BulkImportPageComponent = props => {
     }
   };
 
+  // A bare .csv is imported with placeholder photos; a .zip carries the CSV plus
+  // its photos. The server tells them apart (classifyUpload) from the same field.
   const pickFile = file => {
-    const isCsv = file && file.name.toLowerCase().endsWith('.csv');
+    const name = file ? file.name.toLowerCase() : '';
+    const isAccepted = name.endsWith('.csv') || name.endsWith('.zip');
 
-    if (isCsv) {
+    if (isAccepted) {
       startImport(file);
     } else if (file) {
       setCsvFile(null);
@@ -366,7 +369,7 @@ export const BulkImportPageComponent = props => {
                         id="bulkImportCsv"
                         ref={fileInputRef}
                         type="file"
-                        accept=".csv,text/csv"
+                        accept=".csv,.zip,text/csv,application/zip,application/x-zip-compressed"
                         className={css.visuallyHidden}
                         onChange={event => pickFile(event.target.files[0] || null)}
                       />

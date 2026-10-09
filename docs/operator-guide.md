@@ -1033,15 +1033,16 @@ rejected.
 3. **Fill in the CSV** — one row per listing, replacing the example row. See the
    [CSV Column Reference](#84-csv-column-reference) below. Leave the `user_id` column empty unless
    you are an admin importing for another seller.
-4. **Upload and start** — select or drop the completed `.csv`. The upload and import begin
+4. **Upload and start** — select or drop the completed `.csv`, or a `.zip` holding the CSV and its
+   photos (see [8.3 ZIP File Structure](#83-zip-file-structure)). The upload and import begin
    immediately; there is no separate start button.
 5. **Monitor progress** — the page shows a live progress bar and reports which listings were created
    successfully and which rows had errors. Keep the page open; progress is tied to your account, so
    you can't check it from a different account.
 
-The server still accepts the earlier ZIP-with-images format for direct API integrations, and the
-previous ZIP/CSV page is retained in the codebase as an unrouted V2. That format is not exposed by
-the current seller page.
+A bare `.csv` is imported with the placeholder image for every row; a `.zip` imports the photos it
+contains. Any other file type is refused before upload. (The earlier full ZIP/CSV page is still in
+the codebase as an unrouted V2; the routed page is the simplified one.)
 
 ---
 
@@ -2047,13 +2048,13 @@ expected behaviour, not a fault.
 | `BulkImportPage.simpleStep2Title`   | `Complete and download`                                         | `Completa y descarga`                                                  | Active step 2 title.                                                  |
 | `BulkImportPage.simpleStep2Text`    | `Add your products and download the template when you're done.` | `Agrega tus productos y descarga la plantilla cuando termines.`        | Active step 2 help.                                                   |
 | `BulkImportPage.simpleStep3Title`   | `Upload your template`                                          | `Sube tu plantilla`                                                    | Active step 3 title.                                                  |
-| `BulkImportPage.simpleDropTitle`    | `Drag your CSV file here`                                       | `Arrastra tu archivo CSV aquí`                                         | Active drop-zone heading.                                             |
+| `BulkImportPage.simpleDropTitle`    | `Drag your CSV or ZIP file here`                                | `Arrastra tu archivo CSV o ZIP aquí`                                   | Active drop-zone heading.                                             |
 | `BulkImportPage.simpleDropSubtitle` | `or select it from your computer`                               | `o selecciónalo desde tu computadora`                                  | Active drop-zone help.                                                |
 | `BulkImportPage.simpleSelectFile`   | `Select file`                                                   | `Seleccionar archivo`                                                  | Active file-picker button.                                            |
-| `BulkImportPage.simpleFileHelp`     | `CSV · Max. 5 MB`                                               | `CSV · Máx. 5 MB`                                                      | Matches the enforced bare-CSV limit.                                  |
-| `BulkImportPage.simpleCsvLabel`     | `CSV file`                                                      | `Archivo CSV`                                                          | Accessible file-input label.                                          |
+| `BulkImportPage.simpleFileHelp`     | `CSV (max. 5 MB) or ZIP with photos (max. 20 MB)`               | `CSV (máx. 5 MB) o ZIP con fotos (máx. 20 MB)`                         | Matches the enforced bare-CSV and standard-tier ZIP limits.           |
+| `BulkImportPage.simpleCsvLabel`     | `CSV or ZIP file`                                               | `Archivo CSV o ZIP`                                                    | Accessible file-input label.                                          |
 | `BulkImportPage.simpleWhatsappCta`  | `Message us on WhatsApp`                                        | `Escríbenos por WhatsApp`                                              | Active support-link label.                                            |
-| `BulkImportPage.simpleErrorNoCsv`   | `Please select a .csv file.`                                    | `Por favor, selecciona un archivo .csv.`                               | Active file-type validation message.                                  |
+| `BulkImportPage.simpleErrorNoCsv`   | `Please select a .csv or .zip file.`                            | `Por favor, selecciona un archivo .csv o .zip.`                        | Active file-type validation message.                                  |
 | `BulkImportPage.heading`            | `Bulk Listing Import`                                           | `Importación Masiva de Listings`                                       | Page heading.                                                         |
 | `BulkImportPage.description`        | `Upload a single ZIP file containing your CSV and all images…`  | `Sube un solo archivo ZIP con tu CSV y todas las imágenes…`            | Intro paragraph.                                                      |
 | `BulkImportPage.zipLabel`           | `ZIP File`                                                      | `Archivo ZIP`                                                          | Upload field label.                                                   |

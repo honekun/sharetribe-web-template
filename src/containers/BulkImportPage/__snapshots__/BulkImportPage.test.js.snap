@@ -210,7 +210,7 @@ exports[`BulkImportPage renders page heading 1`] = `
                       </span>
                     </label>
                     <input
-                      accept=".csv,text/csv"
+                      accept=".csv,.zip,text/csv,application/zip,application/x-zip-compressed"
                       class="visuallyHidden"
                       id="bulkImportCsv"
                       type="file"

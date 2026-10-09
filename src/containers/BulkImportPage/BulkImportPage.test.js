@@ -79,14 +79,17 @@ describe('BulkImportPage', () => {
     expect(window.localStorage.getItem('bulkImportApiKey')).toBeNull();
   });
 
-  it('renders a file input that takes a CSV', async () => {
+  it('renders a file input that takes a CSV or a ZIP', async () => {
     render(<BulkImportPage />, { initialState: baseState });
 
     await waitFor(() => {
       const input = screen.getByLabelText('BulkImportPage.simpleCsvLabel');
       expect(input).toBeInTheDocument();
       expect(input.type).toBe('file');
-      expect(input.accept).toBe('.csv,text/csv');
+      // Without the ZIP entries the OS file picker greys out .zip files.
+      expect(input.accept.split(',')).toEqual(
+        expect.arrayContaining(['.csv', '.zip', 'application/zip'])
+      );
     });
   });
 
@@ -122,16 +125,49 @@ describe('BulkImportPage', () => {
     expect(startCall[1].body.get('zipFile')).toBe(csv);
   });
 
-  it('rejects a file that is not a CSV', async () => {
+  it('accepts a ZIP with photos and posts it to the start endpoint', async () => {
+    global.fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, token: 'action-token' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ jobId: 'job-zip', total: 2 }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'job-zip',
+          status: 'completed',
+          total: 2,
+          processed: 2,
+          succeeded: 2,
+          failed: 0,
+          errors: [],
+          results: [],
+        }),
+      });
+
     render(<BulkImportPage />, { initialState: baseState });
 
     const input = await screen.findByLabelText('BulkImportPage.simpleCsvLabel');
-    const zip = new File(['nope'], 'listings.zip', { type: 'application/zip' });
+    const zip = new File(['PK'], 'Listings.ZIP', { type: 'application/zip' });
     fireEvent.change(input, { target: { files: [zip] } });
+
+    await waitFor(() => {
+      expect(screen.getByText('BulkImportPage.completed')).toBeInTheDocument();
+    });
+
+    const startCall = global.fetch.mock.calls.find(([url]) => url.includes('/start'));
+    expect(startCall[1].body.get('zipFile')).toBe(zip);
+  });
+
+  it('rejects a file that is neither a CSV nor a ZIP', async () => {
+    render(<BulkImportPage />, { initialState: baseState });
+
+    const input = await screen.findByLabelText('BulkImportPage.simpleCsvLabel');
+    const pdf = new File(['nope'], 'listings.pdf', { type: 'application/pdf' });
+    fireEvent.change(input, { target: { files: [pdf] } });
 
     await waitFor(() => {
       expect(screen.getByText('BulkImportPage.simpleErrorNoCsv')).toBeInTheDocument();
     });
+    expect(global.fetch).not.toHaveBeenCalledWith('/api/bulk-import/start', expect.anything());
   });
 
   it('renders the CSV helper text', async () => {
