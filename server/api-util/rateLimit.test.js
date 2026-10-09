@@ -46,4 +46,23 @@ describe('createRateLimiter', () => {
 
     expect(next).toHaveBeenCalledTimes(2);
   });
+
+  it('keys on req.ip and ignores a client-supplied X-Forwarded-For', () => {
+    // Behind Heroku the leftmost X-Forwarded-For entry is whatever the client
+    // sent; rotating it must not buy a fresh bucket. req.ip is resolved by
+    // Express from the trusted hop count instead.
+    const limiter = createRateLimiter({ windowMs: 1000, max: 1 });
+    const next = jest.fn();
+    const spoofed = forwardedFor => ({
+      ip: '203.0.113.9',
+      headers: { 'x-forwarded-for': `${forwardedFor}, 203.0.113.9` },
+    });
+
+    limiter(spoofed('6.6.6.6'), createRes(), next);
+    const blockedRes = createRes();
+    limiter(spoofed('7.7.7.7'), blockedRes, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(blockedRes.statusCode).toBe(429);
+  });
 });

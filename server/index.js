@@ -51,6 +51,7 @@ const {
   assertProductionNotificationConfig,
   isEventPollerEnabled,
 } = require('./services/notificationConfig');
+const { toTrustProxySetting } = require('./api-util/trustProxy');
 
 const buildPath = path.resolve(__dirname, '..', 'build');
 const dev = process.env.REACT_APP_ENV === 'development';
@@ -158,7 +159,7 @@ if (TRUST_PROXY === 'true') {
 } else if (TRUST_PROXY === 'false') {
   app.disable('trust proxy');
 } else if (TRUST_PROXY !== null) {
-  app.set('trust proxy', TRUST_PROXY);
+  app.set('trust proxy', toTrustProxySetting(TRUST_PROXY));
 }
 
 app.use(compression());
