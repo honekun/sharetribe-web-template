@@ -126,9 +126,10 @@ const defaultConfig = {
   // Optional
   // Online presence of the same organization:
   // Facebook page is used in SEO schema (http://schema.org/Organization)
-  siteFacebookPage: null, // e.g. 'https://www.facebook.com/Sharetribe/',
+  // AV: same profiles as the hosted footer's socialMediaLinks; used for the Organization `sameAs`.
+  siteFacebookPage: 'https://www.facebook.com/profile.php?id=61578221927915',
   // Instagram page is used in SEO schema (http://schema.org/Organization)
-  siteInstagramPage: null, // e.g. 'https://www.instagram.com/sharetribe/',
+  siteInstagramPage: 'https://www.instagram.com/archivovintach/',
   // Twitter handle is needed in meta tags (twitter:site). Start it with '@' character
   siteTwitterHandle: null, // e.g. '@sharetribe',
 
