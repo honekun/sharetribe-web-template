@@ -628,7 +628,7 @@ control). Small CSS-module forks (restyles kept inline due to scoped-class/var c
 | `containers/pageDataLoadingAPI.js` | `loadData` exports                                                                               |
 | `containers/reducers.js`           | Custom page reducers                                                                             |
 | `ducks/index.js`                   | `avExtension` duck                                                                               |
-| `server/index.js`                  | AV-noti poller + `mountCustomApiRoutes(app)` (before `app.use('/api', apiRouter)`)               |
+| `server/index.js`                  | AV-noti poller + `mountCustomApiRoutes(app)` (before `app.use('/api', apiRouter)`); `toTrustProxySetting` turns a numeric `SERVER_SHARETRIBE_TRUST_PROXY` into a hop count (Heroku: `1`) |
 | `server/customApiRoutes.js`        | AV-owned: `/api/brevo`, `/api/instagram`, `/api/my-balance`, `/api/bulk-import`, `/api/shipping` |
 
 ## Deployment

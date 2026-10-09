@@ -160,6 +160,22 @@ Use the matching Test values for every environment-coupled setting:
 Configure every required variable from `.env-template`. Keep server secrets out of `REACT_APP_*`.
 Confirm that Marketplace and Integration credentials come from the same Sharetribe Test environment.
 
+These are the same in Test and Live and must be present before the build:
+
+```sh
+heroku config:set \
+  REACT_APP_ENV=production \
+  REACT_APP_SHARETRIBE_USING_SSL=true \
+  SERVER_SHARETRIBE_TRUST_PROXY=1 \
+  REACT_APP_CSP=report \
+  --app "$AV_HEROKU_APP"
+```
+
+`SERVER_SHARETRIBE_TRUST_PROXY` is a hop count. `true` would make `req.ip` the client-supplied
+`X-Forwarded-For` value; the redirect and rate limiting rely on the router's own hop. Switch
+`REACT_APP_CSP` to `block` after the CSP review in the release checklist. The three `REACT_APP_*`
+values are compiled into the browser bundle, so set them before a build, not after.
+
 ### 3.3 Deploy and migrate
 
 Deploy the selected branch to the app and confirm the build log includes `yarn build`:

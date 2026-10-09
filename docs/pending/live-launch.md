@@ -33,23 +33,42 @@ Brevo hosted templates are a known missing piece and are tracked in §6.
 
 ### 2.1 Missing production configuration on Heroku
 
-Variables used by the app but absent from the Heroku config today:
+Reviewed 2026-10-09. Two findings changed the fix:
 
-- [ ] `REACT_APP_ENV=production` — unset. The server, logger, CSP, and sitemap read it.
-- [ ] `SERVER_SHARETRIBE_TRUST_PROXY=true` — unset. Behind the Heroku router `req.ip` is the router
-      address, which feeds the Brevo consent evidence (`server/api/brevo.js`) and rate limiting.
-- [ ] `REACT_APP_SHARETRIBE_USING_SSL=true` — unset; needed for the HTTP→HTTPS redirect.
-- [ ] `REACT_APP_CSP=report` for the Test pass, then `block` (release checklist §2).
-- [ ] `REACT_APP_MAPBOX_ACCESS_TOKEN` — unset. Confirm whether the `av-listing` type uses the
-      Location step or any map/location search; if it does, set a Live-restricted token.
-- [ ] `REACT_APP_SENTRY_DSN` — unset, so production would have no error monitoring. Create a project
-      and set it before launch.
-- [ ] Brevo welcome: `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`, `BREVO_TEMPLATE_SELLER_WELCOME`
-      (required by `notificationConfig.js` when welcome email is on). `BREVO_WEBHOOK_SECRET` and the
-      seven campaign template IDs are needed only when campaigns are enabled.
+- `REACT_APP_SHARETRIBE_USING_SSL` does more than the redirect: it sets the `Secure` flag on the
+  session, login-as, and identity-provider cookies (server) and on the browser SDK token cookie
+  (`src/index.js`). Until it is set, auth cookies go out without `Secure`.
+- `SERVER_SHARETRIBE_TRUST_PROXY=true` is the wrong value behind Heroku. The router appends the real
+  client address to whatever `X-Forwarded-For` the client sent, so `true` makes `req.ip` the
+  client's own value, and the env string `"1"` is read by Express as an address (trusting nothing,
+  breaking `req.secure` and looping the redirect). `server/api-util/trustProxy.js` now turns a
+  numeric value into a hop count, and the shared rate limiter keys on `req.ip` instead of the raw
+  leftmost header it trusted before. Verified locally: with `1`, `X-Forwarded-Proto: https` serves
+  and `http` redirects once.
+
+Remaining:
+
+Done on Heroku 2026-10-09: the trust-proxy change was deployed first, then
+`REACT_APP_ENV=production`, `REACT_APP_SHARETRIBE_USING_SSL=true`,
+`SERVER_SHARETRIBE_TRUST_PROXY=1`, and `REACT_APP_CSP=report` were set (runbook §3.2) and the app
+rebuilt. HTTPS serves, HTTP redirects once, the SDK token cookie is `Secure`, and CSP runs in
+report-only mode. Live must carry the same four values.
+
+- [ ] Render staging: set `SERVER_SHARETRIBE_TRUST_PROXY` to Render's proxy hop count. The limiter
+      now keys on `req.ip`, so without it every staging visitor shares one rate-limit bucket.
+- [ ] `REACT_APP_SENTRY_DSN` — create a Sentry project and set its DSN before launch; production has
+      no error monitoring without it.
+- [ ] Brevo welcome: `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`, and `BREVO_TEMPLATE_SELLER_WELCOME`
+      (required by `notificationConfig.js` once welcome email is on). Blocked on the hosted
+      seller-welcome template (§6). `BREVO_WEBHOOK_SECRET` and the seven campaign IDs wait for
+      campaigns.
 - [ ] `SHIPPING_LABEL_OPERATOR_EMAILS` — optional; set it if support staff must retry a seller's
       label.
 - [ ] Optional analytics: `REACT_APP_GOOGLE_ANALYTICS_ID` or `REACT_APP_PLAUSIBLE_DOMAINS`.
+
+Not needed: `REACT_APP_MAPBOX_ACCESS_TOKEN`. The Test Console's only listing type, `av-listing`, has
+location, shipping, and pickup off, search is keyword-only, and there is no hosted map asset.
+Recheck only if Live adds a location-based listing type or location search.
 
 ### 2.2 Remaining dependency advisories
 
