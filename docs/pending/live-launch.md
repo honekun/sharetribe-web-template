@@ -25,7 +25,7 @@ Brevo hosted templates are a known missing piece and are tracked in §6.
 | `env-template-check`   | Passes.                                                                                                                                                                 |
 | `av-translation-check` | Passes (336 symmetric keys).                                                                                                                                            |
 | `format-ci`            | **Fails** on 43 files.                                                                                                                                                  |
-| `yarn audit`           | 1 critical, 35 high, 48 moderate, 6 low in production dependencies.                                                                                                     |
+| `yarn audit`           | Was 1 critical, 35 high, 48 moderate, 6 low; after the 2026-10-09 upgrade 0 critical, 1 high (install-time only), 10 moderate (§2.2).                                   |
 | Upstream               | Fork is based on v12.1.0; `upstream/main` is v12.4.0 + 126 commits. No `default-purchase/process.edn` change upstream since the fork, only Email-text/template wording. |
 | CI                     | No CI pipeline exists (`.github/` has only issue templates). Every gate is run by hand.                                                                                 |
 
@@ -51,27 +51,22 @@ Variables used by the app but absent from the Heroku config today:
       label.
 - [ ] Optional analytics: `REACT_APP_GOOGLE_ANALYTICS_ID` or `REACT_APP_PLAUSIBLE_DOMAINS`.
 
-### 2.2 Dependency vulnerabilities on the request path
+### 2.2 Remaining dependency advisories
 
-Production dependencies with high/critical advisories, installed → patched:
+Every critical/high advisory on the request path was cleared on 2026-10-09 (`multer` 2.4.0,
+`adm-zip` 0.6.1, `compression` 1.8.2, `proxy-addr` 2.0.8, `path-to-regexp` 8.4.2/1.9.0, `axios`
+1.20.0, `sharetribe-flex-sdk` 1.24.2 with `js-cookie` 3, `qs` 6.16.0, `csv-parse` 7). Express stays
+on 5.2.1, and `@babel/runtime` on 7.29.7, because their newest releases were under two weeks old.
+`yarn audit --groups dependencies` now reports 1 high and 10 moderate:
 
-| Package          | Installed | Patched  | Reaches production through                                 |
-| ---------------- | --------- | -------- | ---------------------------------------------------------- |
-| `multer`         | 2.2.0     | ≥ 2.3.0  | Bulk-import upload (direct dependency)                     |
-| `adm-zip`        | 0.5.18    | ≥ 0.6.1  | Bulk-import ZIP extraction — crafted ZIP allocates ~4 GB   |
-| `compression`    | 1.8.1     | ≥ 1.8.2  | Every response (direct dependency)                         |
-| `proxy-addr`     | 2.0.7     | ≥ 2.0.8  | Express (critical; matters once trust proxy is configured) |
-| `path-to-regexp` | 8.3.0     | ≥ 8.4.0  | Express routing                                            |
-| `axios`          | 1.18/1.19 | ≥ 1.20.0 | Sharetribe Marketplace and Integration SDKs                |
-| `js-cookie`      | 2.2.1     | ≥ 3.0.7  | `sharetribe-flex-sdk` (needs an SDK release; track)        |
+- `braces` (high, no patched release) reaches production only through `patch-package`, which runs at
+  install time. Nothing to do until upstream publishes a fix.
+- Seven `@opentelemetry/*` packages (moderate) come from `@sentry/node` 10. The fix is Sentry 11, a
+  major upgrade that upstream v12.4.0 already made; take it with the upstream merge (§2.4) rather
+  than separately.
 
-The remaining high findings are build/dev-time (`braces`, `picomatch`, `semver`, `brace-expansion`).
-
-- [ ] Upgrade `multer`, `compression`, and the transitive Express/axios packages within range; bump
-      `adm-zip` to `^0.6.1` (minor-zero bump, re-test ZIP extraction and the magic-byte sniff).
-- [ ] Re-run server and client tests plus a bulk import on staging.
-- [ ] A single Basic dyno serves every request, so one oversized ZIP can take the site down. Until
-      `adm-zip` is upgraded, confirm the tiered upload limits reject the archive before extraction.
+- [ ] Run one real bulk import (ZIP and bare CSV) on staging before the Heroku Test gate, since
+      `multer`, `adm-zip`, and `csv-parse` all changed major/minor versions on the upload path.
 
 ### 2.3 Repository gates
 
@@ -136,7 +131,9 @@ move.
       marketing consent, Stripe, eShip address sharing), footer, top bar, and any CMS pages.
       Re-enter the PageBuilder section tokens and listing/user UUIDs used by AV sections — Test
       UUIDs do not exist in Live, so the hand-picked carousels (`av-selections`, `av-recommendeds`,
-      `avSelectedUsers`) must be rebuilt after real listings exist.
+      `avSelectedUsers`) must be rebuilt after real listings exist. The landing page already
+      references user UUIDs that no longer exist in Test (`av-landing-user-failed` 404s for
+      `69e25982…` and `69eb22db…`); the page still renders, but fix them in Test Console too.
 - [ ] Marketplace API application (client ID + secret) and Integration API application, both from
       **Live**.
 - [ ] Social login (Google, Facebook): production apps, Live callback URLs on the production domain.
