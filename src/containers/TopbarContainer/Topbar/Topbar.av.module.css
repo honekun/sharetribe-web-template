@@ -1,0 +1,43 @@
+@import '../../../styles/customMediaQueries.css';
+
+/* AV: mobile-topbar additions, kept out of the pristine Topbar.module.css.
+   Everything here applies inside `.container`, which upstream already hides at
+   --viewportLarge, so these rules are scoped to <1024px without asking. */
+
+/* Positioning context for the centred logo below. */
+.mobileNav {
+  position: relative;
+}
+
+/* The icon group adds 148px to the right of the search button, so leaving the
+   logo in flex flow would drag it ~136px left of centre at 768px. Centring it
+   on the nav instead keeps it where it has always been. Taking it out of flow
+   is also what lets .mobileSearchPushRight below work. */
+.mobileLogo {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* With the logo absolutely positioned, `justify-content: space-between` has
+   only the menu button and the search/icons to distribute — which would strand
+   the search button in the middle. `margin-left: auto` collapses the free space
+   before it, pinning it and the icon group after it to the right edge. */
+.mobileSearchPushRight {
+  margin-left: auto;
+}
+
+/* Hidden below --viewportSmall: measured against the real icon widths (inbox 55
+   + favorites 49 + bag 44 = 148px), the row leaves 36px gaps at 550px, 3px at
+   400px, exactly 0 at 390px, and overflows below that. 550px keeps a wide
+   margin over the failure point; smaller screens reach these links through the
+   mobile menu footer instead. */
+.mobileIconLinks {
+  display: none;
+
+  @media (--viewportSmall) {
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+}

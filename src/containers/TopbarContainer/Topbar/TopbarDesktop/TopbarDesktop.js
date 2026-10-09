@@ -76,7 +76,7 @@ const ProfileMenu = ({ currentPage, currentUser, onLogout, showManageListingsLin
             </NamedLink>
           </MenuItem>
         ) : null}
-        {renderAvProfileMenuItems(currentPage)}
+        {renderAvProfileMenuItems(currentPage, currentUser)}
         <MenuItem key="ProfileSettingsPage">
           <NamedLink
             className={classNames(css.menuLink, currentPageClass('ProfileSettingsPage'))}
@@ -149,10 +149,15 @@ const TopbarDesktop = props => {
   const giveSpaceForSearch = customLinks == null || customLinks?.length === 0;
   const classes = classNames(rootClassName || css.root, className);
 
-  const favoritesLinkMaybe = authenticatedOnClientSide ? <FavoritesLink /> : null;
+  // AV: the ids live here rather than inside the link components, which are
+  // also mounted by the mobile topbar and the mobile menu. Set there, each id
+  // would appear three times on every page.
+  const favoritesLinkMaybe = authenticatedOnClientSide ? (
+    <FavoritesLink id="favorites-link" />
+  ) : null;
 
   const inboxLinkMaybe = authenticatedOnClientSide ? (
-    <AVInboxLink notificationCount={notificationCount} inboxTab={inboxTab} />
+    <AVInboxLink id="inbox-link" notificationCount={notificationCount} inboxTab={inboxTab} />
   ) : null;
 
   const profileMenuMaybe = authenticatedOnClientSide ? (
@@ -208,7 +213,7 @@ const TopbarDesktop = props => {
           {createListingMaybe}
           {inboxLinkMaybe}
           {favoritesLinkMaybe}
-          <BagLink />
+          <BagLink popupLayout="desktop" />
           {profileMenuMaybe}
           {signupLinkMaybe}
           {loginLinkMaybe}

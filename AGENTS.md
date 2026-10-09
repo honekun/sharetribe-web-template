@@ -1,8 +1,8 @@
 # AGENTS.md - Codex Guide for Sharetribe Web Template
 
 This is the root Codex instruction file for the Archivo Vintach Sharetribe Web Template repository.
-Keep this file compact because Codex loads it automatically. Detailed subsystem notes live in
-`.codex/reference/`.
+Keep this file compact because Codex loads it automatically. Detailed tracked guidance lives in
+`CLAUDE.md` and `docs/`.
 
 ## Project
 
@@ -32,34 +32,27 @@ yarn run format-ci        # Check JS/CSS formatting
 yarn test -- --watchAll=false
 yarn test-server
 yarn test-ci
-
-node .codex/scripts/codex-scaffold.js new-page MyPage --path /my-page
-node .codex/scripts/codex-scaffold.js new-section SectionBanner --target cms
-node .codex/scripts/branch-review.js
 ```
+
+Optional machine-local helpers may exist under `.codex/`; use them only when present. They are not
+part of a fresh clone and are never a prerequisite for following this guide.
 
 ## Codex Setup
 
-- `.codex/agents/` contains task-specific briefs for spawned agents.
-- `.codex/commands/` contains repeatable prompt workflows.
-- `.codex/checks/README.md` contains local guardrail checklists.
-- `.codex/reference/` contains detailed subsystem guidance.
+- `CLAUDE.md` is the tracked source for architecture, customization, transaction, i18n, upstream
+  watchlist, and local-override policy.
+- `docs/README.md` indexes the tracked operator, implementation, integration, and reference guides.
+- `.codex/` is gitignored and may contain optional local agents, commands, checks, references, or
+  scripts. Never depend on it in repository instructions, CI, or required workflows.
 - `AGENTS.override.md` is gitignored and may be used for local, temporary instructions.
 
-Read the relevant reference before touching a subsystem:
-
-- `.codex/reference/architecture.md` - routing, Redux ducks, SSR, config, API boundaries.
-- `.codex/reference/pagebuilder.md` - PageBuilder sections, display tokens, extension rules.
-- `.codex/reference/listing-forms.md` - listing wizard customizations, image handling, pricing.
-- `.codex/reference/transactions.md` - transaction processes, My Sales/Purchases/Balance.
-- `.codex/reference/notifications.md` - server-only AV notification services.
-- `.codex/reference/i18n.md` - translation files and key checks.
-- `.codex/reference/upstream-sync.md` - upstream merge-risk watchlist.
-- `.codex/reference/local-overrides.md` - local override workflow.
+Before touching a subsystem, read its section in `CLAUDE.md` and the relevant current guide linked
+from `docs/README.md`. A local `.codex/reference/` copy may supplement those tracked sources, but it
+cannot override them.
 
 ## Delegation
 
-Use project-local briefs when delegation is useful:
+When optional project-local briefs exist, use them when delegation is useful:
 
 - Explorer: `.codex/agents/sharetribe-web-template-explorer.md`
 - Implementer: `.codex/agents/sharetribe-web-template-implementer.md`
@@ -136,7 +129,8 @@ See `src/containers/CheckoutPage/CheckoutPage.js` for an example.
 - Translation files: `src/translations/en.json`, `src/translations/es.json`,
   `src/translations/en_av.json`, `src/translations/es_av.json`.
 - Keep AV-specific keys symmetric between `en_av.json` and `es_av.json`.
-- Use the translation-reviewer brief or `.codex/commands/i18n-check.md` for copy-heavy changes.
+- Use the translation-reviewer role for copy-heavy changes. An optional local
+  `.codex/commands/i18n-check.md` may provide extra checks when present.
 
 ## Testing
 
@@ -158,9 +152,10 @@ run Prettier on touched files or `yarn run format`.
 - `.env-template` is allowed.
 - Before editing upstream Sharetribe template files, first check whether the change can be done in a
   custom component, config file, extension hook, or CSS override.
-- If a watchlist file from `.codex/reference/upstream-sync.md` changes, keep the diff minimal and
-  call out upstream merge risk.
-- Use `node .codex/scripts/branch-review.js` before larger final handoffs.
+- If a file in the tracked upstream watchlist in `CLAUDE.md` changes, keep the diff minimal and call
+  out upstream merge risk.
+- Before larger final handoffs, run the relevant tests plus `git status --short` and
+  `git diff --check`. If the optional local `.codex/scripts/branch-review.js` exists, run it too.
 
 ## Documentation
 

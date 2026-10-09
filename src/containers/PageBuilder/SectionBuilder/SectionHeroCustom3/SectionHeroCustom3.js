@@ -1,12 +1,13 @@
 import React from 'react';
 import classNames from 'classnames';
 
-import Field from '../../Field';
 import { sanitizeUrl } from '../../../../util/sanitize';
 import {
   parseBlockCtaClass,
   mergeBlockCtaClass,
 } from '../../../../extensions/pageBuilder/av/blocks';
+
+import Field from '../../Field';
 
 import css from './SectionHeroCustom3.module.css';
 

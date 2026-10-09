@@ -10,6 +10,12 @@ Before any release, record the actual hosting application, Sharetribe environmen
 database, custom domain, and rollback control. Never infer the active target from an old hostname or
 place secrets in this file.
 
+As of 2026-10-09 the Heroku app `archivo-vintach-marketplace` exists in runbook Phase 1 (Test mode):
+stack `heroku-26`, one Basic `web` dyno, `heroku-postgresql` `essential-0` with daily backups,
+Sharetribe Test / Stripe test / eShip QA. `www.archivovintach.com` (canonical) and
+`archivovintach.com` are attached with ACM enabled, but public DNS still points at the GoDaddy
+placeholder site.
+
 ## Approved initial Live deployment
 
 The approved plan is [one Heroku Test-to-Live cutover](heroku-deployment.md):

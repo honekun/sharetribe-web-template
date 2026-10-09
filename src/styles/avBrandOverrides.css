@@ -837,6 +837,11 @@ textarea {
 :root [class*='ManageListingsPage_listingCards__'] {
   grid-template-columns: repeat(2, 1fr);
 
+  /* 3-up from --viewportSmall rather than only from --viewportLarge, so the
+     550-967px band matches the 1024px+ column count instead of dipping to 2. */
+  @media (--viewportSmall) {
+    grid-template-columns: repeat(3, 1fr);
+  }
   @media (--viewportLarge) {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -957,6 +962,11 @@ textarea {
   gap: 24px;
   width: 100%;
 
+  /* 3-up from --viewportSmall rather than only from --viewportLarge, so the
+     550-967px band matches the 1024px+ column count instead of dipping to 2. */
+  @media (--viewportSmall) {
+    grid-template-columns: repeat(3, 1fr);
+  }
   @media (--viewportLarge) {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -990,6 +1000,13 @@ textarea {
 :root [class*='SearchResultsPanel_listingCards__'] {
   grid-template-columns: repeat(2, 1fr);
 
+  /* 3-up from --viewportSmall rather than only from --viewportLarge, so the
+     550-967px band matches the 1024px+ column count instead of dipping to 2.
+     The map variant is deliberately left 2-up: it shares its width with the
+     map panel, so a third column there would be too narrow. */
+  @media (--viewportSmall) {
+    grid-template-columns: repeat(3, 1fr);
+  }
   @media (--viewportLarge) {
     grid-template-columns: repeat(3, 1fr);
   }

@@ -720,3 +720,119 @@ describe('getCustomerCommissionMaybe()', () => {
     expect(getCustomerCommissionMaybe(commission, order, currency)).toEqual(expectedLineItems);
   });
 });
+
+// AV: the provider fixed fee is read from the environment at module load, so
+// these suites load a fresh copy of the module with it set to the production
+// value ($15.00 MXN). The suites above run with it unset (0).
+//
+// The isolated registry also holds its own copy of the SDK, and the module
+// checks `instanceof Money`, so orders must be built with that copy's Money.
+const loadWithFixedFee = fee => {
+  const original = process.env.REACT_APP_PROVIDER_COMMISSION_FIXED_FEE;
+  process.env.REACT_APP_PROVIDER_COMMISSION_FIXED_FEE = String(fee);
+  let loaded;
+  jest.isolateModules(() => {
+    const { getProviderCommissionMaybe: getCommission } = require('./lineItemHelpers');
+    const { Money: IsolatedMoney } = require('sharetribe-flex-sdk').types;
+    const orderAt = amount => ({
+      code: 'line-item/item',
+      unitPrice: new IsolatedMoney(amount, 'MXN'),
+      quantity: 1,
+      includeFor: ['customer', 'provider'],
+    });
+    loaded = { getCommission, orderAt };
+  });
+  if (original === undefined) {
+    delete process.env.REACT_APP_PROVIDER_COMMISSION_FIXED_FEE;
+  } else {
+    process.env.REACT_APP_PROVIDER_COMMISSION_FIXED_FEE = original;
+  }
+  return loaded;
+};
+
+const fixedFeeOf = lineItems =>
+  lineItems.find(li => li.code === 'line-item/provider-commission-fixed');
+
+describe('getProviderCommissionMaybe() — explicit zero percentage', () => {
+  const { getCommission, orderAt } = loadWithFixedFee(1500);
+
+  it('still charges the fixed fee at an explicit 0%', () => {
+    const result = getCommission({ percentage: 0 }, orderAt(100000), 'MXN');
+
+    // No percentage line item (a -0% row must never be sent to the API),
+    // but the fixed fee survives.
+    expect(result).toHaveLength(1);
+    expect(result[0].code).toBe('line-item/provider-commission-fixed');
+    expect(result[0].unitPrice.amount).toBe(1500);
+  });
+
+  it('returns nothing when the percentage is absent and there is no minimum', () => {
+    // Regression guard: making the early return unconditional would start
+    // charging $15 on a marketplace with no commission asset configured.
+    expect(getCommission({}, orderAt(100000), 'MXN')).toEqual([]);
+    expect(getCommission(undefined, orderAt(100000), 'MXN')).toEqual([]);
+  });
+
+  it('leaves a normal percentage unchanged', () => {
+    const result = getCommission({ percentage: 10 }, orderAt(100000), 'MXN');
+
+    expect(result).toHaveLength(2);
+    expect(result[0].code).toBe('line-item/provider-commission');
+    expect(result[0].percentage).toBe(-10);
+    expect(result[1].code).toBe('line-item/provider-commission-fixed');
+    expect(result[1].unitPrice.amount).toBe(1500);
+  });
+});
+
+describe('getProviderCommissionMaybe() — fixed fee clamping', () => {
+  const { getCommission, orderAt } = loadWithFixedFee(1500);
+
+  beforeEach(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    console.error.mockRestore();
+  });
+
+  it('charges the full fee when it fits', () => {
+    // 2000 order at 10% = 200, leaving 1800 — the full 1500 fits.
+    const result = getCommission({ percentage: 10 }, orderAt(2000), 'MXN');
+
+    expect(fixedFeeOf(result).unitPrice.amount).toBe(1500);
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
+  it('clamps the fee to what remains instead of throwing', () => {
+    // 1600 order at 10% = 160, leaving 1440 — the fee must clamp.
+    const result = getCommission({ percentage: 10 }, orderAt(1600), 'MXN');
+
+    expect(fixedFeeOf(result).unitPrice.amount).toBe(1440);
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining('Provider fixed fee clamped')
+    );
+  });
+
+  it('omits the fixed-fee line item when nothing remains', () => {
+    // At 100% of a 1000 order the percentage consumes everything.
+    const result = getCommission({ percentage: 100 }, orderAt(1000), 'MXN');
+
+    expect(fixedFeeOf(result)).toBeUndefined();
+  });
+
+  it('never throws at prices around and below the minimum listing price', () => {
+    [500, 1000, 1500, 1600, 1667, 2000, 6000].forEach(amount => {
+      expect(() => getCommission({ percentage: 10 }, orderAt(amount), 'MXN')).not.toThrow();
+    });
+  });
+
+  it('never takes more than the order total', () => {
+    const result = getCommission({ percentage: 75 }, orderAt(1000), 'MXN');
+
+    const percentageAmount = 750;
+    const fixed = fixedFeeOf(result);
+    const fixedAmount = fixed ? fixed.unitPrice.amount : 0;
+
+    expect(percentageAmount + fixedAmount).toBeLessThanOrEqual(1000);
+  });
+});

@@ -24,6 +24,14 @@ Of the 584 default keys, 316 are already present in Test Console and retain the 
 Thirty-three of those values differ from the current Sharetribe default. In every duplicate, the
 Console value wins.
 
+**Corrected 2026-10-09** before the Live paste. All 36 ICU date skeletons used `YYYY` (week-based
+year), which prints the wrong year for dates near New Year — e.g. 30 Dec 2026 renders as 2027. They
+now use `yyyy`, matching upstream v12.4.0's fix to the `purchase-mark-order-received-reminder`
+template. Two Spanish errors were also fixed: `rechazó to solicitud` → `rechazó tu solicitud`
+(`BookingDeclinedRequest.*`), and `BookingOperatorDeclinedRequest.ContentForHourly`/`Nightly` said
+the operator _aceptó_ a reservation they declined. Test Console still carries the old `YYYY` values
+(19 keys); re-paste this file into Test as well.
+
 The current Test listing configuration uses `default-purchase/release-1`. The complete reference
 also keeps the other four process families supported by this app so their Spanish Email texts are
 present if those listing types are enabled. The two latest built-in attachment-message keys are also

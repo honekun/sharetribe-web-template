@@ -31,12 +31,33 @@
  * desktop has reduced version of bookListingContainer (incl. title and Stripe paymentForm).
  * priceBreakdown is inside separate column (detailsContainerDesktop)
  */
+
+/* AV: the two-column layout starts at --viewportMedium (768px) instead of
+   --viewportLarge (1024px), matching the listing page's tablet gallery/info
+   split. Every `@media (--viewportLarge)` in this file was widened to
+   `--viewportMedium`, which only broadens each condition — so on its own that
+   swap leaves the >=1024px rendering exactly as upstream had it.
+
+   Sizing is a different matter, and it does change below 1156px. Upstream's
+   columns are fixed (519px form + 132px gutter + 409px details + 96px padding
+   = 1156px), so they only fit unshrunk from 1156px up. The block at the end of
+   this file re-sizes them fluidly instead; see its comment for why. The upshot
+   for reading the rules above:
+
+     <768px          single column, untouched
+     768-1155px      fluid columns — deliberately NOT upstream's proportions
+     >=1156px        exactly upstream: 519 + 132 + 409, centred
+
+   Note 1156, not 1152. The ramp itself finishes at 1152px (padding and gutter
+   reach 48px/132px there), but the form caps at 519px from ~1093px and the
+   details column then takes the remainder, so it only reaches its own 409px cap
+   at 1156px — the width where upstream's fixed total first fits. */
 .contentContainer {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
 
-  @media (--viewportLarge) {
+  @media (--viewportMedium) {
     flex-direction: row;
     justify-content: center;
     align-items: flex-start;
@@ -49,7 +70,7 @@
   display: flex;
   flex-direction: column;
 
-  @media (--viewportLarge) {
+  @media (--viewportMedium) {
     flex-grow: 0;
     flex-basis: 519px;
     margin-top: 73px;
@@ -61,7 +82,7 @@
   position: relative;
   background-color: var(--colorGrey100); /* Loading BG color */
 
-  @media (--viewportLarge) {
+  @media (--viewportMedium) {
     display: none;
   }
 }
@@ -75,7 +96,19 @@
   right: 0;
   width: 100%;
 
-  @media (--viewportLarge) {
+  /* AV: both checkout images sit in a 4:3 box (see avListingImage.js) while the
+     served `listing-card` variant is cropped 3:4, so the image must cover the
+     box — the default `object-fit: fill` would distort it.
+
+     `height: 100%` is required, not redundant: this element is absolutely
+     positioned with top/bottom 0, but for a *replaced* element `height: auto`
+     resolves to the intrinsic height and `bottom` is then ignored — so without
+     it the img keeps its natural 3:4 height, overflows the shorter 4:3 box, and
+     object-fit never engages. */
+  height: 100%;
+  object-fit: cover;
+
+  @media (--viewportMedium) {
     border-radius: 2px 2px 0 0;
   }
 }
@@ -91,22 +124,21 @@
   /* Layout */
   display: block;
 
-  @media (--viewportLarge) {
+  @media (--viewportMedium) {
     margin-left: 0;
   }
   &.noListingImage {
     margin-top: 24px;
+    /* AV: upstream had 32px here and 40px at --viewportLarge; with both widened
+       to --viewportMedium the 40px won, so that is what is kept. */
     @media (--viewportMedium) {
-      margin-top: 32px;
-    }
-    @media (--viewportLarge) {
       margin-top: 40px;
     }
   }
 }
 
 .avatarMobile {
-  @media (--viewportLarge) {
+  @media (--viewportMedium) {
     display: none;
   }
 }
@@ -116,12 +148,9 @@
   margin-bottom: 34px;
   padding: 0 24px;
 
+  /* AV: upstream's 27px/30px at --viewportMedium were overridden at
+     --viewportLarge; with both widened the latter won, so only it is kept. */
   @media (--viewportMedium) {
-    margin-top: 27px;
-    margin-bottom: 30px;
-  }
-
-  @media (--viewportLarge) {
     margin-top: 0px;
     margin-bottom: 0px;
     padding: 0;
@@ -145,7 +174,7 @@
 }
 
 .detailsHeadingMobile {
-  @media (--viewportLarge) {
+  @media (--viewportMedium) {
     display: none;
   }
 }
@@ -171,7 +200,7 @@
 .bookingPriceVariantMobile {
   margin-bottom: 12px;
 
-  @media (--viewportLarge) {
+  @media (--viewportMedium) {
     display: none;
   }
 }
@@ -188,11 +217,11 @@
   margin-bottom: 37px;
 
   @media (--viewportMedium) {
-    margin-bottom: 38px;
-  }
-  @media (--viewportLarge) {
     /* we don't show price breakdown since it will be visible within 2nd column (detailsContainerDesktop) */
     display: none;
+    /* AV: upstream also set 38px here before the display:none took over at
+       --viewportLarge. Inert while hidden, kept so the value isn't lost. */
+    margin-bottom: 38px;
   }
 }
 
@@ -203,11 +232,10 @@
   margin-top: 0;
   margin-bottom: 14px;
 
+  /* AV: upstream's 18px at --viewportMedium was overridden back to 14px at
+     --viewportLarge; with both widened the 14px won, which matches the base
+     value above — so this block is now a no-op, kept only to mirror upstream. */
   @media (--viewportMedium) {
-    margin-top: 0;
-    margin-bottom: 18px;
-  }
-  @media (--viewportLarge) {
     margin-top: 0;
     margin-bottom: 14px;
   }
@@ -220,13 +248,12 @@
   padding: 0 24px;
   margin-bottom: 35px;
 
+  /* AV: merged from upstream's --viewportMedium (2px/120px) and --viewportLarge
+     (0/padding 0) blocks — the margin-top the latter won, plus the
+     margin-bottom only the former set. */
   @media (--viewportMedium) {
-    margin-top: 2px;
-    margin-bottom: 120px;
-  }
-
-  @media (--viewportLarge) {
     margin-top: 0;
+    margin-bottom: 120px;
     padding: 0;
   }
 }
@@ -250,7 +277,7 @@
   color: var(--colorFail);
   margin: 19px 0 1px 0;
 
-  @media (--viewportLarge) {
+  @media (--viewportMedium) {
     margin: 28px 0 0 0;
   }
 }
@@ -263,7 +290,7 @@
 .detailsContainerDesktop {
   display: none;
 
-  @media (--viewportLarge) {
+  @media (--viewportMedium) {
     flex-shrink: 0;
     display: block;
     /* Dimensions */
@@ -288,7 +315,7 @@
 .detailsHeadings {
   display: none;
 
-  @media (--viewportLarge) {
+  @media (--viewportMedium) {
     display: block;
     margin: 0;
     &.noListingImage {
@@ -304,7 +331,7 @@
   margin-top: 0;
   margin-bottom: 0;
 
-  @media (--viewportLarge) {
+  @media (--viewportMedium) {
     padding: 3px 0 5px 0;
     margin-top: 0;
     margin-bottom: 0;
@@ -312,7 +339,7 @@
 }
 
 .orderBreakdownHeader {
-  @media (--viewportLarge) {
+  @media (--viewportMedium) {
     margin: 0 48px;
   }
 }
@@ -324,7 +351,7 @@
   /* Layout spacing */
   margin: 5px 24px 25px 24px;
 
-  @media (--viewportLarge) {
+  @media (--viewportMedium) {
     padding: 6px 0 2px 0;
     margin: 16px 0 8px 0;
   }
@@ -345,7 +372,7 @@
 }
 
 .orderBreakdown {
-  @media (--viewportLarge) {
+  @media (--viewportMedium) {
     padding-bottom: 20px;
     margin: 0 48px;
   }
@@ -409,11 +436,9 @@
   margin-right: 22px;
   padding: 3px 0;
 
+  /* AV: upstream's 4px padding at --viewportMedium was overridden at
+     --viewportLarge; with both widened the latter won, so only it is kept. */
   @media (--viewportMedium) {
-    padding: 4px 0;
-  }
-
-  @media (--viewportLarge) {
     flex-direction: row;
     margin-right: unset;
     padding: 0;
@@ -445,9 +470,6 @@
     margin-top: 0;
     margin-bottom: 0;
   }
-
-  @media (--viewportLarge) {
-  }
 }
 
 .inquiryPrice {
@@ -469,4 +491,65 @@
 
 .spinner {
   margin: auto;
+}
+
+/* AV: two-column sizing from 768px up.
+
+   Upstream's desktop columns are fixed — 519px form + 132px gutter + 409px
+   details + 96px padding = 1156px — so they only fit unshrunk at >=1156px.
+   Below that the form absorbed all the shortfall (387px at 1024px), while our
+   768-1023px band sized it fluidly at 3fr/2fr (556px at 1023px). That produced
+   a jump at the 1024px boundary: the form lost ~170px going one pixel wider.
+
+   Instead every dimension ramps linearly from its 768px value to its upstream
+   desktop value across 768->1152px, and the columns cap at the upstream widths.
+   The ratio is the listing page's 3fr/2fr, so the two pages still line up.
+
+   The ramp and the columns finish at different widths, which is worth keeping
+   straight. Padding and gutter reach 48px/132px once 100vw hits 1152px, where
+   the ramp clamps. The columns take longer: the form caps at 519px from around
+   1093px, after which the details column absorbs the remainder and only reaches
+   its own 409px cap at 1156px of *layout* width. So upstream's exact
+   519 + 132 + 409 resumes at 1156px — the width where that fixed total first
+   fits — and 1024-1155px is deliberately not upstream's proportions. That is
+   the whole point: removing the jump means one side of the old boundary has to
+   move.
+
+   Those two units differ by the scrollbar: 100vw counts a classic one, the
+   layout box does not. Harmless, since both ends are clamped, but it is why
+   measuring against window.innerWidth on a platform that reserves scrollbar
+   space puts the 409px cap nearer 1171px than 1156px.
+
+   Declared last in the file so it wins the source-order tie against
+   .contentContainer / .orderFormContainer / .detailsContainerDesktop, which
+   share its (0,1,0) specificity. */
+@media (--viewportMedium) {
+  .contentContainer {
+    /* 0 at 768px, 384px at 1152px and beyond — the shared ramp every dimension
+       below is interpolated against. Inherited by both columns. */
+    --avCheckoutRamp: clamp(0px, calc(100vw - 768px), 384px);
+
+    /* 24px -> 48px */
+    padding: 0 calc(24px + var(--avCheckoutRamp) * 0.0625);
+    /* 32px -> 132px, replacing the form's fixed margin-right gutter */
+    gap: calc(32px + var(--avCheckoutRamp) * 0.260417);
+  }
+
+  .orderFormContainer {
+    flex: 3 1 0;
+    min-width: 0;
+    max-width: 519px;
+    /* 32px -> 73px */
+    margin-top: calc(32px + var(--avCheckoutRamp) * 0.106771);
+    margin-right: 0;
+  }
+
+  .detailsContainerDesktop {
+    flex: 2 1 0;
+    min-width: 0;
+    width: auto;
+    max-width: 409px;
+    /* 32px -> 56px; the shorthand above still supplies the 24px bottom */
+    margin-top: calc(32px + var(--avCheckoutRamp) * 0.0625);
+  }
 }

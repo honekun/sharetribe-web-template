@@ -2,9 +2,7 @@ import React, { useEffect, useState } from 'react';
 import classNames from 'classnames';
 
 import { FormattedMessage } from '../../../../util/reactIntl';
-import { NamedLink } from '../../../../components';
 import { useConfiguration } from '../../../../context/configurationContext';
-
 import {
   defaultTopbarCategoryDropdowns,
   getCategoryDropdownsConfig,
@@ -16,6 +14,8 @@ import {
   getLocalDesignUsers,
   getTopbarData,
 } from '../../../../extensions/topbar/topbarDataProvider';
+
+import { NamedLink } from '../../../../components';
 
 import css from './TopbarMobileMenu.module.css';
 

@@ -83,7 +83,9 @@ heroku auth:whoami
 From a clean reviewed branch:
 
 ```sh
-yarn test-ci
+CI=true yarn test-ci
+yarn format-ci
+yarn av-translation-check
 yarn run config-check
 yarn run env-template-check
 yarn run build
@@ -127,6 +129,7 @@ must have every guarded capability explicitly disabled:
 heroku config:set \
   AV_NOTIFICATIONS_ENABLED=false \
   AV_SHIPPING_LABELS_ENABLED=false \
+  AV_ESHIP_TRACKING_EMAILS_ENABLED=false \
   AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=false \
   AV_BREVO_CAMPAIGNS_ENABLED=false \
   AV_WHATSAPP_NOTIFICATIONS_ENABLED=false \
@@ -148,6 +151,7 @@ Use the matching Test values for every environment-coupled setting:
 | Stripe                   | `pk_test_...` in Heroku; matching `sk_test_...` in Sharetribe Test Console |
 | Public root URL          | The app's current `herokuapp.com` HTTPS URL                                |
 | eShip                    | QA base URL and QA key                                                     |
+| eShip tracking webhook   | QA-only `ESHIP_WEBHOOK_SECRET`, sent as the `X-AV-Webhook-Secret` header   |
 | eShip debug              | Optional in Test; must not expose secrets                                  |
 | Brevo                    | Test/pre-production resources and templates                                |
 | WhatsApp                 | Disabled                                                                   |
@@ -155,6 +159,25 @@ Use the matching Test values for every environment-coupled setting:
 
 Configure every required variable from `.env-template`. Keep server secrets out of `REACT_APP_*`.
 Confirm that Marketplace and Integration credentials come from the same Sharetribe Test environment.
+
+These are the same in Test and Live and must be present before the build:
+
+```sh
+heroku config:set \
+  REACT_APP_ENV=production \
+  REACT_APP_SHARETRIBE_USING_SSL=true \
+  SERVER_SHARETRIBE_TRUST_PROXY=1 \
+  REACT_APP_CSP=report \
+  --app "$AV_HEROKU_APP"
+```
+
+`SERVER_SHARETRIBE_TRUST_PROXY` is a hop count. `true` would make `req.ip` the client-supplied
+`X-Forwarded-For` value; the redirect and rate limiting rely on the router's own hop. Switch
+`REACT_APP_CSP` to `block` after the CSP review in the release checklist. The three `REACT_APP_*`
+values are compiled into the browser bundle, so set them before a build, not after.
+
+While the app runs against Test, keep it out of search engines with `AV_NOINDEX=true` (runtime only,
+no rebuild needed); remove it in the Live configuration (§5.4).
 
 ### 3.3 Deploy and migrate
 
@@ -173,6 +196,7 @@ provider configuration are verified, enable only the Test capabilities needed fo
 heroku config:set \
   AV_NOTIFICATIONS_ENABLED=true \
   AV_SHIPPING_LABELS_ENABLED=true \
+  AV_ESHIP_TRACKING_EMAILS_ENABLED=false \
   AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=true \
   AV_BREVO_CAMPAIGNS_ENABLED=false \
   AV_WHATSAPP_NOTIFICATIONS_ENABLED=false \
@@ -182,6 +206,14 @@ heroku config:set \
 heroku ps:scale web=1 --app "$AV_HEROKU_APP"
 heroku ps --app "$AV_HEROKU_APP"
 ```
+
+The buyer pickup email stays off until its own prerequisites are met, in this order: the hosted
+`default-purchase` version carrying the `eship-picked-up-*` transitions and its Email texts are
+published, migration `009` has run, `ESHIP_WEBHOOK_SECRET` is set, and the eShip QA dashboard sends
+to `https://APP_HOST/api/shipping/eship-webhook` with the `X-AV-Webhook-Secret` header. Only then
+set `AV_ESHIP_TRACKING_EMAILS_ENABLED=true`. The endpoint returns `404` while the flag is `false`,
+so enable the flag before saving the dashboard webhook or eShip will record failed deliveries. See
+[eShip](../integrations/eship.md) §5.3.
 
 Use a non-sleeping dyno. Monitor actual memory during the bulk-import test; do not assume a dyno
 size from a documentation estimate.
@@ -202,7 +234,7 @@ Use [test accounts](test-accounts.md) and the full [release checklist](release-c
 minimum, verify:
 
 - SSR, CMS pages, search, filters, signup, verification, login, and both languages;
-- `comprador`, `vendedor`, and `vendedor-tienda` behavior;
+- buyer (any signed-in user), `vendedor`, and `vendedor-tienda` behavior;
 - Stripe Connect Test onboarding;
 - listing create/edit/publish/moderation and original-price behavior;
 - seller shipping origin, eShip QA quote, payment, shipping line item, and transaction data;
@@ -231,7 +263,11 @@ In Sharetribe Console with **Live** selected:
 7. Prepare the eShip production key/base URL and keep API debug disabled.
 8. Prepare separate production Brevo sender, templates, list, webhook, and secret if enabled.
 9. Add the production domain to Heroku and enable managed certificates, but do not move public DNS
-   until the Live build and health gates pass.
+   until the Live build and health gates pass. Done 2026-10-09: `archivovintach.com` and
+   `www.archivovintach.com` are attached and ACM is on. The canonical host is
+   **`https://www.archivovintach.com`** because DNS stays at GoDaddy, which cannot point the apex at
+   Heroku (no ALIAS/ANAME); the apex is forwarded to `www` instead and its certificate stays pending
+   by design. Read the current DNS targets with `heroku domains`.
 
 Users, listings, transactions, Stripe Connect accounts, Integration events, and Test database rows
 must not be copied into Live.
@@ -258,6 +294,7 @@ With `web=0`, set all guarded capabilities to `false` so no poller can start dur
 heroku config:set \
   AV_NOTIFICATIONS_ENABLED=false \
   AV_SHIPPING_LABELS_ENABLED=false \
+  AV_ESHIP_TRACKING_EMAILS_ENABLED=false \
   AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=false \
   AV_BREVO_CAMPAIGNS_ENABLED=false \
   AV_WHATSAPP_NOTIFICATIONS_ENABLED=false \
@@ -275,6 +312,21 @@ heroku pg:backups:info --app "$AV_HEROKU_APP"
 
 Record the completed backup ID. This is a Test rollback/audit backup; never restore it over a Live
 database after production activity begins.
+
+Carry the Instagram token across the reset. The working token lives in `av_instagram_token` and is
+refreshed in place, so `INSTAGRAM_ACCESS_TOKEN` is an older seed that may have expired; after the
+reset the app reseeds from that variable. Copy the live value first, without printing it:
+
+```sh
+heroku config:set --app "$AV_HEROKU_APP" INSTAGRAM_ACCESS_TOKEN="$(
+  heroku pg:psql --app "$AV_HEROKU_APP" \
+    --command "SELECT 'TOKEN:' || access_token FROM av_instagram_token WHERE token_name='default';" |
+    grep -oE 'TOKEN:[^ |]+' | sed 's/^TOKEN://'
+)" >/dev/null
+```
+
+Skip this only if Live uses a different Instagram account (then mint a new token, see
+[Instagram](../integrations/instagram.md)).
 
 ### 5.3 Reset the reused PostgreSQL add-on
 
@@ -302,10 +354,12 @@ Replace, do not mix, all environment-bound values:
 | Stripe                           | `pk_live_...`; matching secret in Sharetribe Live     |
 | `REACT_APP_MARKETPLACE_ROOT_URL` | Canonical production HTTPS URL, no trailing slash     |
 | eShip                            | Explicit production base URL and production key       |
+| `ESHIP_WEBHOOK_SECRET`           | New secret; re-point the production eShip dashboard   |
 | `ESHIP_API_DEBUG`                | `false` or unset                                      |
 | Brevo                            | Production sender/resources/secrets                   |
 | Social login                     | Production IDs/secrets and callbacks                  |
 | CSP                              | `block`, after the Test CSP gate                      |
+| `AV_NOINDEX`                     | Unset (Test phase sets it `true`)                     |
 | Notification/label flags         | All remain `false` until migration and baseline smoke |
 
 Use `heroku config --app "$AV_HEROKU_APP"` only in an approved private terminal. Cross-check the
@@ -344,6 +398,7 @@ Then enable the approved launch capabilities:
 heroku config:set \
   AV_NOTIFICATIONS_ENABLED=true \
   AV_SHIPPING_LABELS_ENABLED=true \
+  AV_ESHIP_TRACKING_EMAILS_ENABLED=false \
   AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=true \
   AV_BREVO_CAMPAIGNS_ENABLED=false \
   AV_WHATSAPP_NOTIFICATIONS_ENABLED=false \
@@ -367,7 +422,18 @@ active poller leaders            → exactly 1 when a start flag is enabled
 
 ### 5.7 Open production traffic and smoke test
 
-After readiness passes, update public DNS to the Heroku target and verify managed TLS. Then:
+After readiness passes, update public DNS and verify managed TLS. At GoDaddy:
+
+- point `www` with a **CNAME** to the `www.archivovintach.com` DNS target from `heroku domains`;
+- replace the apex website with **domain forwarding** (301, forward-only) to
+  `https://www.archivovintach.com`, and confirm `https://archivovintach.com` still answers over
+  HTTPS — the current site sends HSTS with `includeSubDomains`, so returning visitors' browsers
+  refuse plain HTTP;
+- leave the Google Workspace MX, SPF, and verification TXT records untouched;
+- set `REACT_APP_MARKETPLACE_ROOT_URL=https://www.archivovintach.com` (and the Sharetribe Live
+  Marketplace URL to match) before the Live build.
+
+Then:
 
 - verify apex/www redirects, canonical URLs, SSR, CMS, search, login, and both languages;
 - create one real seller and complete real Stripe Connect onboarding;
@@ -381,6 +447,9 @@ After readiness passes, update public DNS to the Heroku target and verify manage
 
 Keep `AV_BREVO_CAMPAIGNS_ENABLED=false`, `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false`, and
 `ESHIP_LABEL_AUTOBUY=false` until their pending gates are independently completed.
+`AV_ESHIP_TRACKING_EMAILS_ENABLED` is enabled separately, and only after the Live purchase-process
+version, migration `009`, the production `ESHIP_WEBHOOK_SECRET`, and the production eShip dashboard
+webhook are all in place.
 
 ## 6. Rollback rules
 

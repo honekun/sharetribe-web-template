@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import classNames from 'classnames';
+
 import { useIntl } from '../../../../util/reactIntl';
-import Field from '../../Field';
 import useDebouncedWindowResize from '../../../../hooks/useDebouncedWindowResize';
+
+import Field from '../../Field';
+
 import css from './SectionInstaGrid.module.css';
 
 const getColumns = () => {

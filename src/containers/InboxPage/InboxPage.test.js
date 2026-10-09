@@ -275,6 +275,66 @@ describe('InboxPage', () => {
         expect(status2).toBeInTheDocument();
       });
     });
+
+    // AV: store sellers sell through the marketplace rather than buying on it.
+    describe('AV: orders tab visibility by user type', () => {
+      const emptyInboxState = userType => ({
+        InboxPage: {
+          fetchInProgress: false,
+          fetchOrdersOrSalesError: null,
+          pagination: null,
+          transactionRefs: [],
+        },
+        marketplaceData: { entities: {} },
+        user: {
+          currentUser: createCurrentUser('seller-user-id', {
+            profile: { publicData: { userType } },
+          }),
+          currentUserHasListings: true,
+          sendVerificationEmailInProgress: false,
+        },
+      });
+
+      const salesProps = {
+        params: { tab: 'sales' },
+        scrollingDisabled: false,
+        onManageDisableScrolling: noop,
+        sendVerificationEmailInProgress: false,
+        onResendVerificationEmail: noop,
+      };
+
+      it('hides the orders tab from a store seller, keeping the sales tab', async () => {
+        render(<InboxPage {...salesProps} />, { initialState: emptyInboxState('vendedor-tienda') });
+
+        await waitFor(() => {
+          expect(screen.getByRole('link', { name: 'InboxPage.salesTabTitle' })).toBeInTheDocument();
+        });
+        expect(
+          screen.queryByRole('link', { name: 'InboxPage.ordersTabTitle' })
+        ).not.toBeInTheDocument();
+      });
+
+      it('keeps both tabs for other seller user types', async () => {
+        render(<InboxPage {...salesProps} />, { initialState: emptyInboxState('vendedor') });
+
+        await waitFor(() => {
+          expect(screen.getByRole('link', { name: 'InboxPage.salesTabTitle' })).toBeInTheDocument();
+        });
+        expect(screen.getByRole('link', { name: 'InboxPage.ordersTabTitle' })).toBeInTheDocument();
+      });
+
+      // Visibility only: /inbox/orders is still a working route, it just has no
+      // tab pointing at it.
+      it('still renders the orders route for a store seller who opens it directly', async () => {
+        render(<InboxPage {...salesProps} params={{ tab: 'orders' }} />, {
+          initialState: emptyInboxState('vendedor-tienda'),
+        });
+
+        await waitFor(() => {
+          expect(screen.getByText('InboxPage.noOrdersFound')).toBeInTheDocument();
+        });
+      });
+    });
   });
 
   describe('InboxItem: default-inquiry process with "inquiry" item', () => {

@@ -51,18 +51,20 @@ describe('BulkImportPage', () => {
   });
 
   it('renders page heading', async () => {
-    render(<BulkImportPage />, { initialState: baseState });
+    const { asFragment } = render(<BulkImportPage />, { initialState: baseState });
 
     await waitFor(() => {
-      expect(screen.getByText('BulkImportPage.heading')).toBeInTheDocument();
+      expect(screen.getByText('BulkImportPage.simpleHeading')).toBeInTheDocument();
     });
+
+    expect(asFragment()).toMatchSnapshot();
   });
 
   it('renders description text', async () => {
     render(<BulkImportPage />, { initialState: baseState });
 
     await waitFor(() => {
-      expect(screen.getByText('BulkImportPage.description')).toBeInTheDocument();
+      expect(screen.getByText('BulkImportPage.simpleDescription')).toBeInTheDocument();
     });
   });
 
@@ -70,76 +72,148 @@ describe('BulkImportPage', () => {
     render(<BulkImportPage />, { initialState: baseState });
 
     await waitFor(() => {
-      expect(screen.getByText('BulkImportPage.startImport')).toBeInTheDocument();
+      expect(screen.getByText('BulkImportPage.simpleStep3Title')).toBeInTheDocument();
     });
 
     expect(screen.queryByLabelText('BulkImportPage.apiKeyLabel')).not.toBeInTheDocument();
     expect(window.localStorage.getItem('bulkImportApiKey')).toBeNull();
   });
 
-  it('renders ZIP file input', async () => {
+  it('renders a file input that takes a CSV or a ZIP', async () => {
     render(<BulkImportPage />, { initialState: baseState });
 
     await waitFor(() => {
-      const input = screen.getByLabelText('BulkImportPage.zipLabel');
+      const input = screen.getByLabelText('BulkImportPage.simpleCsvLabel');
       expect(input).toBeInTheDocument();
       expect(input.type).toBe('file');
-      expect(input.accept).toBe('.zip');
+      // Without the ZIP entries the OS file picker greys out .zip files.
+      expect(input.accept.split(',')).toEqual(
+        expect.arrayContaining(['.csv', '.zip', 'application/zip'])
+      );
     });
   });
 
-  it('renders ZIP helper text', async () => {
+  it('accepts a CSV and immediately posts it to the start endpoint', async () => {
+    global.fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, token: 'action-token' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ jobId: 'job-csv', total: 2 }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'job-csv',
+          status: 'completed',
+          total: 2,
+          processed: 2,
+          succeeded: 2,
+          failed: 0,
+          errors: [],
+          results: [],
+        }),
+      });
+
+    render(<BulkImportPage />, { initialState: baseState });
+
+    const input = await screen.findByLabelText('BulkImportPage.simpleCsvLabel');
+    const csv = new File(['title,description,price'], 'listings.csv', { type: 'text/csv' });
+    fireEvent.change(input, { target: { files: [csv] } });
+
+    await waitFor(() => {
+      expect(screen.getByText('BulkImportPage.completed')).toBeInTheDocument();
+    });
+
+    const startCall = global.fetch.mock.calls.find(([url]) => url.includes('/start'));
+    expect(startCall[1].body.get('zipFile')).toBe(csv);
+  });
+
+  it('accepts a ZIP with photos and posts it to the start endpoint', async () => {
+    global.fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, token: 'action-token' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ jobId: 'job-zip', total: 2 }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'job-zip',
+          status: 'completed',
+          total: 2,
+          processed: 2,
+          succeeded: 2,
+          failed: 0,
+          errors: [],
+          results: [],
+        }),
+      });
+
+    render(<BulkImportPage />, { initialState: baseState });
+
+    const input = await screen.findByLabelText('BulkImportPage.simpleCsvLabel');
+    const zip = new File(['PK'], 'Listings.ZIP', { type: 'application/zip' });
+    fireEvent.change(input, { target: { files: [zip] } });
+
+    await waitFor(() => {
+      expect(screen.getByText('BulkImportPage.completed')).toBeInTheDocument();
+    });
+
+    const startCall = global.fetch.mock.calls.find(([url]) => url.includes('/start'));
+    expect(startCall[1].body.get('zipFile')).toBe(zip);
+  });
+
+  it('rejects a file that is neither a CSV nor a ZIP', async () => {
+    render(<BulkImportPage />, { initialState: baseState });
+
+    const input = await screen.findByLabelText('BulkImportPage.simpleCsvLabel');
+    const pdf = new File(['nope'], 'listings.pdf', { type: 'application/pdf' });
+    fireEvent.change(input, { target: { files: [pdf] } });
+
+    await waitFor(() => {
+      expect(screen.getByText('BulkImportPage.simpleErrorNoCsv')).toBeInTheDocument();
+    });
+    expect(global.fetch).not.toHaveBeenCalledWith('/api/bulk-import/start', expect.anything());
+  });
+
+  it('renders the CSV helper text', async () => {
     render(<BulkImportPage />, { initialState: baseState });
 
     await waitFor(() => {
-      expect(screen.getByText('BulkImportPage.zipHelp')).toBeInTheDocument();
+      expect(screen.getByText('BulkImportPage.simpleFileHelp')).toBeInTheDocument();
     });
   });
 
-  it('renders start import button', async () => {
+  it('renders the simplified three-step flow and WhatsApp help link', async () => {
     render(<BulkImportPage />, { initialState: baseState });
 
     await waitFor(() => {
-      expect(screen.getByText('BulkImportPage.startImport')).toBeInTheDocument();
+      expect(screen.getByText('BulkImportPage.simpleStep1Title')).toBeInTheDocument();
+      expect(screen.getByText('BulkImportPage.simpleStep2Title')).toBeInTheDocument();
+      expect(screen.getByText('BulkImportPage.simpleStep3Title')).toBeInTheDocument();
     });
-  });
 
-  it('renders download template link', async () => {
-    render(<BulkImportPage />, { initialState: baseState });
-
-    await waitFor(() => {
-      const link = screen.getByText('BulkImportPage.downloadTemplate');
-      expect(link).toBeInTheDocument();
-      expect(link.closest('a')).toHaveAttribute('href', '/static/files/PLANTILLA_CARGA_MASIVA.csv');
-    });
-  });
-
-  it('template link uses direct browser navigation (no fetch required)', async () => {
-    render(<BulkImportPage />, { initialState: baseState });
-
-    const link = await screen.findByText('BulkImportPage.downloadTemplate');
-    expect(link.closest('a')).toHaveAttribute('href', '/static/files/PLANTILLA_CARGA_MASIVA.csv');
-    expect(link.closest('a')).toHaveAttribute('download');
-    // Static file is served directly — browser navigates without a fetch
-    fireEvent.click(link);
-    expect(global.fetch).not.toHaveBeenCalledWith(
-      '/static/files/PLANTILLA_CARGA_MASIVA.csv',
-      expect.anything()
+    expect(screen.getByRole('link', { name: 'BulkImportPage.simpleWhatsappCta' })).toHaveAttribute(
+      'href',
+      'https://wa.me/525531314247'
     );
   });
 
-  it('shows error when submitting without a ZIP file', async () => {
+  const TEMPLATE_URL = '/api/bulk-import/template';
+
+  it('renders the template link', async () => {
     render(<BulkImportPage />, { initialState: baseState });
 
     await waitFor(() => {
-      expect(screen.getByText('BulkImportPage.startImport')).toBeInTheDocument();
+      const link = screen.getByText('BulkImportPage.simpleTemplateCta');
+      expect(link).toBeInTheDocument();
+      expect(link.closest('a')).toHaveAttribute('href', TEMPLATE_URL);
     });
+  });
 
-    fireEvent.click(screen.getByText('BulkImportPage.startImport'));
+  it('downloads the same-origin template without navigating away from an import', async () => {
+    render(<BulkImportPage />, { initialState: baseState });
 
-    await waitFor(() => {
-      expect(screen.getByText('BulkImportPage.errorNoZip')).toBeInTheDocument();
-    });
+    const link = (await screen.findByText('BulkImportPage.simpleTemplateCta')).closest('a');
+
+    // The route is same-origin and sends Content-Disposition: attachment. The
+    // attribute makes the intended browser behaviour explicit as well.
+    expect(link).toHaveAttribute('download');
+    expect(link).not.toHaveAttribute('target');
   });
 
   it('shows validation error returned from start endpoint', async () => {
@@ -159,11 +233,9 @@ describe('BulkImportPage', () => {
 
     render(<BulkImportPage />, { initialState: baseState });
 
-    const zipInput = await screen.findByLabelText('BulkImportPage.zipLabel');
-    const zipFile = new File(['fake zip content'], 'listings.zip', { type: 'application/zip' });
-    fireEvent.change(zipInput, { target: { files: [zipFile] } });
-
-    fireEvent.click(screen.getByText('BulkImportPage.startImport'));
+    const csvInput = await screen.findByLabelText('BulkImportPage.simpleCsvLabel');
+    const csvFile = new File(['fake csv content'], 'listings.csv', { type: 'text/csv' });
+    fireEvent.change(csvInput, { target: { files: [csvFile] } });
 
     await waitFor(() => {
       expect(
@@ -232,11 +304,9 @@ describe('BulkImportPage', () => {
 
     render(<BulkImportPage />, { initialState: baseState });
 
-    const zipInput = await screen.findByLabelText('BulkImportPage.zipLabel');
-    const zipFile = new File(['fake zip content'], 'listings.zip', { type: 'application/zip' });
-    fireEvent.change(zipInput, { target: { files: [zipFile] } });
-
-    fireEvent.click(screen.getByText('BulkImportPage.startImport'));
+    const csvInput = await screen.findByLabelText('BulkImportPage.simpleCsvLabel');
+    const csvFile = new File(['fake csv content'], 'listings.csv', { type: 'text/csv' });
+    fireEvent.change(csvInput, { target: { files: [csvFile] } });
 
     await waitFor(() => {
       expect(screen.getByText('BulkImportPage.processing')).toBeInTheDocument();
@@ -289,11 +359,9 @@ describe('BulkImportPage', () => {
 
     render(<BulkImportPage />, { initialState: baseState });
 
-    const zipInput = await screen.findByLabelText('BulkImportPage.zipLabel');
-    const zipFile = new File(['fake zip content'], 'listings.zip', { type: 'application/zip' });
-    fireEvent.change(zipInput, { target: { files: [zipFile] } });
-
-    fireEvent.click(screen.getByText('BulkImportPage.startImport'));
+    const csvInput = await screen.findByLabelText('BulkImportPage.simpleCsvLabel');
+    const csvFile = new File(['fake csv content'], 'listings.csv', { type: 'text/csv' });
+    fireEvent.change(csvInput, { target: { files: [csvFile] } });
 
     await waitFor(() => {
       expect(screen.getByText('BulkImportPage.errorJobUnavailable')).toBeInTheDocument();
@@ -321,11 +389,9 @@ describe('BulkImportPage', () => {
 
     render(<BulkImportPage />, { initialState: baseState });
 
-    const zipInput = await screen.findByLabelText('BulkImportPage.zipLabel');
-    const zipFile = new File(['fake zip content'], 'listings.zip', { type: 'application/zip' });
-    fireEvent.change(zipInput, { target: { files: [zipFile] } });
-
-    fireEvent.click(screen.getByText('BulkImportPage.startImport'));
+    const csvInput = await screen.findByLabelText('BulkImportPage.simpleCsvLabel');
+    const csvFile = new File(['fake csv content'], 'listings.csv', { type: 'text/csv' });
+    fireEvent.change(csvInput, { target: { files: [csvFile] } });
 
     await waitFor(() => {
       expect(screen.getByText('BulkImportPage.processing')).toBeInTheDocument();
@@ -379,11 +445,9 @@ describe('BulkImportPage', () => {
 
     render(<BulkImportPage />, { initialState: baseState });
 
-    const zipInput = await screen.findByLabelText('BulkImportPage.zipLabel');
-    const zipFile = new File(['fake zip content'], 'listings.zip', { type: 'application/zip' });
-    fireEvent.change(zipInput, { target: { files: [zipFile] } });
-
-    fireEvent.click(screen.getByText('BulkImportPage.startImport'));
+    const csvInput = await screen.findByLabelText('BulkImportPage.simpleCsvLabel');
+    const csvFile = new File(['fake csv content'], 'listings.csv', { type: 'text/csv' });
+    fireEvent.change(csvInput, { target: { files: [csvFile] } });
 
     await waitFor(() => {
       expect(screen.getByText('BulkImportPage.completed')).toBeInTheDocument();
@@ -418,10 +482,10 @@ describe('BulkImportPage', () => {
         json: async () => ({
           id: 'job-err',
           status: 'completed',
-          total: 2,
-          processed: 2,
+          total: 3,
+          processed: 3,
           succeeded: 0,
-          failed: 2,
+          failed: 3,
           errors: [
             {
               row: 1,
@@ -444,6 +508,14 @@ describe('BulkImportPage', () => {
               error: 'Request failed with status code 500',
               status: 500,
             },
+            // Worker-thrown synthetic code: the bundled placeholder image could
+            // not be loaded for an image-less row.
+            {
+              row: 3,
+              title: 'Sin fotos',
+              error: 'No se encontró la imagen de reemplazo',
+              code: 'placeholder-missing',
+            },
           ],
           results: [],
         }),
@@ -451,10 +523,9 @@ describe('BulkImportPage', () => {
 
     render(<BulkImportPage />, { initialState: baseState });
 
-    const zipInput = await screen.findByLabelText('BulkImportPage.zipLabel');
-    const zipFile = new File(['fake zip content'], 'listings.zip', { type: 'application/zip' });
-    fireEvent.change(zipInput, { target: { files: [zipFile] } });
-    fireEvent.click(screen.getByText('BulkImportPage.startImport'));
+    const csvInput = await screen.findByLabelText('BulkImportPage.simpleCsvLabel');
+    const csvFile = new File(['fake csv content'], 'listings.csv', { type: 'text/csv' });
+    fireEvent.change(csvInput, { target: { files: [csvFile] } });
 
     await waitFor(() => {
       expect(screen.getByText('BulkImportPage.completed')).toBeInTheDocument();
@@ -470,6 +541,9 @@ describe('BulkImportPage', () => {
     // Row without a structured code falls back to the HTTP-status message + hint.
     expect(screen.getByText('BulkImportPage.rowError.http500')).toBeInTheDocument();
     expect(screen.getByText('HTTP 500')).toBeInTheDocument();
+
+    // Placeholder-asset failure maps to its own message rather than the generic one.
+    expect(screen.getByText('BulkImportPage.rowError.placeholderUnavailable')).toBeInTheDocument();
   });
 
   it('resets the form after a completed import', async () => {
@@ -498,11 +572,9 @@ describe('BulkImportPage', () => {
 
     render(<BulkImportPage />, { initialState: baseState });
 
-    const zipInput = await screen.findByLabelText('BulkImportPage.zipLabel');
-    const zipFile = new File(['fake zip content'], 'listings.zip', { type: 'application/zip' });
-    fireEvent.change(zipInput, { target: { files: [zipFile] } });
-
-    fireEvent.click(screen.getByText('BulkImportPage.startImport'));
+    const csvInput = await screen.findByLabelText('BulkImportPage.simpleCsvLabel');
+    const csvFile = new File(['fake csv content'], 'listings.csv', { type: 'text/csv' });
+    fireEvent.change(csvInput, { target: { files: [csvFile] } });
 
     await waitFor(() => {
       expect(screen.getByText('BulkImportPage.newImport')).toBeInTheDocument();
@@ -511,7 +583,7 @@ describe('BulkImportPage', () => {
     fireEvent.click(screen.getByText('BulkImportPage.newImport'));
 
     await waitFor(() => {
-      expect(screen.getByText('BulkImportPage.startImport')).toBeInTheDocument();
+      expect(screen.getByText('BulkImportPage.simpleStep3Title')).toBeInTheDocument();
       expect(screen.queryByText('Imported listing')).not.toBeInTheDocument();
     });
   });

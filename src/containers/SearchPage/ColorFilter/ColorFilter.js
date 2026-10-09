@@ -1,7 +1,10 @@
 import React from 'react';
-import { parseSelectFilterOptions } from '../../../util/search';
-import { swatchColors } from '../../../components/FieldSwatch/FieldSwatch';
 import classNames from 'classnames';
+
+import { parseSelectFilterOptions } from '../../../util/search';
+
+import { swatchColors } from '../../../components/FieldSwatch/FieldSwatch';
+
 import css from './ColorFilter.module.css';
 
 const getQueryParamName = queryParamNames => {

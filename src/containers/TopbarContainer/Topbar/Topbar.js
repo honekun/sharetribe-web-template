@@ -25,13 +25,16 @@ import SearchIcon from './SearchIcon';
 import TopbarSearchForm from './TopbarSearchForm/TopbarSearchForm';
 import TopbarMobileMenu from './TopbarMobileMenu/TopbarMobileMenu';
 import TopbarDesktop from './TopbarDesktop/TopbarDesktop';
+import AVTopbarIconLinks from './AVTopbarIconLinks';
 
 import css from './Topbar.module.css';
+import avCss from './Topbar.av.module.css';
 import { getCurrentUserTypeRoles, showCreateListingLinkForUser } from '../../../util/userHelpers';
 import {
   resolveKeywordsInitialValue,
   resolveKeywordsSearchParams,
 } from '../../../extensions/searchFilters/avBrandSearch';
+import { isNavPageHiddenForUser } from '../../../config/configAV';
 
 const MAX_MOBILE_SCREEN_WIDTH = 1599;
 
@@ -236,6 +239,13 @@ const TopbarComponent = props => {
     ? 'sales'
     : 'orders';
 
+  // AV: a store seller's inbox sidebar has no Orders tab
+  // (configAV.isNavPageHiddenForUser), so the envelope must not open on one —
+  // it would leave them on a tab with no nav entry to leave it by.
+  const resolvedInboxTab = isNavPageHiddenForUser(currentUser, `InboxPage:${topbarInboxTab}`)
+    ? 'sales'
+    : topbarInboxTab;
+
   const { mobilemenu, mobilesearch, keywords, address, origin, bounds, pub_brand } = parse(
     location.search,
     {
@@ -267,7 +277,7 @@ const TopbarComponent = props => {
       currentPage={resolvedCurrentPage}
       customLinks={customLinks}
       showCreateListingsLink={showCreateListingsLink}
-      inboxTab={topbarInboxTab}
+      inboxTab={resolvedInboxTab}
       intl={intl}
     />
   );
@@ -319,6 +329,7 @@ const TopbarComponent = props => {
     <Button
       id={MOBILE_SEARCH_BUTTON_ID}
       rootClassName={css.searchMenu}
+      className={avCss.mobileSearchPushRight}
       onClick={() => redirectToURLWithModalState(history, location, 'mobilesearch')}
       title={intl.formatMessage({ id: 'Topbar.searchIcon' })}
     >
@@ -328,7 +339,7 @@ const TopbarComponent = props => {
       />
     </Button>
   ) : (
-    <div className={css.searchMenu} />
+    <div className={classNames(css.searchMenu, avCss.mobileSearchPushRight)} />
   );
 
   const handleSkipToMainContent = e => {
@@ -364,7 +375,13 @@ const TopbarComponent = props => {
         onLogout={handleLogout}
         currentPage={resolvedCurrentPage}
       />
-      <nav className={classNames(mobileRootClassName || css.container, mobileClassName)}>
+      <nav
+        className={classNames(
+          mobileRootClassName || css.container,
+          mobileClassName,
+          avCss.mobileNav
+        )}
+      >
         <Button
           id={MOBILE_MENU_BUTTON_ID}
           rootClassName={css.menu}
@@ -379,11 +396,19 @@ const TopbarComponent = props => {
         </Button>
         <LinkedLogo
           id="logo-topbar-mobile"
+          className={avCss.mobileLogo}
           layout={'mobile'}
           alt={intl.formatMessage({ id: 'Topbar.logoIcon' })}
           linkToExternalSite={config?.topbar?.logoLink}
         />
         {mobileSearchButtonMaybe}
+        <AVTopbarIconLinks
+          className={avCss.mobileIconLinks}
+          isAuthenticated={isAuthenticated}
+          notificationCount={notificationCount}
+          inboxTab={resolvedInboxTab}
+          bagPopupLayout="mobile"
+        />
       </nav>
       <div className={css.desktop}>
         <TopbarDesktop
@@ -401,7 +426,7 @@ const TopbarComponent = props => {
           customLinks={customLinks}
           showSearchForm={showSearchForm}
           showCreateListingsLink={showCreateListingsLink}
-          inboxTab={topbarInboxTab}
+          inboxTab={resolvedInboxTab}
         />
       </div>
       <Modal

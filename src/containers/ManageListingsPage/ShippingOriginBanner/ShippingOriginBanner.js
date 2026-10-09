@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 
 import { FormattedMessage } from '../../../util/reactIntl';
-import { NamedLink } from '../../../components';
 import { hasCompleteShippingOrigin } from '../../../util/shippingOrigin';
+
+import { NamedLink } from '../../../components';
 
 import css from './ShippingOriginBanner.module.css';
 

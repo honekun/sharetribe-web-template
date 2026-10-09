@@ -1,10 +1,9 @@
 'use strict';
 
-const defaultKeyGenerator = req =>
-  req.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
-  req.ip ||
-  req.connection?.remoteAddress ||
-  'unknown';
+// req.ip, not the raw X-Forwarded-For header: behind a proxy its leftmost entry
+// is whatever the client sent. Express resolves req.ip from the trusted hop count
+// (SERVER_SHARETRIBE_TRUST_PROXY, see api-util/trustProxy.js).
+const defaultKeyGenerator = req => req.ip || req.connection?.remoteAddress || 'unknown';
 
 const createRateLimiter = options => {
   const {

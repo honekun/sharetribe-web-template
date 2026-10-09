@@ -2,8 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 
 import { useConfiguration } from '../../../../../context/configurationContext';
-import PriorityLinks, { CreateCusomMenusLinks } from './AVPriorityLinks';
-import LinksMenu from './AVLinksMenu';
 import {
   defaultTopbarCategoryDropdowns,
   getCategoryDropdownsConfig,
@@ -15,6 +13,9 @@ import {
   getLocalDesignUsers,
   getTopbarData,
 } from '../../../../../extensions/topbar/topbarDataProvider';
+
+import PriorityLinks, { CreateCusomMenusLinks } from './AVPriorityLinks';
+import LinksMenu from './AVLinksMenu';
 
 import css from './AVCustomLinksMenu.module.css';
 

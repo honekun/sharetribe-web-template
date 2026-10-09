@@ -5,7 +5,13 @@ jest.mock('../../services/integrationSdk', () => ({
   getIntegrationSdk: jest.fn(),
 }));
 
+jest.mock('./placeholderImage', () => {
+  const actual = jest.requireActual('./placeholderImage');
+  return { ...actual, getPlaceholderImage: jest.fn(actual.getPlaceholderImage) };
+});
+
 const { getIntegrationSdk } = require('../../services/integrationSdk');
+const { getPlaceholderImage } = require('./placeholderImage');
 const { createJob, getJob } = require('./jobStore');
 const { processImportJob, _test: workerTest } = require('./importWorker');
 
@@ -313,6 +319,78 @@ describe('processImportJob', () => {
 
     const params = mockSdk.listings.create.mock.calls[0][0];
     expect(params.publicData.location).toEqual({ address: 'CDMX, México' });
+  });
+
+  // --- Placeholder image for rows that reference no photo ---
+
+  describe('placeholder image', () => {
+    it('uploads the bundled placeholder as the only image of a flagged row', async () => {
+      const mockSdk = createMockSdk();
+      getIntegrationSdk.mockReturnValue(mockSdk);
+
+      const job = createJob(1);
+      const row = makeRow({ imageSlots: {}, usePlaceholderImage: true });
+
+      await processImportJob(job.id, [row], new Map());
+
+      expect(getJob(job.id).succeeded).toBe(1);
+      expect(mockSdk.images.upload).toHaveBeenCalledTimes(1);
+      // The temp file the SDK uploads keeps the placeholder's extension so the
+      // request carries the right MIME type.
+      expect(mockSdk.images.upload.mock.calls[0][0].image).toMatch(/\.jpe?g$|\.png$|\.webp$/);
+
+      const params = mockSdk.listings.create.mock.calls[0][0];
+      expect(params.images).toHaveLength(1);
+      // No slot captions: the placeholder is not a "front"/"back" photo.
+      expect(params.publicData.imageSlots).toBeUndefined();
+      expect(params.publicData.avPlaceholderImage).toBe(true);
+      // The uploaded placeholder's own id, so a later listing edit can tell whether
+      // the placeholder is still attached (src/util/avPlaceholderListing.js).
+      expect(params.publicData.avPlaceholderImageId).toBe('img-uuid-123');
+    });
+
+    it('does not flag or upload a placeholder for a row that has its own images', async () => {
+      const mockSdk = createMockSdk();
+      getIntegrationSdk.mockReturnValue(mockSdk);
+
+      const job = createJob(1);
+      const row = makeRow({ imageSlots: { front: 'a.jpg' }, usePlaceholderImage: false });
+      const imageMap = new Map([['a.jpg', Buffer.from('img-a')]]);
+
+      await processImportJob(job.id, [row], imageMap);
+
+      expect(mockSdk.images.upload).toHaveBeenCalledTimes(1);
+      const params = mockSdk.listings.create.mock.calls[0][0];
+      expect(params.publicData.imageSlots).toEqual({ front: 'img-uuid-123' });
+      expect(params.publicData.avPlaceholderImage).toBeUndefined();
+      expect(params.publicData.avPlaceholderImageId).toBeUndefined();
+    });
+
+    it('fails only the flagged row when the placeholder asset cannot be loaded', async () => {
+      const mockSdk = createMockSdk();
+      getIntegrationSdk.mockReturnValue(mockSdk);
+      getPlaceholderImage.mockImplementationOnce(() => {
+        const err = new Error('No se encontró la imagen de reemplazo');
+        err.avCode = 'placeholder-missing';
+        throw err;
+      });
+
+      const job = createJob(2);
+      const rows = [
+        makeRow({ rowNum: 2, usePlaceholderImage: true }),
+        makeRow({ rowNum: 3, imageSlots: { front: 'a.jpg' } }),
+      ];
+      const imageMap = new Map([['a.jpg', Buffer.from('img-a')]]);
+
+      await processImportJob(job.id, rows, imageMap);
+
+      const finalJob = getJob(job.id);
+      expect(finalJob.failed).toBe(1);
+      expect(finalJob.succeeded).toBe(1);
+      expect(finalJob.errors[0].row).toBe(2);
+      expect(finalJob.errors[0].code).toBe('placeholder-missing');
+      expect(mockSdk.listings.create).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('bounds a hanging row so the job fails it instead of wedging in processing', async () => {

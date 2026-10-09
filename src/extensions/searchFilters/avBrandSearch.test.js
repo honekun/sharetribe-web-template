@@ -4,6 +4,7 @@ import {
   resolveKeywordsInitialValue,
   resolveKeywordsSearchParams,
 } from './avBrandSearch';
+import { mergeHostedBrandOptions } from '../../config/configAV';
 
 const listingFields = [
   { key: 'category', scope: 'public', schemaType: 'enum', enumOptions: [{ option: 'ropa' }] },
@@ -86,6 +87,48 @@ describe('findBrandOption', () => {
 
   it('tolerates a brand field with no enumOptions', () => {
     expect(findBrandOption('prada', [{ key: 'brand', scope: 'public' }])).toBeNull();
+  });
+
+  it('resolves a brand that only Console defines, once merged', () => {
+    const merged = mergeHostedBrandOptions(
+      [
+        {
+          key: 'brand',
+          schemaType: 'enum',
+          enumOptions: [{ option: 'other', label: 'Otra...' }],
+        },
+      ],
+      [
+        {
+          key: 'brand',
+          schemaType: 'enum',
+          enumOptions: [{ option: 'av-test-brand', label: 'AV Test Brand' }],
+        },
+      ]
+    );
+
+    expect(findBrandOption('av test brand', merged)).toEqual('av-test-brand');
+  });
+
+  it('resolves a Console-relabelled brand by its Console label', () => {
+    const merged = mergeHostedBrandOptions(
+      [
+        {
+          key: 'brand',
+          schemaType: 'enum',
+          enumOptions: [{ option: 'zara', label: 'Zara' }],
+        },
+      ],
+      [
+        {
+          key: 'brand',
+          schemaType: 'enum',
+          enumOptions: [{ option: 'zara', label: 'ZARA Espana' }],
+        },
+      ]
+    );
+
+    expect(findBrandOption('zara espana', merged)).toEqual('zara');
   });
 });
 

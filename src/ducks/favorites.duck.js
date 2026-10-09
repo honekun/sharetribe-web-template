@@ -1,8 +1,10 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { clearCurrentUser, setCurrentUser } from './user.duck';
+
 import { denormalisedResponseEntities } from '../util/data';
 import * as log from '../util/log';
 import { trackMarketingEngagement } from '../util/api';
+
+import { clearCurrentUser, setCurrentUser } from './user.duck';
 
 // Max ids supported by sdk.listings.query({ ids }) in one call.
 const MAX_FAVORITES = 100;

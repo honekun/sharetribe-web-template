@@ -30,7 +30,9 @@ const defaultConfig = {
   // Note 1: 0 means no restriction to the price (Currently, Console won't show it.)
   // Note 2: To use only this built-in configuration, you need to remove the overwrite from configHelper.js (mergeConfig func)
   // Note 3: Stripe does have a minimum fee that depends on country, currency, etc!
-  listingMinimumPriceSubUnits: 500,
+  // AV: $20.00 MXN. listingMinimumPrice x (1 - commission%/100) must cover the provider fixed fee,
+  // or a sale at the minimum earns less than the fee. See src/config/commissionInvariant.test.js.
+  listingMinimumPriceSubUnits: 2000,
 
   // Marketplace name is needed for microcopy (aka marketplace texts) and in meta tags (bots and social media sharing reads those)
   marketplaceName: process.env.REACT_APP_MARKETPLACE_NAME || '[Marketplace Name]',
@@ -66,7 +68,7 @@ const defaultConfig = {
   // These code defaults are only used if the asset is unavailable.
   earningsEstimate: {
     providerCommissionPercentage:
-      parseFloat(process.env.REACT_APP_PROVIDER_COMMISSION_PERCENTAGE) || 10,
+      parseFloat(process.env.REACT_APP_PROVIDER_COMMISSION_PERCENTAGE) || 22,
     providerCommissionFixedAmountInSubunits:
       parseInt(process.env.REACT_APP_PROVIDER_COMMISSION_FIXED_FEE, 10) || 0,
     stripeFeePercentage: parseFloat(process.env.REACT_APP_STRIPE_FEE_PERCENTAGE) || 2.9,
@@ -124,9 +126,10 @@ const defaultConfig = {
   // Optional
   // Online presence of the same organization:
   // Facebook page is used in SEO schema (http://schema.org/Organization)
-  siteFacebookPage: null, // e.g. 'https://www.facebook.com/Sharetribe/',
+  // AV: same profiles as the hosted footer's socialMediaLinks; used for the Organization `sameAs`.
+  siteFacebookPage: 'https://www.facebook.com/profile.php?id=61578221927915',
   // Instagram page is used in SEO schema (http://schema.org/Organization)
-  siteInstagramPage: null, // e.g. 'https://www.instagram.com/sharetribe/',
+  siteInstagramPage: 'https://www.instagram.com/archivovintach/',
   // Twitter handle is needed in meta tags (twitter:site). Start it with '@' character
   siteTwitterHandle: null, // e.g. '@sharetribe',
 

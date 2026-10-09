@@ -352,8 +352,13 @@ exports.getProviderCommissionMaybe = (providerCommission, order, currency) => {
   // Check if either minimum commission or percentage are defined in the commission object
   const hasMinimumCommission = exports.hasMinimumCommission(providerCommission);
   const hasCommissionPercentage = exports.hasCommissionPercentage(providerCommission);
+  // A percentage explicitly set to 0 is a real configuration, not an absent one:
+  // that seller pays no percentage but still owes the AV fixed fee. Keeping this
+  // conditional on an EXPLICIT zero matters — an unconditional change would make
+  // a marketplace with no commission asset start charging the fixed fee.
+  const hasExplicitZeroPercentage = providerCommission?.percentage === 0;
 
-  if (!hasMinimumCommission && !hasCommissionPercentage) {
+  if (!hasMinimumCommission && !hasCommissionPercentage && !hasExplicitZeroPercentage) {
     return [];
   }
 
@@ -388,31 +393,45 @@ exports.getProviderCommissionMaybe = (providerCommission, order, currency) => {
           includeFor: ['provider'],
         },
       ]
-    : [
+    : hasCommissionPercentage
+    ? [
         {
           code: 'line-item/provider-commission',
           unitPrice: totalMoneyIn,
           percentage: getNegation(providerCommission.percentage),
           includeFor: ['provider'],
         },
-      ];
+      ]
+    : [];
 
   // Append fixed fee line item if configured (additive, not max-based)
   if (PROVIDER_COMMISSION_FIXED_FEE > 0) {
-    // Validate that total commission doesn't exceed order total
     const percentageAmount = useMinimumCommission
       ? providerCommission.minimum_amount
       : estimatedCommissionFromPercentage;
-    if (percentageAmount + PROVIDER_COMMISSION_FIXED_FEE > totalMoneyIn.amount) {
-      throw new Error('Total provider commission (percentage + fixed fee) exceeds the order total');
+
+    // Clamp rather than throw. A pricing misconfiguration must not turn into a
+    // failed checkout for the buyer; the payout floors at zero instead. This
+    // also fixes the pre-existing case where any listing priced below
+    // fixedFee / (1 - pct/100) broke at payment time on the ordinary rate.
+    const remaining = totalMoneyIn.amount - percentageAmount;
+    const fixedFeeToCharge = Math.min(PROVIDER_COMMISSION_FIXED_FEE, Math.max(0, remaining));
+
+    if (fixedFeeToCharge < PROVIDER_COMMISSION_FIXED_FEE) {
+      // The platform earned less than intended; someone should see why.
+      console.error(
+        `[lineItems] Provider fixed fee clamped: order=${totalMoneyIn.amount} percentage=${providerCommission?.percentage} percentageAmount=${percentageAmount} fee=${PROVIDER_COMMISSION_FIXED_FEE} charged=${fixedFeeToCharge}`
+      );
     }
 
-    lineItems.push({
-      code: 'line-item/provider-commission-fixed',
-      unitPrice: new Money(PROVIDER_COMMISSION_FIXED_FEE, currency),
-      quantity: getNegation(1),
-      includeFor: ['provider'],
-    });
+    if (fixedFeeToCharge > 0) {
+      lineItems.push({
+        code: 'line-item/provider-commission-fixed',
+        unitPrice: new Money(fixedFeeToCharge, currency),
+        quantity: getNegation(1),
+        includeFor: ['provider'],
+      });
+    }
   }
 
   return lineItems;

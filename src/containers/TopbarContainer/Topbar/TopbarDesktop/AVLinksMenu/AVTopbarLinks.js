@@ -2,8 +2,12 @@ import React from 'react';
 import classNames from 'classnames';
 
 import { FormattedMessage, useIntl } from '../../../../../util/reactIntl';
+import {
+  filterAvProfileLinks,
+  useIsNavPageHidden,
+} from '../../../../../extensions/topbar/avNavVisibility';
+
 import { MenuItem, NamedLink } from '../../../../../components';
-import { AV_PROFILE_LINKS } from '../../../../../extensions/topbar/links';
 
 import css from '../TopbarDesktop.module.css';
 
@@ -16,15 +20,34 @@ import css from '../TopbarDesktop.module.css';
  * Purple pill link to the favorites page. Sits between the create-listing button
  * and the inbox link.
  *
+ * `id` is opt-in because this component is mounted three times — desktop
+ * topbar, mobile topbar, mobile menu footer — and a hardcoded one would put
+ * three copies of the same DOM id on every page. Only TopbarDesktop passes it,
+ * which is where upstream's single `inbox-link` has always lived.
+ *
+ * Hidden entirely for user types that `configAV` excludes from the favorites
+ * nav (store sellers). The check lives here rather than at the three mount
+ * points — desktop topbar, mobile topbar, mobile menu footer — so one rule
+ * covers all of them; `null` keeps the icon row's flex layout intact because
+ * there is simply one fewer child.
+ *
  * @component
- * @returns {JSX.Element}
+ * @param {Object} props
+ * @param {string} [props.id]
+ * @returns {JSX.Element|null}
  */
-export const FavoritesLink = () => {
+export const FavoritesLink = ({ id }) => {
   const intl = useIntl();
+  const isHidden = useIsNavPageHidden('FavoritesPage');
   const label = intl.formatMessage({ id: 'TopbarDesktop.favoritesLink' });
+
+  if (isHidden) {
+    return null;
+  }
+
   return (
     <NamedLink
-      id="favorites-link"
+      id={id}
       className={css.favoritesButton}
       name="FavoritesPage"
       title={label}
@@ -53,19 +76,29 @@ export const FavoritesLink = () => {
  * AV replacement for upstream's `InboxLink`: an envelope icon rather than a text
  * label, so it sits in the icon row beside favorites and the bag.
  *
+ * `id` is opt-in for the same reason as FavoritesLink above: three copies of
+ * this component are mounted, and upstream's `inbox-link` is meant to be one
+ * element, not three.
+ *
+ * Shown to every signed-in user. Store sellers keep the envelope — only the
+ * inbox sidebar's Orders tab is hidden from them, and `inboxTab` is resolved by
+ * Topbar so this never points at that tab.
+ *
  * @component
  * @param {Object} props
  * @param {number} props.notificationCount
  * @param {string} props.inboxTab
+ * @param {string} [props.id]
  * @returns {JSX.Element}
  */
-export const AVInboxLink = ({ notificationCount, inboxTab }) => {
+export const AVInboxLink = ({ notificationCount, inboxTab, id }) => {
   const intl = useIntl();
   const label = intl.formatMessage({ id: 'TopbarDesktop.inbox' });
   const notificationDot = notificationCount > 0 ? <div className={css.notificationDot} /> : null;
+
   return (
     <NamedLink
-      id="inbox-link"
+      id={id}
       className={css.inboxLink}
       name="InboxPage"
       params={{ tab: inboxTab }}
@@ -95,11 +128,16 @@ export const AVInboxLink = ({ notificationCount, inboxTab }) => {
  * children with `React.Children.forEach` and throws unless every one of them is
  * a keyed MenuItem, so a wrapper component would break the menu.
  *
+ * Entries hidden for the user's type are dropped rather than rendered disabled,
+ * so the menu shows no trace of them. The caller passes `currentUser` because
+ * ProfileMenu already has it; an array of elements cannot call a hook.
+ *
  * @param {string} currentPage - route name of the page being rendered
+ * @param {Object} [currentUser] - CurrentUser API entity, for the visibility gate
  * @returns {Array<JSX.Element>}
  */
-export const renderAvProfileMenuItems = currentPage =>
-  AV_PROFILE_LINKS.map(({ pageName, labels }) => (
+export const renderAvProfileMenuItems = (currentPage, currentUser) =>
+  filterAvProfileLinks(currentUser).map(({ pageName, labels }) => (
     <MenuItem key={pageName}>
       <NamedLink
         className={classNames(css.menuLink, currentPage === pageName ? css.currentPage : null)}

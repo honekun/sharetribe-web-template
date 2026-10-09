@@ -44,7 +44,7 @@ const intl = createIntl(
 const formatDate = d => {
   return intl.formatDate(d, { day: 'numeric', month: 'long' });
 };
-formatDatesOfMonth = (date, firstDayOfWeek) => {
+const formatDatesOfMonth = (date, firstDayOfWeek) => {
   return getDaysOfMonth(date, true, firstDayOfWeek).map(d => formatDate(d));
 };
 

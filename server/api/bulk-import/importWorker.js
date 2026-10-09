@@ -9,6 +9,7 @@ const { types } = require('sharetribe-flex-integration-sdk');
 const { getPackageSizeForCategory } = require('../../../src/config/configAVShipping');
 const { getIntegrationSdk } = require('../../services/integrationSdk');
 const { updateJob } = require('./jobStore');
+const { getPlaceholderImage } = require('./placeholderImage');
 
 const { UUID, Money, LatLng } = types;
 
@@ -104,14 +105,26 @@ async function processRow(sdk, row, imageMap, config) {
   const imageSlotMapping = {};
   const imageUuids = [];
 
-  // Upload images in slot order
-  for (const slotKey of SLOT_ORDER) {
-    const filename = row.imageSlots[slotKey];
-    if (filename && imageMap.has(filename)) {
-      const buffer = imageMap.get(filename);
-      const uuid = await uploadImage(sdk, buffer, filename);
-      imageSlotMapping[slotKey] = uuid;
-      imageUuids.push(new UUID(uuid));
+  // Rows that reference no photo at all (images are optional in the CSV) get the
+  // bundled placeholder as their single image. It is deliberately left out of
+  // imageSlots — it is not a "front"/"back" photo and must not be captioned as one.
+  const usePlaceholder = row.usePlaceholderImage === true;
+  let placeholderImageId = null;
+
+  if (usePlaceholder) {
+    const { buffer, filename } = getPlaceholderImage();
+    placeholderImageId = await uploadImage(sdk, buffer, filename);
+    imageUuids.push(new UUID(placeholderImageId));
+  } else {
+    // Upload images in slot order
+    for (const slotKey of SLOT_ORDER) {
+      const filename = row.imageSlots[slotKey];
+      if (filename && imageMap.has(filename)) {
+        const buffer = imageMap.get(filename);
+        const uuid = await uploadImage(sdk, buffer, filename);
+        imageSlotMapping[slotKey] = uuid;
+        imageUuids.push(new UUID(uuid));
+      }
     }
   }
 
@@ -151,6 +164,15 @@ async function processRow(sdk, row, imageMap, config) {
 
   if (Object.keys(imageSlotMapping).length > 0) {
     publicData.imageSlots = imageSlotMapping;
+  }
+
+  // Marks the listing as still needing real photos, so placeholder imports can be
+  // found later with a pub_avPlaceholderImage query. The image id lets a later
+  // listing edit clear the flag once the placeholder is gone — see
+  // src/util/avPlaceholderListing.js.
+  if (usePlaceholder) {
+    publicData.avPlaceholderImage = true;
+    publicData.avPlaceholderImageId = placeholderImageId;
   }
 
   if (row.locationAddress) {

@@ -3,6 +3,7 @@
  * Navigational 'aside' content should be added to this wrapper.
  */
 import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 
 import { TabNav } from '../../../components';
 
@@ -69,6 +70,10 @@ const LayoutWrapperAccountSettingsSideNav = props => {
   const [mounted, setMounted] = useState(false);
   const [scrollLeft, setScrollLeft] = useGlobalState('scrollLeft');
   const { accountSettingsNavProps, ariaLabel } = props;
+  // AV: the tab list varies by userType, and every account page renders this
+  // nav — reading the user here keeps the tabs identical across all of them
+  // rather than depending on which page happened to pass the type down.
+  const currentUser = useSelector(state => state.user.currentUser);
 
   useEffect(() => {
     setMounted(true);
@@ -89,7 +94,7 @@ const LayoutWrapperAccountSettingsSideNav = props => {
     }
   }, [mounted]);
 
-  const tabs = getAccountSettingsTabs(accountSettingsNavProps);
+  const tabs = getAccountSettingsTabs({ ...accountSettingsNavProps, currentUser });
 
   return (
     <TabNav rootClassName={css.tabs} tabRootClassName={css.tab} tabs={tabs} ariaLabel={ariaLabel} />
