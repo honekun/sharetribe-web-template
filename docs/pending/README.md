@@ -31,6 +31,9 @@ Last reviewed: 2026-10-09.
 
 ## Product and integration decisions
 
+- [Listings sheet](listings-sheet-proposal.md) — proposal for an in-site spreadsheet that creates
+  many listings with validated dropdowns, instead of the CSV/ZIP bulk import. Awaiting client
+  approval; no development has started.
 - Per-seller provider commission override — **deferred until after launch** (decided 2026-10-09).
   The approved [design](../superpowers/specs/2026-08-14-per-seller-commission-override-design.md)
   and [plan](../superpowers/plans/2026-08-15-per-seller-commission-override.md) remain the starting
