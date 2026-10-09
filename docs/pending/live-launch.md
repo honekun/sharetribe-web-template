@@ -324,8 +324,9 @@ Checked and fixed on 2026-10-09:
 
 Remaining:
 
-- [ ] Deploy the indexing guard and the `sameAs` change, then set `AV_NOINDEX=true` on Heroku until
-      cutover. At cutover remove it (runbook §5.4); the herokuapp host stays noindexed on its own.
+- [x] Deployed 2026-10-09 with `AV_NOINDEX=true` on Heroku: `robots.txt` is `Disallow: /`, every
+      response carries `X-Robots-Tag: noindex, nofollow`, and `sameAs` lists both profiles.
+- [ ] At cutover remove `AV_NOINDEX` (runbook §5.4); the herokuapp host stays noindexed on its own.
 - [ ] Render: `AV_NOINDEX=true` (see §2.1).
 - [ ] Console (Test and Live): write a real Spanish meta description for the landing page — it is
       currently `Archivo Vintach Marketplace` — and remove the trailing space in the footer's TikTok
