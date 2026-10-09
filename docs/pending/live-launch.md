@@ -13,21 +13,21 @@ Brevo hosted templates are a known missing piece and are tracked in §6.
 
 ## 1. Snapshot
 
-| Area                   | State on 2026-10-09                                                                                                                                                     |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Release branch         | `pre-release` is pushed and equals `heroku/main`. `main` is 359 commits behind and has not received the release candidate.                                              |
-| Heroku app             | `archivo-vintach-marketplace`, one `web` Basic dyno, `heroku-postgresql` `essential-0`. Only the `herokuapp.com` domain is attached. Runbook phase: **1 (Test mode)**.  |
-| Heroku providers       | Sharetribe Test credentials, `pk_test_…`, eShip QA base URL.                                                                                                            |
-| Heroku guarded flags   | All seven explicitly `false`. Notifications, manual labels, and welcome email have **not** yet been exercised on Heroku.                                                |
-| Server tests           | 53 suites / 635 tests pass.                                                                                                                                             |
-| Client tests           | 179 suites / 1918 tests pass with `CI=true`; one test failed once and passed on two reruns (flaky).                                                                     |
-| `config-check`         | Passes.                                                                                                                                                                 |
-| `env-template-check`   | Passes.                                                                                                                                                                 |
-| `av-translation-check` | Passes (336 symmetric keys).                                                                                                                                            |
-| `format-ci`            | **Fails** on 43 files.                                                                                                                                                  |
-| `yarn audit`           | Was 1 critical, 35 high, 48 moderate, 6 low; after the 2026-10-09 upgrade 0 critical, 1 high (install-time only), 10 moderate (§2.2).                                   |
-| Upstream               | Fork is based on v12.1.0; `upstream/main` is v12.4.0 + 126 commits. No `default-purchase/process.edn` change upstream since the fork, only Email-text/template wording. |
-| CI                     | No CI pipeline exists (`.github/` has only issue templates). Every gate is run by hand.                                                                                 |
+| Area                   | State on 2026-10-09                                                                                                                                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Release branch         | `pre-release` is deployed to Heroku. `origin/main` is 46 commits behind it; PR #111 (`pre-release` → `main`) is open and is the release merge.                                                                  |
+| Heroku app             | `archivo-vintach-marketplace`, stack `heroku-26` (upgraded 2026-10-09), one `web` Basic dyno, `heroku-postgresql` `essential-0`. Only the `herokuapp.com` domain is attached. Runbook phase: **1 (Test mode)**. |
+| Heroku providers       | Sharetribe Test credentials, `pk_test_…`, eShip QA base URL.                                                                                                                                                    |
+| Heroku guarded flags   | All seven explicitly `false`. Notifications, manual labels, and welcome email have **not** yet been exercised on Heroku.                                                                                        |
+| Server tests           | 54 suites / 654 tests pass.                                                                                                                                                                                     |
+| Client tests           | 180 suites / 1920 tests pass with `CI=true`; a single early failure did not recur in eight later full runs (§2.3).                                                                                              |
+| `config-check`         | Passes.                                                                                                                                                                                                         |
+| `env-template-check`   | Passes.                                                                                                                                                                                                         |
+| `av-translation-check` | Passes (336 symmetric keys).                                                                                                                                                                                    |
+| `format-ci`            | Passes (the earlier 43 failures were a stale local `node_modules`).                                                                                                                                             |
+| `yarn audit`           | Was 1 critical, 35 high, 48 moderate, 6 low; after the 2026-10-09 upgrade 0 critical, 1 high (install-time only), 10 moderate (§2.2).                                                                           |
+| Upstream               | Fork is based on v12.1.0; `upstream/main` is v12.4.0 + 126 commits. Merge decided for **after launch** (see [pending README](README.md)).                                                                       |
+| CI                     | No CI pipeline exists (`.github/` has only issue templates). Every gate is run by hand.                                                                                                                         |
 
 ## 2. Blockers — fix before the Heroku Test gate
 
@@ -62,38 +62,25 @@ on 5.2.1, and `@babel/runtime` on 7.29.7, because their newest releases were und
 - `braces` (high, no patched release) reaches production only through `patch-package`, which runs at
   install time. Nothing to do until upstream publishes a fix.
 - Seven `@opentelemetry/*` packages (moderate) come from `@sentry/node` 10. The fix is Sentry 11, a
-  major upgrade that upstream v12.4.0 already made; take it with the upstream merge (§2.4) rather
-  than separately.
+  major upgrade that upstream v12.4.0 already made; take it with the post-launch upstream merge (see
+  [pending README](README.md)) rather than separately.
 
-- [ ] Run one real bulk import (ZIP and bare CSV) on staging before the Heroku Test gate, since
-      `multer`, `adm-zip`, and `csv-parse` all changed major/minor versions on the upload path.
+The upgraded upload path (`multer`, `adm-zip`, `csv-parse`) was confirmed on 2026-10-09 with a real
+ZIP and a bare-CSV import on the Heroku Test-mode app.
 
 ### 2.3 Repository gates
 
-- [ ] Fix the 43 Prettier failures (`yarn format`, review, commit) so `yarn format-ci` passes.
-- [ ] Identify and fix the flaky client test (one failure in three full runs; it did not reproduce).
-- [ ] Do **not** commit the local `.env.test` change: it adds `REACT_APP_STRIPE_PUBLISHABLE_KEY` to
-      a tracked file. Move it to the gitignored `.env.test.local`. While there, remove the
-      `REACT_APP_BREVO_API_KEY`/`REACT_APP_BREVO_LIST_ID` lines from `.env.test`; they are names
-      `scripts/check-env-template.js` forbids in `.env-template`.
+Closed on 2026-10-09: `yarn format-ci` passes (the 43 failures came from a stale local
+`node_modules`, not the repository); the one-off client failure did not recur in eight full runs and
+coincided with a still-running watch-mode Jest, so it is treated as contention; and `.env.test` no
+longer carries the Stripe key (it lives in `.env.test.local`) or the forbidden `REACT_APP_BREVO_*`
+names.
+
 - [ ] Decide the untracked files: `docs/pending/listings-sheet-proposal.md` (+ two PDFs), and
       `docs/reference/{email,marketplace}-texts-es_OLD.json`. Commit the proposal if it is to be
       tracked; Git history already archives the old text references, so delete the `_OLD` copies.
-- [ ] Merge `pre-release` into `main` through a reviewed PR and deploy the release from that merge.
-
-### 2.4 Upstream v12.4.0
-
-Upstream moved from v12.1.0 to v12.4.0 since the last merge. The process logic AV pushes is
-unchanged; the relevant upstream fixes are `user.duck` hardening (login-as, `currentUser`
-population), checkout speculation for inquiry, sitemap empty-detection, imgix in CSP, Sentry 11, and
-Spanish/English Email-text corrections.
-
-- [ ] Decide: merge v12.4.0 into a branch and validate on Render **before** freezing the release
-      candidate, or freeze now and merge after launch. Recommendation: freeze now; merging after
-      launch avoids re-running the full Test matrix, and none of the upstream fixes is a launch
-      blocker for a product-only marketplace.
-- [ ] If frozen, still apply the upstream Email-text wording fixes when pasting Live Email texts
-      (§3).
+- [ ] Push `pre-release` to `origin`, review and merge PR #111 into `main`, and deploy the release
+      from that merge.
 
 ## 3. Sharetribe Live environment
 
@@ -125,8 +112,10 @@ move.
       after re-reconciling it against the current Test asset (the reference dates from 2026-08-14).
 - [ ] Email texts: paste [`email-texts-es.json`](../reference/email-texts-es.json), including the 20
       AV-only keys (`PurchaseShippingReminderFinal.*`, `PurchaseOrderDisputedCustomer.*`,
-      `PurchaseOrderInTransitCustomer.*`, `BookingMoneyPaid.*`). Send previews with
-      `flex-cli notifications send` for each purchase template.
+      `PurchaseOrderInTransitCustomer.*`, `BookingMoneyPaid.*`). Fold in upstream v12.4.0's
+      Spanish/English Email-text corrections first — the code merge waits until after launch, but
+      Live texts are pasted once. Send previews with `flex-cli notifications send` for each purchase
+      template.
 - [ ] Content pages: landing, about, **terms of service**, **privacy policy** (must cover Brevo
       marketing consent, Stripe, eShip address sharing), footer, top bar, and any CMS pages.
       Re-enter the PageBuilder section tokens and listing/user UUIDs used by AV sections — Test
