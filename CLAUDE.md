@@ -41,7 +41,8 @@ yarn run translate                         # Translation management
 yarn av-translation-check                  # en_av.json / es_av.json key symmetry
 ```
 
-**Node:** `^22.22.0 || >=24.0.0` | **Package manager:** Yarn
+**Node:** `24.x` (pinned for Heroku, which warns on and caps upstream's wide `^22.22.0 || >=24.0.0`;
+re-apply on upstream syncs) | **Package manager:** Yarn
 
 ## Architecture
 

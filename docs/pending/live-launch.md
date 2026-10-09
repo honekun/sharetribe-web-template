@@ -210,8 +210,9 @@ Known missing: the hosted Brevo templates.
 
 ## 9. Documentation drift found in this review
 
-- `CLAUDE.md` listed Node `>=18.20.1 <23.2.0`; `package.json` requires `^22.22.0 || >=24.0.0`.
-  Corrected.
+- `CLAUDE.md` listed Node `>=18.20.1 <23.2.0`. Corrected; `engines.node` is now pinned to `24.x`
+  because Heroku warns on upstream's wide `^22.22.0 || >=24.0.0` range and caps it at the active LTS
+  anyway.
 - The release checklist and runbook ran `yarn test-ci` without `CI=true`. Locally that leaves the
   client half in Jest watch mode, which only runs tests for changed files and never exits — the
   1,918 client tests were silently skipped. Corrected to `CI=true yarn test-ci`, and `format-ci` /
