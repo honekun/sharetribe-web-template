@@ -18,7 +18,7 @@ Brevo hosted templates are a known missing piece and are tracked in §6.
 | Release branch         | `pre-release` is deployed to Heroku. `origin/main` is 46 commits behind it; PR #111 (`pre-release` → `main`) is open and is the release merge.                                                                  |
 | Heroku app             | `archivo-vintach-marketplace`, stack `heroku-26` (upgraded 2026-10-09), one `web` Basic dyno, `heroku-postgresql` `essential-0`. Only the `herokuapp.com` domain is attached. Runbook phase: **1 (Test mode)**. |
 | Heroku providers       | Sharetribe Test credentials, `pk_test_…`, eShip QA base URL.                                                                                                                                                    |
-| Heroku guarded flags   | All seven explicitly `false`. Notifications, manual labels, and welcome email have **not** yet been exercised on Heroku.                                                                                        |
+| Heroku guarded flags   | `AV_SHIPPING_LABELS_ENABLED=true` (2026-10-09, after migrations 001–009); the other six explicitly `false`. Welcome email has not been exercised on Heroku.                                                     |
 | Server tests           | 54 suites / 654 tests pass.                                                                                                                                                                                     |
 | Client tests           | 180 suites / 1920 tests pass with `CI=true`; a single early failure did not recur in eight later full runs (§2.3).                                                                                              |
 | `config-check`         | Passes.                                                                                                                                                                                                         |
@@ -193,20 +193,45 @@ Remaining (Console or owner actions):
 
 ## 4. Stripe
 
+Checked in code on 2026-10-09: Mexico is a supported Connect country (`configStripe.js`, `MXN`),
+payout onboarding defaults to `MX` (`configAV.defaultCountry`), Test localization is `MXN`, and
+Heroku still carries `pk_test_…` as it should until cutover. The earnings estimator for `av-listing`
+(stock-managed products, `EditListingPricingAndStockForm`) shows only the 22 % + \$15 commission and
+never deducts a Stripe fee — correct, because the platform pays Stripe out of its commission. The
+US-style `REACT_APP_STRIPE_FEE_*` defaults reach only the unused booking form.
+
 - [ ] Stripe platform account fully activated for live payments in Mexico (business details, bank
       account, Connect platform profile and branding).
 - [ ] Live secret key entered in Sharetribe **Live** Console; `pk_live_…` set on Heroku only at
       cutover.
 - [ ] Connect onboarding tested with a real MX seller and the payout schedule confirmed.
+- [ ] Finance confirms platform margin per sale covers Stripe's Mexico processing fee on the full
+      charge, shipping included (the platform, not the seller, pays it).
 - [ ] Confirm the Stripe API version Sharetribe Live uses (`flex-cli stripe update-version` only if
       Sharetribe asks).
 
 ## 5. eShip
 
+Checked on 2026-10-09:
+
+- QA still identifies a quotation by `object_id` (no `quot_id`) and each rate by `rate_id`; a CDMX →
+  Guadalajara quote through `server/api-util/eshipClient.js` returned four Estafeta/FedEx rates.
+- The production base URL `https://api.myeship.co/rest` is live (`POST /quotation` without a key
+  returns `401`).
+- Heroku's Test database had **never been migrated** (`readiness.database.migrated: false`), so the
+  label and tracking tables did not exist. Migrations 001–009 were run and
+  `AV_SHIPPING_LABELS_ENABLED=true` set; readiness is `200` with one poller leader and no poll
+  errors. `ESHIP_LABEL_AUTOBUY` stays `false`, so **Generar guía → Descargar guía** can now be
+  tested against QA.
+
+Remaining:
+
+- [ ] Test **Generar guía → Descargar guía** on Heroku against QA with a paid test order.
 - [ ] Production API key and `ESHIP_BASE_URL=https://api.myeship.co/rest`; `ESHIP_API_DEBUG` unset.
+- [ ] Re-run the quote check with the production key and confirm `object_id`/`rate_id` and real
+      (non-`TEST`) rates.
 - [ ] eShip production wallet funded; billing owner named.
-- [ ] Re-confirm on production that `/quotation` and `/shipment` still identify objects by
-      `object_id` (verified on QA only, 2026-07-20).
+- [ ] Confirm the buyer markup: `ESHIP_MARKUP_PCT` is unset, so the code default **18 %** applies.
 - [ ] Every launch seller has a complete shipping origin (`/account/shipping-origin`).
 - [ ] New production `ESHIP_WEBHOOK_SECRET`; production dashboard webhook with the
       `X-AV-Webhook-Secret` header — only after `AV_ESHIP_TRACKING_EMAILS_ENABLED=true`.
@@ -234,10 +259,8 @@ Known missing: the hosted Brevo templates.
 
 ## 7. Heroku and domain
 
-- [ ] Run the Heroku Test gate in full (release checklist §2) — flags are still all `false`, so
-      migrations, readiness, poller leadership, welcome email, and manual labels are unverified on
-      Heroku.
-- [ ] `heroku run yarn db:migrate` (migrations 001–009) and `GET /api/notifications/readiness`.
+- [ ] Run the Heroku Test gate in full (release checklist §2). Migrations, readiness, and poller
+      leadership are verified (2026-10-09, §5); welcome email and the manual label flow are not yet.
 - [ ] Dyno size: Basic is 512 MB. Measure memory during a maximum-size bulk import; move to
       Standard-2X if it approaches the limit.
 - [ ] PostgreSQL `essential-0`: confirm `pg:backups:capture` works on this plan **before** the

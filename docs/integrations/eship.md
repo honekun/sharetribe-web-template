@@ -303,6 +303,9 @@ tracked in [pending eShip policy](../pending/eship.md).
 
 ## 8. Verified API shapes (apiqa, 2026-07-20)
 
+The `/quotation` shape (`object_id`, no `quot_id`; `rate_id` per rate) was re-checked on apiqa on
+2026-10-09. Production has not been checked yet.
+
 Confirmed live against `apiqa` — **the object identifier is `object_id` in both responses; there is
 no `quot_id` or `shipment_id`.**
 

@@ -354,7 +354,7 @@ skips `failed`). **Manual retry:** provider-only `POST /api/shipping/label { tra
 Client: `TransactionPage/AVShippingLabelMaybe/` — `AVShippingLabelSection` (local-state wrapper,
 POSTs + prefers the returned `avLabel`) + `AVShippingLabelMaybe` (3-state: Descargar guía / Generar
 guía / hidden for especial); rendered provider-only via a `shippingLabelSlot` prop threaded through
-`TransactionPanel`. **Verified on apiqa** (2026-07-20): `/quotation` and `/shipment` both identify
+`TransactionPanel`. **Verified on apiqa** (2026-07-20, quotation re-checked 2026-10-09): `/quotation` and `/shipment` both identify
 their object via **`object_id`** (there is **no** `quot_id`/`shipment_id`) — `shippingQuoteService`
 captures the quotation `object_id` as `quot_id`, `shipmentService` maps the shipment `object_id` to
 `shipmentId`. `/shipment` needs only the rate's `rate_id` (the `quot_id` is traceability-only).
