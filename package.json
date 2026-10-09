@@ -221,6 +221,7 @@
     "clean": "rm -rf build/*",
     "config": "node scripts/config.js",
     "config-check": "node scripts/config.js --check",
+    "config:compare": "node scripts/compare-hosted-config.js",
     "db:down": "docker compose down",
     "db:migrate": "node scripts/migrate-notification-db.js",
     "db:setup": "docker compose up -d --wait postgres && cross-env DATABASE_URL=postgresql://archivo_vintach:archivo_vintach_dev@localhost:5432/archivo_vintach yarn run db:migrate",
