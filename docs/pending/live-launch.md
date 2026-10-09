@@ -15,7 +15,7 @@ Brevo hosted templates are a known missing piece and are tracked in §6.
 
 | Area                   | State on 2026-10-09                                                                                                                                                                                                                                                             |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Release branch         | `pre-release` is deployed to Heroku. `origin/main` is 46 commits behind it; PR #111 (`pre-release` → `main`) is open and is the release merge.                                                                                                                                  |
+| Release branch         | `pre-release` is deployed to Heroku. `origin/main` is 62 commits behind it; PR #111 (`pre-release` → `main`) is open and is the release merge.                                                                                                                                  |
 | Heroku app             | `archivo-vintach-marketplace`, stack `heroku-26`, one `web` Basic dyno (idle 224 MB / 512 MB), `heroku-postgresql` `essential-0` with daily backups. `www.archivovintach.com` and `archivovintach.com` attached, ACM on, DNS not yet pointed. Runbook phase: **1 (Test mode)**. |
 | Heroku providers       | Sharetribe Test credentials, `pk_test_…`, eShip QA base URL.                                                                                                                                                                                                                    |
 | Heroku guarded flags   | `AV_SHIPPING_LABELS_ENABLED=true` (2026-10-09, after migrations 001–009); the other six explicitly `false`. Welcome email has not been exercised on Heroku.                                                                                                                     |
@@ -96,11 +96,10 @@ Closed on 2026-10-09: `yarn format-ci` passes (the 43 failures came from a stale
 `node_modules`, not the repository); the one-off client failure did not recur in eight full runs and
 coincided with a still-running watch-mode Jest, so it is treated as contention; and `.env.test` no
 longer carries the Stripe key (it lives in `.env.test.local`) or the forbidden `REACT_APP_BREVO_*`
-names.
+names. The listings-sheet proposal is committed, and the untracked
+`docs/reference/{email,marketplace}-texts-es_OLD.json` copies were deleted (both are byte-identical
+to blobs already in Git history). PR #111 is renamed "Release: pre-release → main".
 
-- [ ] Decide the untracked files: `docs/pending/listings-sheet-proposal.md` (+ two PDFs), and
-      `docs/reference/{email,marketplace}-texts-es_OLD.json`. Commit the proposal if it is to be
-      tracked; Git history already archives the old text references, so delete the `_OLD` copies.
 - [ ] Push `pre-release` to `origin`, review and merge PR #111 into `main`, and deploy the release
       from that merge.
 
