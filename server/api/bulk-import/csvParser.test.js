@@ -120,6 +120,28 @@ describe('validateRows', () => {
     expect(result.valid).toBe(false);
   });
 
+  // --- Minimum listing price (the same floor the listing form enforces) ---
+
+  it('rejects a price below the minimum listing price', () => {
+    const result = validateRows([validRow({ price: '$19.99' })], imageMap, {
+      minimumPriceSubunits: 2000,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/"price" debe ser al menos \$20\.00, se recibió "\$19\.99"/);
+  });
+
+  it('accepts a price exactly at the minimum listing price', () => {
+    const result = validateRows([validRow({ price: '20' })], imageMap, {
+      minimumPriceSubunits: 2000,
+    });
+    expect(result.valid).toBe(true);
+  });
+
+  it('applies no minimum when none is given', () => {
+    const result = validateRows([validRow({ price: '1' })], imageMap);
+    expect(result.valid).toBe(true);
+  });
+
   it('rejects image reference not in imageMap', () => {
     const result = validateRows(
       [

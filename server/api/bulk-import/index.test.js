@@ -13,11 +13,16 @@ jest.mock('../../api-util/sdk', () => ({
   getSdk: jest.fn(),
 }));
 
+jest.mock('../../api-util/listingMinimumPrice', () => ({
+  resolveListingMinimumPrice: jest.fn(() => Promise.resolve(2000)),
+}));
+
 const { processImportJob } = require('./importWorker');
 const { extractZip } = require('./zipExtractor');
 const { parseCsv, validateRows } = require('./csvParser');
 const { createJob, getJob, _test: jobStoreTest } = require('./jobStore');
 const { getSdk } = require('../../api-util/sdk');
+const { resolveListingMinimumPrice } = require('../../api-util/listingMinimumPrice');
 const router = require('./index');
 const { _test: authTest } = require('./auth');
 const { _test: rateLimiterTest } = require('./rateLimiter');
@@ -106,19 +111,42 @@ describe('bulk import router', () => {
     process.env = ORIGINAL_ENV;
   });
 
-  it('starts a valid import job', () => {
+  it('starts a valid import job', async () => {
     const req = {
       file: { buffer: Buffer.from('fake-zip') },
       bulkImportUser: { userId: 'operator-user-id', isAdmin: true },
     };
     const res = createMockRes();
 
-    startHandler(req, res);
+    await startHandler(req, res);
 
     expect(res.statusCode).toBe(202);
     expect(res.body.jobId).toBeDefined();
     expect(res.body.total).toBe(1);
     expect(processImportJob).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects rows priced below the Console minimum listing price', async () => {
+    // A listing below the minimum is one the listing form would refuse, and one
+    // whose sale cannot cover the provider fixed fee.
+    resolveListingMinimumPrice.mockResolvedValueOnce(50000);
+    const sdk = { assetsByAlias: jest.fn() };
+    getSdk.mockReturnValue(sdk);
+    extractZip.mockReturnValue({ csvBuffer: validCsvBuffer, imageMap: defaultImageMap });
+    const req = {
+      file: { buffer: Buffer.from('fake-zip') },
+      bulkImportUser: { userId: 'operator-user-id', isAdmin: true },
+    };
+    const res = createMockRes();
+
+    await startHandler(req, res);
+
+    expect(resolveListingMinimumPrice).toHaveBeenCalledWith(sdk);
+    expect(res.statusCode).toBe(400);
+    expect(res.body.details).toEqual([
+      'Fila 1: "price" debe ser al menos $500.00, se recibió "450.00".',
+    ]);
+    expect(processImportJob).not.toHaveBeenCalled();
   });
 
   describe('bare CSV upload', () => {
@@ -129,14 +157,14 @@ describe('bulk import router', () => {
       mimetype: 'text/csv',
     });
 
-    it('starts a job from a CSV alone, with every row on the placeholder', () => {
+    it('starts a job from a CSV alone, with every row on the placeholder', async () => {
       const req = {
         file: csvFile(validCsvBuffer),
         bulkImportUser: { userId: 'operator-user-id', isAdmin: true },
       };
       const res = createMockRes();
 
-      startHandler(req, res);
+      await startHandler(req, res);
 
       expect(res.statusCode).toBe(202);
       expect(res.body.total).toBe(1);
@@ -151,35 +179,35 @@ describe('bulk import router', () => {
       expect(rows[0].imageSlots).toEqual({});
     });
 
-    it('rejects a CSV over the 5 MB cap', () => {
+    it('rejects a CSV over the 5 MB cap', async () => {
       const req = {
         file: csvFile(Buffer.alloc(5 * 1024 * 1024 + 1, 'a')),
         bulkImportUser: { userId: 'operator-user-id', isAdmin: true },
       };
       const res = createMockRes();
 
-      startHandler(req, res);
+      await startHandler(req, res);
 
       expect(res.statusCode).toBe(400);
       expect(res.body.error).toMatch(/5 MB/);
       expect(processImportJob).not.toHaveBeenCalled();
     });
 
-    it('rejects an empty CSV', () => {
+    it('rejects an empty CSV', async () => {
       const req = {
         file: csvFile(Buffer.alloc(0)),
         bulkImportUser: { userId: 'operator-user-id', isAdmin: true },
       };
       const res = createMockRes();
 
-      startHandler(req, res);
+      await startHandler(req, res);
 
       expect(res.statusCode).toBe(400);
       expect(res.body.error).toMatch(/vacío/);
       expect(processImportJob).not.toHaveBeenCalled();
     });
 
-    it('still enforces the per-tier row cap on a CSV upload', () => {
+    it('still enforces the per-tier row cap on a CSV upload', async () => {
       const header = 'title,description,price';
       const rows = Array.from({ length: 26 }, (_, i) => `"Item ${i}","Descripción","100.00"`);
       const req = {
@@ -189,7 +217,7 @@ describe('bulk import router', () => {
       };
       const res = createMockRes();
 
-      startHandler(req, res);
+      await startHandler(req, res);
 
       expect(res.statusCode).toBe(400);
       expect(res.body.error).toMatch(/Tu límite es 25/);
@@ -293,17 +321,17 @@ describe('bulk import router', () => {
     expect(res.statusCode).toBe(200);
   });
 
-  it('returns 400 when zip file is missing', () => {
+  it('returns 400 when zip file is missing', async () => {
     const req = { file: null };
     const res = createMockRes();
 
-    startHandler(req, res);
+    await startHandler(req, res);
 
     expect(res.statusCode).toBe(400);
     expect(res.body.error).toMatch(/No se subió ningún archivo/);
   });
 
-  it('returns 400 when zipExtractor throws (e.g. corrupt archive or no CSV)', () => {
+  it('returns 400 when zipExtractor throws (e.g. corrupt archive or no CSV)', async () => {
     extractZip.mockImplementation(() => {
       throw new Error('El ZIP no contiene ningún archivo .csv.');
     });
@@ -314,7 +342,7 @@ describe('bulk import router', () => {
     };
     const res = createMockRes();
 
-    startHandler(req, res);
+    await startHandler(req, res);
 
     expect(res.statusCode).toBe(400);
     expect(res.body.error).toMatch(/no contiene ningún archivo .csv/);
@@ -322,7 +350,7 @@ describe('bulk import router', () => {
 
   it.each(['image_front', 'image_back', 'image_horizontal'])(
     'returns 400 when CSV references a %s filename not present in imageMap',
-    missingSlot => {
+    async missingSlot => {
       const slotFile = `${missingSlot.replace('image_', '')}.jpg`;
       const partialMap = new Map(defaultImageMap);
       partialMap.delete(slotFile);
@@ -334,7 +362,7 @@ describe('bulk import router', () => {
       };
       const res = createMockRes();
 
-      startHandler(req, res);
+      await startHandler(req, res);
 
       expect(res.statusCode).toBe(400);
       expect(res.body.details).toEqual(
@@ -345,7 +373,7 @@ describe('bulk import router', () => {
     }
   );
 
-  it('authors listings to the signed-in user when no user_id column is present', () => {
+  it('authors listings to the signed-in user when no user_id column is present', async () => {
     extractZip.mockReturnValue({ csvBuffer: validCsvBuffer, imageMap: defaultImageMap });
 
     const req = {
@@ -354,7 +382,7 @@ describe('bulk import router', () => {
     };
     const res = createMockRes();
 
-    startHandler(req, res);
+    await startHandler(req, res);
 
     expect(res.statusCode).toBe(202);
     const rows = processImportJob.mock.calls[0][1];
@@ -362,20 +390,20 @@ describe('bulk import router', () => {
   });
 
   describe('tiered limits', () => {
-    it('rejects a ZIP larger than the standard-tier byte cap', () => {
+    it('rejects a ZIP larger than the standard-tier byte cap', async () => {
       const req = {
         file: { buffer: Buffer.from('zip'), size: 30 * 1024 * 1024 }, // 30 MB > standard 20 MB
         bulkImportUser: { userId: 'seller-id', isAdmin: false },
       };
       const res = createMockRes();
 
-      startHandler(req, res);
+      await startHandler(req, res);
 
       expect(res.statusCode).toBe(400);
       expect(res.body.error).toMatch(/El ZIP supera tu límite de 20 MB/);
     });
 
-    it('allows admins a ZIP above the standard cap (up to the admin cap)', () => {
+    it('allows admins a ZIP above the standard cap (up to the admin cap)', async () => {
       extractZip.mockReturnValue({ csvBuffer: validCsvBuffer, imageMap: defaultImageMap });
       const req = {
         file: { buffer: Buffer.from('zip'), size: 30 * 1024 * 1024 }, // under admin 50 MB
@@ -383,12 +411,12 @@ describe('bulk import router', () => {
       };
       const res = createMockRes();
 
-      startHandler(req, res);
+      await startHandler(req, res);
 
       expect(res.statusCode).toBe(202);
     });
 
-    it('rejects more images than the standard-tier cap', () => {
+    it('rejects more images than the standard-tier cap', async () => {
       const bigMap = new Map(defaultImageMap);
       for (let i = 0; i < 100; i++) bigMap.set(`extra-${i}.jpg`, Buffer.from('x'));
       extractZip.mockReturnValue({ csvBuffer: validCsvBuffer, imageMap: bigMap });
@@ -399,13 +427,13 @@ describe('bulk import router', () => {
       };
       const res = createMockRes();
 
-      startHandler(req, res);
+      await startHandler(req, res);
 
       expect(res.statusCode).toBe(400);
       expect(res.body.error).toMatch(/Demasiadas imágenes/);
     });
 
-    it('rejects more rows than the standard-tier cap', () => {
+    it('rejects more rows than the standard-tier cap', async () => {
       const header =
         'title,description,price,currency,image_front,image_back,image_horizontal,image_details';
       const row =
@@ -419,14 +447,14 @@ describe('bulk import router', () => {
       };
       const res = createMockRes();
 
-      startHandler(req, res);
+      await startHandler(req, res);
 
       expect(res.statusCode).toBe(400);
       expect(res.body.error).toMatch(/Tu límite es 25/);
     });
   });
 
-  it('returns 429 when the user is over their hourly import cap', () => {
+  it('returns 429 when the user is over their hourly import cap', async () => {
     extractZip.mockReturnValue({ csvBuffer: validCsvBuffer, imageMap: defaultImageMap });
     // Pre-seed the standard tier's 3 allowed imports within the hour.
     const now = Date.now();
@@ -438,14 +466,14 @@ describe('bulk import router', () => {
     };
     const res = createMockRes();
 
-    startHandler(req, res);
+    await startHandler(req, res);
 
     expect(res.statusCode).toBe(429);
     expect(res.body.error).toMatch(/Demasiadas importaciones/);
     expect(processImportJob).not.toHaveBeenCalled();
   });
 
-  it('returns 409 when the same user already has an active job', () => {
+  it('returns 409 when the same user already has an active job', async () => {
     extractZip.mockReturnValue({ csvBuffer: validCsvBuffer, imageMap: defaultImageMap });
     createJob(1, 'seller-id'); // pre-existing in-progress job for this user
 
@@ -455,14 +483,14 @@ describe('bulk import router', () => {
     };
     const res = createMockRes();
 
-    startHandler(req, res);
+    await startHandler(req, res);
 
     expect(res.statusCode).toBe(409);
     expect(res.body.error).toMatch(/una importación en curso/);
     expect(processImportJob).not.toHaveBeenCalled();
   });
 
-  it('lets a different user start while another user has an active job', () => {
+  it('lets a different user start while another user has an active job', async () => {
     extractZip.mockReturnValue({ csvBuffer: validCsvBuffer, imageMap: defaultImageMap });
     createJob(1, 'other-user'); // someone else is importing
 
@@ -472,7 +500,7 @@ describe('bulk import router', () => {
     };
     const res = createMockRes();
 
-    startHandler(req, res);
+    await startHandler(req, res);
 
     expect(res.statusCode).toBe(202);
     // The new job is owned by the user who started it.
@@ -480,7 +508,7 @@ describe('bulk import router', () => {
     expect(getJob(newJobId).ownerId).toBe('seller-id');
   });
 
-  it('returns 503 when global concurrency is full', () => {
+  it('returns 503 when global concurrency is full', async () => {
     extractZip.mockReturnValue({ csvBuffer: validCsvBuffer, imageMap: defaultImageMap });
     // Fill the 3 global slots with other users' jobs.
     createJob(1, 'u1');
@@ -493,7 +521,7 @@ describe('bulk import router', () => {
     };
     const res = createMockRes();
 
-    startHandler(req, res);
+    await startHandler(req, res);
 
     expect(res.statusCode).toBe(503);
     expect(res.body.error).toMatch(/capacidad de importación está llena/);

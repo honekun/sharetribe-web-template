@@ -15,6 +15,8 @@ const { extractZip, MAX_CSV_BYTES } = require('./zipExtractor');
 const { authorizeAction, requireActionToken, requireUserSession } = require('./auth');
 const { getLimits } = require('./limits');
 const { checkAndRecord } = require('./rateLimiter');
+const { getSdk } = require('../../api-util/sdk');
+const { resolveListingMinimumPrice } = require('../../api-util/listingMinimumPrice');
 
 const router = express.Router();
 
@@ -89,7 +91,7 @@ const uploadZip = (req, res, next) => {
 router.post('/authorize', requireUserSession, authorizeAction);
 
 // POST /api/bulk-import/start
-router.post('/start', requireUserSession, requireActionToken, uploadZip, (req, res) => {
+router.post('/start', requireUserSession, requireActionToken, uploadZip, async (req, res) => {
   try {
     // Validate ZIP file was uploaded
     if (!req.file) {
@@ -155,6 +157,12 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, (req, r
       });
     }
 
+    // The listing form refuses a price below the Console minimum; an import must
+    // too, or it publishes listings whose sale cannot cover the provider fixed
+    // fee. Resolved before the job checks below, which stay synchronous so the
+    // one-job-per-user check and createJob cannot interleave with another request.
+    const minimumPriceSubunits = await resolveListingMinimumPrice(getSdk(req, res));
+
     // Validate rows against imageMap. Listings author to the signed-in user;
     // admins (req.bulkImportUser.isAdmin) may override per row via `user_id`.
     // headerMap lets validation errors name the operator's real CSV columns.
@@ -165,6 +173,7 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, (req, r
       // A CSV-only upload has no images to resolve, so any filename it names is
       // dropped rather than reported as missing.
       ignoreImages: isCsvUpload,
+      minimumPriceSubunits,
     });
     if (!validation.valid) {
       return res.status(400).json({

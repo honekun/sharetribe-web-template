@@ -157,6 +157,10 @@ function parseCsv(buffer) {
  * all: a filename the operator typed cannot be resolved either way, so it is
  * discarded rather than reported as missing.
  *
+ * minimumPriceSubunits (default 0 = no floor) rejects a row priced below the
+ * marketplace minimum listing price, the same floor the listing form enforces.
+ * The caller resolves it from Console (api-util/listingMinimumPrice).
+ *
  * Returns { valid: boolean, rows: Array, errors: Array<string> }
  */
 function validateRows(rows, imageMap, authorOptions = {}) {
@@ -165,6 +169,7 @@ function validateRows(rows, imageMap, authorOptions = {}) {
     allowAuthorOverride = false,
     headerMap = {},
     ignoreImages = false,
+    minimumPriceSubunits = 0,
   } = authorOptions;
   // Show the operator the actual CSV column header they typed rather than the
   // internal canonical key.
@@ -210,6 +215,14 @@ function validateRows(rows, imageMap, authorOptions = {}) {
     if (isNaN(price) || price <= 0) {
       rowErrors.push(
         `Fila ${rowNum}: "${label('price')}" debe ser un número positivo, se recibió "${
+          row.price
+        }".`
+      );
+    } else if (Math.round(price * 100) < minimumPriceSubunits) {
+      // Same subunit conversion the import worker uses for the listing price.
+      const minimum = (minimumPriceSubunits / 100).toFixed(2);
+      rowErrors.push(
+        `Fila ${rowNum}: "${label('price')}" debe ser al menos $${minimum}, se recibió "${
           row.price
         }".`
       );

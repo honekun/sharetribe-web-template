@@ -30,7 +30,9 @@ const defaultConfig = {
   // Note 1: 0 means no restriction to the price (Currently, Console won't show it.)
   // Note 2: To use only this built-in configuration, you need to remove the overwrite from configHelper.js (mergeConfig func)
   // Note 3: Stripe does have a minimum fee that depends on country, currency, etc!
-  listingMinimumPriceSubUnits: 500,
+  // AV: $20.00 MXN. listingMinimumPrice x (1 - commission%/100) must cover the provider fixed fee,
+  // or a sale at the minimum earns less than the fee. See src/config/commissionInvariant.test.js.
+  listingMinimumPriceSubUnits: 2000,
 
   // Marketplace name is needed for microcopy (aka marketplace texts) and in meta tags (bots and social media sharing reads those)
   marketplaceName: process.env.REACT_APP_MARKETPLACE_NAME || '[Marketplace Name]',
