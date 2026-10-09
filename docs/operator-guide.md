@@ -1503,6 +1503,7 @@ This is the "missing values" check. It runs in two stages.
 | `title`                         | Not empty.                                                                                                         |
 | `description`                   | Not empty.                                                                                                         |
 | `price`                         | Reads as a **positive** number. A `$` sign and thousands separators are fine; `0`, negatives, and text are not.    |
+| `price` (minimum)               | At least the marketplace **minimum listing price** (Console; \$20.00 by default), the floor the listing form uses. |
 | Image columns                   | None are required. A row that leaves all four blank is imported with the placeholder image.                       |
 | Image filenames                 | Every filename referenced in the row **exists in the ZIP**. A typo or wrong extension fails here.                  |
 | `pub_*` keys                    | A `pub_*`/`pd_*` column does not use a reserved name (`__proto__`, `constructor`, `prototype`).                    |
@@ -1710,10 +1711,18 @@ this up per environment; the test and production marketplaces use different secr
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | **Provider commission percentage** | The marketplace fee percentage charged to sellers. Shown in the earnings estimator when sellers set a price. Default: 10% |
 | **Stripe fee percentage**          | The Stripe processing fee percentage. Default: 2.9%                                                                       |
-| **Stripe fixed fee**               | The fixed Stripe fee per transaction in centavos. Default: 1500 (= MXN \$15.00)                                           |
+| **Stripe fixed fee**               | The fixed Stripe fee per transaction in centavos. Default: 30 (= MXN \$0.30)                                              |
+| **Provider fixed fee**             | Fixed fee in centavos charged to the seller on every sale, on top of the percentage. Production: 1500 (= MXN \$15.00)     |
 
 These values are used to show sellers an estimate of their net earnings while creating a listing.
 The actual fees charged are configured separately in Console → Build → Transactions.
+
+**Minimum listing price.** Console → Build → Transactions → Minimum transaction size must leave room
+for the provider fixed fee: at 10 % plus \$15.00 that is at least \$16.67, and Archivo Vintach uses
+**\$20.00** in both Test and Live. The listing form and bulk import both refuse prices below it. If
+the minimum is ever set too low, a sale still completes, but the fixed fee is reduced to whatever is
+left after the percentage (down to zero) and the server logs `Provider fixed fee clamped`. Raising
+the commission percentage or the fixed fee means raising the minimum too.
 
 ---
 

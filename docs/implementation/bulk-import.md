@@ -169,7 +169,7 @@ BULK_IMPORT_UNIT_TYPE=item
 | ------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `title`       | string | Listing title. Cannot be empty.                                                                                                                                                                                                                     |
 | `description` | string | Listing description. Cannot be empty.                                                                                                                                                                                                               |
-| `price`       | number | Price in major currency units (e.g., `450.00` for 450 MXN). Must be positive. A leading currency token and thousands separators are stripped automatically, so `$4,500.00` → `4500` and `$99.50` → `99.5` (the remaining `.` is the decimal point). |
+| `price`       | number | Price in major currency units (e.g., `450.00` for 450 MXN). Must be positive and at least the Console minimum listing price (`/transactions/minimum-transaction-size.json`, read by `server/api-util/listingMinimumPrice.js`; falls back to `2000` subunits like the client). A leading currency token and thousands separators are stripped automatically, so `$4,500.00` → `4500` and `$99.50` → `99.5` (the remaining `.` is the decimal point). |
 
 ### Optional Core Columns
 
@@ -406,8 +406,8 @@ the filenames resolved.
   path traversal, too many entries, empty CSV)
 - `400` — Bare CSV over 5 MB, or empty
 - `400` — CSV validation failed; `details` array lists all per-row and per-column errors (missing
-  required columns, empty required fields, invalid price, image filename not found in ZIP, invalid
-  geolocation)
+  required columns, empty required fields, invalid price or one below the minimum listing price, image
+  filename not found in ZIP, invalid geolocation)
 - `400` — A non-admin upload set a `user_id` column (author override is admin-only)
 - `400` — Over a per-tier limit (ZIP bytes, image count, or row count exceeds your tier — see
   [Limits](#limits))

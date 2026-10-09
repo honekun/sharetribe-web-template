@@ -1,5 +1,8 @@
 # Per-Seller Provider Commission Override Implementation Plan
 
+> **Status: deferred until after launch (2026-10-09).** Only Task 3 (the fixed-fee clamp) has
+> shipped, as a standalone launch fix. Tracked in [`docs/pending/README.md`](../../pending/README.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Let AV charge specific sellers a negotiated provider commission percentage, stored in an AV-owned database table, falling back to the marketplace-wide rate when no override exists.
@@ -676,6 +679,10 @@ git commit -m "feat(commission): add per-seller commission resolver with determi
 
 Two changes to one function. Both are marketplace-wide, not override-specific: the clamp fixes a pre-existing defect where listings priced under `fixedFee / (1 - pct/100)` fail at payment time on today's ordinary 10% rate.
 
+> **Done 2026-10-09** as a standalone launch fix (Steps 1–6). The tests load the module through
+> `jest.isolateModules` with `REACT_APP_PROVIDER_COMMISSION_FIXED_FEE=1500`, because the fee is read
+> at module load and is unset in the test environment; the snippets below assumed it was set.
+
 **Files:**
 - Modify: `server/api-util/lineItemHelpers.js:351-419` (`getProviderCommissionMaybe` only)
 - Test: `server/api-util/lineItemHelpers.test.js` (extend)
@@ -684,7 +691,7 @@ Two changes to one function. Both are marketplace-wide, not override-specific: t
 - Consumes: nothing from earlier tasks (independent — can be done in parallel with Tasks 1–2)
 - Produces: no new exports. `getProviderCommissionMaybe(providerCommission, order, currency)` keeps its signature; only its behaviour at 0% and at overflow changes.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `server/api-util/lineItemHelpers.test.js`. Match the existing file's import style and `Money` construction.
 
@@ -766,12 +773,12 @@ describe('getProviderCommissionMaybe — fixed fee clamping', () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `yarn test-server -- --testPathPattern=lineItemHelpers`
 Expected: FAIL — the 0% cases return `[]`, and the clamp cases throw `Total provider commission (percentage + fixed fee) exceeds the order total`
 
-- [ ] **Step 3: Apply the explicit-zero change**
+- [x] **Step 3: Apply the explicit-zero change**
 
 In `server/api-util/lineItemHelpers.js`, replace the early return at line 356:
 
@@ -811,7 +818,7 @@ Then make the percentage line item conditional, so a `-0%` row is never emitted.
     : [];
 ```
 
-- [ ] **Step 4: Apply the clamp change**
+- [x] **Step 4: Apply the clamp change**
 
 Replace the whole `if (PROVIDER_COMMISSION_FIXED_FEE > 0) { ... }` block:
 
@@ -847,12 +854,12 @@ Replace the whole `if (PROVIDER_COMMISSION_FIXED_FEE > 0) { ... }` block:
   }
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `yarn test-server -- --testPathPattern=lineItemHelpers`
 Expected: PASS
 
-- [ ] **Step 6: Verify the line-item core is untouched**
+- [x] **Step 6: Verify the line-item core is untouched**
 
 Run: `yarn test-server -- --testPathPattern=lineItems`
 Expected: PASS with no edits to `lineItems.js` — this passing unchanged is the signal that the change stayed inside `getProviderCommissionMaybe`.
@@ -869,6 +876,14 @@ git commit -m "fix(commission): charge fixed fee at 0% and clamp it instead of t
 ### Task 4: Raise the minimum listing price and assert the invariant
 
 The clamp handles overflow at checkout; this prevents most of it from arising. The test fails the build if the ceiling, the fee, or the minimum price ever move independently.
+
+> **Partly superseded 2026-10-09.** The launch fix shipped without the override: the code fallback
+> is `2000` (\$20.00, sized for the marketplace-wide 10 %), and `src/config/commissionInvariant.test.js`
+> checks it against `earningsEstimate.providerCommissionPercentage`, not the 75 % ceiling. The
+> server reader is `server/api-util/listingMinimumPrice.js` exporting `resolveListingMinimumPrice(sdk)`,
+> which falls back to the code default instead of throwing, and is used by bulk import. If this
+> feature resumes, re-raise the fallback and Console minimum to `6000`, switch the invariant test to
+> `MAX_PROVIDER_COMMISSION_PERCENTAGE`, and build the boot check and CLI on that reader.
 
 **Files:**
 - Modify: `src/config/configDefault.js:33`

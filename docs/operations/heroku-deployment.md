@@ -83,7 +83,9 @@ heroku auth:whoami
 From a clean reviewed branch:
 
 ```sh
-yarn test-ci
+CI=true yarn test-ci
+yarn format-ci
+yarn av-translation-check
 yarn run config-check
 yarn run env-template-check
 yarn run build

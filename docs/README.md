@@ -48,6 +48,7 @@ archive.
 Start with the [pending-work index](pending/README.md). It contains actionable open topics and the
 explicitly retained future-use record:
 
+- [Live launch readiness](pending/live-launch.md)
 - [WhatsApp and notification hardening](pending/notifications.md)
 - [Bidding and offer-acceptance research](pending/bidding.md)
 - [eShip policy and reconciliation](pending/eship.md)

@@ -1,9 +1,10 @@
 # Production release checklist
 
-Use this go/no-go checklist with the [approved Heroku runbook](heroku-deployment.md). For the
-initial launch, one Heroku app is tested against Sharetribe **Test**, Stripe test mode, and eShip
-QA, then converted in place to **Live**. The app, dyno formation, and PostgreSQL add-on are reused;
-the Test database contents and build artifact are not.
+Close the [Live launch readiness](../pending/live-launch.md) items first. Use this go/no-go
+checklist with the [approved Heroku runbook](heroku-deployment.md). For the initial launch, one
+Heroku app is tested against Sharetribe **Test**, Stripe test mode, and eShip QA, then converted in
+place to **Live**. The app, dyno formation, and PostgreSQL add-on are reused; the Test database
+contents and build artifact are not.
 
 After launch, Render/Test remains the permanent staging path and Heroku remains Live. Confirm the
 actual state in the [deployment record](deployment.md).
@@ -29,7 +30,9 @@ actual state in the [deployment record](deployment.md).
 - [ ] The reviewed release branch is merged and the worktree is clean.
 - [ ] Record the tested commit and Git tree hash. If an empty release commit is required to trigger
       the Live rebuild, require the same tree hash.
-- [ ] `yarn test-ci` passes.
+- [ ] `CI=true yarn test-ci` passes. Without `CI=true` the client half runs in Jest watch mode,
+      tests only changed files, and never exits.
+- [ ] `yarn format-ci` and `yarn av-translation-check` pass.
 - [ ] `yarn run config-check` passes.
 - [ ] `yarn run env-template-check` passes.
 - [ ] `yarn run build` passes.

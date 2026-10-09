@@ -5,10 +5,13 @@ explicitly requested future-use component record. Completed work belongs in the 
 implementation guides linked from [`docs/README.md`](../README.md), not in a historical archive
 inside `docs/`.
 
-Last reviewed: 2026-08-13.
+Last reviewed: 2026-10-09.
 
 ## Release and operations
 
+- Close the [Live launch readiness](live-launch.md) gaps first: missing Heroku production variables,
+  dependency advisories, repository gates, and the Sharetribe Live, Stripe, eShip, and Brevo setup
+  the release checklist assumes is already done.
 - Complete the [production release checklist](../operations/release-checklist.md). It is an
   operational checklist, so its unchecked environment steps remain in that runbook.
 - Synchronize the retained [Spanish shareable draft](../shareable/pending/operator-guide-es.html)
@@ -23,6 +26,12 @@ Last reviewed: 2026-08-13.
 
 ## Product and integration decisions
 
+- Per-seller provider commission override — **deferred until after launch** (decided 2026-10-09).
+  The approved [design](../superpowers/specs/2026-08-14-per-seller-commission-override-design.md)
+  and [plan](../superpowers/plans/2026-08-15-per-seller-commission-override.md) remain the starting
+  point; only plan Task 3 (fixed-fee clamp) shipped, as a launch fix. Before resuming, raise the
+  Console and code minimum listing price to `6000`, since overrides may reach 75 % (see the plan's
+  Task 4 note).
 - [WhatsApp hardening](notifications.md) — recipient direction, consent, Graph API version, delivery
   status, transition coverage, phone validation, and template governance. WhatsApp notifications are
   release-locked out of the first release; keep `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false` until the

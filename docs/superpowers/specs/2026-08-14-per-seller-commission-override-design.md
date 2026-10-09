@@ -1,5 +1,8 @@
 # Per-seller provider commission override
 
+> **Status: deferred until after launch (2026-10-09).** Only the fixed-fee clamp (plan Task 3) has
+> shipped, as a standalone launch fix; the launch minimum listing price is `2000`, not `6000`. Tracked in [`docs/pending/README.md`](../../pending/README.md).
+
 **Date:** 2026-08-14
 **Status:** Approved design, ready for implementation planning
 

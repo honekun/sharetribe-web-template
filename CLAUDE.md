@@ -41,7 +41,7 @@ yarn run translate                         # Translation management
 yarn av-translation-check                  # en_av.json / es_av.json key symmetry
 ```
 
-**Node:** `>=18.20.1 <23.2.0` | **Package manager:** Yarn
+**Node:** `^22.22.0 || >=24.0.0` | **Package manager:** Yarn
 
 ## Architecture
 
@@ -417,6 +417,13 @@ Integration credentials (`SHARETRIBE_INTEGRATION_CLIENT_ID/SECRET`) to read sell
   `bulk-import/csvParser.js` (which also normalises `$1,000.00` to a number, since the worker
   re-parses with `parseFloat`). Display still requires `originalPrice > price`, so a stored
   violation would silently never render.
+- **Minimum listing price / fixed fee** — the provider fixed fee
+  (`REACT_APP_PROVIDER_COMMISSION_FIXED_FEE`, 1500) is clamped in `getProviderCommissionMaybe` to
+  what the order has left after the percentage (logged, never thrown), so a cheap sale earns less
+  instead of failing checkout. The code fallback `listingMinimumPriceSubUnits` is `2000` and
+  `commissionInvariant.test.js` pins it against the rate and fee; Console's minimum overrides it.
+  Bulk import applies the same floor via `server/api-util/listingMinimumPrice.js`
+  (`resolveListingMinimumPrice`; its test keeps the fallback in step with `configDefault.js`).
 - **EarningsEstimator** — fee breakdown below price input (simple price only). Fees from
   `config.earningsEstimate` (`configDefault.js`), env overrides
   `REACT_APP_PROVIDER_COMMISSION_PERCENTAGE` (10), `REACT_APP_STRIPE_FEE_PERCENTAGE` (2.9),
