@@ -252,14 +252,14 @@ ArchivoVintach" for the Test phase (6 "Live ArchivoVintach" at cutover); the foo
 and was verified on Heroku on 2026-10-10. `archivovintach.com` is authenticated (DKIM + DMARC green)
 and the sender `hola@archivovintach.com` is active. The seller welcome (template 6) is on, the
 transactional webhook is wired, and readiness passes (2026-10-10). End-to-end tests passed (A9,
-Heroku v36). Still to do: the inventory record (A10). The old Retop MX key that leaked through the
-Render bundle was deleted on 2026-10-10.
+Heroku v36). Inventory recorded (A10). The old Retop MX key that leaked through the Render bundle
+was deleted on 2026-10-10.
 
 - [x] Sending identity decided: `hola@archivovintach.com` on a dedicated ARCHIVO VINTACH account.
 - [x] Test-phase list: `BREVO_LIST_ID=7` ("Test ArchivoVintach"); a Heroku footer signup reached it
       (2026-10-10).
-- [ ] Name the Brevo account owner and approve the welcome step that predates eShip (Brevo guide
-      decisions 2, 6).
+- [x] Brevo account owner confirmed (Brevo guide decision 2; recorded in the A10 inventory).
+- [ ] Approve the welcome step that predates eShip (Brevo guide decision 6).
 - [x] Phase A1–A2: `archivovintach.com` authenticated through GoDaddy DNS (DKIM + DMARC) and the
       sender `hola@archivovintach.com` is active (2026-10-09); a test send passed SPF, DKIM and
       DMARC in Gmail (2026-10-10).
@@ -274,9 +274,11 @@ Render bundle was deleted on 2026-10-10.
 - [x] Phase A8: readiness verified — `/api/brevo/health` ready and enabled, readiness `200`, webhook
       rejects requests without the secret (`401`), poller logs clean (2026-10-10).
 - [x] Phase A9: end-to-end tests passed on Heroku v36 (2026-10-10). Covered: the welcome to both
-      seller types, the footer signup, the signup opt-in, and Contact Details opt-in and opt-out.
-      The JSON-body bug that had blocked the opt-in is fixed in PR #112.
-- [ ] Phase A10: inventory record (outside the repository).
+      seller types, the footer signup, the signup opt-in, Contact Details opt-in and opt-out, and
+      Inbox delivery with SPF/DKIM/DMARC passing in Gmail and Outlook. The JSON-body bug that had
+      blocked the opt-in is fixed in PR #112.
+- [x] Phase A10: inventory recorded outside the repository (2026-10-10). Owner, key name, mailbox
+      readers and domain holder confirmed. Domain renews 2027-10-22; confirm auto-renew.
 - [ ] At cutover (Phase A11): `BREVO_LIST_ID=6` ("Live ArchivoVintach"), webhook URL moved to
       `www.archivovintach.com`.
 - [ ] Sharetribe Live outgoing email uses the production domain (separate from Brevo), with the same
