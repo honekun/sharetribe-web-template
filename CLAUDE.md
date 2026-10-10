@@ -594,6 +594,7 @@ contain.
 | `PageBuilder/SectionBuilder/SectionCarousel/SectionCarousel.js`                         | `AVSectionContainer` + `useDebouncedWindowResize`                                                               |
 | `components/CustomExtendedDataSection/CustomExtendedDataSection.js`                     | Custom `color`/`all_sizes` display dispatch (key→component map)                                                 |
 | `components/LayoutComposer/LayoutSideNavigation/LayoutWrapperAccountSettingsSideNav.js` | Account tabs from `getAccountSettingsTabs()` extension, fed `currentUser` from the store                        |
+| `util/api.js`                                                                           | `request()` forwards a caller-encoded (JSON) body instead of dropping it; AV Brevo/topbar helpers appended      |
 
 Also high-conflict on sync: `SearchResultsPanel.js` (AVListingCard swap), `CMSPage.js` (section
 injection), `TopbarDesktop.js`/`TopbarMobileMenu.js`/`UserNav.js` (nav links),

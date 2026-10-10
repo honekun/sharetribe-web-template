@@ -248,7 +248,7 @@ const PhotoGallerySection = props => {
           values={{
             link: (
               <a
-                href="/static/files/HowTo-AV.pdf"
+                href="/static/files/HowTo-AV_low.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
                 className={css.photosTipLink}

@@ -49,6 +49,9 @@ independently on Heroku with Live variables. The production Heroku app is not sw
 ## Current application constraints
 
 - Build with the repository's supported Node/Yarn versions and run `yarn start` for production SSR.
+  `engines.node` is `24.x`, and Yarn refuses to install on any other major. Heroku reads `engines`
+  directly. On Render, a `NODE_VERSION` environment variable takes precedence over `engines`, so set
+  it to `24` or delete it. A leftover `22.x` value fails the build at `Validating package.json`.
 - Keep exactly one web process while bulk-import jobs and rate/concurrency state remain
   process-local. See [scaling constraints](scaling.md).
 - Do not promote or copy a Test build artifact into Live. Build the approved code again with Live

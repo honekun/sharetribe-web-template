@@ -14,42 +14,345 @@ The application implements seller welcome email plus five promotional campaign f
 welcome applies only to Sharetribe user types `vendedor` and `vendedor-tienda`; marketing delivery
 is consent- and suppression-gated. Footer, signup, identity-provider signup, and Contact Details
 flows maintain the preference, while Brevo contact and webhook services synchronize provider state.
-The seller welcome attaches `public/static/files/ArchivoVintach-how-to.pdf`.
+The seller welcome attaches `public/static/files/HowTo-AV_low.pdf` (shown to the recipient as
+`ArchivoVintach-how-to.pdf`).
 
 Repository support does not prove that a Brevo account, production DNS, hosted templates, deployment
 secrets, PostgreSQL schema, or production webhook is configured. Verify each deployment environment
 separately.
 
-### Required per Brevo/deployment environment
+## Which system sends which email
 
-Do not enable production campaign delivery until every applicable item is checked:
+Decided 2026-10-10: the split between Sharetribe and Brevo stays as built. The rule is simple:
 
-- [ ] Confirm that the Brevo account can send transactional email and has sufficient sending
-      capacity.
-- [ ] Authenticate the production sending domain in Brevo and confirm Brevo shows the required
-      domain records, including DKIM and DMARC, as valid.
-- [ ] Register and verify the exact sender address used by `BREVO_SENDER_EMAIL`.
-- [ ] Generate a dedicated Brevo v3 API key for this integration and store it only in the deployment
-      secret manager.
-- [ ] Create one dedicated marketing contact list and copy its positive numeric ID.
-- [ ] Create and activate all eight hosted transactional templates with the exact parameters and
-      Spanish copy documented below.
-- [ ] Put a clear Spanish unsubscribe link and the approved legal sender footer in all seven
-      promotional templates.
-- [ ] Generate a high-entropy webhook secret and configure one **transactional email**, non-batched
-      webhook with the required events.
-- [ ] Set every required production environment variable. Do not use `REACT_APP_*` names for
-      secrets.
-- [ ] Set the canonical production `REACT_APP_MARKETPLACE_ROOT_URL` with no trailing slash so email
-      links do not point to localhost or staging.
-- [ ] Run `yarn db:migrate` against the production database before deploying the application
-      version.
-- [ ] Deploy first with lifecycle campaigns disabled, complete the smoke-test matrix, then enable
-      lifecycle campaigns.
-- [ ] Confirm both readiness endpoints return HTTP `200`, exactly one web process owns the poller,
-      and Brevo webhook events reach PostgreSQL.
-- [ ] Record the Brevo account owner, API-key rotation owner/date, sender/domain owner, list ID,
-      webhook ID, and eight template IDs in the team's secret/configuration inventory.
+- **Sharetribe sends everything that belongs to an account or a transaction.** That covers the
+  built-in account emails (email verification, password reset, email change, new message) and every
+  transaction-process notification in `ext/transaction-processes/*/templates`, including the eShip
+  pickup email. eShip's `TRANSIT` checkpoint makes the app run `transition/eship-picked-up-from-*`,
+  and the process sends `purchase-order-in-transit-customer`.
+- **Brevo sends everything outside a transaction:** the seller welcome email and the lifecycle
+  campaigns.
+
+Why transaction email stays in Sharetribe:
+
+- A notification fires atomically with its transition, and a reminder is pinned to its deadline in
+  `process.edn`. Moving one to Brevo would mean replaying it from the poller instead: up to five
+  minutes late, and lost whenever the dyno or PostgreSQL is down.
+- The templates already use Sharetribe's transaction data, `es_MX` locale and Console email texts.
+  Sharetribe sends them at no extra cost, while Brevo's free plan allows 300 sends a day.
+- Account emails can't move at all: Sharetribe owns the verification and reset tokens.
+
+Why welcome and campaigns stay in Brevo:
+
+- Sharetribe has no trigger outside a transaction. A welcome on `user/created`, a delay of 24 or 72
+  hours, a listing view or a new matching listing can only come from the app's poller.
+- The welcome email attaches the PDF guide, and Sharetribe templates can't attach files.
+- Campaigns are marketing. They need consent, unsubscribe and suppression handling, an A/B split and
+  a frequency cap, which Brevo and the consent ledger provide. Sharetribe's emails are for
+  transactional messages only.
+- Abandoned checkout is triggered by a transaction (`transition/expire-payment`) but is still
+  promotional, so it stays in Brevo and remains consent-gated.
+
+Rules that follow from this:
+
+- Don't add a Brevo email for something a transaction transition already announces, and don't put
+  promotional copy in a Sharetribe template.
+- Make both systems look like one sender. Use the same `archivovintach.com` address, the same
+  visible name (`BREVO_SENDER_NAME` and the Sharetribe Live sender name should match), and a
+  monitored reply-to. Sharetribe Live's custom sending domain needs its own DNS records in GoDaddy.
+  Merge any SPF include into the existing record rather than adding a second `v=spf1`, and keep the
+  shared `_dmarc` record.
+- The welcome email arrives right after Sharetribe's verification email, so it must not repeat the
+  "verify your email" step.
+
+## Setup status (audited 2026-10-09)
+
+Re-checked after the domain was authenticated. Read-only checks against the Brevo API (using the key
+configured on Heroku), the Heroku app `archivo-vintach-marketplace`, and its database:
+
+| Item                          | State                                                                                                                                                                                                                                                                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Brevo account                 | Company **ARCHIVO VINTACH** — a dedicated account; the Heroku key was rotated off the old Retop MX account on 2026-10-09.                                                                                                                                                                                                       |
+| Plan / capacity               | `free` plan, **300 sends per day**.                                                                                                                                                                                                                                                                                             |
+| Sending domains               | **`archivovintach.com` authenticated and verified** (Brevo code, DKIM `brevo1`/`brevo2._domainkey` CNAMEs, DMARC all green).                                                                                                                                                                                                    |
+| Senders                       | `ARCHIVO VINTACH <hola@archivovintach.com>`, active.                                                                                                                                                                                                                                                                            |
+| `archivovintach.com` mail DNS | MX points to Google Workspace. DMARC `_dmarc` TXT is now `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com`. Google Workspace DKIM not yet checked.                                                                                                                                                                             |
+| Contact list                  | `BREVO_LIST_ID` is **7**, "Test ArchivoVintach", for the Test phase; a footer signup on Heroku landed there on 2026-10-10. Production list: 6 "Live ArchivoVintach", 0 subscribers. Also present: 4 "ARCHIVO — Seller Waitlist" (109), 3, 2.                                                                                    |
+| Transactional templates       | Seller welcome is **ID 6** "AV seller welcome", active (created via API on 2026-10-10). ID 5 is an empty, inactive draft of the same name. The seven campaign templates don't exist yet.                                                                                                                                        |
+| Transactional webhook         | **ID 2241911**, transactional, unbatched, events `delivered`, `softBounce`, `hardBounce`, `blocked`, `spam`, `unsubscribed`, pointing at `https://archivo-vintach-marketplace-ee5adafa97a8.herokuapp.com/api/brevo/webhook`. Its `x-av-brevo-webhook-secret` header matches Heroku `BREVO_WEBHOOK_SECRET` (created 2026-10-10). |
+| Consent contact attributes    | None of the five exist, so `BREVO_CONSENT_ATTRIBUTES_ENABLED` must stay `false`.                                                                                                                                                                                                                                                |
+| Heroku variables set          | `BREVO_API_KEY`, `BREVO_LIST_ID=7` (Test phase), `BREVO_SENDER_EMAIL=hola@archivovintach.com`, `BREVO_SENDER_NAME=ARCHIVO VINTACH`, `BREVO_CONSENT_ATTRIBUTES_ENABLED=false`, Integration credentials, `DATABASE_URL`.                                                                                                          |
+| Heroku variables missing      | The seven campaign `BREVO_TEMPLATE_*`. `BREVO_TEMPLATE_SELLER_WELCOME=6` set 2026-10-10 (v33); `BREVO_WEBHOOK_SECRET` set 2026-10-10.                                                                                                                                                                                           |
+| Heroku flags                  | `AV_NOTIFICATIONS_ENABLED=true`, `AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=true` (both since 2026-10-10, v34), `AV_BREVO_CAMPAIGNS_ENABLED=false`, `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false`, `AV_SHIPPING_LABELS_ENABLED=true`, `AV_ESHIP_TRACKING_EMAILS_ENABLED=false`.                                                        |
+| App side                      | `/api/brevo/health` → `{"ready":true,"enabled":true,"missing":[]}`; `/api/notifications/readiness` → `200` (database migrated, poller leader active, no errors); unauthenticated `POST /api/brevo/webhook` → `401` (A8, 2026-10-10). The guide PDF is served at `/static/files/ArchivoVintach-how-to.pdf` (200, 2.4 MB).        |
+
+**What works today:** the footer newsletter and Contact Details opt-in, because they need only the
+API key and list ID, and the domain plus sender are ready (A1–A3). The seller welcome is **on**
+since 2026-10-10 (template 6, A7): `/api/brevo/health` reports ready and enabled, and readiness is
+`200`. A test send via the app's code path was delivered. Webhook delivery tracking is wired (A6)
+and readiness passes (A8). **What does not work yet:** every lifecycle campaign (Phase B).
+
+**Launch needs only Phase A below** (the seller welcome). Campaigns (Phase B) stay off at launch.
+
+## Decisions to make first
+
+1. **Sending identity.** ✅ Decided: `ARCHIVO VINTACH <hola@archivovintach.com>` on the
+   authenticated `archivovintach.com`. Make sure `hola@` is a real, monitored Google Workspace
+   mailbox, group or alias — seller replies land there.
+2. **Account ownership.** ✅ A dedicated ARCHIVO VINTACH Brevo account now holds the key. Name its
+   owner (the person who can rotate keys and see billing). The old Retop MX key that leaked through
+   the Render bundle has been deleted (step A3).
+3. **Capacity.** The free plan's 300 sends per day covers the seller welcome at launch volumes.
+   Before Phase B, size the plan for campaign volume (each consented user can receive up to two
+   promotional emails per seven days).
+4. **Test-phase list.** ✅ The Heroku app runs against Sharetribe Test until cutover, so footer
+   signups made while testing go to list 7 "Test ArchivoVintach" (`BREVO_LIST_ID=7`, set
+   2026-10-10). Switch to 6 "Live ArchivoVintach" at cutover (step A11).
+5. **Existing list members** (109 in "ARCHIVO — Seller Waitlist"). They have no first-party consent
+   evidence in the Live database, and PostgreSQL is authoritative, so campaigns will never mail
+   them. Either leave them (manual Brevo newsletters still reach them) or ask them to opt in again
+   after launch. Do not import them into the consent tables.
+6. **Welcome copy.** ✅ Decided 2026-10-10: the client approved the copy as is, keeping the
+   pre-eShip step "Coordina la entrega" (see [`brevo-templates-es.md`](brevo-templates-es.md)). The
+   subject is the gender-neutral `Te damos la bienvenida a Archivo Vintach ✨`. The guide is the May
+   2026 design, served as the web-optimized `HowTo-AV_low.pdf`.
+
+## Completion runbook
+
+Commands assume a shell with:
+
+```sh
+export AV_HEROKU_APP=archivo-vintach-marketplace
+# Read the key into the shell without printing it. Unset it when finished.
+export BREVO_API_KEY="$(heroku config:get BREVO_API_KEY --app "$AV_HEROKU_APP")"
+```
+
+The Brevo API sits behind Cloudflare, which rejects some HTTP clients (Python `urllib` gets error
+1010); `curl` works.
+
+### Phase A — seller welcome email (required for launch)
+
+**A1. Authenticate `archivovintach.com` in Brevo** — ✅ done 2026-10-09 (all four records green).
+
+1. Brevo → **Settings → Senders, domains, IPs → Domains → Add a domain** → `archivovintach.com`.
+2. Brevo lists the records to publish: a `brevo-code` TXT, DKIM records, and a DMARC TXT. If it
+   offers automatic authentication for GoDaddy, use it; otherwise copy each record **exactly as
+   Brevo shows it** into GoDaddy → **Domains → archivovintach.com → DNS → Add record**. Do not copy
+   values from this guide or another account.
+3. Do **not** change the MX records (Google Workspace receives mail there) or the `www`/apex records
+   reserved for the Heroku cutover.
+4. For DMARC, the domain has none today, so add the one Brevo suggests (normally `p=none`). Because
+   `p=none` only reports, it cannot block Google Workspace mail. Tighten it later only after Google
+   Workspace DKIM is enabled too.
+5. Back in Brevo, click **Authenticate this email domain** and wait until every record shows a green
+   check (DNS can take up to 48 hours; usually minutes on GoDaddy).
+
+Verify:
+
+```sh
+curl -s -H "api-key: $BREVO_API_KEY" -H 'accept: application/json' \
+  https://api.brevo.com/v3/senders/domains/archivovintach.com
+# expect "authenticated": true and "verified": true
+```
+
+**A2. Create the sender** — ✅ `ARCHIVO VINTACH <hola@archivovintach.com>` is active. A test send on
+2026-10-10 reached Gmail with SPF, DKIM (`archivovintach.com`) and DMARC all `PASS`. Brevo →
+**Senders, domains, IPs → Senders → Add a sender**: name `ARCHIVO VINTACH`, email the address chosen
+in decision 1. Brevo emails a confirmation link to that mailbox, so it must exist in Google
+Workspace and someone must be able to read it; replies from sellers also go there.
+
+**A3. Use a dedicated API key** — ✅ Heroku now holds a key from the ARCHIVO VINTACH account. The
+old Retop MX key, which was public in the Render bundle until Render was rebuilt without
+`REACT_APP_BREVO_*`, was deleted on 2026-10-10. To rotate again later: Brevo → **Settings → SMTP &
+API → API keys → Generate a new API key**, named `Archivo Vintach production`. Brevo shows it once.
+Set it straight onto Heroku without echoing it:
+
+```sh
+read -rs NEW_KEY && heroku config:set BREVO_API_KEY="$NEW_KEY" --app "$AV_HEROKU_APP" >/dev/null; unset NEW_KEY
+```
+
+Then delete the old key in Brevo once the footer signup works with the new one (A9).
+
+**A4. Choose the list for the Test phase** (decision 4) — ✅ list 7 "Test ArchivoVintach" is set on
+Heroku and a footer signup reached it (2026-10-10). To create a test list from scratch:
+
+```sh
+curl -s -X POST -H "api-key: $BREVO_API_KEY" -H 'content-type: application/json' \
+  https://api.brevo.com/v3/contacts/lists \
+  -d '{"name":"ArchivoVintach TEST","folderId":1}'
+# returns {"id": N}; then:
+heroku config:set BREVO_LIST_ID=N --app "$AV_HEROKU_APP"
+```
+
+`folderId` must be an existing folder; list them with `GET /v3/contacts/folders` if `1` is rejected.
+The production list for step A11 is 6 "Live ArchivoVintach".
+
+**A5. Create the seller welcome template** — ✅ created through the API on 2026-10-10 as **ID 6**
+"AV seller welcome", active, from the copy in [`brevo-templates-es.md`](brevo-templates-es.md). The
+preview text is a hidden preheader in the HTML. The test send (step 7) is still to do. An empty,
+inactive draft with the same name (ID 5) also exists; delete it once 6 is confirmed.
+
+1. Brevo → **Transactional → Templates → New template** (in some account layouts: **Campaigns →
+   Templates → Transactional**). Name it `AV seller welcome`.
+2. Subject: `Te damos la bienvenida a Archivo Vintach ✨`. Preview text:
+   `Tu closet ahora tiene otro destino posible.`
+3. Sender: the sender from A2. Reply-to: the same mailbox.
+4. Build the body from the `BREVO_TEMPLATE_SELLER_WELCOME` copy in
+   [`brevo-templates-es.md`](brevo-templates-es.md), with decision 6 applied. Insert parameters
+   exactly as `{{ params.NOMBRE }}`, `{{ params.CREATE_LISTING_URL }}`, and `{{ params.GUIDE_URL }}`
+   (case-sensitive). Make both CTAs real buttons/links whose URL is the parameter. Do not hard-code
+   a host.
+5. Do not add the PDF in Brevo: the application attaches `HowTo-AV_low.pdf` itself. No unsubscribe
+   link is required (onboarding is essential, not marketing).
+6. Save, then **activate** the template. Note its numeric ID (shown in the template list or URL).
+7. Send yourself a test from the template editor and check: no visible `{{ … }}`, buttons work,
+   mobile layout, From name/address.
+
+To create it through the API instead, write the HTML to a local file (not in the repository) and:
+
+```sh
+jq -n --rawfile html welcome.html --arg sender "hola@archivovintach.com" '{
+  templateName: "AV seller welcome", subject: "Te damos la bienvenida a Archivo Vintach ✨",
+  sender: { name: "ARCHIVO VINTACH", email: $sender }, replyTo: $sender,
+  htmlContent: $html, isActive: true }' |
+  curl -s -X POST -H "api-key: $BREVO_API_KEY" -H 'content-type: application/json' \
+    https://api.brevo.com/v3/smtp/templates -d @-
+# returns {"id": N}; set the preview text afterwards in the Brevo editor
+```
+
+**A6. Create the transactional webhook** — ✅ done 2026-10-10 (webhook ID 2241911, header secret
+matches Heroku). Recommended before the first welcome send so bounces and blocks are recorded.
+Generate a secret and store it without printing it:
+
+```sh
+BREVO_WEBHOOK_SECRET="$(openssl rand -hex 32)"
+heroku config:set BREVO_WEBHOOK_SECRET="$BREVO_WEBHOOK_SECRET" --app "$AV_HEROKU_APP" >/dev/null
+APP_HOST="$(heroku apps:info --app "$AV_HEROKU_APP" --json | jq -r '.app.web_url' | sed 's#https://##; s#/$##')"
+
+jq -n --arg url "https://$APP_HOST/api/brevo/webhook" --arg secret "$BREVO_WEBHOOK_SECRET" '{
+  type: "transactional", channel: "email", batched: false,
+  description: "Archivo Vintach transactional email - heroku test phase",
+  url: $url,
+  events: ["delivered","softBounce","hardBounce","blocked","spam","unsubscribed"],
+  headers: [{ key: "x-av-brevo-webhook-secret", value: $secret }] }' |
+  curl -s -X POST -H "api-key: $BREVO_API_KEY" -H 'content-type: application/json' \
+    https://api.brevo.com/v3/webhooks -d @-
+unset BREVO_WEBHOOK_SECRET
+# returns {"id": N}; record it
+```
+
+The API is used because the secret must travel as a custom header, which not every Brevo UI layout
+exposes. Leave the unrelated marketing `spam` webhook alone unless its owner confirms it is unused.
+
+**A7. Configure Heroku and turn the welcome on** — ✅ done 2026-10-10 (releases v33–v34). All of
+these are server-only, so no rebuild is needed; `config:set` restarts the dyno. The sender variables
+are already set (`hola@archivovintach.com` / `ARCHIVO VINTACH`, 2026-10-10), so only the template ID
+remains.
+
+```sh
+heroku config:set --app "$AV_HEROKU_APP" \
+  BREVO_TEMPLATE_SELLER_WELCOME=6
+
+heroku config:set --app "$AV_HEROKU_APP" \
+  AV_NOTIFICATIONS_ENABLED=true \
+  AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=true \
+  AV_BREVO_CAMPAIGNS_ENABLED=false \
+  AV_WHATSAPP_NOTIFICATIONS_ENABLED=false
+```
+
+Use the sender from decision 1 and the template ID from A5. The poller has run since 2026-10-09 for
+shipping labels, but the Test marketplace had no events yet, so no cursor is saved
+(`lastSequenceId=null`). Until the first event, each restart seeds from a 10-minute lookback, so
+enabling the poller does not replay old `user/created` events: only accounts created from now on get
+the welcome.
+
+**A8. Verify readiness** — ✅ passed 2026-10-10: health `ready`/`enabled` with nothing missing,
+readiness `200`, webhook without the secret → `401`, poller logs clean.
+
+```sh
+curl -s https://$APP_HOST/api/brevo/health              # {"ready":true,"enabled":true,...,"missing":[]}
+curl -s -o /dev/null -w '%{http_code}\n' https://$APP_HOST/api/notifications/readiness   # 200
+heroku logs --tail --app "$AV_HEROKU_APP" | grep -E 'eventPoller|brevo|notificationAlert'
+```
+
+A `503` or a startup error names the missing variable. Fix it before continuing.
+
+**A9. End-to-end tests** (Test phase, team mailboxes only):
+
+> Run 2026-10-10 on Heroku. **Passed:** welcome to a `vendedor` and a `vendedor-tienda` signup
+> (Spanish subject, first-name greeting, PDF attached, both `delivered` events stored through the
+> webhook, ledger `sent`/`delivered`); footer signup reached list 7 and `av_marketing_preferences`;
+> DKIM and DMARC pass. **Failed:** the signup marketing opt-in never reached PostgreSQL or Brevo —
+> `PUT /api/brevo/preference` returned `400 enabled_must_be_boolean` because `src/util/api.js` >
+> `request()` dropped every caller-encoded JSON body. The same bug broke the Contact Details toggle
+> and listing engagement tracking. Fixed in `request()`; redeploy, then re-run steps 4–5 and a
+> signup with the opt-in checked.
+
+1. Sign up a new `vendedor` account in the Test marketplace. Within about five minutes (one poll)
+   the welcome arrives: Spanish subject, correct name, both buttons open the herokuapp host (it is
+   the root URL until cutover), and the PDF is attached.
+2. Repeat with `vendedor-tienda`.
+3. In Brevo → **Transactional → Logs**, find both sends; then confirm the delivered events reached
+   the app:
+
+   ```sh
+   heroku pg:psql --app "$AV_HEROKU_APP" --command \
+     "SELECT event, count(*) FROM av_brevo_webhook_events GROUP BY 1;"
+   ```
+
+4. Footer newsletter: subscribe a test address; it appears in the list from A4 and in
+   `av_marketing_preferences`.
+5. Contact Details: opt in, reload, opt out; Brevo list membership follows.
+6. Open the welcome from Gmail and from Outlook and check "Show original" / headers: DKIM and DMARC
+   pass for the sending domain, and it is not in spam.
+
+**A10. Record the inventory** (outside the repository): Brevo account owner, API key name and
+rotation date, sender address, domain owner, test and production list IDs, welcome template ID,
+webhook ID.
+
+**A11. At the Live cutover** (in addition to the
+[Heroku runbook](../operations/heroku-deployment.md) §5):
+
+- `BREVO_LIST_ID` → the production list 6 "Live ArchivoVintach"
+  (`heroku config:set BREVO_LIST_ID=6`), then delete the test contacts left in list 7.
+- `REACT_APP_MARKETPLACE_ROOT_URL=https://www.archivovintach.com` is set before the Live build, so
+  email links point to the production host.
+- Point the webhook at the production host (the herokuapp host stays reachable, but production
+  traffic and logs should use the canonical one):
+
+  ```sh
+  curl -s -X PUT -H "api-key: $BREVO_API_KEY" -H 'content-type: application/json' \
+    https://api.brevo.com/v3/webhooks/WEBHOOK_ID \
+    -d '{"url":"https://www.archivovintach.com/api/brevo/webhook","description":"Archivo Vintach transactional email - production"}'
+  ```
+
+- `pg:reset` empties the consent and webhook tables. That is expected: Test-phase consent belongs to
+  test accounts.
+- After reopening, repeat A8 and A9 step 1 with a real Live `vendedor` signup.
+
+### Phase B — lifecycle campaigns (after launch)
+
+Keep `AV_BREVO_CAMPAIGNS_ENABLED=false` until all of this is done:
+
+1. Resolve decision 3 (plan capacity).
+2. Create and activate the seven promotional templates from
+   [`brevo-templates-es.md`](brevo-templates-es.md), following A5, each with Brevo's unsubscribe
+   link and the approved legal sender footer (sender identity and postal/contact address). Record
+   their IDs.
+3. Optional Brevo-side consent evidence: create the five attributes, then set
+   `BREVO_CONSENT_ATTRIBUTES_ENABLED=true` and restart:
+
+   ```sh
+   for a in CONSENT_AT CONSENT_SOURCE CONSENT_LOCALE CONSENT_POLICY_VERSION SHARETRIBE_USER_ID; do
+     curl -s -X POST -H "api-key: $BREVO_API_KEY" -H 'content-type: application/json' \
+       "https://api.brevo.com/v3/contacts/attributes/normal/$a" -d '{"type":"text"}'
+   done
+   ```
+
+4. Set the seven `BREVO_TEMPLATE_*` IDs on Heroku. The webhook secret and list ID from Phase A are
+   reused.
+5. Run steps 12–15 of the [safe deployment sequence](#safe-deployment-sequence) with dedicated
+   consented test users, then step 16.
 
 ## Architecture
 
@@ -75,7 +378,7 @@ are enabled.
 
 | Campaign                 | Trigger and delay                                                                                                           | Cancellation / final eligibility                                                                                                                           |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Seller welcome           | `user/created`; immediate; only `vendedor` and `vendedor-tienda`                                                            | Transactional onboarding; not consent-gated. Attaches `ArchivoVintach-how-to.pdf`.                                                                         |
+| Seller welcome           | `user/created`; immediate; only `vendedor` and `vendedor-tienda`                                                            | Transactional onboarding; not consent-gated. Attaches `HowTo-AV_low.pdf`.                                                                                  |
 | Viewed listing A/B       | Authenticated non-owner remains on a listing page for 10 seconds; 24 hours after latest qualified view                      | Anonymous views count only toward seller activity and never schedule buyer email. Cancel on favorite, inquiry, or purchase. Listing must remain published. |
 | Abandoned checkout       | `transition/expire-payment`; 30 minutes after Sharetribe expires payment                                                    | Cancel if transaction later confirms/cancels. Shopping-bag and ordinary inquiry activity are excluded.                                                     |
 | Matching listings A/B    | First observed publication matched to consented view/favorite behavior from prior 90 days; next 09:00 `America/Mexico_City` | Category required. Brand, size, and color rank results. Up to three published listings; one digest per user/day.                                           |
@@ -97,6 +400,9 @@ AV_NOTIFICATIONS_ENABLED=true
 AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=true
 AV_BREVO_CAMPAIGNS_ENABLED=false
 AV_WHATSAPP_NOTIFICATIONS_ENABLED=false
+# The poller also requires these two to be explicit, whatever their value
+AV_SHIPPING_LABELS_ENABLED=true
+AV_ESHIP_TRACKING_EMAILS_ENABLED=false
 
 # Sharetribe Integration API and durable PostgreSQL
 SHARETRIBE_INTEGRATION_CLIENT_ID=
@@ -125,9 +431,10 @@ BREVO_TEMPLATE_SIGNUP_NO_LISTING=
 BREVO_TEMPLATE_LISTING_NO_ACTIVITY=
 ```
 
-Use exact lowercase `true` or `false` for feature flags. When `AV_NOTIFICATIONS_ENABLED=true`, every
-channel flag must be set explicitly. Production startup rejects incomplete configuration for enabled
-channels.
+Use exact lowercase `true` or `false` for feature flags. `AV_NOTIFICATIONS_ENABLED`,
+`AV_SHIPPING_LABELS_ENABLED`, and `AV_ESHIP_TRACKING_EMAILS_ENABLED` must always be explicit; when
+`AV_NOTIFICATIONS_ENABLED=true`, the welcome, campaign, and WhatsApp flags must be explicit too.
+Production startup rejects incomplete configuration for enabled channels.
 
 ### Setting reference
 
@@ -235,16 +542,16 @@ Create every template under Brevo's transactional template area. For each templa
 The API supplies `sender`, recipient, `templateId`, `params`, tags, and any attachment. It does not
 override the subject, so the active Brevo template must contain the approved subject.
 
-| Environment variable                 | Required template parameters/content                                                                                  | Unsubscribe                           |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `BREVO_TEMPLATE_SELLER_WELCOME`      | `NOMBRE`, `MARKETPLACE_URL`, `CREATE_LISTING_URL`, `GUIDE_URL`; application also attaches `ArchivoVintach-how-to.pdf` | Not required for essential onboarding |
-| `BREVO_TEMPLATE_VIEWED_LISTING_A`    | `NOMBRE`, `LISTING_URL`, `LISTING.title`, `LISTING.priceFormatted`, `LISTING.imageUrl`                                | Required                              |
-| `BREVO_TEMPLATE_VIEWED_LISTING_B`    | Same as viewed A                                                                                                      | Required                              |
-| `BREVO_TEMPLATE_ABANDONED_CHECKOUT`  | `NOMBRE`, `LISTING_URL`, `LISTING.title`, `LISTING.priceFormatted`, `LISTING.imageUrl`                                | Required                              |
-| `BREVO_TEMPLATE_MATCHING_LISTINGS_A` | `NOMBRE`, `MARKETPLACE_URL`, `SEARCH_URL`, loop over up to three `LISTINGS` objects                                   | Required                              |
-| `BREVO_TEMPLATE_MATCHING_LISTINGS_B` | Same as matching A                                                                                                    | Required                              |
-| `BREVO_TEMPLATE_SIGNUP_NO_LISTING`   | `NOMBRE`, `CREATE_LISTING_URL`, `GUIDE_URL`                                                                           | Required                              |
-| `BREVO_TEMPLATE_LISTING_NO_ACTIVITY` | `NOMBRE`, `LISTING_URL`                                                                                               | Required                              |
+| Environment variable                 | Required template parameters/content                                                                         | Unsubscribe                           |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
+| `BREVO_TEMPLATE_SELLER_WELCOME`      | `NOMBRE`, `MARKETPLACE_URL`, `CREATE_LISTING_URL`, `GUIDE_URL`; application also attaches `HowTo-AV_low.pdf` | Not required for essential onboarding |
+| `BREVO_TEMPLATE_VIEWED_LISTING_A`    | `NOMBRE`, `LISTING_URL`, `LISTING.title`, `LISTING.priceFormatted`, `LISTING.imageUrl`                       | Required                              |
+| `BREVO_TEMPLATE_VIEWED_LISTING_B`    | Same as viewed A                                                                                             | Required                              |
+| `BREVO_TEMPLATE_ABANDONED_CHECKOUT`  | `NOMBRE`, `LISTING_URL`, `LISTING.title`, `LISTING.priceFormatted`, `LISTING.imageUrl`                       | Required                              |
+| `BREVO_TEMPLATE_MATCHING_LISTINGS_A` | `NOMBRE`, `MARKETPLACE_URL`, `SEARCH_URL`, loop over up to three `LISTINGS` objects                          | Required                              |
+| `BREVO_TEMPLATE_MATCHING_LISTINGS_B` | Same as matching A                                                                                           | Required                              |
+| `BREVO_TEMPLATE_SIGNUP_NO_LISTING`   | `NOMBRE`, `CREATE_LISTING_URL`, `GUIDE_URL`                                                                  | Required                              |
+| `BREVO_TEMPLATE_LISTING_NO_ACTIVITY` | `NOMBRE`, `LISTING_URL`, `LISTING.title`                                                                     | Required                              |
 
 Campaign messages receive these common values even if one template only uses a subset:
 
@@ -253,8 +560,18 @@ Campaign messages receive these common values even if one template only uses a s
 - `LISTING`; and
 - `LISTINGS`, limited to three results.
 
+`LISTING` and each `LISTINGS` entry have the same fields: `title`, `priceFormatted` (for example
+`$1,250.00`, MXN only; empty otherwise), `imageUrl` (may be `null`), `path`, `closet` (the seller's
+display name), `id`, `slug`, `price.amount`/`price.currency`, `category`, `brand`, `sizes`,
+`colors`, and `state`. Matching-listing entries also carry a ranking `score`. These values are
+captured when the job is scheduled. Only matching listings are reloaded before sending, so a
+viewed-listing, abandoned-checkout, or listing-without-activity email may show a title, price, or
+image up to 24 or 72 hours old.
+
 Each matching-listing object's `path` is relative. Build its link from `MARKETPLACE_URL` plus
-`path`; do not link a bare relative path from the email client.
+`path`; do not link a bare relative path from the email client. `LISTING_URL` always opens the
+public listing page, including in the listing-without-activity email whose CTA reads "Editar mi
+prenda" — the seller reaches the editor from there.
 
 All seven promotional templates must include:
 
@@ -389,6 +706,8 @@ seller, category, and listing data are not trusted.
    AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=true
    AV_BREVO_CAMPAIGNS_ENABLED=false
    AV_WHATSAPP_NOTIFICATIONS_ENABLED=false
+   AV_SHIPPING_LABELS_ENABLED=true
+   AV_ESHIP_TRACKING_EMAILS_ENABLED=false
    ```
 
 5. Confirm `GET /api/brevo/health` and `GET /api/notifications/readiness` return HTTP `200`.
@@ -397,10 +716,11 @@ seller, category, and listing data are not trusted.
 8. Test email and identity-provider signup with consent both unchecked and checked.
 9. Test Contact Details opt-in, withdrawal, page reload, and Brevo list membership.
 10. Trigger seller welcome with a `vendedor` and `vendedor-tienda`; verify copy, CTA URLs, tags,
-    sender authentication, and the committed 2.3 MB PDF attachment. Confirm other user types do not
+    sender authentication, and the committed ≈0.9 MB PDF attachment. Confirm other user types do not
     receive it.
-11. Exercise each promotional trigger with dedicated consented test users while campaigns remain
-    disabled; inspect whether expected pending jobs are created without sending.
+11. While campaigns are disabled, the poller neither schedules nor sends campaign jobs
+    (`eventPoller.js` checks the flag before both), so there is nothing to observe yet; confirm
+    `av_notification_jobs` stays empty.
 12. Temporarily enable campaigns in the controlled environment, exercise each campaign, and inspect
     `av_notification_jobs`, `av_notification_deliveries`, `av_brevo_webhook_events`, and the Brevo
     transactional log.

@@ -56,7 +56,8 @@ const request = (path, options = {}) => {
   // If headers are not set, we assume that the body should be serialized as transit format.
   const shouldSerializeBody =
     (!headers || headers['Content-Type'] === 'application/transit+json') && body;
-  const bodyMaybe = shouldSerializeBody ? { body: serialize(body) } : {};
+  // AV: forward a caller-encoded body (e.g. JSON) instead of silently dropping it.
+  const bodyMaybe = shouldSerializeBody ? { body: serialize(body) } : body ? { body } : {};
 
   const fetchOptions = {
     credentials: credentials || 'include',

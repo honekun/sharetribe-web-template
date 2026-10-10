@@ -401,8 +401,9 @@ automatically. The list below documents the canonical options defined in code.
 
 ### 3.6 Marca (Brand) Field
 
-> **Code-only field.** `brand` is defined in `src/config/configListing.js`. Operators cannot edit it
-> in the Console — changes require a development update.
+> **Code field with Console additions.** `brand` is defined in `src/config/configListingAV.js`.
+> Operators can **add** brands in the Console without a deploy; everything else about the field
+> stays code-owned.
 
 | Property    | Value                               |
 | ----------- | ----------------------------------- |
@@ -410,9 +411,21 @@ automatically. The list below documents the canonical options defined in code.
 | Schema type | `enum` (pick one brand per listing) |
 | Scope       | `public`                            |
 
-The brand list has 625 options and is managed entirely in `src/config/configListing.js`. You can see
-the full list in `docs/data/brand.csv`. To add or remove brands, ask the development team. Any
-`brand` field configured in the Console is ignored by the app.
+The code list has 625 options (full list in `docs/data/brand.csv`). The app also reads the options
+of the Console `brand` listing field and merges them in, so a brand added there appears in the
+listing form, the search filter, the brand search box, and on listing pages after the next page
+load:
+
+- **Adding a brand:** add an option to the Console `brand` field. Before you do, search the list for
+  the brand — adding a second key for a brand that already exists (for example `hm` next to the
+  existing `h-m` key for H&M) splits its listings between two filter values.
+- **Same key in both places:** the Console label wins, so the Console can also correct a label.
+- **Removing a brand:** not possible from the Console. Deleting a Console option only removes brands
+  that exist nowhere else; the 625 code options always remain. Ask the development team.
+- **Ordering:** the merged list is sorted alphabetically, with `Otra...` (`other`) always first.
+- **Only the options are read.** Changing the Console field's label, filter or display settings
+  has no effect, and only `brand` behaves this way — `color` and `all_sizes` ignore Console
+  entirely.
 
 ---
 
@@ -937,11 +950,11 @@ The top-right area of the desktop top bar shows a row of actions. From left to r
 | Item                              | Appearance                              | Links to                                                                                     | Shown when                |
 | --------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------- |
 | **VENDE** (Sell / Create listing) | Blue pill button                        | Upload chooser page (`/create-type`) — see [Section 13](#13-upload-chooser-page-create-type) | Signed in                 |
-| **Favorites**                     | Black heart icon                        | Favorites page (`/favorites`)                                                                | Signed in                 |
-| **Bag**                           | Black bag icon with an item-count badge | Bag page (`/bag`)                                                                            | Always (works logged out) |
 | **Inbox**                         | Black envelope icon                     | Inbox                                                                                        | Signed in                 |
+| **Favorites**                     | Black heart icon                        | Favorites page (`/favorites`)                                                                | Signed in, except store sellers ([hidden entries](#store-sellers-tienda-hidden-menu-entries)) |
+| **Bag**                           | Black bag icon with a blue item-count badge | Bag page (`/bag`)                                                                        | Always (works logged out) |
 
-The three icons (heart, bag, envelope) are icon-only — their text is used as a hover tooltip and for
+The three icons (envelope, heart, bag) are icon-only — their text is used as a hover tooltip and for
 screen readers, not shown on screen. None of this requires configuration. The relevant labels are
 `TopbarDesktop.favoritesLink`, `BagLink.label`, and `TopbarDesktop.inbox`. See
 [Section 11 — Favorites](#11-favorites-wish-list) and [Section 12 — Shopping Bag](#12-shopping-bag)
@@ -1493,8 +1506,9 @@ value such as `Otoño` is stored as typed and matches no option:
 
 #### Brand option keys
 
-The full brand list has 625 entries. The most common ones are listed here. For the complete list,
-see `docs/data/brand.csv`.
+The code brand list has 625 entries. The most common ones are listed here. For the complete list,
+see `docs/data/brand.csv`; brands added in the Console ([§3.6](#36-marca-brand-field)) are valid
+too, using the key entered there.
 
 | Brand                   | Key            | Brand         | Key             |
 | ----------------------- | -------------- | ------------- | --------------- |
@@ -1779,12 +1793,11 @@ this up per environment; the test and production marketplaces use different secr
 | Setting                            | What it controls                                                                                                          |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | **Provider commission percentage** | The marketplace fee percentage charged to sellers. Shown in the earnings estimator when sellers set a price. Read from Console (`commission.json`, 22 % in Test and Live); 22 % is also the code fallback. |
-| **Stripe fee percentage**          | The Stripe processing fee percentage. Default: 2.9%                                                                       |
-| **Stripe fixed fee**               | The fixed Stripe fee per transaction in centavos. Default: 30 (= MXN \$0.30)                                              |
-| **Provider fixed fee**             | Fixed fee in centavos charged to the seller on every sale, on top of the percentage. Production: 1500 (= MXN \$15.00)     |
+| **Provider fixed fee** (`REACT_APP_PROVIDER_COMMISSION_FIXED_FEE`) | Fixed fee in centavos charged to the seller on every sale, on top of the percentage. Set by the dev team, not in Console: 1500 (= MXN \$15.00) on Heroku. The same value drives both the estimate and the fee actually charged, so changing it needs a rebuild. |
+| **Stripe fee** (`REACT_APP_STRIPE_FEE_PERCENTAGE`, `REACT_APP_STRIPE_FEE_FIXED_AMOUNT`) | Not shown to Archivo Vintach sellers. The `av-listing` pricing step shows only the commission and fixed fee, because the platform pays Stripe out of its commission. These values (default 2.9 % + 30 centavos) reach only the booking-style pricing form, which no listing type uses. |
 
-These values are used to show sellers an estimate of their net earnings while creating a listing.
-The actual fees charged are configured separately in Console → Build → Transactions.
+Sellers see an estimate of their net earnings while setting a price. The percentage actually charged
+comes from Console → Build → Transactions; the fixed fee comes from the setting above.
 
 **Minimum listing price.** Console → Build → Transactions → Minimum transaction size must leave room
 for the provider fixed fee: at 22 % plus \$15.00 that is at least \$19.24, and Archivo Vintach uses
@@ -1865,26 +1878,19 @@ missing or blank value to hide that optional element. Do not blank a standard ke
 | Photo upload (inline) | `EditListingDetailsPanel.photosTitle`                     | `Photos`                                                    | `Subir Fotos`                                                  | Section heading above the inline photo uploader. Displayed in ALL CAPS by CSS.                     |
 | Details form heading  | `EditListingDetailsPanel.detailsTitle`                    | `Detalles del producto`                                     | `Detalles del producto`                                        | Section heading above the details fields (below the photo uploader). Displayed in ALL CAPS by CSS. |
 | Photo upload (inline) | `EditListingDetailsPanel.photosMinRequired`               | `Add at least 3 photos to continue.`                        | `Agrega almenos 3 fotos.`                                      | Validation message when too few photos are uploaded.                                               |
-| Photo upload (inline) | `EditListingDetailsPanel.photosAddTip`                    | `You can add up to 100 photos.`                             | `Puedes agregar hasta 100 fotos.`                              | Helper text under the uploader.                                                                    |
-| Photo upload (inline) | `EditListingDetailsPanel.photosMaxReached`                | `Maximum of 100 photos reached.`                            | `Has alcanzado el máximo de 100 fotos.`                        | Shown when the photo limit is hit.                                                                 |
+| Photo upload (inline) | `EditListingDetailsPanel.photosAddTip`                    | `You can add up to 10 photos.`                              | `Máximo 10 fotos.`                                             | Helper text under the uploader.                                                                    |
+| Photo upload (inline) | `EditListingDetailsPanel.photosMaxReached`                | `Maximum of 10 photos reached.`                             | `El máximo de 10 fotos se ha alcanzado.`                       | Shown when the photo limit is hit.                                                                 |
 | Photo upload (inline) | `EditListingDetailsPanel.photosUploadInProgress`          | `Please wait for all photos to finish uploading.`           | `Espera a que todas los fotos terminen de cargarse.`           | Shown while photos are still uploading.                                                            |
-| Photo upload (slots)  | `EditListingPhotosForm.slotLabel.front`                   | `Front`                                                     | `Frente`                                                       | Label for the front-photo slot.                                                                    |
-| Photo upload (slots)  | `EditListingPhotosForm.slotLabel.back`                    | `Back`                                                      | `Trasera`                                                      | Label for the back-photo slot.                                                                     |
-| Photo upload (slots)  | `EditListingPhotosForm.slotLabel.horizontal`              | `Horizontal`                                                | `Horizontal`                                                   | Label for the horizontal-photo slot.                                                               |
-| Photo upload (slots)  | `EditListingPhotosForm.slotLabel.details`                 | `Details`                                                   | `Detalles`                                                     | Label for the optional details-photo slot.                                                         |
-| Photo upload (slots)  | `EditListingPhotosForm.frontImageRequired`                | `The front photo is required.`                              | `La foto de frente es obligatoria.`                            | Validation when front photo is missing.                                                            |
-| Photo upload (slots)  | `EditListingPhotosForm.minImagesRequired`                 | `At least 3 photos are required (Front, Back, Horizontal).` | `Se requieren al menos 3 fotos (Frente, Trasera, Horizontal).` | Validation when required slots are empty.                                                          |
-| Photo upload (slots)  | `EditListingPhotosForm.addImagesTip`                      | `Tip: Upload at least 3 good-quality photos.`               | `Tip: Sube al menos 3 fotos de buena calidad.`                 | Helper tip below the slot uploader.                                                                |
-| Original price field  | `EditListingPricingForm.originalPrice`                    | `Original Price (optional)`                                 | `Precio original (opcional)`                                   | Label for the strike-through original price field.                                                 |
+| Photo upload (step)  | `EditListingPhotosForm.addImagesTip`                      | `Tip: Upload 2-3 good-quality photos from different angles.` | `Consejo: sube las mejores 2-3 fotos desde diferentes ángulos.` | Tip in the standalone Photos step (hidden while photos are uploaded in Details).                                                      |
+| Original price field  | `EditListingPricingForm.originalPrice`                    | `Original Price (optional)`                                 | `Precio Original (opcional)`                                   | Label for the strike-through original price field.                                                 |
 | Original price field  | `EditListingPricingForm.originalPricePlaceholder`         | `Add original price…`                                       | `Agrega el precio original…`                                   | Placeholder in the original price input.                                                           |
-| Earnings estimator    | `EarningsEstimator.title`                                 | `Estimated Earnings`                                        | `Ganancias estimadas`                                          | Card heading in the pricing panel.                                                                 |
-| Earnings estimator    | `EarningsEstimator.listingPrice`                          | `Listing price`                                             | `Precio del artículo`                                          | Row label for the listing price.                                                                   |
+| Earnings estimator    | `EarningsEstimator.title`                                 | `Estimated Earnings`                                        | `Ganancias Estimadas`                                          | Card heading in the pricing panel.                                                                 |
+| Earnings estimator    | `EarningsEstimator.listingPrice`                          | `Listing price`                                             | `Precio del producto`                                          | Row label for the listing price.                                                                   |
 | Earnings estimator    | `EarningsEstimator.marketplaceFeeLabel`                   | `Marketplace fee`                                           | `Comisión del marketplace`                                     | Row label for the marketplace commission.                                                          |
-| Earnings estimator    | `EarningsEstimator.stripeFee`                             | `Payment processing`                                        | `Procesamiento de pago`                                        | Row label for the Stripe processing fee.                                                           |
+| Earnings estimator    | `EarningsEstimator.stripeFee`                             | `Payment processing`                                        | `Procesamiento de pago`                                        | Row label for the Stripe fee. Not shown on the `av-listing` pricing step (booking form only). |
 | Earnings estimator    | `EarningsEstimator.yourEarnings`                          | `Your earnings`                                             | `Tus ganancias`                                                | Row label for the net earnings.                                                                    |
-| Earnings estimator    | `EarningsEstimator.enterPrice`                            | `Enter a price to see estimated earnings.`                  | `Ingresa un precio para ver tus ganancias estimadas.`          | Shown before a price is entered.                                                                   |
-| Earnings estimator    | `EarningsEstimator.disclaimer`                            | `This is an estimate. Actual fees may vary.`                | `Esto es un estimado. Las tarifas reales pueden variar.`       | Small disclaimer below the estimate.                                                               |
-| Order breakdown       | `OrderBreakdown.providerCommissionFixed`                  | `{marketplaceName} fixed fee`                               | `Tarifa fija de {marketplaceName}`                             | Line item label for the fixed provider commission.                                                 |
+| Earnings estimator    | `EarningsEstimator.enterPrice`                            | `Enter a price to see estimated earnings.`                  | `Ingresa un precio para ver las ganancias estimadas.`          | Shown before a price is entered.                                                                   |
+| Earnings estimator    | `EarningsEstimator.disclaimer`                            | `This is an estimate. Actual fees may vary.`                | `Esta es una estimación. Las comisiones reales pueden variar.` | Small disclaimer below the estimate.                                                               |
 | Photo upload (inline) | `EditListingDetailsPanel.photoLabel1`                     | `Front photo`                                               | `Foto frontal`                                                 | Caption under photo slot 1.                                                                        |
 | Photo upload (inline) | `EditListingDetailsPanel.photoLabel2`                     | `Back photo`                                                | `Foto posterior`                                               | Caption under photo slot 2.                                                                        |
 | Photo upload (inline) | `EditListingDetailsPanel.photoLabel3`                     | `Label or detail`                                           | `Etiqueta o detalle`                                           | Caption under photo slot 3.                                                                        |
@@ -1914,7 +1920,7 @@ missing or blank value to hide that optional element. Do not blank a standard ke
 | Mobile menu              | `TopbarMobileMenu.favoritesLink`                      | `Favorites`          | `Favoritos`           | Mobile menu link to the favorites page.                    |
 | Account sidebar tab      | `UserNav.favorites`                                   | `Favorites`          | `Favoritos`           | Tab label in the account navigation sidebar.               |
 | Desktop bag icon         | `BagLink.label`                                       | `Shopping bag`       | `Bolsa de compras`    | Tooltip / label for the top-bar bag icon.                  |
-| Mobile menu              | `TopbarMobileMenu.bagLink`                            | `My bag`             | `Mi bolsa`            | Mobile menu link to the bag page.                          |
+| Mobile menu              | `TopbarMobileMenu.bagLink`                            | `My bag`             | `Mi carrito`          | Mobile menu link to the bag page.                          |
 | Desktop profile menu     | `TopbarDesktop.myPurchasesLink`                       | `My Purchases`       | `Mis Compras`         | Profile dropdown link to the purchases page.               |
 | Desktop profile menu     | `TopbarDesktop.mySalesLink`                           | `My Sales`           | `Mis Ventas`          | Profile dropdown link to the sales page.                   |
 | Desktop profile menu     | `TopbarDesktop.myBalanceLink`                         | `My Balance`         | `Mi Balance`          | Profile dropdown link to the balance page.                 |
@@ -2064,7 +2070,7 @@ expected behaviour, not a fault.
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
 | `NewsletterForm.emailPlaceholder` | `Your Email`                                                                                                                                    | `Tu Email`                                                                                                                                                                                             | Email input placeholder.          |
 | `NewsletterForm.disclaimerText`   | `By entering your email, you agree to receive promotional emails from Archivo Vintach per our Privacy Policy. You may unsubscribe at any time.` | `Al introducir tu correo electrónico, aceptas recibir correos electrónicos promocionales de Archivo Vintach de acuerdo con nuestra Política de Privacidad. Puedes darte de baja en cualquier momento.` | Disclaimer below the email field. |
-| `NewsletterForm.successMessage`   | `Thanks! Please check your inbox.`                                                                                                              | `¡Gracias! Revisa tu bandeja de entrada.`                                                                                                                                                              | Shown after successful signup.    |
+| `NewsletterForm.successMessage`   | `You're subscribed! Thanks for joining our newsletter.`                                                                                         | `¡Gracias! Revisa tu bandeja de entrada.`                                                                                                                                                              | Shown after successful signup.    |
 | `NewsletterForm.errorMessage`     | `Subscription failed. Try again later.`                                                                                                         | `Error en la suscripción. Inténtalo más tarde.`                                                                                                                                                        | Server error state.               |
 | `NewsletterForm.invalidEmail`     | `Please enter a valid email.`                                                                                                                   | `Introduce un email válido.`                                                                                                                                                                           | Client-side validation message.   |
 | `NewsletterForm.networkError`     | `Network error. Try again.`                                                                                                                     | `Error de red. Inténtalo de nuevo.`                                                                                                                                                                    | Network failure state.            |
@@ -2083,26 +2089,26 @@ expected behaviour, not a fault.
 | Sales page      | `MySalesPage.noResults`          | `You don't have any sales yet.`                  | `Aún no tienes ninguna venta.`                           | Empty state.            |
 | Balance page    | `MyBalancePage.heading`          | `My Balance`                                     | `Mi Balance`                                             | Page heading.           |
 | Balance page    | `MyBalancePage.title`            | `My Balance \| Archivo Vintach`                  | `Mi Balance \| Archivo Vintach`                          | Browser tab title.      |
-| Balance page    | `MyBalancePage.loadingError`     | `Failed to load balance data. Please try again.` | `No se pudieron cargar los datos. Inténtalo de nuevo.`   | Error state.            |
+| Balance page    | `MyBalancePage.loadingError`     | `Failed to load balance data. Please try again.` | `No se pudieron cargar los datos del balance. Inténtalo de nuevo.` | Error state.            |
 | Balance page    | `MyBalancePage.noResults`        | `No transactions found.`                         | `No se encontraron transacciones.`                       | Empty state.            |
-| Balance summary | `BalanceSummary.totalEarnings`   | `Total Earnings`                                 | `Ganancias totales`                                      | Summary card heading.   |
+| Balance summary | `BalanceSummary.totalEarnings`   | `Total Earnings`                                 | `Ganancias Totales`                                      | Summary card heading.   |
 | Balance summary | `BalanceSummary.pending`         | `Pending`                                        | `Pendiente`                                              | Summary card heading.   |
-| Balance summary | `BalanceSummary.cancelled`       | `Cancelled`                                      | `Cancelado`                                              | Summary card heading.   |
+| Balance summary | `BalanceSummary.cancelled`       | `Cancelled`                                      | `Canceladas`                                             | Summary card heading.   |
 | Balance summary | `BalanceSummary.tabAllTime`      | `All Time`                                       | `Todo el tiempo`                                         | Time-range tab label.   |
 | Balance summary | `BalanceSummary.tabCurrentMonth` | `This Month`                                     | `Este mes`                                               | Time-range tab label.   |
 | Payout row      | `PayoutItem.gross`               | `Gross`                                          | `Bruto`                                                  | Column header.          |
 | Payout row      | `PayoutItem.net`                 | `Net`                                            | `Neto`                                                   | Column header.          |
-| Payout row      | `PayoutItem.statusCompleted`     | `Completed`                                      | `Completado`                                             | Status badge text.      |
+| Payout row      | `PayoutItem.statusCompleted`     | `Completed`                                      | `Completada`                                             | Status badge text.      |
 | Payout row      | `PayoutItem.statusPending`       | `Pending`                                        | `Pendiente`                                              | Status badge text.      |
-| Payout row      | `PayoutItem.statusCancelled`     | `Cancelled`                                      | `Cancelado`                                              | Status badge text.      |
+| Payout row      | `PayoutItem.statusCancelled`     | `Cancelled`                                      | `Cancelada`                                              | Status badge text.      |
 | Filters         | `TransactionFilters.status`      | `Status`                                         | `Estado`                                                 | Filter label.           |
 | Filters         | `TransactionFilters.dateFrom`    | `From`                                           | `Desde`                                                  | Date range start label. |
 | Filters         | `TransactionFilters.dateTo`      | `To`                                             | `Hasta`                                                  | Date range end label.   |
 | Filters         | `TransactionFilters.clearAll`    | `Clear filters`                                  | `Limpiar filtros`                                        | Clear button.           |
 | Filters         | `TransactionFilters.all`         | `All`                                            | `Todos`                                                  | Status option.          |
-| Filters         | `TransactionFilters.completed`   | `Completed`                                      | `Completado`                                             | Status option.          |
-| Filters         | `TransactionFilters.pending`     | `Pending`                                        | `Pendiente`                                              | Status option.          |
-| Filters         | `TransactionFilters.cancelled`   | `Cancelled`                                      | `Cancelado`                                              | Status option.          |
+| Filters         | `TransactionFilters.completed`   | `Completed`                                      | `Completadas`                                            | Status option.          |
+| Filters         | `TransactionFilters.pending`     | `Pending`                                        | `Pendientes`                                             | Status option.          |
+| Filters         | `TransactionFilters.cancelled`   | `Cancelled`                                      | `Canceladas`                                             | Status option.          |
 
 ### Bulk import page
 
@@ -2123,10 +2129,10 @@ expected behaviour, not a fault.
 | `BulkImportPage.simpleCsvLabel`     | `CSV or ZIP file`                                               | `Archivo CSV o ZIP`                                                    | Accessible file-input label.                                          |
 | `BulkImportPage.simpleWhatsappCta`  | `Message us on WhatsApp`                                        | `Escríbenos por WhatsApp`                                              | Active support-link label.                                            |
 | `BulkImportPage.simpleErrorNoCsv`   | `Please select a .csv or .zip file.`                            | `Por favor, selecciona un archivo .csv o .zip.`                        | Active file-type validation message.                                  |
-| `BulkImportPage.heading`            | `Bulk Listing Import`                                           | `Importación Masiva de Listings`                                       | Page heading.                                                         |
-| `BulkImportPage.description`        | `Upload a single ZIP file containing your CSV and all images…`  | `Sube un solo archivo ZIP con tu CSV y todas las imágenes…`            | Intro paragraph.                                                      |
-| `BulkImportPage.zipLabel`           | `ZIP File`                                                      | `Archivo ZIP`                                                          | Upload field label.                                                   |
-| `BulkImportPage.zipHelp`            | `Pack your CSV and all images into a single .zip file…`         | `Empaca tu CSV y todas las imágenes en un solo archivo .zip…`          | Helper text below the upload field.                                   |
+| `BulkImportPage.heading`            | `Upload your inventory in minutes`                              | `Sube tu inventario en minutos`                                        | Page heading.                                                         |
+| `BulkImportPage.description`        | `Upload several items at once with a template — with your…`     | `Carga varias prendas a la vez con una plantilla: con tus…`            | Intro paragraph.                                                      |
+| `BulkImportPage.zipLabel`           | `ZIP or CSV file`                                               | `Archivo ZIP o CSV`                                                    | Upload field label.                                                   |
+| `BulkImportPage.zipHelp`            | `Maximum 50 MB per file • .zip with CSV and photos (JPG or…`    | `Máximo 50 MB por archivo • .zip con CSV y fotos (JPG o…`              | Helper text below the upload field.                                   |
 | `BulkImportPage.zipSelected`        | `Selected: {name}`                                              | `Seleccionado: {name}`                                                 | Shown after a file is selected.                                       |
 | `BulkImportPage.startImport`        | `Start Import`                                                  | `Iniciar Importación`                                                  | Primary action button.                                                |
 | `BulkImportPage.downloadTemplate`   | `Download template`                                             | `Descargar plantilla`                                                  | Downloads the generated seller CSV template.                          |
@@ -2148,12 +2154,12 @@ expected behaviour, not a fault.
 | `BulkImportPage.step1Title`         | `1. Complete the template`                                      | `Completa la plantilla`                                                | Step 1 title.                                                         |
 | `BulkImportPage.step1Text`          | `Add one row per item.`                                         | `Agrega una fila por prenda.`                                          | Step 1 text.                                                          |
 | `BulkImportPage.step2Title`         | `2. Photo instructions`                                         | `Instrucciones de fotos`                                               | Step 2 title.                                                         |
-| `BulkImportPage.step2Text`          | `Each photo's filename must match the item name…`               | `El nombre de tus fotos debe ser igual al nombre…`                     | Step 2 text.                                                          |
-| `BulkImportPage.step3Title`         | `3. Compress everything into a ZIP`                             | `Comprime todo en ZIP`                                                 | Step 3 title.                                                         |
-| `BulkImportPage.step3Text`          | `Include the template and the photos folder…`                   | `Incluye la plantilla y la carpeta de fotos…`                          | Step 3 text.                                                          |
-| `BulkImportPage.dropzoneTitle`      | `Upload your ZIP file`                                          | `Sube tu archivo ZIP`                                                  | Drop-zone heading.                                                    |
+| `BulkImportPage.step2Text`          | `Photos are optional. If you include them, each photo's…`       | `Las fotos son opcionales. Si las incluyes, el nombre de…`             | Step 2 text.                                                          |
+| `BulkImportPage.step3Title`         | `3. Upload the CSV, or a ZIP with photos`                       | `Sube el CSV, o un ZIP con fotos`                                      | Step 3 title.                                                         |
+| `BulkImportPage.step3Text`          | `With photos, put the template and the photos folder in a…`     | `Con fotos, incluye la plantilla y la carpeta de fotos en un…`         | Step 3 text.                                                          |
+| `BulkImportPage.dropzoneTitle`      | `Upload your ZIP or CSV file`                                   | `Sube tu archivo ZIP o CSV`                                            | Drop-zone heading.                                                    |
 | `BulkImportPage.dropzoneSubtitle`   | `Drag your file here or select it from your computer.`          | `Arrastra tu archivo aquí o selecciónalo desde tu computadora.`        | Drop-zone subtitle.                                                   |
-| `BulkImportPage.selectZip`          | `Select ZIP file`                                               | `Seleccionar archivo ZIP`                                              | File-picker button label.                                             |
+| `BulkImportPage.selectZip`          | `Select file`                                                   | `Seleccionar archivo`                                                  | File-picker button label.                                             |
 | `BulkImportPage.noFileSelected`     | `No file selected`                                              | `Ningún archivo seleccionado`                                          | Shown before a file is chosen.                                        |
 | `BulkImportPage.dividerOr`          | `or`                                                            | `o`                                                                    | Divider between drag-and-drop and the button.                         |
 | `BulkImportPage.reviewNotice`       | `We'll review your file before creating your listings…`         | `Revisaremos tu archivo antes de crear tus publicaciones…`             | Review notice under the drop zone.                                    |
@@ -2162,7 +2168,7 @@ expected behaviour, not a fault.
 | `BulkImportPage.helpTitle`          | `Need help?`                                                    | `¿Necesitas ayuda?`                                                    | Help bar heading.                                                     |
 | `BulkImportPage.whatsappContact`    | `Contact us on WhatsApp`                                        | `Contáctanos por WhatsApp`                                             | WhatsApp support link label.                                          |
 | `ManageListingsPage.bulkImport`     | `Carga Masiva`                                                  | `Subir Varios`                                                         | Blue bulk-import CTA on Manage listings and the new-listing flow.     |
-| `BulkImportPage.errorNoZip`         | `Please select a ZIP file.`                                     | `Selecciona un archivo ZIP.`                                           | Validation message.                                                   |
+| `BulkImportPage.errorNoZip`         | `Please select a .zip or .csv file.`                            | `Por favor selecciona un archivo .zip o .csv.`                         | Validation message.                                                   |
 
 ### Checkout — delivery options and shipping address
 
@@ -2318,7 +2324,9 @@ the wording.
 
 ### How a shopper reaches the Favorites page
 
-The favorites page is linked from four places (all created automatically):
+The favorites page is linked from four places (all created automatically). Store sellers
+(`vendedor-tienda`) see none of them — see
+[hidden menu entries](#store-sellers-tienda-hidden-menu-entries):
 
 | Location                     | What it looks like                                                |
 | ---------------------------- | ----------------------------------------------------------------- |
@@ -2376,8 +2384,8 @@ the wording.
 - **"Add to bag" button on the listing page.** On a product listing, below the "Comprar ahora" (Buy
   now) button, a full-width **Add to bag** button adds the item to the bag. Once added it reads **In
   your bag**; clicking again removes it.
-- **Bag icon in the top bar.** A blue bag icon (with a small number badge showing how many items are
-  in the bag) sits between the Favorites heart and the Inbox envelope. It is visible to everyone,
+- **Bag icon in the top bar.** A black bag icon (with a small blue badge showing how many items are
+  in the bag) sits to the right of the Favorites heart, just before the profile menu. It is visible to everyone,
   including signed-out visitors. Clicking it opens the full bag page (`/bag`).
 - **Bag dropdown (quick view).** Hovering the bag icon (when the bag has items), or adding an item,
   opens a small dropdown under the icon listing the bag's contents. Each row shows the seller, a
@@ -2391,7 +2399,7 @@ the wording.
 
 | Location            | What it looks like                                          |
 | ------------------- | ----------------------------------------------------------- |
-| **Desktop top bar** | The blue bag icon with the item-count badge → opens `/bag`. |
+| **Desktop top bar** | The bag icon with the item-count badge → opens `/bag`.      |
 | **Mobile menu**     | A "My bag" entry in the slide-out menu.                     |
 | **Direct URL**      | `/bag`.                                                     |
 
@@ -2425,11 +2433,11 @@ All bag text can be changed via **Console → Content → Translations** (see
 
 | Area                | Key                          | English default                                                  | Spanish default                                                                 | Operator note                                                             |
 | ------------------- | ---------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| Listing button      | `AddToBagButton.addToBag`    | `Add to bag`                                                     | `Agregar a la bolsa`                                                            | Button on the listing when the item is not in the bag.                    |
-| Listing button      | `AddToBagButton.inBag`       | `In your bag`                                                    | `En tu bolsa`                                                                   | Same button once the item has been added.                                 |
+| Listing button      | `AddToBagButton.addToBag`    | `Add to bag`                                                     | `Agregar al carrito`                                                            | Button on the listing when the item is not in the bag.                    |
+| Listing button      | `AddToBagButton.inBag`       | `In your bag`                                                    | `En tu carrito`                                                                 | Same button once the item has been added.                                 |
 | Top bar             | `BagLink.label`              | `Shopping bag`                                                   | `Bolsa de compras`                                                              | Tooltip / screen-reader label for the top-bar bag icon.                   |
-| Mobile menu         | `TopbarMobileMenu.bagLink`   | `My bag`                                                         | `Mi bolsa`                                                                      | Mobile menu link to the bag page.                                         |
-| Bag dropdown        | `BagPopup.titleLabel`        | `Bag`                                                            | `Bolsa`                                                                         | Dropdown heading label; always shown in ALL CAPS.                         |
+| Mobile menu         | `TopbarMobileMenu.bagLink`   | `My bag`                                                         | `Mi carrito`                                                                    | Mobile menu link to the bag page.                                         |
+| Bag dropdown        | `BagPopup.titleLabel`        | `Bag`                                                            | `Carrito`                                                                       | Dropdown heading label; always shown in ALL CAPS.                         |
 | Bag dropdown        | `BagPopup.titleCount`        | `({count, plural, one {# item} other {# items}})`                | `({count, plural, one {# producto} other {# productos}})`                       | Item count next to the heading (regular body font). Keep the plural part. |
 | Bag dropdown        | `BagPopup.close`             | `Close`                                                          | `Cerrar`                                                                        | Close (×) button on the dropdown.                                         |
 | Bag dropdown        | `BagPopup.goToBag`           | `Go to bag`                                                      | `Ir a la bolsa`                                                                 | Link from the dropdown to the full bag page.                              |
@@ -2438,8 +2446,8 @@ All bag text can be changed via **Console → Content → Translations** (see
 | Bag / dropdown item | `AVBagItemCard.shippingNote` | `Shipping calculated at checkout`                                | `Envío calculado al finalizar la compra`                                        | Note under the item total.                                                |
 | Bag / dropdown item | `AVBagItemCard.checkout`     | `Checkout {count, plural, one {# item} other {# items}}`         | `Comprar {count, plural, one {# producto} other {# productos}}`                 | Per-item checkout button. Keep the plural part.                           |
 | Bag / dropdown item | `BagPage.remove`             | `Remove`                                                         | `Eliminar`                                                                      | Remove link on each item (page and dropdown).                             |
-| Bag page            | `BagPage.title`              | `My bag`                                                         | `Mi bolsa`                                                                      | Browser tab / page title.                                                 |
-| Bag page            | `BagPage.heading`            | `My bag`                                                         | `Mi bolsa`                                                                      | Heading at the top of the page.                                           |
+| Bag page            | `BagPage.title`              | `My bag`                                                         | `Mi carrito`                                                                    | Browser tab / page title.                                                 |
+| Bag page            | `BagPage.heading`            | `My bag`                                                         | `Mi carrito`                                                                    | Heading at the top of the page.                                           |
 | Bag page            | `BagPage.empty`              | `Your bag is empty. Browse the catalog and add pieces you love.` | `Tu bolsa está vacía. Explora el catálogo y agrega las piezas que te encanten.` | Empty state.                                                              |
 | Bag page            | `BagPage.fetchError`         | `Loading your bag failed. Please try again.`                     | `No se pudo cargar tu bolsa. Inténtalo de nuevo.`                               | Error state.                                                              |
 
