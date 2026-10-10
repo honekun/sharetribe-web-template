@@ -61,10 +61,10 @@ report-only mode. Live must carry the same four values.
       it is fully crawlable.
 - [ ] `REACT_APP_SENTRY_DSN` — create a Sentry project and set its DSN before launch; production has
       no error monitoring without it.
-- [ ] Brevo welcome: `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`, and `BREVO_TEMPLATE_SELLER_WELCOME`
-      (required by `notificationConfig.js` once welcome email is on). Blocked on the hosted
-      seller-welcome template (§6). `BREVO_WEBHOOK_SECRET` and the seven campaign IDs wait for
-      campaigns.
+- [ ] Brevo welcome: `BREVO_TEMPLATE_SELLER_WELCOME` (`BREVO_SENDER_EMAIL`/`BREVO_SENDER_NAME` are
+      set; all three are required by `notificationConfig.js` once welcome email is on). Blocked on
+      the hosted seller-welcome template (§6). `BREVO_WEBHOOK_SECRET` and the seven campaign IDs
+      wait for campaigns.
 - [ ] `SHIPPING_LABEL_OPERATOR_EMAILS` — optional; set it if support staff must retry a seller's
       label.
 - [ ] Optional analytics: `REACT_APP_GOOGLE_ANALYTICS_ID` or `REACT_APP_PLAUSIBLE_DOMAINS`.
@@ -245,19 +245,33 @@ Remaining:
 
 ## 6. Email (Brevo + Sharetribe native)
 
-Known missing: the hosted Brevo templates.
+Audited 2026-10-09; full state and the step-by-step procedure are in the
+[Brevo guide](../integrations/brevo.md#setup-status-audited-2026-10-09). In short: Heroku now uses a
+key from a dedicated ARCHIVO VINTACH Brevo account (free plan, 300 sends/day) with list 6 "Live
+ArchivoVintach", so the footer newsletter works. `archivovintach.com` is authenticated (DKIM + DMARC
+green) and the sender `hola@archivovintach.com` is active. Still missing: the hosted welcome
+template, the transactional webhook, and the template variable on Heroku (the sender variables are
+set). The old Retop MX key that leaked through the Render bundle was deleted on 2026-10-10.
 
-- [ ] Brevo account can send transactional email; production sending domain authenticated
-      (SPF/DKIM/DMARC valid); sender address verified.
-- [ ] Seller welcome template created from
-      [the Spanish copy](../integrations/brevo-templates-es.md), activated, and its ID set as
-      `BREVO_TEMPLATE_SELLER_WELCOME`. This is the only template launch needs.
-- [ ] The seven campaign templates (with unsubscribe link and legal footer), the webhook, and its
-      secret — needed only before `AV_BREVO_CAMPAIGNS_ENABLED=true`, which stays `false` at launch.
-- [ ] Production marketing list ID set as `BREVO_LIST_ID` (footer newsletter uses it at launch).
+- [x] Sending identity decided: `hola@archivovintach.com` on a dedicated ARCHIVO VINTACH account.
+- [ ] Name the Brevo account owner, pick the Test-phase list (7 "Test ArchivoVintach" exists; Heroku
+      has 6), and approve the welcome step that predates eShip (Brevo guide decisions 2, 4, 6).
+- [x] Phase A1–A2: `archivovintach.com` authenticated through GoDaddy DNS (DKIM + DMARC) and the
+      sender `hola@archivovintach.com` is active (2026-10-09); a test send passed SPF, DKIM and
+      DMARC in Gmail (2026-10-10).
+- [x] Phase A3: Heroku key replaced; the old Retop MX key that leaked through the Render bundle was
+      deleted (2026-10-10).
+- [ ] Phase A5: create and activate the seller welcome template — the only template launch needs.
+- [ ] Phase A6–A7: create the transactional webhook with its header secret, set
+      `BREVO_TEMPLATE_SELLER_WELCOME` (sender variables already set), and turn on
+      `AV_NOTIFICATIONS_ENABLED` and `AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED`.
+- [ ] Phase A8–A10: readiness, end-to-end welcome/footer/Contact Details tests, and the inventory
+      record (outside the repository).
+- [ ] At cutover (Phase A11): production `BREVO_LIST_ID`, webhook URL moved to
+      `www.archivovintach.com`.
 - [ ] Sharetribe Live outgoing email uses the production domain (separate from Brevo).
-- [ ] Record the Brevo owner, key-rotation date, list ID, and template IDs in the team's secret
-      inventory (not in the repository).
+- [ ] Campaigns (Phase B: seven templates, capacity, smoke tests) wait until after launch;
+      `AV_BREVO_CAMPAIGNS_ENABLED` stays `false`.
 
 ## 7. Heroku and domain
 
@@ -289,8 +303,8 @@ Remaining:
       `heroku certs:auto` shows `www` issued.
 - [ ] Set `REACT_APP_MARKETPLACE_ROOT_URL=https://www.archivovintach.com` and the Sharetribe Live
       Marketplace URL to match, before the Live build.
-- [ ] Add a DMARC record (`_dmarc.archivovintach.com` has none) when authenticating the Brevo and
-      Sharetribe sending domain (§6).
+- [x] DMARC record added (`_dmarc.archivovintach.com`, `p=none`) with the Brevo domain (§6, Brevo
+      guide step A1). Re-check it when adding Sharetribe's Live sending-domain records.
 - [ ] Before `pg:reset`, carry the Instagram token across (runbook §5.2), or mint one if Live uses a
       different account.
 

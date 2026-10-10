@@ -14,6 +14,10 @@ Common parameters:
   `{{ params.LISTING.imageUrl }}`, `{{ params.LISTING_URL }}`
 - `{{ params.LISTINGS }}` for a Brevo loop containing up to three listing objects
 
+Each listing object also carries `closet` (the seller's display name) and `path` (relative; link it
+as `{{ params.MARKETPLACE_URL }}{{ item.path }}` inside the loop). See the
+[Brevo guide](brevo.md#hosted-transactional-templates) for every field.
+
 ## `BREVO_TEMPLATE_VIEWED_LISTING_A`
 
 - Asunto: `Una prenda de un closet chido te está esperando 👀`
@@ -147,6 +151,11 @@ Para empezar:
 1. Publica tu primera prenda — fotos honestas, descripción con alma, precio justo
 2. Conecta con tu compradora — responde rápido, genera confianza
 3. Coordina la entrega — tú decides cómo mover tus prendas
+
+> **Pending approval:** step 3 predates eShip. Sellers now print a prepaid label (Generar guía) and
+> hand the package to the carrier; they do not arrange delivery themselves. Suggested replacement:
+> "Envía con guía prepagada — genera tu guía desde la venta y entrega el paquete a la paquetería".
+> Approve or rewrite before creating the template (Brevo guide, decision 6).
 
 CTA: `Publicar mi primera prenda` → `{{ params.CREATE_LISTING_URL }}`
 
