@@ -285,8 +285,13 @@ A `503` or a startup error names the missing variable. Fix it before continuing.
 > DKIM and DMARC pass. **Failed:** the signup marketing opt-in never reached PostgreSQL or Brevo —
 > `PUT /api/brevo/preference` returned `400 enabled_must_be_boolean` because `src/util/api.js` >
 > `request()` dropped every caller-encoded JSON body. The same bug broke the Contact Details toggle
-> and listing engagement tracking. Fixed in `request()`; redeploy, then re-run steps 4–5 and a
-> signup with the opt-in checked.
+> and listing engagement tracking. Fixed in `request()` (PR #112, Heroku v36).
+>
+> **Re-run after v36 — passed:** a new signup with the opt-in checked (`signup_email`) reached
+> `av_marketing_preferences`, the `av_newsletter_consent` ledger and list 7, and got its welcome.
+> Contact Details opt-in (`account_details`) added a contact to list 7. Opt-in then opt-out recorded
+> `granted` then `withdrawn`, and the contact stayed out of list 7. Every
+> `PUT /api/brevo/preference` returned `200`. Outlook delivery was not checked.
 
 1. Sign up a new `vendedor` account in the Test marketplace. Within about five minutes (one poll)
    the welcome arrives: Spanish subject, correct name, both buttons open the herokuapp host (it is
