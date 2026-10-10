@@ -259,7 +259,8 @@ was deleted on 2026-10-10.
 - [x] Test-phase list: `BREVO_LIST_ID=7` ("Test ArchivoVintach"); a Heroku footer signup reached it
       (2026-10-10).
 - [x] Brevo account owner confirmed (Brevo guide decision 2; recorded in the A10 inventory).
-- [ ] Approve the welcome step that predates eShip (Brevo guide decision 6).
+- [x] Welcome step 3 updated for eShip (shipping origin, prepaid guía, 7 days) in template 6 (Brevo
+      guide decision 6, 2026-10-10).
 - [x] Phase A1–A2: `archivovintach.com` authenticated through GoDaddy DNS (DKIM + DMARC) and the
       sender `hola@archivovintach.com` is active (2026-10-09); a test send passed SPF, DKIM and
       DMARC in Gmail (2026-10-10).

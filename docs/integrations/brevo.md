@@ -112,8 +112,9 @@ and readiness passes (A8). **What does not work yet:** every lifecycle campaign 
    evidence in the Live database, and PostgreSQL is authoritative, so campaigns will never mail
    them. Either leave them (manual Brevo newsletters still reach them) or ask them to opt in again
    after launch. Do not import them into the consent tables.
-6. **Welcome copy.** ✅ Decided 2026-10-10: the client approved the copy as is, keeping the
-   pre-eShip step "Coordina la entrega" (see [`brevo-templates-es.md`](brevo-templates-es.md)). The
+6. **Welcome copy.** ✅ Decided 2026-10-10. Step 3 now reads "Configura tu envío", replacing the
+   pre-eShip "Coordina la entrega". It covers the shipping origin, the prepaid guía and the 7-day
+   window, and is live in template 6 (see [`brevo-templates-es.md`](brevo-templates-es.md)). The
    subject is the gender-neutral `Te damos la bienvenida a Archivo Vintach ✨`. The guide is the May
    2026 design, served as the web-optimized `HowTo-AV_low.pdf`.
 
