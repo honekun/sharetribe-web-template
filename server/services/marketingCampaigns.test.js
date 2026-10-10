@@ -1,6 +1,7 @@
 'use strict';
 
 const {
+  buildCampaignEmail,
   buildSellerWelcomeEmail,
   isSellerUserType,
   stableVariant,
@@ -42,14 +43,33 @@ describe('marketing campaign configuration', () => {
         params: expect.objectContaining({
           NOMBRE: 'Sofía',
           CREATE_LISTING_URL: 'https://example.com/l/new',
+          GUIDE_URL: 'https://example.com/static/files/HowTo-AV_low.pdf',
         }),
         attachments: [
           {
-            path: 'public/static/files/ArchivoVintach-how-to.pdf',
+            path: 'public/static/files/HowTo-AV_low.pdf',
             name: 'ArchivoVintach-how-to.pdf',
           },
         ],
       })
     );
+  });
+
+  test('campaigns link the same seller guide as the welcome', () => {
+    expect(
+      buildCampaignEmail({
+        campaign: 'signup_no_listing',
+        recipientKey: 'user-1',
+        email: 'seller@example.com',
+        firstName: 'Sofía',
+      }).params.GUIDE_URL
+    ).toBe('https://example.com/static/files/HowTo-AV_low.pdf');
+  });
+
+  test('the attached seller guide is committed', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const [guide] = buildSellerWelcomeEmail({ email: 'seller@example.com' }).attachments;
+    expect(fs.existsSync(path.resolve(__dirname, '../..', guide.path))).toBe(true);
   });
 });

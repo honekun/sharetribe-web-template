@@ -3,6 +3,8 @@
 const { createHash } = require('crypto');
 
 const SELLER_USER_TYPES = new Set(['vendedor', 'vendedor-tienda']);
+// Web-optimized export of HowTo-AV.pdf; linked as GUIDE_URL and attached to the seller welcome.
+const SELLER_GUIDE_PATH = '/static/files/HowTo-AV_low.pdf';
 const PROMOTIONAL_CAMPAIGNS = new Set([
   'viewed_listing',
   'abandoned_checkout',
@@ -84,7 +86,7 @@ function buildCampaignEmail({ campaign, recipientKey, email, firstName, payload 
       LISTINGS: listings,
       CREATE_LISTING_URL: marketplaceUrl('/l/new'),
       SEARCH_URL: marketplaceUrl('/s'),
-      GUIDE_URL: marketplaceUrl('/static/files/ArchivoVintach-how-to.pdf'),
+      GUIDE_URL: marketplaceUrl(SELLER_GUIDE_PATH),
     },
     templateName,
   };
@@ -100,11 +102,11 @@ function buildSellerWelcomeEmail({ email, firstName, lastName }) {
       NOMBRE: firstName || 'Usuario',
       MARKETPLACE_URL: marketplaceUrl(),
       CREATE_LISTING_URL: marketplaceUrl('/l/new'),
-      GUIDE_URL: marketplaceUrl('/static/files/ArchivoVintach-how-to.pdf'),
+      GUIDE_URL: marketplaceUrl(SELLER_GUIDE_PATH),
     },
     attachments: [
       {
-        path: 'public/static/files/ArchivoVintach-how-to.pdf',
+        path: `public${SELLER_GUIDE_PATH}`,
         name: 'ArchivoVintach-how-to.pdf',
       },
     ],
