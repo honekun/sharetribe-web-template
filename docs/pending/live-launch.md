@@ -247,15 +247,18 @@ Remaining:
 
 Audited 2026-10-09; full state and the step-by-step procedure are in the
 [Brevo guide](../integrations/brevo.md#setup-status-audited-2026-10-09). In short: Heroku now uses a
-key from a dedicated ARCHIVO VINTACH Brevo account (free plan, 300 sends/day) with list 6 "Live
-ArchivoVintach", so the footer newsletter works. `archivovintach.com` is authenticated (DKIM + DMARC
-green) and the sender `hola@archivovintach.com` is active. Still missing: the hosted welcome
-template, the transactional webhook, and the template variable on Heroku (the sender variables are
-set). The old Retop MX key that leaked through the Render bundle was deleted on 2026-10-10.
+key from a dedicated ARCHIVO VINTACH Brevo account (free plan, 300 sends/day) with list 7 "Test
+ArchivoVintach" for the Test phase (6 "Live ArchivoVintach" at cutover); the footer newsletter works
+and was verified on Heroku on 2026-10-10. `archivovintach.com` is authenticated (DKIM + DMARC green)
+and the sender `hola@archivovintach.com` is active. Still missing: the hosted welcome template, the
+transactional webhook, and the template variable on Heroku (the sender variables are set). The old
+Retop MX key that leaked through the Render bundle was deleted on 2026-10-10.
 
 - [x] Sending identity decided: `hola@archivovintach.com` on a dedicated ARCHIVO VINTACH account.
-- [ ] Name the Brevo account owner, pick the Test-phase list (7 "Test ArchivoVintach" exists; Heroku
-      has 6), and approve the welcome step that predates eShip (Brevo guide decisions 2, 4, 6).
+- [x] Test-phase list: `BREVO_LIST_ID=7` ("Test ArchivoVintach"); a Heroku footer signup reached it
+      (2026-10-10).
+- [ ] Name the Brevo account owner and approve the welcome step that predates eShip (Brevo guide
+      decisions 2, 6).
 - [x] Phase A1–A2: `archivovintach.com` authenticated through GoDaddy DNS (DKIM + DMARC) and the
       sender `hola@archivovintach.com` is active (2026-10-09); a test send passed SPF, DKIM and
       DMARC in Gmail (2026-10-10).
@@ -267,7 +270,7 @@ set). The old Retop MX key that leaked through the Render bundle was deleted on 
       `AV_NOTIFICATIONS_ENABLED` and `AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED`.
 - [ ] Phase A8–A10: readiness, end-to-end welcome/footer/Contact Details tests, and the inventory
       record (outside the repository).
-- [ ] At cutover (Phase A11): production `BREVO_LIST_ID`, webhook URL moved to
+- [ ] At cutover (Phase A11): `BREVO_LIST_ID=6` ("Live ArchivoVintach"), webhook URL moved to
       `www.archivovintach.com`.
 - [ ] Sharetribe Live outgoing email uses the production domain (separate from Brevo), with the same
       visible sender name and reply-to mailbox as Brevo's `hola@archivovintach.com` sender (Brevo

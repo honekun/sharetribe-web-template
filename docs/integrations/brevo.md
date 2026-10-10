@@ -76,11 +76,11 @@ configured on Heroku), the Heroku app `archivo-vintach-marketplace`, and its dat
 | Sending domains               | **`archivovintach.com` authenticated and verified** (Brevo code, DKIM `brevo1`/`brevo2._domainkey` CNAMEs, DMARC all green).                                                                                                                  |
 | Senders                       | `ARCHIVO VINTACH <hola@archivovintach.com>`, active.                                                                                                                                                                                          |
 | `archivovintach.com` mail DNS | MX points to Google Workspace. DMARC `_dmarc` TXT is now `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com`. Google Workspace DKIM not yet checked.                                                                                           |
-| Contact list                  | `BREVO_LIST_ID` is **6**, "Live ArchivoVintach", 0 subscribers. Also present: 7 "Test ArchivoVintach" (0), 4 "ARCHIVO — Seller Waitlist" (109), 3, 2.                                                                                         |
+| Contact list                  | `BREVO_LIST_ID` is **7**, "Test ArchivoVintach", for the Test phase; a footer signup on Heroku landed there on 2026-10-10. Production list: 6 "Live ArchivoVintach", 0 subscribers. Also present: 4 "ARCHIVO — Seller Waitlist" (109), 3, 2.  |
 | Transactional templates       | **None of the eight exist.** Only Brevo's four default double-opt-in templates.                                                                                                                                                               |
 | Transactional webhook         | **None.**                                                                                                                                                                                                                                     |
 | Consent contact attributes    | None of the five exist, so `BREVO_CONSENT_ATTRIBUTES_ENABLED` must stay `false`.                                                                                                                                                              |
-| Heroku variables set          | `BREVO_API_KEY`, `BREVO_LIST_ID=6`, `BREVO_SENDER_EMAIL=hola@archivovintach.com`, `BREVO_SENDER_NAME=ARCHIVO VINTACH`, `BREVO_CONSENT_ATTRIBUTES_ENABLED=false`, Integration credentials, `DATABASE_URL`.                                     |
+| Heroku variables set          | `BREVO_API_KEY`, `BREVO_LIST_ID=7` (Test phase), `BREVO_SENDER_EMAIL=hola@archivovintach.com`, `BREVO_SENDER_NAME=ARCHIVO VINTACH`, `BREVO_CONSENT_ATTRIBUTES_ENABLED=false`, Integration credentials, `DATABASE_URL`.                        |
 | Heroku variables missing      | `BREVO_WEBHOOK_SECRET`, every `BREVO_TEMPLATE_*`.                                                                                                                                                                                             |
 | Heroku flags                  | `AV_NOTIFICATIONS_ENABLED=false`, `AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=false`, `AV_BREVO_CAMPAIGNS_ENABLED=false`, `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false`, `AV_SHIPPING_LABELS_ENABLED=true`, `AV_ESHIP_TRACKING_EMAILS_ENABLED=false`. |
 | App side                      | `/api/brevo/health` → `200` (ready, nothing enabled). The guide PDF is served at `/static/files/ArchivoVintach-how-to.pdf` (200, 2.4 MB). Consent tables are empty.                                                                           |
@@ -102,10 +102,9 @@ welcome email (no template, sender variables, or flags) and every lifecycle camp
 3. **Capacity.** The free plan's 300 sends per day covers the seller welcome at launch volumes.
    Before Phase B, size the plan for campaign volume (each consented user can receive up to two
    promotional emails per seven days).
-4. **Test-phase list.** The Heroku app runs against Sharetribe Test until cutover, so footer signups
-   made while testing would land in the real list. List 7 "Test ArchivoVintach" exists for this: set
-   `BREVO_LIST_ID=7` during the Test phase and switch back to 6 "Live ArchivoVintach" at cutover
-   (step A11). Heroku currently has 6.
+4. **Test-phase list.** ✅ The Heroku app runs against Sharetribe Test until cutover, so footer
+   signups made while testing go to list 7 "Test ArchivoVintach" (`BREVO_LIST_ID=7`, set
+   2026-10-10). Switch to 6 "Live ArchivoVintach" at cutover (step A11).
 5. **Existing list members** (109 in "ARCHIVO — Seller Waitlist"). They have no first-party consent
    evidence in the Live database, and PostgreSQL is authoritative, so campaigns will never mail
    them. Either leave them (manual Brevo newsletters still reach them) or ask them to opt in again
@@ -170,7 +169,8 @@ read -rs NEW_KEY && heroku config:set BREVO_API_KEY="$NEW_KEY" --app "$AV_HEROKU
 
 Then delete the old key in Brevo once the footer signup works with the new one (A9).
 
-**A4. Choose the list for the Test phase** (decision 4). To create the test list:
+**A4. Choose the list for the Test phase** (decision 4) — ✅ list 7 "Test ArchivoVintach" is set on
+Heroku and a footer signup reached it (2026-10-10). To create a test list from scratch:
 
 ```sh
 curl -s -X POST -H "api-key: $BREVO_API_KEY" -H 'content-type: application/json' \
@@ -181,7 +181,7 @@ heroku config:set BREVO_LIST_ID=N --app "$AV_HEROKU_APP"
 ```
 
 `folderId` must be an existing folder; list them with `GET /v3/contacts/folders` if `1` is rejected.
-Write down the production list ID (`9` today) for step A11.
+The production list for step A11 is 6 "Live ArchivoVintach".
 
 **A5. Create the seller welcome template.**
 
@@ -292,7 +292,8 @@ webhook ID.
 **A11. At the Live cutover** (in addition to the
 [Heroku runbook](../operations/heroku-deployment.md) §5):
 
-- `BREVO_LIST_ID` → the production list (`9`, or a new one).
+- `BREVO_LIST_ID` → the production list 6 "Live ArchivoVintach"
+  (`heroku config:set BREVO_LIST_ID=6`), then delete the test contacts left in list 7.
 - `REACT_APP_MARKETPLACE_ROOT_URL=https://www.archivovintach.com` is set before the Live build, so
   email links point to the production host.
 - Point the webhook at the production host (the herokuapp host stays reachable, but production
