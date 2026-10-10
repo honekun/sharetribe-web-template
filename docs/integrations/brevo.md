@@ -14,7 +14,8 @@ The application implements seller welcome email plus five promotional campaign f
 welcome applies only to Sharetribe user types `vendedor` and `vendedor-tienda`; marketing delivery
 is consent- and suppression-gated. Footer, signup, identity-provider signup, and Contact Details
 flows maintain the preference, while Brevo contact and webhook services synchronize provider state.
-The seller welcome attaches `public/static/files/ArchivoVintach-how-to.pdf`.
+The seller welcome attaches `public/static/files/HowTo-AV_low.pdf` (shown to the recipient as
+`ArchivoVintach-how-to.pdf`).
 
 Repository support does not prove that a Brevo account, production DNS, hosted templates, deployment
 secrets, PostgreSQL schema, or production webhook is configured. Verify each deployment environment
@@ -109,9 +110,10 @@ welcome email (no template, sender variables, or flags) and every lifecycle camp
    evidence in the Live database, and PostgreSQL is authoritative, so campaigns will never mail
    them. Either leave them (manual Brevo newsletters still reach them) or ask them to opt in again
    after launch. Do not import them into the consent tables.
-6. **Welcome copy.** Approve or update the step "Coordina la entrega — tú decides cómo mover tus
-   prendas" in [`brevo-templates-es.md`](brevo-templates-es.md); it predates eShip, where the seller
-   generates a prepaid label (Generar guía) rather than arranging delivery.
+6. **Welcome copy.** ✅ Decided 2026-10-10: the client approved the copy as is, keeping the
+   pre-eShip step "Coordina la entrega" (see [`brevo-templates-es.md`](brevo-templates-es.md)). The
+   subject is the gender-neutral `Te damos la bienvenida a Archivo Vintach ✨`. The guide is the May
+   2026 design, served as the web-optimized `HowTo-AV_low.pdf`.
 
 ## Completion runbook
 
@@ -153,7 +155,7 @@ curl -s -H "api-key: $BREVO_API_KEY" -H 'accept: application/json' \
 
 **A2. Create the sender** — ✅ `ARCHIVO VINTACH <hola@archivovintach.com>` is active. A test send on
 2026-10-10 reached Gmail with SPF, DKIM (`archivovintach.com`) and DMARC all `PASS`. Brevo →
-**Senders, domains, IPs → Senders → Add a sender**: name `Archivo Vintach`, email the address chosen
+**Senders, domains, IPs → Senders → Add a sender**: name `ARCHIVO VINTACH`, email the address chosen
 in decision 1. Brevo emails a confirmation link to that mailbox, so it must exist in Google
 Workspace and someone must be able to read it; replies from sellers also go there.
 
@@ -187,7 +189,7 @@ The production list for step A11 is 6 "Live ArchivoVintach".
 
 1. Brevo → **Transactional → Templates → New template** (in some account layouts: **Campaigns →
    Templates → Transactional**). Name it `AV seller welcome`.
-2. Subject: `Bienvenido a Archivo Vintach ✨`. Preview text:
+2. Subject: `Te damos la bienvenida a Archivo Vintach ✨`. Preview text:
    `Tu closet ahora tiene otro destino posible.`
 3. Sender: the sender from A2. Reply-to: the same mailbox.
 4. Build the body from the `BREVO_TEMPLATE_SELLER_WELCOME` copy in
@@ -195,8 +197,8 @@ The production list for step A11 is 6 "Live ArchivoVintach".
    exactly as `{{ params.NOMBRE }}`, `{{ params.CREATE_LISTING_URL }}`, and `{{ params.GUIDE_URL }}`
    (case-sensitive). Make both CTAs real buttons/links whose URL is the parameter. Do not hard-code
    a host.
-5. Do not add the PDF in Brevo: the application attaches `ArchivoVintach-how-to.pdf` itself. No
-   unsubscribe link is required (onboarding is essential, not marketing).
+5. Do not add the PDF in Brevo: the application attaches `HowTo-AV_low.pdf` itself. No unsubscribe
+   link is required (onboarding is essential, not marketing).
 6. Save, then **activate** the template. Note its numeric ID (shown in the template list or URL).
 7. Send yourself a test from the template editor and check: no visible `{{ … }}`, buttons work,
    mobile layout, From name/address.
@@ -204,9 +206,9 @@ The production list for step A11 is 6 "Live ArchivoVintach".
 To create it through the API instead, write the HTML to a local file (not in the repository) and:
 
 ```sh
-jq -n --rawfile html welcome.html --arg sender "contacto@archivovintach.com" '{
-  templateName: "AV seller welcome", subject: "Bienvenido a Archivo Vintach ✨",
-  sender: { name: "Archivo Vintach", email: $sender }, replyTo: $sender,
+jq -n --rawfile html welcome.html --arg sender "hola@archivovintach.com" '{
+  templateName: "AV seller welcome", subject: "Te damos la bienvenida a Archivo Vintach ✨",
+  sender: { name: "ARCHIVO VINTACH", email: $sender }, replyTo: $sender,
   htmlContent: $html, isActive: true }' |
   curl -s -X POST -H "api-key: $BREVO_API_KEY" -H 'content-type: application/json' \
     https://api.brevo.com/v3/smtp/templates -d @-
@@ -357,7 +359,7 @@ are enabled.
 
 | Campaign                 | Trigger and delay                                                                                                           | Cancellation / final eligibility                                                                                                                           |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Seller welcome           | `user/created`; immediate; only `vendedor` and `vendedor-tienda`                                                            | Transactional onboarding; not consent-gated. Attaches `ArchivoVintach-how-to.pdf`.                                                                         |
+| Seller welcome           | `user/created`; immediate; only `vendedor` and `vendedor-tienda`                                                            | Transactional onboarding; not consent-gated. Attaches `HowTo-AV_low.pdf`.                                                                                  |
 | Viewed listing A/B       | Authenticated non-owner remains on a listing page for 10 seconds; 24 hours after latest qualified view                      | Anonymous views count only toward seller activity and never schedule buyer email. Cancel on favorite, inquiry, or purchase. Listing must remain published. |
 | Abandoned checkout       | `transition/expire-payment`; 30 minutes after Sharetribe expires payment                                                    | Cancel if transaction later confirms/cancels. Shopping-bag and ordinary inquiry activity are excluded.                                                     |
 | Matching listings A/B    | First observed publication matched to consented view/favorite behavior from prior 90 days; next 09:00 `America/Mexico_City` | Category required. Brand, size, and color rank results. Up to three published listings; one digest per user/day.                                           |
@@ -521,16 +523,16 @@ Create every template under Brevo's transactional template area. For each templa
 The API supplies `sender`, recipient, `templateId`, `params`, tags, and any attachment. It does not
 override the subject, so the active Brevo template must contain the approved subject.
 
-| Environment variable                 | Required template parameters/content                                                                                  | Unsubscribe                           |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `BREVO_TEMPLATE_SELLER_WELCOME`      | `NOMBRE`, `MARKETPLACE_URL`, `CREATE_LISTING_URL`, `GUIDE_URL`; application also attaches `ArchivoVintach-how-to.pdf` | Not required for essential onboarding |
-| `BREVO_TEMPLATE_VIEWED_LISTING_A`    | `NOMBRE`, `LISTING_URL`, `LISTING.title`, `LISTING.priceFormatted`, `LISTING.imageUrl`                                | Required                              |
-| `BREVO_TEMPLATE_VIEWED_LISTING_B`    | Same as viewed A                                                                                                      | Required                              |
-| `BREVO_TEMPLATE_ABANDONED_CHECKOUT`  | `NOMBRE`, `LISTING_URL`, `LISTING.title`, `LISTING.priceFormatted`, `LISTING.imageUrl`                                | Required                              |
-| `BREVO_TEMPLATE_MATCHING_LISTINGS_A` | `NOMBRE`, `MARKETPLACE_URL`, `SEARCH_URL`, loop over up to three `LISTINGS` objects                                   | Required                              |
-| `BREVO_TEMPLATE_MATCHING_LISTINGS_B` | Same as matching A                                                                                                    | Required                              |
-| `BREVO_TEMPLATE_SIGNUP_NO_LISTING`   | `NOMBRE`, `CREATE_LISTING_URL`, `GUIDE_URL`                                                                           | Required                              |
-| `BREVO_TEMPLATE_LISTING_NO_ACTIVITY` | `NOMBRE`, `LISTING_URL`                                                                                               | Required                              |
+| Environment variable                 | Required template parameters/content                                                                         | Unsubscribe                           |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
+| `BREVO_TEMPLATE_SELLER_WELCOME`      | `NOMBRE`, `MARKETPLACE_URL`, `CREATE_LISTING_URL`, `GUIDE_URL`; application also attaches `HowTo-AV_low.pdf` | Not required for essential onboarding |
+| `BREVO_TEMPLATE_VIEWED_LISTING_A`    | `NOMBRE`, `LISTING_URL`, `LISTING.title`, `LISTING.priceFormatted`, `LISTING.imageUrl`                       | Required                              |
+| `BREVO_TEMPLATE_VIEWED_LISTING_B`    | Same as viewed A                                                                                             | Required                              |
+| `BREVO_TEMPLATE_ABANDONED_CHECKOUT`  | `NOMBRE`, `LISTING_URL`, `LISTING.title`, `LISTING.priceFormatted`, `LISTING.imageUrl`                       | Required                              |
+| `BREVO_TEMPLATE_MATCHING_LISTINGS_A` | `NOMBRE`, `MARKETPLACE_URL`, `SEARCH_URL`, loop over up to three `LISTINGS` objects                          | Required                              |
+| `BREVO_TEMPLATE_MATCHING_LISTINGS_B` | Same as matching A                                                                                           | Required                              |
+| `BREVO_TEMPLATE_SIGNUP_NO_LISTING`   | `NOMBRE`, `CREATE_LISTING_URL`, `GUIDE_URL`                                                                  | Required                              |
+| `BREVO_TEMPLATE_LISTING_NO_ACTIVITY` | `NOMBRE`, `LISTING_URL`, `LISTING.title`                                                                     | Required                              |
 
 Campaign messages receive these common values even if one template only uses a subset:
 
@@ -541,7 +543,11 @@ Campaign messages receive these common values even if one template only uses a s
 
 `LISTING` and each `LISTINGS` entry have the same fields: `title`, `priceFormatted` (for example
 `$1,250.00`, MXN only; empty otherwise), `imageUrl` (may be `null`), `path`, `closet` (the seller's
-display name), `id`, `slug`, `price.amount`/`price.currency`, `category`, `brand`, and `sizes`.
+display name), `id`, `slug`, `price.amount`/`price.currency`, `category`, `brand`, `sizes`,
+`colors`, and `state`. Matching-listing entries also carry a ranking `score`. These values are
+captured when the job is scheduled. Only matching listings are reloaded before sending, so a
+viewed-listing, abandoned-checkout, or listing-without-activity email may show a title, price, or
+image up to 24 or 72 hours old.
 
 Each matching-listing object's `path` is relative. Build its link from `MARKETPLACE_URL` plus
 `path`; do not link a bare relative path from the email client. `LISTING_URL` always opens the
@@ -691,7 +697,7 @@ seller, category, and listing data are not trusted.
 8. Test email and identity-provider signup with consent both unchecked and checked.
 9. Test Contact Details opt-in, withdrawal, page reload, and Brevo list membership.
 10. Trigger seller welcome with a `vendedor` and `vendedor-tienda`; verify copy, CTA URLs, tags,
-    sender authentication, and the committed 2.3 MB PDF attachment. Confirm other user types do not
+    sender authentication, and the committed ≈0.9 MB PDF attachment. Confirm other user types do not
     receive it.
 11. While campaigns are disabled, the poller neither schedules nor sends campaign jobs
     (`eventPoller.js` checks the flag before both), so there is nothing to observe yet; confirm
