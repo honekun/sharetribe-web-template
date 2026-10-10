@@ -20,6 +20,50 @@ Repository support does not prove that a Brevo account, production DNS, hosted t
 secrets, PostgreSQL schema, or production webhook is configured. Verify each deployment environment
 separately.
 
+## Which system sends which email
+
+Decided 2026-10-10: the split between Sharetribe and Brevo stays as built. The rule is simple:
+
+- **Sharetribe sends everything that belongs to an account or a transaction.** That covers the
+  built-in account emails (email verification, password reset, email change, new message) and every
+  transaction-process notification in `ext/transaction-processes/*/templates`, including the eShip
+  pickup email. eShip's `TRANSIT` checkpoint makes the app run `transition/eship-picked-up-from-*`,
+  and the process sends `purchase-order-in-transit-customer`.
+- **Brevo sends everything outside a transaction:** the seller welcome email and the lifecycle
+  campaigns.
+
+Why transaction email stays in Sharetribe:
+
+- A notification fires atomically with its transition, and a reminder is pinned to its deadline in
+  `process.edn`. Moving one to Brevo would mean replaying it from the poller instead: up to five
+  minutes late, and lost whenever the dyno or PostgreSQL is down.
+- The templates already use Sharetribe's transaction data, `es_MX` locale and Console email texts.
+  Sharetribe sends them at no extra cost, while Brevo's free plan allows 300 sends a day.
+- Account emails can't move at all: Sharetribe owns the verification and reset tokens.
+
+Why welcome and campaigns stay in Brevo:
+
+- Sharetribe has no trigger outside a transaction. A welcome on `user/created`, a delay of 24 or 72
+  hours, a listing view or a new matching listing can only come from the app's poller.
+- The welcome email attaches the PDF guide, and Sharetribe templates can't attach files.
+- Campaigns are marketing. They need consent, unsubscribe and suppression handling, an A/B split and
+  a frequency cap, which Brevo and the consent ledger provide. Sharetribe's emails are for
+  transactional messages only.
+- Abandoned checkout is triggered by a transaction (`transition/expire-payment`) but is still
+  promotional, so it stays in Brevo and remains consent-gated.
+
+Rules that follow from this:
+
+- Don't add a Brevo email for something a transaction transition already announces, and don't put
+  promotional copy in a Sharetribe template.
+- Make both systems look like one sender. Use the same `archivovintach.com` address, the same
+  visible name (`BREVO_SENDER_NAME` and the Sharetribe Live sender name should match), and a
+  monitored reply-to. Sharetribe Live's custom sending domain needs its own DNS records in GoDaddy.
+  Merge any SPF include into the existing record rather than adding a second `v=spf1`, and keep the
+  shared `_dmarc` record.
+- The welcome email arrives right after Sharetribe's verification email, so it must not repeat the
+  "verify your email" step.
+
 ## Setup status (audited 2026-10-09)
 
 Re-checked after the domain was authenticated. Read-only checks against the Brevo API (using the key

@@ -269,7 +269,9 @@ set). The old Retop MX key that leaked through the Render bundle was deleted on 
       record (outside the repository).
 - [ ] At cutover (Phase A11): production `BREVO_LIST_ID`, webhook URL moved to
       `www.archivovintach.com`.
-- [ ] Sharetribe Live outgoing email uses the production domain (separate from Brevo).
+- [ ] Sharetribe Live outgoing email uses the production domain (separate from Brevo), with the same
+      visible sender name and reply-to mailbox as Brevo's `hola@archivovintach.com` sender (Brevo
+      guide, "Which system sends which email").
 - [ ] Campaigns (Phase B: seven templates, capacity, smoke tests) wait until after launch;
       `AV_BREVO_CAMPAIGNS_ENABLED` stays `false`.
 
