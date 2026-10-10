@@ -70,25 +70,27 @@ Rules that follow from this:
 Re-checked after the domain was authenticated. Read-only checks against the Brevo API (using the key
 configured on Heroku), the Heroku app `archivo-vintach-marketplace`, and its database:
 
-| Item                          | State                                                                                                                                                                                                                                         |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Brevo account                 | Company **ARCHIVO VINTACH** — a dedicated account; the Heroku key was rotated off the old Retop MX account on 2026-10-09.                                                                                                                     |
-| Plan / capacity               | `free` plan, **300 sends per day**.                                                                                                                                                                                                           |
-| Sending domains               | **`archivovintach.com` authenticated and verified** (Brevo code, DKIM `brevo1`/`brevo2._domainkey` CNAMEs, DMARC all green).                                                                                                                  |
-| Senders                       | `ARCHIVO VINTACH <hola@archivovintach.com>`, active.                                                                                                                                                                                          |
-| `archivovintach.com` mail DNS | MX points to Google Workspace. DMARC `_dmarc` TXT is now `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com`. Google Workspace DKIM not yet checked.                                                                                           |
-| Contact list                  | `BREVO_LIST_ID` is **7**, "Test ArchivoVintach", for the Test phase; a footer signup on Heroku landed there on 2026-10-10. Production list: 6 "Live ArchivoVintach", 0 subscribers. Also present: 4 "ARCHIVO — Seller Waitlist" (109), 3, 2.  |
-| Transactional templates       | **None of the eight exist.** Only Brevo's four default double-opt-in templates.                                                                                                                                                               |
-| Transactional webhook         | **None.**                                                                                                                                                                                                                                     |
-| Consent contact attributes    | None of the five exist, so `BREVO_CONSENT_ATTRIBUTES_ENABLED` must stay `false`.                                                                                                                                                              |
-| Heroku variables set          | `BREVO_API_KEY`, `BREVO_LIST_ID=7` (Test phase), `BREVO_SENDER_EMAIL=hola@archivovintach.com`, `BREVO_SENDER_NAME=ARCHIVO VINTACH`, `BREVO_CONSENT_ATTRIBUTES_ENABLED=false`, Integration credentials, `DATABASE_URL`.                        |
-| Heroku variables missing      | `BREVO_WEBHOOK_SECRET`, every `BREVO_TEMPLATE_*`.                                                                                                                                                                                             |
-| Heroku flags                  | `AV_NOTIFICATIONS_ENABLED=false`, `AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=false`, `AV_BREVO_CAMPAIGNS_ENABLED=false`, `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false`, `AV_SHIPPING_LABELS_ENABLED=true`, `AV_ESHIP_TRACKING_EMAILS_ENABLED=false`. |
-| App side                      | `/api/brevo/health` → `200` (ready, nothing enabled). The guide PDF is served at `/static/files/ArchivoVintach-how-to.pdf` (200, 2.4 MB). Consent tables are empty.                                                                           |
+| Item                          | State                                                                                                                                                                                                                                                                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Brevo account                 | Company **ARCHIVO VINTACH** — a dedicated account; the Heroku key was rotated off the old Retop MX account on 2026-10-09.                                                                                                                                                                                                       |
+| Plan / capacity               | `free` plan, **300 sends per day**.                                                                                                                                                                                                                                                                                             |
+| Sending domains               | **`archivovintach.com` authenticated and verified** (Brevo code, DKIM `brevo1`/`brevo2._domainkey` CNAMEs, DMARC all green).                                                                                                                                                                                                    |
+| Senders                       | `ARCHIVO VINTACH <hola@archivovintach.com>`, active.                                                                                                                                                                                                                                                                            |
+| `archivovintach.com` mail DNS | MX points to Google Workspace. DMARC `_dmarc` TXT is now `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com`. Google Workspace DKIM not yet checked.                                                                                                                                                                             |
+| Contact list                  | `BREVO_LIST_ID` is **7**, "Test ArchivoVintach", for the Test phase; a footer signup on Heroku landed there on 2026-10-10. Production list: 6 "Live ArchivoVintach", 0 subscribers. Also present: 4 "ARCHIVO — Seller Waitlist" (109), 3, 2.                                                                                    |
+| Transactional templates       | Seller welcome is **ID 6** "AV seller welcome", active (created via API on 2026-10-10). ID 5 is an empty, inactive draft of the same name. The seven campaign templates don't exist yet.                                                                                                                                        |
+| Transactional webhook         | **ID 2241911**, transactional, unbatched, events `delivered`, `softBounce`, `hardBounce`, `blocked`, `spam`, `unsubscribed`, pointing at `https://archivo-vintach-marketplace-ee5adafa97a8.herokuapp.com/api/brevo/webhook`. Its `x-av-brevo-webhook-secret` header matches Heroku `BREVO_WEBHOOK_SECRET` (created 2026-10-10). |
+| Consent contact attributes    | None of the five exist, so `BREVO_CONSENT_ATTRIBUTES_ENABLED` must stay `false`.                                                                                                                                                                                                                                                |
+| Heroku variables set          | `BREVO_API_KEY`, `BREVO_LIST_ID=7` (Test phase), `BREVO_SENDER_EMAIL=hola@archivovintach.com`, `BREVO_SENDER_NAME=ARCHIVO VINTACH`, `BREVO_CONSENT_ATTRIBUTES_ENABLED=false`, Integration credentials, `DATABASE_URL`.                                                                                                          |
+| Heroku variables missing      | The seven campaign `BREVO_TEMPLATE_*`. `BREVO_TEMPLATE_SELLER_WELCOME=6` set 2026-10-10 (v33); `BREVO_WEBHOOK_SECRET` set 2026-10-10.                                                                                                                                                                                           |
+| Heroku flags                  | `AV_NOTIFICATIONS_ENABLED=true`, `AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=true` (both since 2026-10-10, v34), `AV_BREVO_CAMPAIGNS_ENABLED=false`, `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false`, `AV_SHIPPING_LABELS_ENABLED=true`, `AV_ESHIP_TRACKING_EMAILS_ENABLED=false`.                                                        |
+| App side                      | `/api/brevo/health` → `{"ready":true,"enabled":true,"missing":[]}`; `/api/notifications/readiness` → `200` (database migrated, poller leader active, no errors); unauthenticated `POST /api/brevo/webhook` → `401` (A8, 2026-10-10). The guide PDF is served at `/static/files/ArchivoVintach-how-to.pdf` (200, 2.4 MB).        |
 
 **What works today:** the footer newsletter and Contact Details opt-in, because they need only the
-API key and list ID, and the domain plus sender are ready (A1–A3). **What does not:** the seller
-welcome email (no template, sender variables, or flags) and every lifecycle campaign.
+API key and list ID, and the domain plus sender are ready (A1–A3). The seller welcome is **on**
+since 2026-10-10 (template 6, A7): `/api/brevo/health` reports ready and enabled, and readiness is
+`200`. A test send via the app's code path was delivered. Webhook delivery tracking is wired (A6)
+and readiness passes (A8). **What does not work yet:** every lifecycle campaign (Phase B).
 
 **Launch needs only Phase A below** (the seller welcome). Campaigns (Phase B) stay off at launch.
 
@@ -185,7 +187,10 @@ heroku config:set BREVO_LIST_ID=N --app "$AV_HEROKU_APP"
 `folderId` must be an existing folder; list them with `GET /v3/contacts/folders` if `1` is rejected.
 The production list for step A11 is 6 "Live ArchivoVintach".
 
-**A5. Create the seller welcome template.**
+**A5. Create the seller welcome template** — ✅ created through the API on 2026-10-10 as **ID 6**
+"AV seller welcome", active, from the copy in [`brevo-templates-es.md`](brevo-templates-es.md). The
+preview text is a hidden preheader in the HTML. The test send (step 7) is still to do. An empty,
+inactive draft with the same name (ID 5) also exists; delete it once 6 is confirmed.
 
 1. Brevo → **Transactional → Templates → New template** (in some account layouts: **Campaigns →
    Templates → Transactional**). Name it `AV seller welcome`.
@@ -215,8 +220,9 @@ jq -n --rawfile html welcome.html --arg sender "hola@archivovintach.com" '{
 # returns {"id": N}; set the preview text afterwards in the Brevo editor
 ```
 
-**A6. Create the transactional webhook.** Recommended before the first welcome send so bounces and
-blocks are recorded. Generate a secret and store it without printing it:
+**A6. Create the transactional webhook** — ✅ done 2026-10-10 (webhook ID 2241911, header secret
+matches Heroku). Recommended before the first welcome send so bounces and blocks are recorded.
+Generate a secret and store it without printing it:
 
 ```sh
 BREVO_WEBHOOK_SECRET="$(openssl rand -hex 32)"
@@ -238,13 +244,14 @@ unset BREVO_WEBHOOK_SECRET
 The API is used because the secret must travel as a custom header, which not every Brevo UI layout
 exposes. Leave the unrelated marketing `spam` webhook alone unless its owner confirms it is unused.
 
-**A7. Configure Heroku and turn the welcome on.** All of these are server-only, so no rebuild is
-needed; `config:set` restarts the dyno. The sender variables are already set
-(`hola@archivovintach.com` / `ARCHIVO VINTACH`, 2026-10-10), so only the template ID remains.
+**A7. Configure Heroku and turn the welcome on** — ✅ done 2026-10-10 (releases v33–v34). All of
+these are server-only, so no rebuild is needed; `config:set` restarts the dyno. The sender variables
+are already set (`hola@archivovintach.com` / `ARCHIVO VINTACH`, 2026-10-10), so only the template ID
+remains.
 
 ```sh
 heroku config:set --app "$AV_HEROKU_APP" \
-  BREVO_TEMPLATE_SELLER_WELCOME=N
+  BREVO_TEMPLATE_SELLER_WELCOME=6
 
 heroku config:set --app "$AV_HEROKU_APP" \
   AV_NOTIFICATIONS_ENABLED=true \
@@ -253,11 +260,14 @@ heroku config:set --app "$AV_HEROKU_APP" \
   AV_WHATSAPP_NOTIFICATIONS_ENABLED=false
 ```
 
-Use the sender from decision 1 and the template ID from A5. The event cursor already exists
-(shipping labels have run the poller since 2026-10-09), so enabling the poller does not replay old
-`user/created` events: only accounts created from now on get the welcome.
+Use the sender from decision 1 and the template ID from A5. The poller has run since 2026-10-09 for
+shipping labels, but the Test marketplace had no events yet, so no cursor is saved
+(`lastSequenceId=null`). Until the first event, each restart seeds from a 10-minute lookback, so
+enabling the poller does not replay old `user/created` events: only accounts created from now on get
+the welcome.
 
-**A8. Verify readiness.**
+**A8. Verify readiness** — ✅ passed 2026-10-10: health `ready`/`enabled` with nothing missing,
+readiness `200`, webhook without the secret → `401`, poller logs clean.
 
 ```sh
 curl -s https://$APP_HOST/api/brevo/health              # {"ready":true,"enabled":true,...,"missing":[]}

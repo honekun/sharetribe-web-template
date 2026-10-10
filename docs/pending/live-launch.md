@@ -61,10 +61,10 @@ report-only mode. Live must carry the same four values.
       it is fully crawlable.
 - [ ] `REACT_APP_SENTRY_DSN` — create a Sentry project and set its DSN before launch; production has
       no error monitoring without it.
-- [ ] Brevo welcome: `BREVO_TEMPLATE_SELLER_WELCOME` (`BREVO_SENDER_EMAIL`/`BREVO_SENDER_NAME` are
-      set; all three are required by `notificationConfig.js` once welcome email is on). Blocked on
-      the hosted seller-welcome template (§6). `BREVO_WEBHOOK_SECRET` and the seven campaign IDs
-      wait for campaigns.
+- [x] Brevo welcome: `BREVO_TEMPLATE_SELLER_WELCOME` (`BREVO_SENDER_EMAIL`/`BREVO_SENDER_NAME` are
+      set; all three are required by `notificationConfig.js` once welcome email is on). The hosted
+      template exists as ID 6 (§6); `BREVO_TEMPLATE_SELLER_WELCOME=6` set 2026-10-10.
+      `BREVO_WEBHOOK_SECRET` and the seven campaign IDs wait for campaigns.
 - [ ] `SHIPPING_LABEL_OPERATOR_EMAILS` — optional; set it if support staff must retry a seller's
       label.
 - [ ] Optional analytics: `REACT_APP_GOOGLE_ANALYTICS_ID` or `REACT_APP_PLAUSIBLE_DOMAINS`.
@@ -250,9 +250,10 @@ Audited 2026-10-09; full state and the step-by-step procedure are in the
 key from a dedicated ARCHIVO VINTACH Brevo account (free plan, 300 sends/day) with list 7 "Test
 ArchivoVintach" for the Test phase (6 "Live ArchivoVintach" at cutover); the footer newsletter works
 and was verified on Heroku on 2026-10-10. `archivovintach.com` is authenticated (DKIM + DMARC green)
-and the sender `hola@archivovintach.com` is active. Still missing: the hosted welcome template, the
-transactional webhook, and the template variable on Heroku (the sender variables are set). The old
-Retop MX key that leaked through the Render bundle was deleted on 2026-10-10.
+and the sender `hola@archivovintach.com` is active. The seller welcome (template 6) is on, the
+transactional webhook is wired, and readiness passes (2026-10-10). Still to do: the end-to-end tests
+(A9) and the inventory record (A10). The old Retop MX key that leaked through the Render bundle was
+deleted on 2026-10-10.
 
 - [x] Sending identity decided: `hola@archivovintach.com` on a dedicated ARCHIVO VINTACH account.
 - [x] Test-phase list: `BREVO_LIST_ID=7` ("Test ArchivoVintach"); a Heroku footer signup reached it
@@ -264,12 +265,16 @@ Retop MX key that leaked through the Render bundle was deleted on 2026-10-10.
       DMARC in Gmail (2026-10-10).
 - [x] Phase A3: Heroku key replaced; the old Retop MX key that leaked through the Render bundle was
       deleted (2026-10-10).
-- [ ] Phase A5: create and activate the seller welcome template — the only template launch needs.
-- [ ] Phase A6–A7: create the transactional webhook with its header secret, set
-      `BREVO_TEMPLATE_SELLER_WELCOME` (sender variables already set), and turn on
-      `AV_NOTIFICATIONS_ENABLED` and `AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED`.
-- [ ] Phase A8–A10: readiness, end-to-end welcome/footer/Contact Details tests, and the inventory
-      record (outside the repository).
+- [x] Phase A5: seller welcome template created and active as ID 6 (2026-10-10, via API). Still to
+      do: a test send from the Brevo editor, and deleting the empty draft ID 5.
+- [x] Phase A7: `BREVO_TEMPLATE_SELLER_WELCOME=6` set and `AV_NOTIFICATIONS_ENABLED` plus
+      `AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED` turned on (2026-10-10, v33–v34).
+- [x] Phase A6: transactional webhook ID 2241911 created with its header secret; it matches Heroku
+      `BREVO_WEBHOOK_SECRET` (2026-10-10).
+- [x] Phase A8: readiness verified — `/api/brevo/health` ready and enabled, readiness `200`, webhook
+      rejects requests without the secret (`401`), poller logs clean (2026-10-10).
+- [ ] Phase A9–A10: end-to-end welcome/footer/Contact Details tests, and the inventory record
+      (outside the repository).
 - [ ] At cutover (Phase A11): `BREVO_LIST_ID=6` ("Live ArchivoVintach"), webhook URL moved to
       `www.archivovintach.com`.
 - [ ] Sharetribe Live outgoing email uses the production domain (separate from Brevo), with the same
