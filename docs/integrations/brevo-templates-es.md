@@ -87,10 +87,11 @@ CTA: `Comprar ahora` → `{{ params.LISTING_URL }}`
 Sent 30 minutes after Sharetribe expires an unpaid checkout (`transition/expire-payment`). The only
 check before sending is that the transaction is still expired.
 
-> **Approved as is (2026-10-10).** The client approved this copy knowing two of its claims aren't
-> checked by the code. The subject says someone else is looking at the item, but nothing counts
-> other viewers. The body says "todavía está disponible", but the send doesn't check that the
-> listing is still published or in stock. Don't re-flag this unless the copy or the check changes.
+> **Step 3 updated 2026-10-10** (live in Brevo template 6). It replaces the pre-eShip "Coordina la
+> entrega — tú decides cómo mover tus prendas". Sellers must set a shipping origin
+> (`/account/shipping-origin`) or checkout can't quote shipping, and the buyer sees "Contactar AV".
+> Once an order is paid, the seller generates the prepaid eShip label (Generar guía) and has 7 days
+> to ship.
 
 - Asunto: `Alguien más también la está mirando 👀`
 - Preview: `Viene de un closet chido. Ya sabes lo que eso significa.`
@@ -210,7 +211,8 @@ Para empezar:
 
 1. Publica tu primera prenda — fotos honestas, descripción con alma, precio justo
 2. Conecta con tu compradora — responde rápido, genera confianza
-3. Coordina la entrega — tú decides cómo mover tus prendas
+3. Configura tu envío — agrega tu dirección de origen; cuando vendas, genera tu guía prepagada en un
+   clic y envía en máximo 7 días
 
 > **Approved as is (2026-10-10).** The client kept step 3 knowing it predates eShip: sellers now
 > generate a prepaid label (Generar guía) and have 7 days to ship. The welcome also doesn't ask

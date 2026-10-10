@@ -70,21 +70,21 @@ Rules that follow from this:
 Re-checked after the domain was authenticated. Read-only checks against the Brevo API (using the key
 configured on Heroku), the Heroku app `archivo-vintach-marketplace`, and its database:
 
-| Item                          | State                                                                                                                                                                                                                                                                                                                           |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Brevo account                 | Company **ARCHIVO VINTACH** — a dedicated account; the Heroku key was rotated off the old Retop MX account on 2026-10-09.                                                                                                                                                                                                       |
-| Plan / capacity               | `free` plan, **300 sends per day**.                                                                                                                                                                                                                                                                                             |
-| Sending domains               | **`archivovintach.com` authenticated and verified** (Brevo code, DKIM `brevo1`/`brevo2._domainkey` CNAMEs, DMARC all green).                                                                                                                                                                                                    |
-| Senders                       | `ARCHIVO VINTACH <hola@archivovintach.com>`, active.                                                                                                                                                                                                                                                                            |
-| `archivovintach.com` mail DNS | MX points to Google Workspace. DMARC `_dmarc` TXT is now `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com`. Google Workspace DKIM not yet checked.                                                                                                                                                                             |
-| Contact list                  | `BREVO_LIST_ID` is **7**, "Test ArchivoVintach", for the Test phase; a footer signup on Heroku landed there on 2026-10-10. Production list: 6 "Live ArchivoVintach", 0 subscribers. Also present: 4 "ARCHIVO — Seller Waitlist" (109), 3, 2.                                                                                    |
-| Transactional templates       | Seller welcome is **ID 6** "AV seller welcome", active (created via API on 2026-10-10). ID 5 is an empty, inactive draft of the same name. The seven campaign templates don't exist yet.                                                                                                                                        |
-| Transactional webhook         | **ID 2241911**, transactional, unbatched, events `delivered`, `softBounce`, `hardBounce`, `blocked`, `spam`, `unsubscribed`, pointing at `https://archivo-vintach-marketplace-ee5adafa97a8.herokuapp.com/api/brevo/webhook`. Its `x-av-brevo-webhook-secret` header matches Heroku `BREVO_WEBHOOK_SECRET` (created 2026-10-10). |
-| Consent contact attributes    | None of the five exist, so `BREVO_CONSENT_ATTRIBUTES_ENABLED` must stay `false`.                                                                                                                                                                                                                                                |
-| Heroku variables set          | `BREVO_API_KEY`, `BREVO_LIST_ID=7` (Test phase), `BREVO_SENDER_EMAIL=hola@archivovintach.com`, `BREVO_SENDER_NAME=ARCHIVO VINTACH`, `BREVO_CONSENT_ATTRIBUTES_ENABLED=false`, Integration credentials, `DATABASE_URL`.                                                                                                          |
-| Heroku variables missing      | The seven campaign `BREVO_TEMPLATE_*`. `BREVO_TEMPLATE_SELLER_WELCOME=6` set 2026-10-10 (v33); `BREVO_WEBHOOK_SECRET` set 2026-10-10.                                                                                                                                                                                           |
-| Heroku flags                  | `AV_NOTIFICATIONS_ENABLED=true`, `AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=true` (both since 2026-10-10, v34), `AV_BREVO_CAMPAIGNS_ENABLED=false`, `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false`, `AV_SHIPPING_LABELS_ENABLED=true`, `AV_ESHIP_TRACKING_EMAILS_ENABLED=false`.                                                        |
-| App side                      | `/api/brevo/health` → `{"ready":true,"enabled":true,"missing":[]}`; `/api/notifications/readiness` → `200` (database migrated, poller leader active, no errors); unauthenticated `POST /api/brevo/webhook` → `401` (A8, 2026-10-10). The guide PDF is served at `/static/files/ArchivoVintach-how-to.pdf` (200, 2.4 MB).        |
+| Item                          | State                                                                                                                                                                                                                                                                                                                                                                                         |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Brevo account                 | Company **ARCHIVO VINTACH** — a dedicated account; the Heroku key was rotated off the old Retop MX account on 2026-10-09.                                                                                                                                                                                                                                                                     |
+| Plan / capacity               | `free` plan, **300 sends per day**.                                                                                                                                                                                                                                                                                                                                                           |
+| Sending domains               | **`archivovintach.com` authenticated and verified** (Brevo code, DKIM `brevo1`/`brevo2._domainkey` CNAMEs, DMARC all green).                                                                                                                                                                                                                                                                  |
+| Senders                       | `ARCHIVO VINTACH <hola@archivovintach.com>`, active.                                                                                                                                                                                                                                                                                                                                          |
+| `archivovintach.com` mail DNS | MX points to Google Workspace. DMARC `_dmarc` TXT is now `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com`. Google Workspace DKIM not yet checked.                                                                                                                                                                                                                                           |
+| Contact list                  | `BREVO_LIST_ID` is **7**, "Test ArchivoVintach", for the Test phase; a footer signup on Heroku landed there on 2026-10-10. Production list: 6 "Live ArchivoVintach", 0 subscribers. Also present: 4 "ARCHIVO — Seller Waitlist" (109), 3, 2.                                                                                                                                                  |
+| Transactional templates       | Seller welcome is **ID 6** "AV seller welcome", active (created via API on 2026-10-10). ID 5 is an empty, inactive draft of the same name. The seven campaign templates don't exist yet.                                                                                                                                                                                                      |
+| Transactional webhook         | **ID 2241911**, transactional, unbatched, events `delivered`, `softBounce`, `hardBounce`, `blocked`, `spam`, `unsubscribed`, pointing at `https://archivo-vintach-marketplace-ee5adafa97a8.herokuapp.com/api/brevo/webhook`. Its `x-av-brevo-webhook-secret` header matches Heroku `BREVO_WEBHOOK_SECRET` (created 2026-10-10).                                                               |
+| Consent contact attributes    | None of the five exist, so `BREVO_CONSENT_ATTRIBUTES_ENABLED` must stay `false`.                                                                                                                                                                                                                                                                                                              |
+| Heroku variables set          | `BREVO_API_KEY`, `BREVO_LIST_ID=7` (Test phase), `BREVO_SENDER_EMAIL=hola@archivovintach.com`, `BREVO_SENDER_NAME=ARCHIVO VINTACH`, `BREVO_CONSENT_ATTRIBUTES_ENABLED=false`, Integration credentials, `DATABASE_URL`.                                                                                                                                                                        |
+| Heroku variables missing      | The seven campaign `BREVO_TEMPLATE_*`. `BREVO_TEMPLATE_SELLER_WELCOME=6` set 2026-10-10 (v33); `BREVO_WEBHOOK_SECRET` set 2026-10-10.                                                                                                                                                                                                                                                         |
+| Heroku flags                  | `AV_NOTIFICATIONS_ENABLED=true`, `AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=true` (both since 2026-10-10, v34), `AV_BREVO_CAMPAIGNS_ENABLED=false`, `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false`, `AV_SHIPPING_LABELS_ENABLED=true`, `AV_ESHIP_TRACKING_EMAILS_ENABLED=false`.                                                                                                                      |
+| App side                      | `/api/brevo/health` → `{"ready":true,"enabled":true,"missing":[]}`; `/api/notifications/readiness` → `200` (database migrated, poller leader active, no errors); unauthenticated `POST /api/brevo/webhook` → `401` (A8, 2026-10-10). The guide PDF is served at `/static/files/HowTo-AV_low.pdf` (200, ≈0.9 MB) since v36; the old `/static/files/ArchivoVintach-how-to.pdf` now returns 404. |
 
 **What works today:** the footer newsletter and Contact Details opt-in, because they need only the
 API key and list ID, and the domain plus sender are ready (A1–A3). The seller welcome is **on**
@@ -99,9 +99,9 @@ and readiness passes (A8). **What does not work yet:** every lifecycle campaign 
 1. **Sending identity.** ✅ Decided: `ARCHIVO VINTACH <hola@archivovintach.com>` on the
    authenticated `archivovintach.com`. Make sure `hola@` is a real, monitored Google Workspace
    mailbox, group or alias — seller replies land there.
-2. **Account ownership.** ✅ A dedicated ARCHIVO VINTACH Brevo account now holds the key. Name its
-   owner (the person who can rotate keys and see billing). The old Retop MX key that leaked through
-   the Render bundle has been deleted (step A3).
+2. **Account ownership.** ✅ A dedicated ARCHIVO VINTACH Brevo account now holds the key. Its owner
+   (rotates keys, sees billing) is confirmed and recorded in the A10 inventory. The old Retop MX key
+   that leaked through the Render bundle has been deleted (step A3).
 3. **Capacity.** The free plan's 300 sends per day covers the seller welcome at launch volumes.
    Before Phase B, size the plan for campaign volume (each consented user can receive up to two
    promotional emails per seven days).
@@ -112,8 +112,9 @@ and readiness passes (A8). **What does not work yet:** every lifecycle campaign 
    evidence in the Live database, and PostgreSQL is authoritative, so campaigns will never mail
    them. Either leave them (manual Brevo newsletters still reach them) or ask them to opt in again
    after launch. Do not import them into the consent tables.
-6. **Welcome copy.** ✅ Decided 2026-10-10: the client approved the copy as is, keeping the
-   pre-eShip step "Coordina la entrega" (see [`brevo-templates-es.md`](brevo-templates-es.md)). The
+6. **Welcome copy.** ✅ Decided 2026-10-10. Step 3 now reads "Configura tu envío", replacing the
+   pre-eShip "Coordina la entrega". It covers the shipping origin, the prepaid guía and the 7-day
+   window, and is live in template 6 (see [`brevo-templates-es.md`](brevo-templates-es.md)). The
    subject is the gender-neutral `Te damos la bienvenida a Archivo Vintach ✨`. The guide is the May
    2026 design, served as the web-optimized `HowTo-AV_low.pdf`.
 
@@ -277,16 +278,22 @@ heroku logs --tail --app "$AV_HEROKU_APP" | grep -E 'eventPoller|brevo|notificat
 
 A `503` or a startup error names the missing variable. Fix it before continuing.
 
-**A9. End-to-end tests** (Test phase, team mailboxes only):
+**A9. End-to-end tests** (Test phase, team mailboxes only) — ✅ complete 2026-10-10:
 
 > Run 2026-10-10 on Heroku. **Passed:** welcome to a `vendedor` and a `vendedor-tienda` signup
 > (Spanish subject, first-name greeting, PDF attached, both `delivered` events stored through the
 > webhook, ledger `sent`/`delivered`); footer signup reached list 7 and `av_marketing_preferences`;
 > DKIM and DMARC pass. **Failed:** the signup marketing opt-in never reached PostgreSQL or Brevo —
-> `PUT /api/brevo/preference` returned `400 enabled_must_be_boolean` because `src/util/api.js` >
-> `request()` dropped every caller-encoded JSON body. The same bug broke the Contact Details toggle
-> and listing engagement tracking. Fixed in `request()`; redeploy, then re-run steps 4–5 and a
-> signup with the opt-in checked.
+> `PUT /api/brevo/preference` returned `400 enabled_must_be_boolean` because `request()` in
+> `src/util/api.js` dropped every caller-encoded JSON body. The same bug broke the Contact Details
+> toggle and listing engagement tracking. Fixed in `request()` (PR #112, Heroku v36).
+>
+> **Re-run after v36 — passed:** a new signup with the opt-in checked (`signup_email`) reached
+> `av_marketing_preferences`, the `av_newsletter_consent` ledger and list 7, and got its welcome.
+> Contact Details opt-in (`account_details`) added a contact to list 7. Opt-in then opt-out recorded
+> `granted` then `withdrawn`, and the contact stayed out of list 7. Every
+> `PUT /api/brevo/preference` returned `200`. Outlook (Hotmail): the welcome landed in Inbox with
+> SPF, DKIM (`archivovintach.com`) and DMARC passing.
 
 1. Sign up a new `vendedor` account in the Test marketplace. Within about five minutes (one poll)
    the welcome arrives: Spanish subject, correct name, both buttons open the herokuapp host (it is
@@ -306,9 +313,10 @@ A `503` or a startup error names the missing variable. Fix it before continuing.
 6. Open the welcome from Gmail and from Outlook and check "Show original" / headers: DKIM and DMARC
    pass for the sending domain, and it is not in spam.
 
-**A10. Record the inventory** (outside the repository): Brevo account owner, API key name and
-rotation date, sender address, domain owner, test and production list IDs, welcome template ID,
-webhook ID.
+**A10. Record the inventory** (outside the repository) — ✅ recorded 2026-10-10 in the team's
+out-of-repo notes (`ArchivoVintach/docs/brevo-inventory.md`). Owner, key name, mailbox readers and
+domain holder confirmed. It records: Brevo account owner, API key name and rotation date, sender
+address, domain owner, test and production list IDs, welcome template ID, webhook ID.
 
 **A11. At the Live cutover** (in addition to the
 [Heroku runbook](../operations/heroku-deployment.md) §5):
