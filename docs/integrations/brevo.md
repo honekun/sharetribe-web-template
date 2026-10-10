@@ -279,6 +279,15 @@ A `503` or a startup error names the missing variable. Fix it before continuing.
 
 **A9. End-to-end tests** (Test phase, team mailboxes only):
 
+> Run 2026-10-10 on Heroku. **Passed:** welcome to a `vendedor` and a `vendedor-tienda` signup
+> (Spanish subject, first-name greeting, PDF attached, both `delivered` events stored through the
+> webhook, ledger `sent`/`delivered`); footer signup reached list 7 and `av_marketing_preferences`;
+> DKIM and DMARC pass. **Failed:** the signup marketing opt-in never reached PostgreSQL or Brevo —
+> `PUT /api/brevo/preference` returned `400 enabled_must_be_boolean` because `src/util/api.js` >
+> `request()` dropped every caller-encoded JSON body. The same bug broke the Contact Details toggle
+> and listing engagement tracking. Fixed in `request()`; redeploy, then re-run steps 4–5 and a
+> signup with the opt-in checked.
+
 1. Sign up a new `vendedor` account in the Test marketplace. Within about five minutes (one poll)
    the welcome arrives: Spanish subject, correct name, both buttons open the herokuapp host (it is
    the root URL until cutover), and the PDF is attached.
