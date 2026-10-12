@@ -1,6 +1,8 @@
 # Approved Heroku Test-to-Live deployment
 
-Status: approved initial production deployment plan.
+Status: approved initial production deployment plan. Progress (2026-10-10): **Phase 1 in progress**
+on `archivo-vintach-marketplace` (Heroku v36, `main` at `81e98fac6`); open items are tracked in
+[Live launch readiness](../pending/live-launch.md).
 
 Archivo Vintach will use **one Heroku app** for the initial release. The app is first deployed with
 Sharetribe Test, Stripe test mode, and eShip QA. After the release candidate passes the complete
@@ -140,6 +142,10 @@ heroku config:set \
 Do not set `NODE_ENV`, `PORT`, or `DATABASE_URL` manually. Heroku supplies the first two and manages
 the database attachment.
 
+Done 2026-08-14: app created (now stack `heroku-26`, one Basic `web` dyno), `heroku-postgresql`
+`essential-0` attached (v3), and six guarded flags set (v4) before the first deploy (v6).
+`AV_ESHIP_TRACKING_EMAILS_ENABLED` was added explicitly at v9; until then it defaulted off.
+
 ### 3.2 Configure Test services
 
 Use the matching Test values for every environment-coupled setting:
@@ -179,6 +185,10 @@ values are compiled into the browser bundle, so set them before a build, not aft
 While the app runs against Test, keep it out of search engines with `AV_NOINDEX=true` (runtime only,
 no rebuild needed); remove it in the Live configuration (§5.4).
 
+Done 2026-10-09: the four shared values (v23, then rebuilt) and `AV_NOINDEX=true` (v26). The app
+carries Test Marketplace/Integration credentials, `pk_test_…`, the eShip QA base URL, and its
+`herokuapp.com` root URL.
+
 ### 3.3 Deploy and migrate
 
 Deploy the selected branch to the app and confirm the build log includes `yarn build`:
@@ -217,6 +227,11 @@ so enable the flag before saving the dashboard webhook or eShip will record fail
 
 Use a non-sleeping dyno. Monitor actual memory during the bulk-import test; do not assume a dyno
 size from a documentation estimate.
+
+Done: migrations 001–009 (2026-10-09), `AV_SHIPPING_LABELS_ENABLED=true` (v25), and
+`AV_NOTIFICATIONS_ENABLED` plus `AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED` (v34, 2026-10-10).
+Readiness returns `200` with one poller owner, and `ps` shows one `web` process. The buyer pickup
+email remains off.
 
 ### 3.4 Connect Sharetribe Test
 
@@ -267,7 +282,9 @@ In Sharetribe Console with **Live** selected:
    `www.archivovintach.com` are attached and ACM is on. The canonical host is
    **`https://www.archivovintach.com`** because DNS stays at GoDaddy, which cannot point the apex at
    Heroku (no ALIAS/ANAME); the apex is forwarded to `www` instead and its certificate stays pending
-   by design. Read the current DNS targets with `heroku domains`.
+   by design. Read the current DNS targets with `heroku domains`. Because DNS is not pointed yet,
+   ACM has stopped retrying `www` (`Failed — Incorrect DNS Settings`); that is expected and is
+   cleared with `heroku certs:auto:refresh` in §5.7.
 
 Users, listings, transactions, Stripe Connect accounts, Integration events, and Test database rows
 must not be copied into Live.
@@ -430,6 +447,9 @@ After readiness passes, update public DNS and verify managed TLS. At GoDaddy:
   HTTPS — the current site sends HSTS with `includeSubDomains`, so returning visitors' browsers
   refuse plain HTTP;
 - leave the Google Workspace MX, SPF, and verification TXT records untouched;
+- once the CNAME resolves to Heroku, run `heroku certs:auto:refresh --app "$AV_HEROKU_APP"` (ACM
+  stopped retrying `www` while DNS pointed elsewhere) and wait for `heroku certs:auto` to show `www`
+  issued before announcing the domain;
 - set `REACT_APP_MARKETPLACE_ROOT_URL=https://www.archivovintach.com` (and the Sharetribe Live
   Marketplace URL to match) before the Live build.
 

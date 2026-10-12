@@ -15,8 +15,10 @@ actual state in the [deployment record](deployment.md).
 - Test commit SHA and tree hash:
 - Live commit SHA and tree hash:
 - Pull request:
-- Heroku app, dyno type, and PostgreSQL add-on:
-- Sharetribe Test and Live application/integration records:
+- Heroku app, dyno type, and PostgreSQL add-on: `archivo-vintach-marketplace`, one Basic `web`,
+  `heroku-postgresql` `essential-0`
+- Sharetribe Test and Live application/integration records: Test marketplace `archivovintach-test`;
+  Live not yet created
 - Completed Test database backup ID:
 - Database reset and migration evidence:
 - Live Heroku release ID:
@@ -43,15 +45,18 @@ actual state in the [deployment record](deployment.md).
 
 ## 2. Heroku Test-mode gate
 
-- [ ] Deploy the release candidate to the permanent Heroku app with Test variables.
-- [ ] Confirm all guarded flags were explicitly `false` on the first boot.
-- [ ] Run `yarn db:migrate` against the attached Heroku PostgreSQL database before enabling
-      notifications or labels.
-- [ ] Confirm exactly one web process, per [scaling constraints](scaling.md).
-- [ ] Confirm the application uses Test Marketplace/Integration credentials, Stripe test mode, eShip
-      QA, the staging root URL, and CSP report mode for the initial pass.
-- [ ] `GET /api/notifications/readiness` returns `200` and one process owns poller leadership.
-- [ ] `GET /api/brevo/health` returns `200` for enabled Brevo features.
+- [x] Deploy the release candidate to the permanent Heroku app with Test variables. Heroku v36,
+      `81e98fac6` (2026-10-10); redeploy and re-run this gate if the candidate changes.
+- [x] Confirm all guarded flags were explicitly `false` on the first boot. Six were set at v4,
+      before the first deploy (v6); `AV_ESHIP_TRACKING_EMAILS_ENABLED` defaulted off until v9.
+- [x] Run `yarn db:migrate` against the attached Heroku PostgreSQL database before enabling
+      notifications or labels. Migrations 001–009 on 2026-10-09, before v25.
+- [x] Confirm exactly one web process, per [scaling constraints](scaling.md). (2026-10-10)
+- [x] Confirm the application uses Test Marketplace/Integration credentials, Stripe test mode, eShip
+      QA, the staging root URL, and CSP report mode for the initial pass. (2026-10-10)
+- [x] `GET /api/notifications/readiness` returns `200` and one process owns poller leadership.
+      (2026-10-10)
+- [x] `GET /api/brevo/health` returns `200` for enabled Brevo features. (2026-10-10)
 - [ ] Verify SSR, search/filters, signup, email verification, login, and both configured languages.
 - [ ] Verify seller payout onboarding, shipping origin, listing create/edit/publish, and welcome
       popup.
@@ -76,8 +81,9 @@ production.
 - [ ] Configure Stripe live mode and the matching publishable key.
 - [ ] Verify the production root URL, DNS, TLS, email sender domain, social callbacks, and Mapbox.
 - [ ] Use the explicit production eShip base URL/key and disable eShip debug output.
-- [ ] Add the production domains and certificate to the same Heroku app without moving public DNS
-      yet.
+- [x] Add the production domains and certificate to the same Heroku app without moving public DNS
+      yet. Both domains attached and ACM on (2026-10-09); the `www` certificate is issued only after
+      DNS moves and `heroku certs:auto:refresh` (runbook §5.7).
 - [ ] Confirm the approved cutover reuses the PostgreSQL add-on only after a completed Test backup
       and full reset; no Test tables or rows may enter Live.
 - [ ] Confirm all notification/channel flags are explicitly `true` or `false` and readiness is
