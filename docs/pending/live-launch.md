@@ -1,6 +1,8 @@
 # Live launch readiness
 
-Status: open. Reviewed 2026-10-09 against `pre-release` at `0bf590fe2`.
+Status: open. Reviewed 2026-10-09 against `pre-release` at `0bf590fe2`; re-checked 2026-10-10
+against `pre-release` at `94c6e320d` (same tree as `main` `fa40e9179`) and the live Heroku and
+Render apps.
 
 This is the work that has to be finished **before** the go/no-go in the
 [production release checklist](../operations/release-checklist.md) can start. The release checklist
@@ -13,21 +15,21 @@ Brevo hosted templates are a known missing piece and are tracked in §6.
 
 ## 1. Snapshot
 
-| Area                   | State on 2026-10-09                                                                                                                                                                                                                                                             |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Release branch         | `main` is deployed to Heroku. PR #111 (`pre-release` → `main`) merged as `f27c19cb9` on 2026-10-09; `pre-release` and `main` carry the same code.                                                                                                                               |
-| Heroku app             | `archivo-vintach-marketplace`, stack `heroku-26`, one `web` Basic dyno (idle 224 MB / 512 MB), `heroku-postgresql` `essential-0` with daily backups. `www.archivovintach.com` and `archivovintach.com` attached, ACM on, DNS not yet pointed. Runbook phase: **1 (Test mode)**. |
-| Heroku providers       | Sharetribe Test credentials, `pk_test_…`, eShip QA base URL.                                                                                                                                                                                                                    |
-| Heroku guarded flags   | `AV_SHIPPING_LABELS_ENABLED=true` (2026-10-09, after migrations 001–009); the other six explicitly `false`. Welcome email has not been exercised on Heroku.                                                                                                                     |
-| Server tests           | 54 suites / 654 tests pass.                                                                                                                                                                                                                                                     |
-| Client tests           | 180 suites / 1920 tests pass with `CI=true`; a single early failure did not recur in eight later full runs (§2.3).                                                                                                                                                              |
-| `config-check`         | Passes.                                                                                                                                                                                                                                                                         |
-| `env-template-check`   | Passes.                                                                                                                                                                                                                                                                         |
-| `av-translation-check` | Passes (336 symmetric keys).                                                                                                                                                                                                                                                    |
-| `format-ci`            | Passes (the earlier 43 failures were a stale local `node_modules`).                                                                                                                                                                                                             |
-| `yarn audit`           | Was 1 critical, 35 high, 48 moderate, 6 low; after the 2026-10-09 upgrade 0 critical, 1 high (install-time only), 10 moderate (§2.2).                                                                                                                                           |
-| Upstream               | Fork is based on v12.1.0; `upstream/main` is v12.4.0 + 126 commits. Merge decided for **after launch** (see [pending README](README.md)).                                                                                                                                       |
-| CI                     | No CI pipeline exists (`.github/` has only issue templates). Every gate is run by hand.                                                                                                                                                                                         |
+| Area                   | State (2026-10-09, re-checked 2026-10-10)                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Release branch         | `main` is deployed to Heroku. PR #111 merged as `f27c19cb9` (2026-10-09); PR #112 (the JSON-body fix `ff1c390ed`) merged as `81e98fac6` and is Heroku **v36** (2026-10-10); PR #113 (docs only) merged as `fa40e9179`. `pre-release` and `main` carry the same tree.                                                                                                                                   |
+| Heroku app             | `archivo-vintach-marketplace`, stack `heroku-26`, one `web` Basic dyno (idle 224 MB / 512 MB), `heroku-postgresql` `essential-0` with daily backups (`b001`, `b002`, `a003` completed). `www.archivovintach.com` and `archivovintach.com` attached, ACM on; DNS not yet pointed, so ACM reports `www` as `Failed — Incorrect DNS Settings` (expected until cutover). Runbook phase: **1 (Test mode)**. |
+| Heroku providers       | Sharetribe Test credentials, `pk_test_…`, eShip QA base URL.                                                                                                                                                                                                                                                                                                                                           |
+| Heroku guarded flags   | `AV_SHIPPING_LABELS_ENABLED=true` (v25, after migrations 001–009), `AV_NOTIFICATIONS_ENABLED=true` and `AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=true` (v34); the other four explicitly `false`. Readiness `200`, one poller owner, 3 Brevo deliveries sent, **no shipping-label attempts yet** (2026-10-10).                                                                                            |
+| Server tests           | 56 suites / 669 tests pass (2026-10-10, `CI=true yarn test-ci`).                                                                                                                                                                                                                                                                                                                                       |
+| Client tests           | 181 suites / 1922 tests / 157 snapshots pass with `CI=true` (2026-10-10).                                                                                                                                                                                                                                                                                                                              |
+| `config-check`         | Passes (2026-10-10).                                                                                                                                                                                                                                                                                                                                                                                   |
+| `env-template-check`   | Passes (2026-10-10).                                                                                                                                                                                                                                                                                                                                                                                   |
+| `av-translation-check` | Passes (336 symmetric keys, 2026-10-10).                                                                                                                                                                                                                                                                                                                                                               |
+| `format-ci`            | Passes (2026-10-10). `yarn run build` also passes.                                                                                                                                                                                                                                                                                                                                                     |
+| `yarn audit`           | Was 1 critical, 35 high, 48 moderate, 6 low; after the 2026-10-09 upgrade 0 critical, 1 high (install-time only), 10 moderate (§2.2).                                                                                                                                                                                                                                                                  |
+| Upstream               | Fork is based on v12.1.0; `upstream/main` is v12.4.0 + 126 commits. Merge decided for **after launch** (see [pending README](README.md)).                                                                                                                                                                                                                                                              |
+| CI                     | No CI pipeline exists (`.github/` has only issue templates). Every gate is run by hand.                                                                                                                                                                                                                                                                                                                |
 
 ## 2. Blockers — fix before the Heroku Test gate
 
@@ -54,11 +56,16 @@ Done on Heroku 2026-10-09: the trust-proxy change was deployed first, then
 rebuilt. HTTPS serves, HTTP redirects once, the SDK token cookie is `Secure`, and CSP runs in
 report-only mode. Live must carry the same four values.
 
-- [ ] Render staging: set `SERVER_SHARETRIBE_TRUST_PROXY` to Render's proxy hop count. The limiter
-      now keys on `req.ip`, so without it every staging visitor shares one rate-limit bucket.
-- [ ] Render staging: set `REACT_APP_SHARETRIBE_USING_SSL=true` and `AV_NOINDEX=true`, then rebuild.
-      Its sitemap still advertises `http://` URLs (so its auth cookies are not `Secure` either), and
-      it is fully crawlable.
+- [ ] Render staging: confirm in the Render dashboard that `SERVER_SHARETRIBE_TRUST_PROXY` is a hop
+      count, not `true`. It is set to something — HTTPS serves without the `express-enforces-ssl`
+      redirect loop an unset value would cause (2026-10-10) — but the value cannot be read from
+      outside. `true` makes `req.ip` the client-supplied `X-Forwarded-For`, so rate limits can be
+      dodged; a too-small count puts every visitor in one bucket. To find the count, log
+      `req.ips.length` once with `true`, or compare `req.ip` against your own address.
+- [x] Render staging: `REACT_APP_SHARETRIBE_USING_SSL=true` and `AV_NOINDEX=true` are in effect
+      (verified 2026-10-10 from outside): canonical, `og:url`, and the sitemap index use `https://`,
+      `http://` answers `301`, every response carries `X-Robots-Tag: noindex, nofollow`, and
+      `robots.txt` is `Disallow: /`.
 - [ ] `REACT_APP_SENTRY_DSN` — create a Sentry project and set its DSN before launch; production has
       no error monitoring without it.
 - [x] Brevo welcome: `BREVO_TEMPLATE_SELLER_WELCOME` (`BREVO_SENDER_EMAIL`/`BREVO_SENDER_NAME` are
@@ -309,13 +316,18 @@ Checked and prepared on 2026-10-09:
 
 Remaining:
 
-- [ ] Run the Heroku Test gate in full (release checklist §2). Migrations, readiness, and poller
-      leadership are verified; welcome email and the manual label flow are not yet.
+- [ ] Run the Heroku Test gate in full (release checklist §2). Migrations, readiness, poller
+      leadership, one web process, Brevo health, and the welcome email (Brevo A9) are verified.
+      Still open: the Stripe test purchase with a QA quote, **Generar guía → Descargar guía** (no
+      label has been attempted), `Contactar AV`, a formal restart/no-duplicate check, CSP review and
+      block mode, and recording the remaining functional checks.
 - [ ] Watch `sample#memory_total` and R14 during a large bulk import; revisit Standard-2X (1 GB,
       preboot) or a lower concurrent-import cap if it nears 512 MB.
 - [ ] At cutover, point GoDaddy DNS as in runbook §5.7: `www` CNAME to its `heroku domains` target,
-      apex forwarding to `https://www.archivovintach.com` over HTTPS, MX/SPF untouched. Confirm
-      `heroku certs:auto` shows `www` issued.
+      apex forwarding to `https://www.archivovintach.com` over HTTPS, MX/SPF untouched. ACM gave up
+      on `www` while DNS still points at GoDaddy (`Failed — Incorrect DNS Settings`, 2026-10-10), so
+      run `heroku certs:auto:refresh` after the CNAME resolves, then confirm `heroku certs:auto`
+      shows `www` issued.
 - [ ] Set `REACT_APP_MARKETPLACE_ROOT_URL=https://www.archivovintach.com` and the Sharetribe Live
       Marketplace URL to match, before the Live build.
 - [x] DMARC record added (`_dmarc.archivovintach.com`, `p=none`) with the Brevo domain (§6, Brevo
@@ -354,7 +366,7 @@ Remaining:
 - [x] Deployed 2026-10-09 with `AV_NOINDEX=true` on Heroku: `robots.txt` is `Disallow: /`, every
       response carries `X-Robots-Tag: noindex, nofollow`, and `sameAs` lists both profiles.
 - [ ] At cutover remove `AV_NOINDEX` (runbook §5.4); the herokuapp host stays noindexed on its own.
-- [ ] Render: `AV_NOINDEX=true` (see §2.1).
+- [x] Render: `AV_NOINDEX=true` is in effect (verified 2026-10-10, see §2.1).
 - [ ] Console (Test and Live): write a real Spanish meta description for the landing page — it is
       currently `Archivo Vintach Marketplace` — and remove the trailing space in the footer's TikTok
       URL.
