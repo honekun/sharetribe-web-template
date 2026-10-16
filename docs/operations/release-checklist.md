@@ -62,9 +62,9 @@ checks were never completed in any hosted Test environment.
       (2026-10-15).
 - [x] Configure the Test-phase Brevo values on Render. Welcome email enabled, nothing missing
       (2026-10-15).
-- [ ] Confirm all guarded flags are explicit. Readiness shows all six set (2026-10-15); confirm
-      `ESHIP_LABEL_AUTOBUY=false`, and that tracking emails (`true` on Render) have their Test
-      prerequisites.
+- [x] Confirm all guarded flags are explicit. Readiness shows all six set (2026-10-15).
+      `ESHIP_LABEL_AUTOBUY` is off (paid orders got no label until **Generar guía**), and tracking
+      emails were switched off on 2026-10-16 (`eshipTracking.enabled: false`, webhook `404`).
 - [ ] Confirm `SERVER_SHARETRIBE_TRUST_PROXY` is a hop count, not `true`.
 - [ ] Confirm exactly one web process, per [scaling constraints](scaling.md).
 - [x] `GET /api/notifications/readiness` returns `200` and one process owns poller leadership.
