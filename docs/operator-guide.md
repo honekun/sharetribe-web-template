@@ -1805,7 +1805,7 @@ production marketplaces use different secrets.
 | Setting                                            | What it controls                                                                                                                                       |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **HTTPS** (`REACT_APP_SHARETRIBE_USING_SSL`)       | `true` on every deployed site: redirects HTTP to HTTPS and marks login cookies secure.                                                                 |
-| **Proxy hops** (`SERVER_SHARETRIBE_TRUST_PROXY`)   | `1` on Heroku, so the server sees each visitor's real address (rate limits, consent records). Never `true`.                                            |
+| **Proxy hops** (`SERVER_SHARETRIBE_TRUST_PROXY`)   | `1` on Heroku, `3` on Render, so the server sees each visitor's real address (rate limits, consent records). Never `true`.                                            |
 | **Content Security Policy** (`REACT_APP_CSP`)      | `report` while testing, `block` in production.                                                                                                         |
 | **Hide from search engines** (`AV_NOINDEX`)        | `true` on Render staging; unset on Heroku production (removed at the Live cutover). Any address other than the main site address is always hidden from search. |
 
