@@ -27,11 +27,14 @@ A deploy, process restart, configuration change, or crash clears process memory:
 - an in-flight import stops and its status endpoint later returns `404`;
 - listings already created through Sharetribe persist;
 - remaining CSV rows are not processed;
-- job progress, active-job locks, action tokens, and rate-limit counters reset; and
-- rerunning the entire ZIP can duplicate rows that already succeeded.
+- job progress, active-job locks, action tokens, and rate-limit counters reset.
 
-When an import is interrupted, compare its success results with **Console → Manage → Listings** and
-build a new ZIP containing only rows that did not create a listing.
+Rows are idempotent across a restart: each imported listing carries its row key in
+`metadata.avBulkImport`, so re-uploading the **same** file within 24 hours skips rows that finished
+and completes rows that were left hidden part-way (see
+[row idempotency](../implementation/bulk-import.md#row-idempotency-and-recovery)). After 24 hours,
+or if the file was edited, compare the results with **Console → Manage → Listings** before
+re-uploading.
 
 ## Why multiple web processes are unsupported today
 
@@ -40,11 +43,13 @@ With two or more web processes, each process has different maps:
 - status polling can reach a process that does not know the job and return a false `404`;
 - the same user can start one job per process;
 - the global cap becomes three jobs per process;
-- hourly limits multiply by the process count; and
-- an action token issued by one process can be rejected by another.
+- hourly limits multiply by the process count;
+- an action token issued by one process can be rejected by another; and
+- row idempotency races: the in-flight row registry (`rowIdempotency.js`) is per process, so two
+  processes importing the same row at once can both find no listing for its key and both create it.
 
 These failures affect coordination and memory control. Sharetribe records already created are not
-corrupted, but duplicate listing creation becomes easier and users can lose progress visibility.
+corrupted, but duplicate listing creation becomes possible and users can lose progress visibility.
 
 ## State that is already safe across processes
 
