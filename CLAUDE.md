@@ -565,6 +565,7 @@ On each sync, diff the upstream original against its fork commit and hand-apply 
 | ------------------------------------------------------------ | ----------------------------------------- | --------------------- |
 | `PageBuilder/BlockBuilder/AVBlockDefault/AVBlockDefaultView` | `BlockBuilder/BlockDefault/BlockDefault` | `832f8d66f` (v12.1.0) |
 | `PageBuilder/BlockBuilder/AVBlockFooter/AVBlockFooter`       | `BlockBuilder/BlockFooter/BlockFooter`   | `832f8d66f` (v12.1.0) |
+| `TopbarDesktop/AVLinksMenu/` (`AVCustomLinksMenu`, `AVPriorityLinks`, `AVLinksMenu`) | `TopbarDesktop/CustomLinksMenu/` | `832f8d66f` (v12.1.0) |
 
 The "forked from" SHA is a historical fact — it does not go stale. To see what upstream has changed
 in the original since the fork, and hand-apply what matters:
@@ -573,6 +574,10 @@ in the original since the fork, and hand-apply what matters:
 git fetch upstream
 git diff 832f8d66f upstream/main -- src/containers/PageBuilder/BlockBuilder/BlockDefault/
 ```
+
+`AVLinksMenu` already carries upstream's `be151ebbd` (PriorityLinks remeasures after a mobile→desktop
+resize instead of looping on zero widths; ported 2026-10-16). `9b3de2271` and `33f2a1ec2` do not
+apply: they manage the create-listing priority link, which the AV menu never adds.
 
 ### Watchlist — high merge-conflict risk
 

@@ -129,11 +129,19 @@ const PriorityLinks = props => {
   const containerRef = useRef(null);
 
   // With this useEffect, we measure the widths of each rendered priority link
-  // This is done once before the real rendering and it's done outside the viewport.
+  // This is done before the real rendering and it's done outside the viewport.
+  // Re-run when links are reset without widths, and when containerWidth (from
+  // CustomLinksMenu's ResizeObserver) changes, so a page loaded at mobile width
+  // is measured once it is resized to desktop. Ported from upstream be151ebbd.
   useEffect(() => {
     const isMeasured = props.links?.[0]?.width;
-    if (containerRef.current && !isMeasured) {
+    if (containerRef.current && props.links?.length > 0 && !isMeasured) {
       const linksFromRenderedWrapper = [...containerRef.current.childNodes];
+      // TopbarDesktop is display:none below --viewportLarge; offsetWidth is 0 then.
+      // Writing width:0 keeps isMeasured falsy and retriggers this effect forever.
+      if (!linksFromRenderedWrapper[0]?.offsetWidth) {
+        return;
+      }
       let cumulatedWidth = 0;
       // Generate an array of link configs with width & cumulatedWidth included
       const linksWithWidths = props.links.reduce((links, l, i) => {
@@ -143,7 +151,7 @@ const PriorityLinks = props => {
       }, []);
       props.setLinks(linksWithWidths);
     }
-  }, [containerRef]);
+  }, [props.links, props.setLinks, props.containerWidth]);
 
   const { links, priorityLinks } = props;
   const isMeasured = links?.[0]?.width && (priorityLinks.length === 0 || priorityLinks?.[0]?.width);
