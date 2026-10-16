@@ -265,7 +265,7 @@ describes the Render Test gate.
 Use [test accounts](test-accounts.md) and the full [release checklist](release-checklist.md). At a
 minimum, verify:
 
-- SSR, CMS pages, search, filters, signup, verification, login, and both languages;
+- SSR, CMS pages, search, filters, signup, verification, and login;
 - buyer (any signed-in user), `vendedor`, and `vendedor-tienda` behavior;
 - Stripe Connect Test onboarding;
 - listing create/edit/publish/moderation and original-price behavior;
@@ -505,7 +505,7 @@ After readiness passes, update public DNS and verify managed TLS. At GoDaddy:
 
 Then:
 
-- verify apex/www redirects, canonical URLs, SSR, CMS, search, login, and both languages;
+- verify apex/www redirects, canonical URLs, SSR, CMS, search, and login;
 - create one real seller and complete real Stripe Connect onboarding;
 - publish one approved real listing;
 - complete one approved low-value purchase with a production eShip quote;

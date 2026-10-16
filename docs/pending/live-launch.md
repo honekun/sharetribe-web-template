@@ -30,13 +30,12 @@ dashboards), _Dev_ (repository), _Business_ (decision or sign-off).
 
 ### B. Render Test gate — must pass before Live sign-off
 
-| #   | Item                                                                                                                                                               | Owner   | Where        |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | ------------ |
-| B1  | Functional run: SSR/search/filters, signup, verification, login, both languages; seller payout onboarding, shipping origin, listing create/publish, welcome popup. | Ops/Dev | checklist §2 |
-| B4  | Restart Render: sessions survive, poller resumes from its cursor, no duplicate sends.                                                                              | Ops     | checklist §2 |
-| B6  | `SERVER_SHARETRIBE_TRUST_PROXY` on Render is a hop count, not `true` (`ESHIP_LABEL_AUTOBUY` is off: paid orders got no label until **Generar guía**, 2026-10-16).  | Ops     | §2.1 below   |
-| B7  | Check one built-in Test email's links (Test Console's Marketplace URL can't point at Render).                                                                      | Ops     | checklist §2 |
-| B8  | Note the Render Postgres expiry date (free tier, 30 days) and plan its renewal.                                                                                    | Ops     | §7 below     |
+| #   | Item                                                                                                                                                                             | Owner   | Where        |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------------ |
+| B1  | Functional run: listing create/edit/publish and the welcome popup (SSR, search, filters, signup, verification, login, payout onboarding, and shipping origin passed 2026-10-16). | Ops/Dev | checklist §2 |
+| B6  | `SERVER_SHARETRIBE_TRUST_PROXY` on Render is a hop count, not `true` (`ESHIP_LABEL_AUTOBUY` is off: paid orders got no label until **Generar guía**, 2026-10-16).                | Ops     | §2.1 below   |
+| B7  | Check one built-in Test email's links (Test Console's Marketplace URL can't point at Render).                                                                                    | Ops     | checklist §2 |
+| B8  | Note the Render Postgres expiry date (free tier, 30 days) and plan its renewal.                                                                                                  | Ops     | §7 below     |
 
 ### C. Live content and configuration (Console) — fix before announcing
 
@@ -67,7 +66,7 @@ dashboards), _Dev_ (repository), _Business_ (decision or sign-off).
 
 | #   | Item                                                                                                                                               | Owner    |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| E1  | Login, search, and CMS pages in both languages on `www`.                                                                                           | Ops      |
+| E1  | Login, search, and CMS pages on `www`.                                                                                                             | Ops      |
 | E2  | One real seller with real Stripe Connect onboarding and a complete shipping origin; one approved listing.                                          | Business |
 | E3  | One approved low-value purchase with a production eShip quote; verify order math, retained shipping fee, payout, `avShipping`.                     | Business |
 | E4  | Buy and download the production label manually; record the carrier charge.                                                                         | Ops      |

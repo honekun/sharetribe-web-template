@@ -1861,8 +1861,9 @@ Changes take effect on the next page load. Most keys below have defaults in `en_
 dynamic keys—such as per-instance `AVHero2` buttons, mobile backgrounds, and `AVVideo` URLs—use a
 missing or blank value to hide that optional element. Do not blank a standard key to hide its UI.
 
-> **Two languages:** Add the same key in both English and Spanish tabs, or whichever languages your
-> marketplace supports.
+> **One language:** The marketplace has a single locale, Spanish (`es`, set in Console's
+> localization), so each key has one value to edit. `en_av.json` is never shown to users; it only
+> keeps the AV keys in step with `es_av.json` (`yarn av-translation-check`).
 
 ---
 
@@ -2568,7 +2569,7 @@ Use Test as the editing and approval environment whenever the change can be stag
 1. Record the requested change and the current Live behavior.
 2. Make the change in **Test**. For page content, use the section-availability table in Section 4;
    for translations, preserve placeholders such as `{count}`, plural expressions, and links.
-3. Preview the affected page in English and Spanish at mobile and desktop widths.
+3. Preview the affected page at mobile and desktop widths.
 4. Test every CTA, category filter, external URL, image crop, and empty state.
 5. Have another operator compare the result with the request when the change affects pricing,
    payments, legal/consent copy, navigation, or the home page.

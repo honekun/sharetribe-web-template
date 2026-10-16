@@ -72,12 +72,14 @@ checks were never completed in any hosted Test environment.
 - [x] `GET /api/brevo/health` returns `200` for enabled Brevo features. (2026-10-15)
 - [ ] Check one built-in Sharetribe Test email: Console's Test Marketplace URL can't be edited, so
       its links may point at the `…mysharetribe-test.com` address rather than Render. Record which.
-- [ ] Verify SSR, search/filters, signup, email verification, login, and both configured languages.
-      Done 2026-10-16: SSR of the landing, CMS, legal, search, and auth routes (`200`); search 276
-      results, with keyword, `genero`, `brand`, `all_sizes`, `color`, and category filters
-      narrowing; the brand filter's "Sin resultados". `pub_tags` is ignored until `tags` is
-      searchable (live-launch C3). Signup and the verification email confirmed 2026-10-16 with a new
-      account (`alex+buyer@rewav.co`). The second language still needs a manual pass.
+- [x] Verify SSR, search/filters, signup, email verification, and login, in Spanish (the only
+      configured locale). Done 2026-10-16: SSR of the landing, CMS, legal, search, and auth routes
+      (`200`); search 276 results, with keyword, `genero`, `brand`, `all_sizes`, `color`, and
+      category filters narrowing; the brand filter's "Sin resultados". `pub_tags` is ignored until
+      `tags` is searchable (live-launch C3). Signup and the verification email confirmed 2026-10-16
+      with a new account (`alex+buyer@rewav.co`); login worked throughout. There is no second
+      language: the Console localization asset sets a single locale (`es`) and the app has no
+      language switcher.
 - [ ] Verify seller payout onboarding, shipping origin, listing create/edit/publish, and welcome
       popup. Store seller `alex+av_store1@rewav.co` completed Stripe test payout onboarding and
       saved a Guadalajara origin on 2026-10-16: `/account/payments` reports the account up to date,
@@ -124,8 +126,13 @@ checks were never completed in any hosted Test environment.
       placeholder image, stock 1, `metadata.avBulkImport` set).
 - [ ] Review CSP reports, switch staging to block mode, and repeat the critical path. Production
       already enforces CSP (v47), so a CSP regression found here is a live defect.
-- [ ] Restart staging; sessions survive and the poller resumes from its PostgreSQL cursor without
-      duplicate sends.
+- [x] Restart staging; sessions survive and the poller resumes from its PostgreSQL cursor without
+      duplicate sends. Done 2026-10-16 with a manual Render restart: the browser stayed signed in as
+      `alex+vendedor_av@rewav.co`; readiness returned `200`; a new process took the poller lease
+      (21:58:28Z) at the saved cursor `441280017` instead of the 10-minute lookback, and picked up a
+      probe `listing/updated` event (`441283102`) on its next poll (22:03:28Z); the delivery ledger
+      still held the one `seller_welcome` send from 16:03Z, which also survived four earlier
+      redeploys that day, with no repeat sends and no retries.
 
 Other Render results (2026-10-16): `/my-balance` total earnings equal the sum of completed net
 amounts; bag, favorites, `/my-sales`, `/my-purchases`, shipping origin, payout, `/l/new`, and
@@ -215,8 +222,8 @@ This is the pending "overall validation" for the initial launch.
 
 - [x] Move public DNS only after the Live build and readiness gates pass. `www` CNAME to Heroku,
       apex `301` to `www` (verified 2026-10-15).
-- [ ] Production domain, redirects, SSR, login, search, and CMS pages work in both languages.
-      Redirects, SSR, canonical URL, and crawlable `robots.txt` verified (2026-10-15).
+- [ ] Production domain, redirects, SSR, login, search, and CMS pages work. Redirects, SSR,
+      canonical URL, and crawlable `robots.txt` verified (2026-10-15).
 - [ ] Create one real seller/listing and complete real Stripe Connect onboarding.
 - [ ] Complete one approved low-value real purchase with a live eShip quote.
 - [ ] Verify order math, platform-retained shipping fee, seller payout, and transaction shipping
