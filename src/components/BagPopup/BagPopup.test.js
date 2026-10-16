@@ -31,4 +31,17 @@ describe('BagPopup', () => {
     expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /go to bag/i })).toHaveAttribute('href', '/bag');
   });
+
+  it('uses selectors that return stable references (no React-Redux warning)', () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    render(<BagPopup />, {
+      messages,
+      initialState: { bag: { bagListingIds: ['a'], isPopupOpen: true, hydrated: true } },
+    });
+    const unstable = warn.mock.calls.filter(([msg]) =>
+      /returned a different result when called with the same parameters/.test(String(msg))
+    );
+    warn.mockRestore();
+    expect(unstable).toEqual([]);
+  });
 });

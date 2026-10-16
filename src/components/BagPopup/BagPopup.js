@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router-dom';
 
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { checkoutBagItem } from '../../util/bagCheckout';
+import { denormalisedEntities } from '../../util/data';
 import { useRouteConfiguration } from '../../context/routeConfigurationContext';
 import { initializeCardPaymentData } from '../../ducks/stripe.duck.js';
 import {
@@ -13,7 +14,6 @@ import {
   selectBagCount,
   selectBagIds,
 } from '../../ducks/bag.duck';
-import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { AVBagItemCard, NamedLink } from '../../components';
 
 import css from './BagPopup.module.css';
@@ -34,7 +34,11 @@ const BagPopup = () => {
   const bagIds = useSelector(selectBagIds);
   const count = useSelector(selectBagCount);
   const [refs, setRefs] = useState([]);
-  const listings = useSelector(state => getMarketplaceEntities(state, refs));
+  // Select the stable entities map and denormalise outside the selector:
+  // getMarketplaceEntities builds a new array on every call, which makes
+  // useSelector re-render on every store update (and warn in development).
+  const entities = useSelector(state => state.marketplaceData.entities);
+  const listings = useMemo(() => denormalisedEntities(entities, refs, false), [entities, refs]);
   const rootRef = useRef(null);
   const prevPath = useRef(location.pathname);
 
