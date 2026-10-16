@@ -31,6 +31,9 @@ Test (`AVShippingSelector.noticeTitle`, `AVShippingSelector.noticeText`,
 Console-owned: a later change to `es_av.json` for the same key will not show until Console is
 updated too.
 
+**2026-10-16:** `BrandFilter.noResults` (the brand filter's empty search result, previously
+hard-coded in Spanish) was added from `es_av.json`, bringing the file to 2,009 keys.
+
 Test and Live are separate Sharetribe environments. Review and publish this object in Test first,
 then copy the approved content to Live through the normal content-release process. Preserve ICU
 placeholders such as `{count}`, plural/select expressions, and link variables exactly.

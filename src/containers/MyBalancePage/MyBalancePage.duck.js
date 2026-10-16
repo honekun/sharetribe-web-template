@@ -2,11 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { storableError } from '../../util/errors';
 import { parse } from '../../util/urlHelpers';
 import { getSupportedProcessesInfo, INQUIRY_PROCESS_NAME } from '../../transactions/transaction';
-import {
-  buildFilteredQueryParams,
-  getCompletedTransitions,
-  getRefundedTransitions,
-} from '../../transactions/transactionHelpers';
+import { buildFilteredQueryParams } from '../../transactions/transactionHelpers';
 import { addMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import * as log from '../../util/log';
 
@@ -156,15 +152,11 @@ export const loadTransactionsThunk = createAsyncThunk(
 );
 
 // Thunk: fetch summary totals from the server endpoint, which paginates fully.
-// The server scopes results to the authenticated user via the cookie SDK.
+// The server scopes results to the authenticated user via the cookie SDK and
+// derives the process/transition lists itself (server/api/my-balance/).
 const fetchSummaryPayloadCreator = async (_, { rejectWithValue }) => {
-  const params = new URLSearchParams({
-    completed: getCompletedTransitions().join(','),
-    refunded: getRefundedTransitions().join(','),
-    processNames: paymentProcessNames().join(','),
-  });
   try {
-    const res = await fetch(`/api/my-balance/summary?${params.toString()}`, {
+    const res = await fetch('/api/my-balance/summary', {
       credentials: 'include',
     });
     if (!res.ok) {

@@ -1,8 +1,11 @@
 version: 2.1
+# Every job runs Node 24 to satisfy package.json `engines.node: 24.x` (Yarn refuses
+# to install on any other major) and to match Heroku/Render. Upstream pins 22.x
+# here; keep 24 on upstream syncs, and bump the minor when a newer cimg tag ships.
 jobs:
   format:
     docker:
-      - image: cimg/node:22.22
+      - image: cimg/node:24.22
     steps:
       - checkout
       - restore_cache:
@@ -25,7 +28,7 @@ jobs:
           command: yarn run format-ci
   test:
     docker:
-      - image: cimg/node:22.22
+      - image: cimg/node:24.22
     steps:
       - checkout
       - restore_cache:
@@ -48,7 +51,7 @@ jobs:
           command: yarn run test-ci
   build:
     docker:
-      - image: cimg/node:22.22
+      - image: cimg/node:24.22
     steps:
       - checkout
       - restore_cache:
@@ -71,7 +74,7 @@ jobs:
           command: yarn run build
   audit:
     docker:
-      - image: cimg/node:22.22
+      - image: cimg/node:24.22
     steps:
       - checkout
       - restore_cache:
@@ -92,9 +95,23 @@ jobs:
       - run:
           name: Audit dependencies
           command: yarn run audit
+  # AV-owned repository checks. Both scripts use only Node built-ins, so the job
+  # skips `yarn install`.
+  av-checks:
+    docker:
+      - image: cimg/node:24.22
+    steps:
+      - checkout
+      - run:
+          name: Check AV translation overlays are symmetric
+          command: node scripts/check-av-translations.js
+      - run:
+          name: Check .env-template exposes no secrets to the browser
+          command: node scripts/check-env-template.js
 workflows:
   format_test_build_audit:
     jobs:
       - format
       - test
       - build
+      - av-checks

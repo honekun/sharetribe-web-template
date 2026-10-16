@@ -100,7 +100,9 @@ const BrandFilter = props => {
                 </li>
               ))
             ) : (
-              <li className={css.noResults}>Sin resultados</li>
+              <li className={css.noResults}>
+                {intl.formatMessage({ id: 'BrandFilter.noResults' })}
+              </li>
             )}
           </ul>
         </div>

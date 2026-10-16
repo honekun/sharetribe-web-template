@@ -75,6 +75,16 @@ describe('MyPurchasesPage', () => {
     });
   });
 
+  it('matches snapshot (empty state)', async () => {
+    render(<MyPurchasesPage />, { initialState: baseState });
+
+    await waitFor(() => {
+      expect(screen.getByText('MyPurchasesPage.heading')).toBeInTheDocument();
+    });
+    // Page content only: the Topbar/footer re-render with async auth state.
+    expect(screen.getByRole('main')).toMatchSnapshot();
+  });
+
   it('renders empty state', async () => {
     render(<MyPurchasesPage />, { initialState: baseState });
 

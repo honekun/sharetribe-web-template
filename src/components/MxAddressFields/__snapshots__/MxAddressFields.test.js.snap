@@ -1,0 +1,351 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`MxAddressFields matches snapshot 1`] = `
+<form>
+  <div
+    class="root"
+  >
+    <h3
+      class="heading"
+    >
+      <span>
+        ShippingDetails.mxTitle
+      </span>
+    </h3>
+    <div
+      class="root fieldFullWidth"
+    >
+      <label
+        for="address.recipientName"
+      >
+        ShippingDetails.mxNameLabel
+      </label>
+      <input
+        autocomplete="shipping name"
+        class="input"
+        id="address.recipientName"
+        name="recipientName"
+        placeholder="ShippingDetails.mxNamePlaceholder"
+        type="text"
+        value=""
+      />
+    </div>
+    <div
+      class="root fieldFullWidth"
+    >
+      <label
+        for="address.recipientAddressLine1"
+      >
+        ShippingDetails.mxStreetLabel
+      </label>
+      <input
+        autocomplete="shipping address-line1"
+        class="input"
+        id="address.recipientAddressLine1"
+        name="recipientAddressLine1"
+        placeholder="ShippingDetails.mxStreetPlaceholder"
+        type="text"
+        value=""
+      />
+    </div>
+    <div
+      class="formRow"
+    >
+      <div
+        class="root field"
+      >
+        <label
+          for="address.recipientExteriorNumber"
+        >
+          ShippingDetails.mxExteriorLabel
+        </label>
+        <input
+          autocomplete="off"
+          class="input"
+          id="address.recipientExteriorNumber"
+          name="recipientExteriorNumber"
+          placeholder="ShippingDetails.mxExteriorPlaceholder"
+          type="text"
+          value=""
+        />
+      </div>
+      <div
+        class="root field"
+      >
+        <label
+          for="address.recipientInteriorNumber"
+        >
+          ShippingDetails.mxInteriorLabel
+        </label>
+        <input
+          autocomplete="off"
+          class="input inputSuccess"
+          id="address.recipientInteriorNumber"
+          name="recipientInteriorNumber"
+          placeholder="ShippingDetails.mxInteriorPlaceholder"
+          type="text"
+          value=""
+        />
+      </div>
+    </div>
+    <div
+      class="root fieldFullWidth"
+    >
+      <label
+        for="address.recipientColonia"
+      >
+        ShippingDetails.mxColoniaLabel
+      </label>
+      <input
+        autocomplete="off"
+        class="input"
+        id="address.recipientColonia"
+        name="recipientColonia"
+        placeholder="ShippingDetails.mxColoniaPlaceholder"
+        type="text"
+        value=""
+      />
+    </div>
+    <div
+      class="formRow"
+    >
+      <div
+        class="root field"
+      >
+        <label
+          for="address.recipientPostal"
+        >
+          ShippingDetails.mxPostalLabel
+        </label>
+        <input
+          autocomplete="shipping postal-code"
+          class="input"
+          id="address.recipientPostal"
+          name="recipientPostal"
+          placeholder="ShippingDetails.mxPostalPlaceholder"
+          type="text"
+          value=""
+        />
+      </div>
+      <div
+        class="root field"
+      >
+        <label
+          for="address.recipientCity"
+        >
+          ShippingDetails.mxCityLabel
+        </label>
+        <input
+          autocomplete="shipping address-level2"
+          class="input"
+          id="address.recipientCity"
+          name="recipientCity"
+          placeholder="ShippingDetails.mxCityPlaceholder"
+          type="text"
+          value=""
+        />
+      </div>
+    </div>
+    <div
+      class="root fieldFullWidth"
+    >
+      <label
+        class=""
+        for="address.recipientState"
+      >
+        ShippingDetails.mxStateLabel
+      </label>
+      <select
+        class=""
+        id="address.recipientState"
+        name="recipientState"
+      >
+        <option
+          disabled=""
+          value=""
+        >
+          ShippingDetails.mxStatePlaceholder
+        </option>
+        <option
+          value="Aguascalientes"
+        >
+          Aguascalientes
+        </option>
+        <option
+          value="Baja California"
+        >
+          Baja California
+        </option>
+        <option
+          value="Baja California Sur"
+        >
+          Baja California Sur
+        </option>
+        <option
+          value="Campeche"
+        >
+          Campeche
+        </option>
+        <option
+          value="Chiapas"
+        >
+          Chiapas
+        </option>
+        <option
+          value="Chihuahua"
+        >
+          Chihuahua
+        </option>
+        <option
+          value="Ciudad de México"
+        >
+          Ciudad de México
+        </option>
+        <option
+          value="Coahuila"
+        >
+          Coahuila
+        </option>
+        <option
+          value="Colima"
+        >
+          Colima
+        </option>
+        <option
+          value="Durango"
+        >
+          Durango
+        </option>
+        <option
+          value="Estado de México"
+        >
+          Estado de México
+        </option>
+        <option
+          value="Guanajuato"
+        >
+          Guanajuato
+        </option>
+        <option
+          value="Guerrero"
+        >
+          Guerrero
+        </option>
+        <option
+          value="Hidalgo"
+        >
+          Hidalgo
+        </option>
+        <option
+          value="Jalisco"
+        >
+          Jalisco
+        </option>
+        <option
+          value="Michoacán"
+        >
+          Michoacán
+        </option>
+        <option
+          value="Morelos"
+        >
+          Morelos
+        </option>
+        <option
+          value="Nayarit"
+        >
+          Nayarit
+        </option>
+        <option
+          value="Nuevo León"
+        >
+          Nuevo León
+        </option>
+        <option
+          value="Oaxaca"
+        >
+          Oaxaca
+        </option>
+        <option
+          value="Puebla"
+        >
+          Puebla
+        </option>
+        <option
+          value="Querétaro"
+        >
+          Querétaro
+        </option>
+        <option
+          value="Quintana Roo"
+        >
+          Quintana Roo
+        </option>
+        <option
+          value="San Luis Potosí"
+        >
+          San Luis Potosí
+        </option>
+        <option
+          value="Sinaloa"
+        >
+          Sinaloa
+        </option>
+        <option
+          value="Sonora"
+        >
+          Sonora
+        </option>
+        <option
+          value="Tabasco"
+        >
+          Tabasco
+        </option>
+        <option
+          value="Tamaulipas"
+        >
+          Tamaulipas
+        </option>
+        <option
+          value="Tlaxcala"
+        >
+          Tlaxcala
+        </option>
+        <option
+          value="Veracruz"
+        >
+          Veracruz
+        </option>
+        <option
+          value="Yucatán"
+        >
+          Yucatán
+        </option>
+        <option
+          value="Zacatecas"
+        >
+          Zacatecas
+        </option>
+      </select>
+    </div>
+    <div
+      class="root fieldFullWidth"
+    >
+      <label
+        for="address.recipientPhoneNumber"
+      >
+        ShippingDetails.mxPhoneLabel
+      </label>
+      <input
+        autocomplete="shipping tel"
+        class="input"
+        id="address.recipientPhoneNumber"
+        name="recipientPhoneNumber"
+        placeholder="ShippingDetails.mxPhonePlaceholder"
+        type="text"
+        value=""
+      />
+    </div>
+  </div>
+</form>
+`;

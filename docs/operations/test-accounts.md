@@ -1,11 +1,22 @@
-# Local test accounts
+# Test accounts
 
-Use one seller account and one buyer account to exercise the current product-purchase flow locally.
-Both accounts must belong to the Sharetribe **Test** environment configured in the local app.
+Use one seller account and one buyer account to exercise the current product-purchase flow. Both
+accounts must belong to the Sharetribe **Test** environment. The flow is the same in either place:
+
+- **Render staging**, `https://archivo-vintach.onrender.com/`: the hosted Test environment and the
+  place where the release Test gate runs. The free service may cold-start, so allow up to a minute
+  for the first request.
+- **Locally**, against the same Test environment.
+
+**Never create test accounts or test orders on `https://www.archivovintach.com`.** Heroku is
+connected to Sharetribe Live and Stripe live mode, so anything created there is a real user,
+listing, or charge.
 
 ## Prerequisites
 
-- Start the full application with `yarn run dev`, then open `http://localhost:3000`.
+- On Render, nothing to start. Check that `GET /api/notifications/readiness` returns `200` before
+  testing notifications or labels.
+- Locally, start the full application with `yarn run dev`, then open `http://localhost:3000`.
 - Confirm the local Marketplace API client ID and secret belong to the same Sharetribe Test
   environment.
 - Set a Stripe test publishable key (`pk_test_...`) for that environment. Never use live keys for
@@ -14,7 +25,8 @@ Both accounts must belong to the Sharetribe **Test** environment configured in t
 - If eShip is enabled locally, use the QA carrier base URL and credentials.
 
 Do not commit local credentials or edit protected environment files as part of a documentation or
-test change.
+test change. When the local app uses the same Sharetribe Test marketplace as Render
+(`archivovintach-test`), one pair of accounts works in both.
 
 ## Seller account
 
@@ -70,5 +82,5 @@ Use Stripe's current test-card documentation if a scenario changes.
 - `server/services/shippingQuoteService.js`
 - `server/services/shipmentService.js`
 
-For the complete staging and production verification gates, use the
+For the complete staging (§2) and production (§5) verification gates, use the
 [release checklist](release-checklist.md).

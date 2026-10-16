@@ -32,7 +32,7 @@ const StatusBadge = ({ status, intl }) => {
 };
 
 const PayoutItem = props => {
-  const { tx } = props;
+  const { tx, timeZone } = props;
   const intl = useIntl();
 
   const {
@@ -51,7 +51,8 @@ const PayoutItem = props => {
 
   const status = getStatusFromLastTransition(processName, lastTransition);
 
-  const dateInfo = formatDateIntoPartials(lastTransitionedAt, intl);
+  // Without timeZone the date is shown in the viewer's local time.
+  const dateInfo = formatDateIntoPartials(lastTransitionedAt, intl, { timeZone });
   const dateStr = `${dateInfo.date} ${dateInfo.time}`;
 
   const formattedPayin = payinTotal ? formatMoney(intl, payinTotal) : '—';
@@ -94,6 +95,7 @@ StatusBadge.propTypes = {
 
 PayoutItem.propTypes = {
   tx: PropTypes.object.isRequired,
+  timeZone: PropTypes.string,
 };
 
 export default React.memo(PayoutItem);

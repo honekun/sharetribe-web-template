@@ -182,6 +182,7 @@
   "BookingTimeForm.seatsTitle": "Plazas disponibles",
   "BookingTimeForm.timeSlotsError": "Encontramos un error al cargar las fechas disponibles. Por favor actualiza la página.",
   "BookingTimeForm.youWontBeChargedInfo": "No se te cobrará nada todavía",
+  "BrandFilter.noResults": "Sin resultados",
   "BrandFilter.searchPlaceholder": "Buscar marca…",
   "BulkImportPage.completed": "Importación completada",
   "BulkImportPage.description": "Carga varias prendas a la vez con una plantilla y tus fotos en ZIP.",

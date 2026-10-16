@@ -1,0 +1,47 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AVShippingLabelMaybe matches snapshot for the download and generate states 1`] = `
+<div
+  class="root"
+>
+  <h3
+    class="heading"
+  >
+    <span>
+      AVShippingLabel.heading
+    </span>
+  </h3>
+  <a
+    class="downloadLink"
+    href="https://eship/labels/1.pdf"
+    rel="noopener noreferrer"
+    target="_blank"
+  >
+    <span>
+      AVShippingLabel.download
+    </span>
+  </a>
+</div>
+`;
+
+exports[`AVShippingLabelMaybe matches snapshot for the download and generate states 2`] = `
+<div
+  class="root"
+>
+  <h3
+    class="heading"
+  >
+    <span>
+      AVShippingLabel.heading
+    </span>
+  </h3>
+  <button
+    class="primaryButtonRoot primaryButton generateButton"
+    type="button"
+  >
+    <span>
+      AVShippingLabel.generate
+    </span>
+  </button>
+</div>
+`;

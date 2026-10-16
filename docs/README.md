@@ -19,10 +19,10 @@ archive.
 ### Operations
 
 - [Production release checklist](operations/release-checklist.md)
-- [Current deployment topology](operations/deployment.md)
-- [Approved Heroku Test-to-Live deployment](operations/heroku-deployment.md)
+- [Current deployment topology](operations/deployment.md) — Render (Test) and Heroku (Live)
+- [Heroku Test-to-Live cutover record](operations/heroku-deployment.md)
 - [Single-process and scaling constraints](operations/scaling.md)
-- [Local test accounts](operations/test-accounts.md)
+- [Test accounts](operations/test-accounts.md) — Render staging and local
 
 ### Application features
 

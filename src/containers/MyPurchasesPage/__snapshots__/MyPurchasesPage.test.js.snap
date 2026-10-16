@@ -1,0 +1,20 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`MyPurchasesPage matches snapshot (empty state) 1`] = `
+<main
+  class="main"
+  id="main-content"
+>
+  <ul
+    class="itemList"
+  >
+    <li
+      class="noResults"
+    >
+      <span>
+        MyPurchasesPage.noResults
+      </span>
+    </li>
+  </ul>
+</main>
+`;

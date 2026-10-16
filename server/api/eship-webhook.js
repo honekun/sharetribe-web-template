@@ -8,8 +8,9 @@ const { EVENT_TYPE_PICKED_UP } = require('../services/eshipTrackingService');
 
 const router = express.Router();
 const SHIPMENT_ID_PATTERN = /^[A-Za-z0-9_-]{1,100}$/;
-// Preferred over ?secret=: platform router logs and Sentry both record the query
-// string, and the "secret" substring also matches Sentry's default scrubbing.
+// Header only, never ?secret=: platform router logs and Sentry both record the
+// query string, so a URL secret ends up in third-party retention. The "secret"
+// substring in the header name also matches Sentry's default scrubbing.
 const SECRET_HEADER = 'x-av-webhook-secret';
 
 function secretMatches(provided, configured) {
@@ -18,12 +19,9 @@ function secretMatches(provided, configured) {
   return supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected);
 }
 
-// Either presentation is accepted, so a dashboard configured with both a header
-// and a legacy ?secret= keeps delivering while the URL form is rolled off.
+// A ?secret= query parameter is ignored even when it is correct.
 function requestSecretMatches(req, configured) {
-  return [req?.headers?.[SECRET_HEADER], req?.query?.secret].some(provided =>
-    secretMatches(provided, configured)
-  );
+  return secretMatches(req?.headers?.[SECRET_HEADER], configured);
 }
 
 function parseEventTimestamp(timestamp, timezone) {

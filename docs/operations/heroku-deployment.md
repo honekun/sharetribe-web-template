@@ -1,16 +1,27 @@
-# Approved Heroku Test-to-Live deployment
+# Heroku Test-to-Live deployment (initial cutover record)
 
-Status: approved initial production deployment plan. Progress (2026-10-10): **Phase 1 in progress**
-on `archivo-vintach-marketplace` (Heroku v36, `main` at `81e98fac6`); open items are tracked in
+Status (2026-10-15): **cutover executed, Live validation pending.** The app
+`archivo-vintach-marketplace` was converted to Sharetribe Live on 2026-10-12 (releases v37–v49; Live
+build v48 from `main` at `cdb36026c`). It serves `https://www.archivovintach.com`. The Live smoke
+and launch gate (§5.7, release checklist §5) is not signed off. Open items are tracked in
 [Live launch readiness](../pending/live-launch.md).
+
+This file is now the record of how the initial cutover was performed, plus the rollback rules that
+still apply. Routine releases follow [current deployment topology](deployment.md): test on Render,
+then rebuild on Heroku with Live variables. Do not run Phases 1–3 again on this app.
+
+**Deviation from the plan:** the Heroku Test gate (§3.5) was not completed before the cutover.
+Migrations, readiness, poller leadership, Brevo, and the welcome email were verified on Heroku. The
+remaining functional checks were transferred to the Render Test environment (release checklist §2),
+and they must pass there before the Live validation can be signed off.
 
 Archivo Vintach will use **one Heroku app** for the initial release. The app is first deployed with
 Sharetribe Test, Stripe test mode, and eShip QA. After the release candidate passes the complete
 test matrix, the same Heroku app, dyno formation, and PostgreSQL add-on are converted to Live.
 
 The PostgreSQL **resource** is reused, but its Test contents are not. Test state must be backed up
-and erased before the app receives Sharetribe Live credentials. Render remains the permanent Test
-staging environment after the Heroku app becomes production.
+and erased before the app receives Sharetribe Live credentials. Render is the permanent, and now
+only, Test environment.
 
 ## Non-negotiable boundaries
 
@@ -237,13 +248,19 @@ email remains off.
 
 In Sharetribe Console with **Test** selected:
 
-- set the Marketplace URL to the Heroku pre-production URL;
-- add its social-login callback URLs where those providers are enabled;
+- the Marketplace URL can't be changed here: Sharetribe Test fixes it at the
+  `…mysharetribe-test.com` address. With custom code, the app's own address comes from
+  `REACT_APP_MARKETPLACE_ROOT_URL` and the host's domain settings instead (see
+  [deployment topology](deployment.md#where-the-marketplace-url-is-defined));
+- add the app's social-login callback URLs where those providers are enabled;
 - verify listing types, fields, categories, transaction processes, translations, pages, navigation,
   top bar, footer, and email texts; and
 - confirm Stripe Test and the Test Integration API application are selected.
 
 ### 3.5 Complete the Test gate
+
+Not completed on Heroku. The open checks were moved to Render (release checklist §2); this list now
+describes the Render Test gate.
 
 Use [test accounts](test-accounts.md) and the full [release checklist](release-checklist.md). At a
 minimum, verify:
@@ -289,10 +306,38 @@ In Sharetribe Console with **Live** selected:
 Users, listings, transactions, Stripe Connect accounts, Integration events, and Test database rows
 must not be copied into Live.
 
+Checked 2026-10-15: `yarn run config:compare` between the Test (Render bundle) and Live (Heroku
+bundle) client IDs reports all 23 hosted assets identical: commission, minimum transaction size,
+localization, user types and fields, listing types, fields, categories and search, layout, branding,
+top bar, footer, translations, email texts, and the eight content pages. The copy also carried
+Test's open defects into Live (see [Live launch readiness](../pending/live-launch.md) §3). Live
+Marketplace and Integration credentials were set at v42, `pk_live_…` at v38, and the eShip
+production key and base URL at v39–v40.
+
 ## 5. Phase 3 — convert the same Heroku app to Live
 
 Perform this phase in a recorded maintenance window. Once it begins, the Heroku Test deployment is
 unavailable until the conversion completes or the pre-traffic rollback is executed.
+
+Performed 2026-10-12, from Heroku's release log and the app's public endpoints:
+
+| Release | Time (-0600) | Step                                                                                       |
+| ------- | ------------ | ------------------------------------------------------------------------------------------ |
+| v37     | 16:40        | `REACT_APP_MARKETPLACE_ROOT_URL` set                                                       |
+| v38     | 17:05        | Stripe publishable key replaced (bundle now carries `pk_live_…`)                           |
+| v39–v40 | 17:11        | eShip production key and base URL                                                          |
+| v41     | 17:19        | Notification and label flags changed (freeze, §5.1)                                        |
+| —       | 17:19        | Backup `b007` captured: the last Test database backup (§5.2)                               |
+| v42     | 17:21        | Live Marketplace API and Integration API credentials                                       |
+| v43–v44 | 17:25–17:32  | `INSTAGRAM_ACCESS_TOKEN` carried across (§5.2)                                             |
+| v45     | 17:33        | `REACT_APP_GOOGLE_CLIENT_ID`, `BREVO_LIST_ID`                                              |
+| v46     | 17:33        | `AV_NOINDEX` removed                                                                       |
+| v47     | 17:33        | `REACT_APP_CSP` changed (production sends an enforcing `Content-Security-Policy`)          |
+| v48     | 17:38        | **Live build**: deploy `cdb36026c`, docs-only changes from the Test-mode v36 (`81e98fac6`) |
+| v49     | 17:43        | Notification, label, and welcome-email flags enabled (§5.6)                                |
+
+The database reset (§5.3) and migration (§5.6) leave no release entry. On 2026-10-15, readiness
+showed `migrated: true` and no Test rows (no deliveries, marketing preferences, or poller cursor).
 
 ### 5.1 Freeze the app
 
@@ -439,6 +484,11 @@ active poller leaders            → exactly 1 when a start flag is enabled
 
 ### 5.7 Open production traffic and smoke test
 
+DNS done (verified 2026-10-15): `www` resolves to its Heroku DNS target and serves over HTTPS, and
+the apex answers `301` to `https://www.archivovintach.com`. The canonical link, readiness (`200`,
+one poller owner), and `/api/brevo/health` (`200`) are correct, and `robots.txt` is the normal
+crawlable file. **The smoke checks below are still open.**
+
 After readiness passes, update public DNS and verify managed TLS. At GoDaddy:
 
 - point `www` with a **CNAME** to the `www.archivovintach.com` DNS target from `heroku domains`;
@@ -500,7 +550,7 @@ contents changed.
 
 ## 7. Steady-state deployment after launch
 
-After sign-off, the approved topology is:
+This topology is in effect since 2026-10-12. The Live launch sign-off is still pending:
 
 | Purpose         | Host   | External environment                     | Database                             |
 | --------------- | ------ | ---------------------------------------- | ------------------------------------ |

@@ -1,37 +1,112 @@
 # Live launch readiness
 
 Status: open. Reviewed 2026-10-09 against `pre-release` at `0bf590fe2`; re-checked 2026-10-10
-against `pre-release` at `94c6e320d` (same tree as `main` `fa40e9179`) and the live Heroku and
-Render apps.
+against `pre-release` at `94c6e320d`; re-checked 2026-10-15 after the Live cutover, against `main`
+at `cdb36026c`, the public Heroku and Render endpoints, and both hosted Console configurations.
 
-This is the work that has to be finished **before** the go/no-go in the
-[production release checklist](../operations/release-checklist.md) can start. The release checklist
-and the [Heroku Test-to-Live runbook](../operations/heroku-deployment.md) still govern the cutover
-itself; this file lists the gaps found in code, configuration, and third-party setup that those
-documents assume are already closed. Remove each item when it is done, and delete this file when it
-is empty.
+**Production is deployed but not signed off.** Heroku was converted to Sharetribe Live on 2026-10-12
+and serves `https://www.archivovintach.com`. Render is the Test environment. This file lists the
+gaps that block the Live validation sign-off: the Render Test gate (release checklist §2) and the
+Live smoke gate (§5). The cutover itself is recorded in the
+[Heroku runbook](../operations/heroku-deployment.md). Remove each item when it is done, and delete
+this file when it is empty.
 
-Brevo hosted templates are a known missing piece and are tracked in §6.
+Brevo campaign templates are a known missing piece (post-launch, §6).
+
+## 0. Finalization tracker (2026-10-15)
+
+Every open item across `docs/`, in the order it should be closed. Details are in the linked
+sections. **Owner** is who can act: _Console_ (Sharetribe Console), _Ops_ (Heroku/Render/DNS
+dashboards), _Dev_ (repository), _Business_ (decision or sign-off).
+
+### A. Release mechanics
+
+| #   | Item                                                                                                                                                                                                                       | Owner | Where            |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ---------------- |
+| A1  | Merge the post-cutover docs realignment (`pre-release` working tree) to `main`.                                                                                                                                            | Dev   | —                |
+| A2  | Confirm which commit Render runs after PR #116 merges. Heroku is still `cdb36026c` (v48); everything since (#115, #116: bulk-import, Brevo form, eShip webhook header-only, my-balance, bag, user duck) is Live-pending.   | Ops   | checklist §2     |
+| A3  | ✅ Code gate passed on `pre-release` at `741187829` (PR #116) on 2026-10-16: server and client tests, `format-ci`, `av-translation-check`, `config-check`, `env-template-check`, `build`. Re-run if the candidate changes. | Dev   | checklist §1     |
+| A4  | After the Render gate passes, rebuild that commit on Heroku (Live) and record the first known-good Live release. Never roll back past v48.                                                                                 | Ops   | checklist §4, §5 |
+
+### B. Render Test gate — must pass before Live sign-off
+
+| #   | Item                                                                                                                                                                                                                                                                                                                                               | Owner   | Where        |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------------ |
+| B1  | Functional run: SSR/search/filters, signup, verification, login, both languages; seller payout onboarding, shipping origin, listing create/publish, welcome popup.                                                                                                                                                                                 | Ops/Dev | checklist §2 |
+| B2  | eShip QA quote → Stripe test purchase → breakdown → `protectedData.avShipping`; **Generar guía → Descargar guía**; `Contactar AV` for missing origin / `especial`.                                                                                                                                                                                 | Ops/Dev | §5 below     |
+| B3  | Bulk import as a regular seller and as an allowlisted operator (`BULK_IMPORT_OPERATOR_EMAILS` on Render).                                                                                                                                                                                                                                          | Ops     | checklist §2 |
+| B4  | Restart Render: sessions survive, poller resumes from its cursor, no duplicate sends.                                                                                                                                                                                                                                                              | Ops     | checklist §2 |
+| B5  | Tracking emails are `true` on Render: point the eShip **QA** dashboard webhook at Render with the `X-AV-Webhook-Secret` header, or set the flag back to `false`. The `?secret=` URL form is rejected since 2026-10-15: if the dashboard URL ever carried it, rotate `ESHIP_WEBHOOK_SECRET` and confirm a real checkpoint returns `202`, not `401`. | Ops     | §7 below     |
+| B6  | `SERVER_SHARETRIBE_TRUST_PROXY` on Render is a hop count, not `true`; confirm `ESHIP_LABEL_AUTOBUY=false`.                                                                                                                                                                                                                                         | Ops     | §2.1 below   |
+| B7  | Check one built-in Test email's links (Test Console's Marketplace URL can't point at Render).                                                                                                                                                                                                                                                      | Ops     | checklist §2 |
+| B8  | Note the Render Postgres expiry date (free tier, 30 days) and plan its renewal.                                                                                                                                                                                                                                                                    | Ops     | §7 below     |
+
+### C. Live content and configuration (Console) — fix before announcing
+
+| #   | Item                                                                                                                                                                                                                                                     | Owner       | Where    |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | -------- |
+| C1  | **Live landing page:** all 20 hand-picked references are Test IDs, so three sections are empty. Hide them, then rebuild with Live listings and users.                                                                                                    | Console     | §3 below |
+| C2  | Paste the corrected email texts into Live and Test (36 `YYYY` date skeletons in both). Optionally re-paste the marketplace texts reference too: it now has 2,009 keys (adds `BrandFilter.noResults`); without it the bundled `es_av.json` value applies. | Console     | §3 below |
+| C3  | Turn on `tags` "include in search" in Live and Test (Hot List and tag carousels show arbitrary listings).                                                                                                                                                | Console     | §3 below |
+| C4  | Real Spanish landing meta description (still `Archivo Vintach Marketplace`; production is now crawlable).                                                                                                                                                | Console     | §8 below |
+| C5  | Outgoing-email sender, sender name, and reply-to for Sharetribe Live, plus its sending-domain DNS records (SPF merge, shared DMARC).                                                                                                                     | Console/Ops | §3, §6   |
+| C6  | Legal review of the terms of service and privacy policy (Brevo consent, Stripe, eShip address sharing).                                                                                                                                                  | Business    | §3 below |
+| C7  | Live operator/admin account and the `BULK_IMPORT_OPERATOR_EMAILS` / `SHIPPING_LABEL_OPERATOR_EMAILS` users.                                                                                                                                              | Console/Ops | §3 below |
+| C8  | Fix Test's landing page (8 dead references) so Render's logs stay clean.                                                                                                                                                                                 | Console     | §3 below |
+
+### D. Live configuration to confirm (not readable from outside)
+
+| #   | Item                                                                                                                                                                                            | Owner    | Where                  |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---------------------- |
+| D1  | `REACT_APP_SENTRY_DSN`: production has no error monitoring (no Sentry in the Live bundle). Needs a rebuild.                                                                                     | Ops      | §2.1                   |
+| D2  | `ESHIP_API_DEBUG` unset and `ESHIP_LABEL_AUTOBUY=false` on Heroku; eShip production wallet funded, billing owner named.                                                                         | Ops      | §5                     |
+| D3  | `BREVO_LIST_ID=6` on Heroku, and the Brevo transactional webhook moved to `www.archivovintach.com` (it still targets the herokuapp host).                                                       | Ops      | §6                     |
+| D4  | Social login: Google redirects with the `www` callback (verified); confirm `GOOGLE_CLIENT_SECRET`, and the Facebook app (ID present in the bundle) is a production app with the `www` callback. | Ops      | §3                     |
+| D5  | Stripe: Live secret key in Sharetribe Live, platform activated for Mexico, payout schedule.                                                                                                     | Ops      | §4                     |
+| D6  | Release-record gaps: cutover `web=0`, independent approver, boot logs clean, launch roles and observation window.                                                                               | Business | checklist §4, §8 below |
+| D7  | Optional: analytics (`REACT_APP_GOOGLE_ANALYTICS_ID` or `REACT_APP_PLAUSIBLE_DOMAINS`); none is set in Live.                                                                                    | Business | §2.1                   |
+
+### E. Live smoke and sign-off (release checklist §5)
+
+| #   | Item                                                                                                                                               | Owner    |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| E1  | Login, search, and CMS pages in both languages on `www`.                                                                                           | Ops      |
+| E2  | One real seller with real Stripe Connect onboarding and a complete shipping origin; one approved listing.                                          | Business |
+| E3  | One approved low-value purchase with a production eShip quote; verify order math, retained shipping fee, payout, `avShipping`.                     | Business |
+| E4  | Buy and download the production label manually; record the carrier charge.                                                                         | Ops      |
+| E5  | Welcome email and built-in Sharetribe emails use the production sender and `www` links; dispute reply with an image reaches the monitored mailbox. | Ops      |
+| E6  | Approved refund/cancellation test; reconcile the label separately (needs the eShip policy owner, [pending eShip](eship.md) §1).                    | Business |
+| E7  | Record evidence and the launch approver's sign-off; then start the post-launch observation window (checklist §6).                                  | Business |
+
+### F. After launch (does not block sign-off)
+
+Real `TRANSIT` webhook test and enabling tracking emails on Live (checklist §5, eShip §5.3); Brevo
+campaigns (Phase B); eShip cancellation policy and IVA ([pending eShip](eship.md)); WhatsApp
+WA-01–08 ([notifications](notifications.md)); upstream v12.4.0 merge and Sentry 11; Spanish
+shareable operator guide; per-seller commission override; bulk-import scaling
+([scaling](scaling.md)); listings-sheet and bidding decisions.
 
 ## 1. Snapshot
 
-| Area                   | State (2026-10-09, re-checked 2026-10-10)                                                                                                                                                                                                                                                                                                                                                              |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Release branch         | `main` is deployed to Heroku. PR #111 merged as `f27c19cb9` (2026-10-09); PR #112 (the JSON-body fix `ff1c390ed`) merged as `81e98fac6` and is Heroku **v36** (2026-10-10); PR #113 (docs only) merged as `fa40e9179`. `pre-release` and `main` carry the same tree.                                                                                                                                   |
-| Heroku app             | `archivo-vintach-marketplace`, stack `heroku-26`, one `web` Basic dyno (idle 224 MB / 512 MB), `heroku-postgresql` `essential-0` with daily backups (`b001`, `b002`, `a003` completed). `www.archivovintach.com` and `archivovintach.com` attached, ACM on; DNS not yet pointed, so ACM reports `www` as `Failed — Incorrect DNS Settings` (expected until cutover). Runbook phase: **1 (Test mode)**. |
-| Heroku providers       | Sharetribe Test credentials, `pk_test_…`, eShip QA base URL.                                                                                                                                                                                                                                                                                                                                           |
-| Heroku guarded flags   | `AV_SHIPPING_LABELS_ENABLED=true` (v25, after migrations 001–009), `AV_NOTIFICATIONS_ENABLED=true` and `AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED=true` (v34); the other four explicitly `false`. Readiness `200`, one poller owner, 3 Brevo deliveries sent, **no shipping-label attempts yet** (2026-10-10).                                                                                            |
-| Server tests           | 56 suites / 669 tests pass (2026-10-10, `CI=true yarn test-ci`).                                                                                                                                                                                                                                                                                                                                       |
-| Client tests           | 181 suites / 1922 tests / 157 snapshots pass with `CI=true` (2026-10-10).                                                                                                                                                                                                                                                                                                                              |
-| `config-check`         | Passes (2026-10-10).                                                                                                                                                                                                                                                                                                                                                                                   |
-| `env-template-check`   | Passes (2026-10-10).                                                                                                                                                                                                                                                                                                                                                                                   |
-| `av-translation-check` | Passes (336 symmetric keys, 2026-10-10).                                                                                                                                                                                                                                                                                                                                                               |
-| `format-ci`            | Passes (2026-10-10). `yarn run build` also passes.                                                                                                                                                                                                                                                                                                                                                     |
-| `yarn audit`           | Was 1 critical, 35 high, 48 moderate, 6 low; after the 2026-10-09 upgrade 0 critical, 1 high (install-time only), 10 moderate (§2.2).                                                                                                                                                                                                                                                                  |
-| Upstream               | Fork is based on v12.1.0; `upstream/main` is v12.4.0 + 126 commits. Merge decided for **after launch** (see [pending README](README.md)).                                                                                                                                                                                                                                                              |
-| CI                     | No CI pipeline exists (`.github/` has only issue templates). Every gate is run by hand.                                                                                                                                                                                                                                                                                                                |
+| Area                   | State (re-checked 2026-10-15)                                                                                                                                                                                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Release branch         | Heroku **v48** runs `cdb36026c` (PR #114), the Live build (2026-10-12; docs-only changes from the Test-mode v36). `main` is now `cd843da16` (PR #115, bulk-import fix), not yet on Heroku.                                                                                                        |
+| Heroku app (Live)      | `archivo-vintach-marketplace`, stack `heroku-26`, one `web` Basic dyno, `heroku-postgresql` `essential-0` with daily backups (`b007` is the last Test backup). Serves `https://www.archivovintach.com`; apex `301` to `www`. Runbook phase: **cutover done, Live validation pending**.            |
+| Heroku providers       | Sharetribe Live credentials (v42), `pk_live_…` in the bundle (v38), eShip production key and base URL (v39–v40), enforcing CSP (v47), `AV_NOINDEX` removed (v46).                                                                                                                                 |
+| Heroku guarded flags   | Notifications, shipping labels, and welcome email on (v49); campaigns, tracking emails, and WhatsApp off. Readiness `200`, `migrated: true`, one poller owner, no deliveries or labels yet, no Test rows (2026-10-15).                                                                            |
+| Render app (Test)      | `https://archivo-vintach.onrender.com/`, `pk_test_…`, `AV_NOINDEX` in effect. New Postgres `archivovintach_v102026` migrated 001–009 and redeployed (2026-10-15): readiness `200`, one poller owner, `/api/brevo/health` `200`. Welcome email and tracking emails on; campaigns and WhatsApp off. |
+| Hosted config          | `config:compare` Test → Live: all 23 assets identical (2026-10-15).                                                                                                                                                                                                                               |
+| Server tests           | 59 suites / 738 tests pass (`CI=true yarn test-server`, 2026-10-16, `pre-release` at `741187829`).                                                                                                                                                                                                |
+| Client tests           | 187 suites / 1978 tests / 168 snapshots pass with `CI=true` (2026-10-16, `741187829`).                                                                                                                                                                                                            |
+| `config-check`         | Passes (2026-10-16).                                                                                                                                                                                                                                                                              |
+| `env-template-check`   | Passes (2026-10-16).                                                                                                                                                                                                                                                                              |
+| `av-translation-check` | Passes (342 symmetric keys, 2026-10-16).                                                                                                                                                                                                                                                          |
+| `format-ci`            | Passes (2026-10-16). `yarn run build` also passes.                                                                                                                                                                                                                                                |
+| `yarn audit`           | Was 1 critical, 35 high, 48 moderate, 6 low; after the 2026-10-09 upgrade 0 critical, 1 high (install-time only), 10 moderate (§2.2).                                                                                                                                                             |
+| Upstream               | Fork is based on v12.1.0; `upstream/main` is v12.4.0 + 126 commits. Merge decided for **after launch** (see [pending README](README.md)).                                                                                                                                                         |
+| CI                     | `.circleci/config.yml` runs `format-ci`, `test-ci`, `build`, `av-translation-check`, and `env-template-check` on Node 24, but no check reported on PR #116 (2026-10-16), so CircleCI is not yet connected to the repository. Until it reports on PRs, every gate is run by hand.                  |
 
-## 2. Blockers — fix before the Heroku Test gate
+## 2. Blockers — configuration
 
 ### 2.1 Missing production configuration on Heroku
 
@@ -66,8 +141,9 @@ report-only mode. Live must carry the same four values.
       (verified 2026-10-10 from outside): canonical, `og:url`, and the sitemap index use `https://`,
       `http://` answers `301`, every response carries `X-Robots-Tag: noindex, nofollow`, and
       `robots.txt` is `Disallow: /`.
-- [ ] `REACT_APP_SENTRY_DSN` — create a Sentry project and set its DSN before launch; production has
-      no error monitoring without it.
+- [ ] `REACT_APP_SENTRY_DSN` — create a Sentry project and set its DSN on Heroku (a rebuild is
+      needed); production has no error monitoring without it. The Live bundle has no Sentry DSN
+      (2026-10-15).
 - [x] Brevo welcome: `BREVO_TEMPLATE_SELLER_WELCOME` (`BREVO_SENDER_EMAIL`/`BREVO_SENDER_NAME` are
       set; all three are required by `notificationConfig.js` once welcome email is on). The hosted
       template exists as ID 6 (§6); `BREVO_TEMPLATE_SELLER_WELCOME=6` set 2026-10-10.
@@ -112,10 +188,15 @@ remains open.
 ## 3. Sharetribe Live environment
 
 Nothing is copied automatically from Test. Users, listings, transactions, and Stripe accounts never
-move. Once Live has a Marketplace API client ID, check every Console item below at once with
-`yarn run config:compare <testClientId> <liveClientId>` (`scripts/compare-hosted-config.js`; public
-client IDs only, read-only). Branding image URLs and page listing/user IDs are expected to differ;
-anything else is a setup gap.
+move. Check every Console item at once with `yarn run config:compare <testClientId> <liveClientId>`
+(`scripts/compare-hosted-config.js`; public client IDs only, read-only; take them from the Render
+and Heroku bundles). Branding image URLs and page listing/user IDs are expected to differ; anything
+else is a setup gap.
+
+Checked 2026-10-15: all 23 assets are **identical**, including the landing page. That confirms the
+Console copy, and it also means Test's open content defects are now in Live too: the landing page
+references Test listings and users, its meta description is still the placeholder, the email texts
+still carry 36 `YYYY` skeletons, and `tags` is still not searchable (each listed below).
 
 Verified or prepared in Test on 2026-10-09:
 
@@ -137,27 +218,30 @@ Verified or prepared in Test on 2026-10-09:
 
 Remaining (Console or owner actions):
 
-- [ ] Sharetribe subscription is on a plan that permits Live, and the Live environment is opened.
-- [ ] Marketplace settings: name, Marketplace URL (production domain), localization (`es`, `MXN`,
-      first day Monday), branding (logo, favicon, colours, social share image), and the
-      outgoing-email sender and reply-to mailbox. The dispute acknowledgement relies on replies
-      reaching a monitored Archivo Vintach mailbox.
-- [ ] User types `vendedor` ("Persona") and `vendedor-tienda` ("Tienda"); user fields `tipoTienda`
+- [x] Sharetribe subscription is on a plan that permits Live, and the Live environment is opened.
+- [x] Localization and branding match Test (`config:compare`, 2026-10-15).
+- [ ] Marketplace settings not covered by `config:compare`: name, and the outgoing-email sender and
+      reply-to mailbox. The dispute acknowledgement relies on replies reaching a monitored Archivo
+      Vintach mailbox. The site address itself comes from `REACT_APP_MARKETPLACE_ROOT_URL` (custom
+      code); confirm that Live's built-in emails link to `https://www.archivovintach.com`.
+- [x] User types `vendedor` ("Persona") and `vendedor-tienda` ("Tienda"); user fields `tipoTienda`
       (private enum) and `localDesign` (metadata enum), both limited to `vendedor-tienda`. Keep the
-      phone field out — WhatsApp is release-locked.
-- [ ] Listing type `av-listing` → `default-purchase/release-1`, unit type `item`, stock enabled;
-      location, shipping, and pickup off.
-- [ ] Categories (5 top-level, 150 total) and Console listing fields (`genero`, `brand`, `estado`,
+      phone field out — WhatsApp is release-locked. (Identical to Test, 2026-10-15.)
+- [x] Listing type `av-listing` → `default-purchase/release-1`, unit type `item`, stock enabled;
+      location, shipping, and pickup off. (Identical to Test; the alias itself is checked below.)
+- [x] Categories (5 top-level, 150 total) and Console listing fields (`genero`, `brand`, `estado`,
       `estilo`, `temporada`, `tags`) exactly as in Test. Bulk-import option keys in the operator
-      guide §8.5 must match Live.
-- [ ] **`tags`: turn on "include in search" (indexForSearch) in Console, in Test and Live.** It is
-      off, so the `pub_tags` query behind the tag carousels and the Hot List (`av-tag-listings`) is
-      ignored and those sections show arbitrary listings. The CLI cannot change a Console-owned
-      field.
-- [ ] `transactions/commission.json` **22 %** and **Minimum transaction size `$20.00`** (`2000`
-      subunits), as in Test.
-- [ ] Push the process to Live and create its alias (confirm the Live marketplace ID in Console →
-      Build → Advanced; Test is `archivovintach-test`):
+      guide §8.5 must match Live. (Identical to Test, 2026-10-15.)
+- [ ] **`tags`: turn on "include in search" (indexForSearch) in Console, in Test and Live.** Still
+      off in both (2026-10-15), so the `pub_tags` query behind the tag carousels and the Hot List
+      (`av-tag-listings`) is ignored and those sections show arbitrary listings. The CLI cannot
+      change a Console-owned field.
+- [x] `transactions/commission.json` **22 %** and **Minimum transaction size `$20.00`** (`2000`
+      subunits), as in Test. (Identical, 2026-10-15.)
+- [x] Process and alias in Live (`archivovintach`): `default-purchase` v1 with
+      `default-purchase/release-1`, created 2026-10-12. Its `process.edn` and templates are
+      identical to Test's v4 and to the repository (formatting only) (2026-10-15). For a future
+      process change, push to Test first, then Live:
 
       ```sh
       flex-cli process create --process default-purchase \
@@ -169,7 +253,9 @@ Remaining (Console or owner actions):
       version instead. Push `default-inquiry`/`default-negotiation`/`default-booking` only if a
       listing type uses them.
 
-- [ ] Search schemas in Live:
+- [x] Search schemas in Live: `color`, `all_sizes` (multi-enum) and `avPlaceholderImage` (boolean)
+      exist, alongside the Console-owned fields (`flex-cli search -m archivovintach`, 2026-10-15).
+      Commands, for reference:
 
       ```sh
       flex-cli search set --key color --scope public --type multi-enum --schema-for listing -m LIVE_ID
@@ -177,41 +263,53 @@ Remaining (Console or owner actions):
       flex-cli search set --key avPlaceholderImage --scope public --type boolean --schema-for listing -m LIVE_ID
       ```
 
-- [ ] Marketplace texts: paste
-      [`marketplace-texts-es.json`](../reference/marketplace-texts-es.json).
+- [x] Marketplace texts: identical to Test (2026-10-15).
 - [ ] Email texts: paste the corrected [`email-texts-es.json`](../reference/email-texts-es.json)
-      into Live **and re-paste it into Test** (Test still has 19 `YYYY` values). Send previews with
-      `flex-cli notifications send` for each purchase template.
-- [ ] Content pages: landing, `acerca-archivo-vintach`, `como-funciona`, `como-vender-persona`,
-      `contacto`, `faqs`, **terms of service**, and **privacy policy** (must cover Brevo marketing
-      consent, Stripe, and eShip address sharing), plus footer and top bar. Test UUIDs do not exist
-      in Live, so the hand-picked sections must be rebuilt after real listings exist.
-- [ ] Fix Test's landing page, which has 8 references that no longer resolve: 3 listings in
-      `av-selections-nuevo-drop` (`69e27e64…`, `69e25c40…`, `69e27942…`), 3 in
-      `av-selections-favoritos` (`69e25a4d…`, `69e25b5e…`, `69e25b9d…`), and 2 users in
-      `av-selected-users-closets-destacados` (`69e25982…`, `69eb22db…`). A listing that is closed
-      rather than deleted also reports as missing.
-- [ ] Marketplace API application (client ID + secret) and Integration API application, both from
-      **Live**.
+      into **both Live and Test**. Both still carry the 36 uncorrected `YYYY` date skeletons
+      (2026-10-15); the reference file has none. Every key the process templates use exists in Live
+      (604 keys, same set as the reference). Send previews with `flex-cli notifications send` for
+      each purchase template.
+- [x] Content pages, footer, and top bar copied: landing, `acerca-archivo-vintach`, `como-funciona`,
+      `como-vender-persona`, `contacto`, `faqs`, terms of service, and privacy policy are identical
+      to Test (2026-10-15).
+- [ ] Review the terms of service and privacy policy for Live. They must cover Brevo marketing
+      consent, Stripe, and eShip address sharing.
+- [ ] **Live landing page:** it is a copy of Test's, so **all 20** hand-picked references resolve to
+      nothing in Live (2026-10-15): 13 distinct listings in `av-selections-nuevo-drop` and
+      `av-selections-favoritos`, and 4 users in `av-selected-users-closets-destacados`. Those
+      sections render empty, and every landing render logs `av-landing-listings-failed` /
+      `av-landing-user-failed`. Rebuild them with Live listings and users once those exist, or hide
+      the sections until then.
+- [ ] Fix Test's landing page, which has 8 references that no longer resolve (re-checked 2026-10-15;
+      Render logs `av-landing-user-failed` for `69e25982…` on every landing render, including the
+      deploy health check — handled, not a deploy failure): 3 listings in `av-selections-nuevo-drop`
+      (`69e27e64…`, `69e25c40…`, `69e27942…`), 3 in `av-selections-favoritos` (`69e25a4d…`,
+      `69e25b5e…`, `69e25b9d…`), and 2 users in `av-selected-users-closets-destacados` (`69e25982…`,
+      `69eb22db…`). A listing that is closed rather than deleted also reports as missing.
+- [x] Marketplace API application (client ID + secret) and Integration API application, both from
+      **Live** (Heroku v42).
 - [ ] Social login (Google, Facebook): production apps, Live callback URLs on the production domain.
+      Google: client ID set at v45, and `/api/auth/google` redirects with the `www` callback
+      (2026-10-15); a real sign-in proves the secret. Facebook: an app ID is in the Live bundle;
+      confirm it is the production app with the `www` callback, or remove it.
 - [ ] At least one operator admin account and the `BULK_IMPORT_OPERATOR_EMAILS` /
       `SHIPPING_LABEL_OPERATOR_EMAILS` users created in Live.
-- [ ] Run `yarn run config:compare <testClientId> <liveClientId>` and resolve every unexpected
-      difference.
+- [x] Run `yarn run config:compare <testClientId> <liveClientId>` and resolve every unexpected
+      difference. No differences (2026-10-15).
 
 ## 4. Stripe
 
 Checked in code on 2026-10-09: Mexico is a supported Connect country (`configStripe.js`, `MXN`),
-payout onboarding defaults to `MX` (`configAV.defaultCountry`), Test localization is `MXN`, and
-Heroku still carries `pk_test_…` as it should until cutover. The earnings estimator for `av-listing`
-(stock-managed products, `EditListingPricingAndStockForm`) shows only the 22 % + \$15 commission and
-never deducts a Stripe fee — correct, because the platform pays Stripe out of its commission. The
-US-style `REACT_APP_STRIPE_FEE_*` defaults reach only the unused booking form.
+payout onboarding defaults to `MX` (`configAV.defaultCountry`), and Test localization is `MXN`.
+Heroku carries `pk_live_…` since v38. The earnings estimator for `av-listing` (stock-managed
+products, `EditListingPricingAndStockForm`) shows only the 22 % + \$15 commission and never deducts
+a Stripe fee — correct, because the platform pays Stripe out of its commission. The US-style
+`REACT_APP_STRIPE_FEE_*` defaults reach only the unused booking form.
 
 - [ ] Stripe platform account fully activated for live payments in Mexico (business details, bank
       account, Connect platform profile and branding).
-- [ ] Live secret key entered in Sharetribe **Live** Console; `pk_live_…` set on Heroku only at
-      cutover.
+- [ ] Live secret key entered in Sharetribe **Live** Console. `pk_live_…` is on Heroku (v38); a Live
+      payout onboarding or purchase proves the pair matches.
 - [ ] Connect onboarding tested with a real MX seller and the payout schedule confirmed.
 - [ ] Finance confirms platform margin per sale covers Stripe's Mexico processing fee on the full
       charge, shipping included (the platform, not the seller, pays it).
@@ -235,8 +333,10 @@ Checked on 2026-10-09:
 
 Remaining:
 
-- [ ] Test **Generar guía → Descargar guía** on Heroku against QA with a paid test order.
+- [ ] Test **Generar guía → Descargar guía** on **Render** against QA with a paid test order. It was
+      never run on Heroku before the cutover, and Render's database must be migrated first (§7).
 - [ ] Production API key and `ESHIP_BASE_URL=https://api.myeship.co/rest`; `ESHIP_API_DEBUG` unset.
+      Key and base URL set at v39–v40; confirm the value and that debug is unset.
 - [ ] Re-run the quote check with the production key and confirm `object_id`/`rate_id` and real
       (non-`TEST`) rates.
 - [ ] eShip production wallet funded; billing owner named.
@@ -287,15 +387,19 @@ was deleted on 2026-10-10.
       blocked the opt-in is fixed in PR #112.
 - [x] Phase A10: inventory recorded outside the repository (2026-10-10). Owner, key name, mailbox
       readers and domain holder confirmed. Domain renews 2027-10-22; confirm auto-renew.
-- [ ] At cutover (Phase A11): `BREVO_LIST_ID=6` ("Live ArchivoVintach"), webhook URL moved to
+- [ ] Phase A11 (cutover): `BREVO_LIST_ID` was changed at v45; confirm it is `6` ("Live
+      ArchivoVintach") and that the transactional webhook URL now points at
       `www.archivovintach.com`.
+- [x] Render (Test): Brevo configured for the welcome email (2026-10-15): readiness shows it enabled
+      with nothing missing and `/api/brevo/health` returns `200`. The forbidden public
+      `REACT_APP_BREVO_LIST_ID` (it was `9` in the Render bundle) is gone from the rebuilt bundle.
 - [ ] Sharetribe Live outgoing email uses the production domain (separate from Brevo), with the same
       visible sender name and reply-to mailbox as Brevo's `hola@archivovintach.com` sender (Brevo
       guide, "Which system sends which email").
 - [ ] Campaigns (Phase B: seven templates, capacity, smoke tests) wait until after launch;
       `AV_BREVO_CAMPAIGNS_ENABLED` stays `false`.
 
-## 7. Heroku and domain
+## 7. Hosting: Heroku (Live), Render (Test), and domain
 
 Checked and prepared on 2026-10-09:
 
@@ -316,24 +420,36 @@ Checked and prepared on 2026-10-09:
 
 Remaining:
 
-- [ ] Run the Heroku Test gate in full (release checklist §2). Migrations, readiness, poller
-      leadership, one web process, Brevo health, and the welcome email (Brevo A9) are verified.
-      Still open: the Stripe test purchase with a QA quote, **Generar guía → Descargar guía** (no
-      label has been attempted), `Contactar AV`, a formal restart/no-duplicate check, CSP review and
-      block mode, and recording the remaining functional checks.
+- [x] **Render database:** the old free Postgres had stopped accepting connections. It was replaced
+      by `archivovintach_v102026`, migrations 001–009 were applied with the `migrate-test-db`
+      procedure, and the web service's `DATABASE_URL` now uses the internal URL. After the redeploy,
+      readiness returns `200` with `migrated: true`, one poller owner, and clean polls (2026-10-15).
+      A free Render Postgres expires again after 30 days; record its expiry and repeat this before
+      then.
+- [ ] Render has `AV_ESHIP_TRACKING_EMAILS_ENABLED=true` (readiness, 2026-10-15). Confirm its
+      prerequisites in Test: the hosted `default-purchase` version with the `eship-picked-up-*`
+      transitions and Email texts, and the eShip **QA** dashboard webhook pointed at
+      `https://archivo-vintach.onrender.com/api/shipping/eship-webhook` with the
+      `X-AV-Webhook-Secret` header. Otherwise set it back to `false`.
+- [ ] Run the Test gate in full on **Render** (release checklist §2). It was never completed on
+      Heroku: the Stripe test purchase with a QA quote, **Generar guía → Descargar guía**,
+      `Contactar AV`, a formal restart/no-duplicate check, and the remaining functional checks are
+      open. The Heroku Test-mode infrastructure results (migrations, readiness, Brevo A9) don't
+      carry over to Render.
+- [ ] Run the Live smoke gate on Heroku (release checklist §5) and record the first known-good
+      Live-configured release (candidate v49).
 - [ ] Watch `sample#memory_total` and R14 during a large bulk import; revisit Standard-2X (1 GB,
       preboot) or a lower concurrent-import cap if it nears 512 MB.
-- [ ] At cutover, point GoDaddy DNS as in runbook §5.7: `www` CNAME to its `heroku domains` target,
-      apex forwarding to `https://www.archivovintach.com` over HTTPS, MX/SPF untouched. ACM gave up
-      on `www` while DNS still points at GoDaddy (`Failed — Incorrect DNS Settings`, 2026-10-10), so
-      run `heroku certs:auto:refresh` after the CNAME resolves, then confirm `heroku certs:auto`
-      shows `www` issued.
-- [ ] Set `REACT_APP_MARKETPLACE_ROOT_URL=https://www.archivovintach.com` and the Sharetribe Live
-      Marketplace URL to match, before the Live build.
+- [x] GoDaddy DNS pointed as in runbook §5.7: `www` resolves to its Heroku target and serves valid
+      HTTPS, and the apex answers `301` to `https://www.archivovintach.com` (2026-10-15). Confirm
+      the Google Workspace MX/SPF records still resolve.
+- [x] `REACT_APP_MARKETPLACE_ROOT_URL` set at v37, before the Live build; the canonical link is
+      `https://www.archivovintach.com/`. Console has no editable Marketplace URL for a custom-code
+      marketplace; see
+      [deployment topology](../operations/deployment.md#where-the-marketplace-url-is-defined).
 - [x] DMARC record added (`_dmarc.archivovintach.com`, `p=none`) with the Brevo domain (§6, Brevo
       guide step A1). Re-check it when adding Sharetribe's Live sending-domain records.
-- [ ] Before `pg:reset`, carry the Instagram token across (runbook §5.2), or mint one if Live uses a
-      different account.
+- [x] Before `pg:reset`, carry the Instagram token across (runbook §5.2): done at v43–v44.
 
 ## 8. Content, SEO, and operations
 
@@ -365,11 +481,12 @@ Remaining:
 
 - [x] Deployed 2026-10-09 with `AV_NOINDEX=true` on Heroku: `robots.txt` is `Disallow: /`, every
       response carries `X-Robots-Tag: noindex, nofollow`, and `sameAs` lists both profiles.
-- [ ] At cutover remove `AV_NOINDEX` (runbook §5.4); the herokuapp host stays noindexed on its own.
+- [x] `AV_NOINDEX` removed at v46: `www` serves the normal `robots.txt`, and the herokuapp host
+      still sends `X-Robots-Tag: noindex, nofollow` (2026-10-15).
 - [x] Render: `AV_NOINDEX=true` is in effect (verified 2026-10-10, see §2.1).
 - [ ] Console (Test and Live): write a real Spanish meta description for the landing page — it is
-      currently `Archivo Vintach Marketplace` — and remove the trailing space in the footer's TikTok
-      URL.
+      still `Archivo Vintach Marketplace` in both (2026-10-15), and production is now crawlable —
+      and remove the trailing space in the footer's TikTok URL.
 - [ ] Spanish shareable operator guide is still a draft (see [pending README](README.md)); decide
       whether operators get the English edition at launch.
 - [ ] Assign the launch roles from the runbook §1 (operator, approver, rollback owner, monitoring

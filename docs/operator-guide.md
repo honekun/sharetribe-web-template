@@ -901,6 +901,14 @@ need to set the Block Type field.
 | `av-table-*`      | Markdown table (e.g. `av-table-fees`); content from block text |
 | `av-contact-form` | Brevo contact form                                             |
 
+**Brevo contact form (`av-contact-form`).** In the block's text, paste the **iframe** embed code
+from Brevo (Forms → your form → Share → _Embed as an iframe_), or just its URL
+(`https://….sibforms.com/serve/…`). Only that URL is used: the form is shown in a sandboxed frame,
+and anything else in the text is ignored. Brevo's other embed option — the HTML/JavaScript snippet
+— is **not supported** and renders nothing, because it would run Brevo's scripts on the marketplace
+itself. The frame has a fixed height per screen size; if you add many fields to the form in Brevo,
+ask a developer to raise it (`BlockBrevoForm.module.css`).
+
 ---
 
 ## 6. Navigation Bar
@@ -1769,7 +1777,7 @@ both enabled.
 | **Shipping markup** (`ESHIP_MARKUP_PCT`)                     | The margin buffer added on top of the raw carrier cost to get the buyer's shipping price. Default: 18%.                                                                                                                                                                                                                          |
 | **Label capability** (`AV_SHIPPING_LABELS_ENABLED`)          | Enables label-purchase storage, readiness checks, the seller action, and the shared poller path. It does not turn on auto-buy by itself.                                                                                                                                                                                         |
 | **Pickup email** (`AV_ESHIP_TRACKING_EMAILS_ENABLED`)        | Enables one native Sharetribe buyer email after the carrier reports `TRANSIT/picked_up`. Requires the new hosted purchase-process version, migration 009, and webhook setup.                                                                                                                                                     |
-| **eShip webhook secret** (`ESHIP_WEBHOOK_SECRET`)            | At least 32 random bytes shared between the server and the eShip dashboard, so the marketplace can tell a real carrier update from a forged one. In the eShip dashboard it is entered **either** as the `X-AV-Webhook-Secret` header (preferred — see below) or in the webhook URL. Keep private and rotate both sides together. |
+| **eShip webhook secret** (`ESHIP_WEBHOOK_SECRET`)            | At least 32 random bytes shared between the server and the eShip dashboard, so the marketplace can tell a real carrier update from a forged one. In the eShip dashboard it is entered as the `X-AV-Webhook-Secret` header — never in the webhook URL (see below). Keep private and rotate both sides together. |
 | **Label retry operators** (`SHIPPING_LABEL_OPERATOR_EMAILS`) | Comma-separated support emails authorized to use the label API for any seller. There is no operator UI; cross-seller or unknown retries require the approved engineering procedure. Sellers retry their own labels in the sale UI.                                                                                               |
 | **Auto-buy labels** (`ESHIP_LABEL_AUTOBUY`)                  | `true` plus enabled label capability = buy automatically after confirmed payment. Default/unset/`false` = seller buys with **Generar guía**. Keep off until cancellation/refund policy is approved.                                                                                                                              |
 
@@ -1785,11 +1793,12 @@ both enabled.
 **Where the pickup email comes from.** eShip notifies the marketplace when the carrier scans a
 package. In the eShip dashboard (**Ver tus Webhooks**), the notification address is the marketplace
 address followed by `/api/shipping/eship-webhook`, and the shared secret goes in the **Encabezados**
-table as key `X-AV-Webhook-Secret` with the secret as its value. Putting the secret in the URL after
-`?secret=` still works and is kept as a fallback, but the header is preferred: web hosts and error
-monitoring routinely record full URLs in their logs, and a secret in the URL ends up stored in those
-logs, while a header does not. Treat the secret like a password in either form. The dev team sets
-this up per environment; the test and production marketplaces use different secrets.
+table as key `X-AV-Webhook-Secret` with the secret as its value. The secret must **not** go in the
+URL: web hosts and error monitoring routinely record full URLs in their logs, so a secret in the URL
+ends up stored in those logs, while a header does not. The marketplace rejects a secret sent after
+`?secret=` in the URL. If a dashboard ever had the secret in its URL, ask the dev team to rotate it.
+Treat the secret like a password. The dev team sets this up per environment; the test and
+production marketplaces use different secrets.
 
 ### Security and search indexing
 
@@ -1798,7 +1807,7 @@ this up per environment; the test and production marketplaces use different secr
 | **HTTPS** (`REACT_APP_SHARETRIBE_USING_SSL`)       | `true` on every deployed site: redirects HTTP to HTTPS and marks login cookies secure.                                                                 |
 | **Proxy hops** (`SERVER_SHARETRIBE_TRUST_PROXY`)   | `1` on Heroku, so the server sees each visitor's real address (rate limits, consent records). Never `true`.                                            |
 | **Content Security Policy** (`REACT_APP_CSP`)      | `report` while testing, `block` in production.                                                                                                         |
-| **Hide from search engines** (`AV_NOINDEX`)        | `true` on staging and on the Heroku app before launch; unset in production. Any address other than the main site address is always hidden from search. |
+| **Hide from search engines** (`AV_NOINDEX`)        | `true` on Render staging; unset on Heroku production (removed at the Live cutover). Any address other than the main site address is always hidden from search. |
 
 ### Seller earnings estimator
 
@@ -1917,6 +1926,7 @@ missing or blank value to hide that optional element. Do not blank a standard ke
 | Area         | Key                             | English default | Spanish default | Operator note                              |
 | ------------ | ------------------------------- | --------------- | --------------- | ------------------------------------------ |
 | Brand filter | `BrandFilter.searchPlaceholder` | `Search brand…` | `Buscar marca…` | Placeholder inside the brand search input. |
+| Brand filter | `BrandFilter.noResults` | `No results` | `Sin resultados` | Shown when the brand search matches nothing. |
 | Size filter  | `SearchPage.groupedSizesLabel`  | `Size`          | `Talla`         | Sidebar grouped size filter label.         |
 
 ### Navigation
@@ -2515,9 +2525,16 @@ environment and record IDs first, then take the smallest reversible action that 
 Archivo Vintach has separate Sharetribe **Test** and **Live** environments. Their users, listings,
 transactions, API applications, Integration API credentials, Stripe modes, and operational data are
 separate. Content and configuration may be copied between environments, but marketplace records are
-not copied. For the initial Live deployment, the approved plan reuses one Heroku app and its
-PostgreSQL add-on only after the Test database contents are backed up and completely erased. No Test
-poller, notification, consent, or label record may remain when Live credentials are installed.
+not copied. Each environment has its own site:
+
+| Environment | Site                                             | Use it for                                                        |
+| ----------- | ------------------------------------------------ | ----------------------------------------------------------------- |
+| **Test**    | `https://archivo-vintach.onrender.com/` (Render) | Trying changes, test accounts, Stripe test cards, eShip QA labels |
+| **Live**    | `https://www.archivovintach.com` (Heroku)        | Real users, listings, payments, and labels only                   |
+
+The Heroku app ran against Test before launch and was converted to Live on 2026-10-12, after its
+Test database was backed up and erased. It is never switched back to Test. Never create test
+accounts or test orders on the Live site.
 
 Before any change:
 
@@ -2730,9 +2747,10 @@ Escalate immediately when an issue may create duplicate charges or labels, expos
 misdirect notifications, alter payouts, block all checkout, or affect multiple Live users. Stop
 retries while the external outcome is unknown.
 
-For the initial deployment boundary, follow the approved
-[Heroku Test-to-Live runbook](operations/heroku-deployment.md) and
-[release checklist](operations/release-checklist.md). Do not switch the production app between Test
-and Live as an ordinary support action. After an operator-visible fix, update this canonical guide
+Releases are tested on Render (Test) and then rebuilt on Heroku (Live): see the
+[deployment topology](operations/deployment.md) and the
+[release checklist](operations/release-checklist.md). The
+[Heroku Test-to-Live runbook](operations/heroku-deployment.md) records the initial cutover. Never
+switch the production app to Test, whether for support or for testing. After an operator-visible fix, update this canonical guide
 first, rebuild the English shareable HTML, and synchronize every translated edition intended for
 distribution.

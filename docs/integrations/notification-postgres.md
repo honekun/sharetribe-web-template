@@ -149,11 +149,14 @@ production alerting system.
 
 ## 4. Production setup
 
-For the approved initial Heroku cutover, the existing PostgreSQL add-on is reused only after its
-Test contents are backed up and fully reset. This prevents Test poller cursors, delivery claims,
-campaign jobs, consent records, and shipping-label attempts from entering Live. Follow the
-[Heroku deployment runbook](../operations/heroku-deployment.md); do not truncate selected tables or
-attach the same populated database to Test and Live simultaneously.
+Each environment has its own database. Production (Heroku, Sharetribe Live) reuses the add-on that
+served the Heroku Test phase. Its Test contents were backed up (`b007`) and fully reset at the
+2026-10-12 cutover, so no Test poller cursor, delivery claim, campaign job, consent record, or
+shipping-label attempt entered Live (see the [Heroku runbook](../operations/heroku-deployment.md)).
+Test (Render) uses its own Render Postgres, migrated from a local machine with the `migrate-test-db`
+procedure over the External URL. The Render web service connects through the Internal URL, because
+the app's pool sets no TLS. Never truncate selected tables, and never attach one populated database
+to both Test and Live.
 
 1. Provision a durable managed PostgreSQL database.
 2. Set its server-only `DATABASE_URL` on every web process. All processes must use the same

@@ -12,9 +12,10 @@ Final Form, Express SSR, Sharetribe Marketplace API, and Stripe Connect.
 
 - GitHub: `https://github.com/honekun/sharetribe-web-template`
 - Upstream: `https://github.com/sharetribe/web-template`
-- Staging: `https://archivo-vintach.onrender.com/`
+- Test (Render; Sharetribe Test, Stripe test, eShip QA): `https://archivo-vintach.onrender.com/`
+- Production (Heroku; Sharetribe Live): `https://www.archivovintach.com`
 - Docs: `https://www.sharetribe.com/docs/`
-- Node: `>=18.20.1 <23.2.0`
+- Node: `24.x` (`engines` in `package.json`; CircleCI uses `cimg/node:24.x`)
 - Package manager: Yarn
 
 ## Commands

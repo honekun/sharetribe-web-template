@@ -29,7 +29,6 @@ export const BagPageComponent = props => {
     scrollingDisabled,
     hydrated,
     bagCount,
-    currentUser,
     callSetInitialValues,
     onInitializeCardPaymentData,
   } = props;
@@ -85,7 +84,6 @@ export const BagPageComponent = props => {
                       listing,
                       history,
                       routes,
-                      currentUser,
                       callSetInitialValues,
                       onInitializeCardPaymentData,
                     })
@@ -108,7 +106,6 @@ const mapStateToProps = state => {
     fetchError,
     hydrated: state.bag.hydrated,
     bagCount: selectBagCount(state),
-    currentUser: state.user.currentUser,
     scrollingDisabled: isScrollingDisabled(state),
   };
 };

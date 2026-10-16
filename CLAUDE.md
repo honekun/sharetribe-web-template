@@ -6,14 +6,15 @@ Guidance for Claude Code working in this repository.
 
 Customized marketplace ("Archivo Vintach") built on the
 [Sharetribe Web Template](https://github.com/sharetribe/web-template) (React + Express SSR). Fork of
-`sharetribe/web-template`. Render.com is the current Test staging host. The approved initial Live
-plan validates one Heroku app against Test services, then converts that same app and dyno formation
-to Live while reusing a reset, clean PostgreSQL add-on. Stripe Connect payments use Sharetribe
-Marketplace API.
+`sharetribe/web-template`. **Render.com is the Test environment** (Sharetribe Test, Stripe test,
+eShip QA). **Heroku is production** (Sharetribe Live, Stripe live, eShip production): converted from
+Test to Live on 2026-10-12 and deployed, but overall Live validation is still pending. Stripe Connect
+payments use Sharetribe Marketplace API.
 
 - GitHub: https://github.com/honekun/sharetribe-web-template
 - Upstream: https://github.com/sharetribe/web-template
-- Staging: https://archivo-vintach.onrender.com/
+- Test (Render): https://archivo-vintach.onrender.com/
+- Production (Heroku `archivo-vintach-marketplace`): https://www.archivovintach.com
 - Docs: https://www.sharetribe.com/docs/
 
 ## Commands
@@ -40,10 +41,16 @@ yarn run config                            # Config validation/setup wizard
 yarn run config:compare <baseId> <targetId> # Diff hosted Console config of two envs (public client IDs)
 yarn run translate                         # Translation management
 yarn av-translation-check                  # en_av.json / es_av.json key symmetry
+yarn env-template-check                    # .env-template exposes no REACT_APP_ secrets
 ```
 
+CircleCI (`.circleci/config.yml`) runs `format`, `test`, `build` and the AV-owned `av-checks` job (the
+two checks above). Upstream's `audit` job is defined but, as upstream, not in the workflow.
+
 **Node:** `24.x` (pinned for Heroku, which warns on and caps upstream's wide `^22.22.0 || >=24.0.0`;
-re-apply on upstream syncs) | **Package manager:** Yarn
+re-apply on upstream syncs, together with the `cimg/node:24.x` images in `.circleci/config.yml` —
+upstream pins `22.22` there, which Yarn's engine check rejects at install) | **Package manager:**
+Yarn
 
 ## Architecture
 
@@ -230,6 +237,12 @@ upstream BlockBuilder → options.blockComponents
   └─ blockPhotoSlider · blockInstagramFeed · blockMarkdownTable · blockBrevoForm
 ```
 
+`blockBrevoForm` (`av-contact-form`) renders **only** a sandboxed `<iframe>` whose URL is pulled
+from the block text and allowlisted by `BlockBrevoForm/sibformsEmbed.js` (https
+`*.sibforms.com/serve/…`, matching CSP `frame-src`). Never render the hosted text as HTML or copy
+its scripts into the page: that ran Console content as script on our origin, and the CSP blocked
+the inline Brevo embed anyway.
+
 `AVBlockDefault` is a dispatcher, not a renderer. It calls `buildAvBlockProps` (token props + CTA
 class layering, both in `av/blocks.js`) and `resolveAvBlockComponent` (routes by `blockId` /
 `blockName`), then renders either the matched AV block or `AVBlockDefaultView`. **AV blocks must
@@ -265,8 +278,12 @@ props to restructure without forking. Full detail: `memory/listing-page-carousel
 
 `/my-purchases` + `/my-sales` reuse `InboxItem` + `getStateData` from InboxPage; ducks hard-code
 `only: 'order'` / `only: 'sale'`. `/my-balance` is a seller financial dashboard: **no direct Stripe
-balance API** — totals computed client-side from transaction `payoutTotal` via `Promise.all` of
-paginated + 3 summary `sdk.transactions.query()` calls. Shared util
+balance API** — the list is a paginated client `sdk.transactions.query()`; the totals come from
+`GET /api/my-balance/summary` (`server/api/my-balance/`), which takes **no** client parameters: it
+reads the process/transition lists from `balanceTransitions.js` (kept in step with the client
+helpers by `MyBalancePage/balanceTransitions.test.js`), walks the caller's sales in one capped
+pagination chain (5000 tx, `truncated` flag), and coalesces in-flight requests per user behind an
+IP rate limit and a bounded per-user 60 s cache. Shared util
 `src/transactions/transactionHelpers.js`: `getStatusFromLastTransition`, `getCompletedTransitions`,
 `getRefundedTransitions`, `buildFilteredQueryParams`. All three registered in
 `routeConfiguration.js`/`pageDataLoadingAPI.js`/`reducers.js`; linked from TopbarDesktop,
@@ -385,10 +402,10 @@ hosts the selector slot + surfaces address values via `FormSpy` + gates the Pay 
 `POST /api/shipping/eship-webhook` (`server/api/eship-webhook.js`) takes eShip's tracking
 checkpoints, queues only `TRANSIT`/`picked_up` in PostgreSQL (migration `009`), and lets the poller
 send one native buyer email; everything else is `202`-ignored and duplicates return `200`. Auth is a
-shared secret presented **either** as the `X-AV-Webhook-Secret` header or `?secret=`, compared in
-constant time — `requestSecretMatches` accepts whichever matches, so a stale header next to a valid
-URL still delivers. Configure eShip with the header: Render/Heroku router logs and `@sentry/node`'s
-`request.query_string` both persist query strings. The route 404s unless
+shared secret presented **only** as the `X-AV-Webhook-Secret` header, compared in constant time. A
+`?secret=` query parameter is ignored even when correct (the legacy fallback was removed 2026-10-15):
+Render/Heroku router logs and `@sentry/node`'s `request.query_string` both persist query strings, so
+a secret that was ever configured in the URL must be rotated. The route 404s unless
 `AV_ESHIP_TRACKING_EMAILS_ENABLED=true`, so enable the flag before saving the dashboard webhook.
 
 Env vars: `ESHIP_API_KEY` (server secret, required to quote), `ESHIP_BASE_URL` (required; no
@@ -641,13 +658,21 @@ control). Small CSS-module forks (restyles kept inline due to scoped-class/var c
 
 ## Deployment
 
-- **Approved initial Live cutover:** follow `docs/operations/heroku-deployment.md`. Deploy one
-  Heroku app with Sharetribe Test, Stripe test, and eShip QA; after approval, scale it down, back up
-  and reset the same PostgreSQL add-on, replace every environment-bound value with Live values,
-  rebuild, migrate, and reopen it as production.
-- **Steady-state staging (Render.com):** Sharetribe Test, Stripe test, and eShip QA; may cold-start.
-- **Steady-state production (Heroku):** Sharetribe Live, Stripe live, and eShip production. Build
-  independently because `REACT_APP_*` values are compiled into the browser bundle.
+Current state and release flow: `docs/operations/deployment.md`; go/no-go:
+`docs/operations/release-checklist.md`.
+
+- **Test (Render.com):** Sharetribe Test, Stripe test, and eShip QA; may cold-start. The only Test
+  environment — every release candidate and every test account goes here (or local), never
+  production.
+- **Production (Heroku):** Sharetribe Live, Stripe live, and eShip production, at
+  `www.archivovintach.com`. Rebuild the Render-validated commit with Live variables; never promote
+  a Test artifact, because `REACT_APP_*` values are compiled into the browser bundle. Never switch
+  it back to Test. The initial in-place Test→Live cutover (2026-10-12, v37–v49) is recorded in
+  `docs/operations/heroku-deployment.md`; the Live validation (release checklist §5) and the Render
+  Test gate (§2) are still open — see `docs/pending/live-launch.md`.
+- **Domain:** custom code has no editable Console Marketplace URL (fixed in Sharetribe Test). The
+  host attaches the domain; the app's address is `REACT_APP_MARKETPLACE_ROOT_URL` (rebuild to
+  change).
 
 ## Upstream Sync
 

@@ -1,86 +1,54 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
+
+import { useIntl } from '../../../../util/reactIntl';
+
+import { getSibformsFormUrl } from './sibformsEmbed';
 import css from './BlockBrevoForm.module.css';
 
-const stripCodeFences = raw => {
-  const fenceMatch = raw.match(/^```[\w]*\n?([\s\S]*?)```$/m);
-  return fenceMatch ? fenceMatch[1].trim() : raw.trim();
-};
+// The form runs in its own cross-origin frame. allow-scripts + allow-same-origin
+// let Sibforms validate and submit within its own origin (sibforms.com), which
+// cannot reach this page: the frame is cross-origin either way. Popups (the
+// privacy-policy link) open unsandboxed; top-level navigation is not allowed.
+const SANDBOX = [
+  'allow-forms',
+  'allow-scripts',
+  'allow-same-origin',
+  'allow-popups',
+  'allow-popups-to-escape-sandbox',
+].join(' ');
 
-const isIframeEmbed = html => /<iframe\s/i.test(html);
-
-// Walks container for <script>/<link> nodes that innerHTML doesn't activate.
-// Returns injected nodes so the caller can clean up on unmount.
-function activateEmbedAssets(container) {
-  const injected = [];
-
-  // Stylesheets first to avoid FOUC
-  container.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
-    const href = link.getAttribute('href');
-    if (!href || document.querySelector(`link[href="${href}"]`)) return;
-    const el = document.createElement('link');
-    el.rel = 'stylesheet';
-    el.href = href;
-    document.head.appendChild(el);
-    injected.push(el);
-  });
-
-  // Scripts in DOM order
-  container.querySelectorAll('script').forEach(script => {
-    const el = document.createElement('script');
-    if (script.src) {
-      el.src = script.src;
-      el.async = false; // preserve execution order
-    } else {
-      el.textContent = script.textContent;
-    }
-    document.head.appendChild(el);
-    injected.push(el);
-  });
-
-  return injected;
-}
-
+/**
+ * Brevo (Sibforms) contact form, reached with the `av-contact-form` block id.
+ *
+ * Renders only a sandboxed iframe whose URL is taken from the block text and
+ * checked by getSibformsFormUrl. Inline Brevo embeds (scripts + markup) are not
+ * supported: they would run hosted script on this origin, and the CSP blocks
+ * them anyway. Sibforms sends no resize messages, so the height is set in CSS.
+ */
 const BlockBrevoForm = ({ blockId, text }) => {
-  const wrapRef = useRef(null);
+  const intl = useIntl();
   const raw = text?.content || (typeof text === 'string' ? text : '');
-  const html = stripCodeFences(raw);
+  const src = getSibformsFormUrl(raw);
 
-  useEffect(() => {
-    if (!wrapRef.current) return;
-
-    if (isIframeEmbed(html)) {
-      // Legacy iframe embed path
-      const iframe = wrapRef.current.querySelector('iframe');
-      if (iframe) {
-        iframe.removeAttribute('height');
-        iframe.removeAttribute('width');
-        iframe.style.removeProperty('height');
-        iframe.style.removeProperty('width');
-        iframe.style.removeProperty('max-width');
-      }
-
-      // Forward-compatible: listen for postMessage in case Sibforms ever adds it
-      const onMessage = e => {
-        if (!e.data || typeof e.data !== 'object') return;
-        const height = e.data.height || e.data.frameHeight;
-        if (!height || !wrapRef.current) return;
-        const iframeEl = wrapRef.current.querySelector('iframe');
-        if (iframeEl) iframeEl.style.height = `${height}px`;
-      };
-      window.addEventListener('message', onMessage);
-      return () => window.removeEventListener('message', onMessage);
-    } else {
-      // Inline JS embed path — activate scripts and stylesheets
-      const injected = activateEmbedAssets(wrapRef.current);
-      return () => injected.forEach(el => el.parentNode?.removeChild(el));
+  if (!src) {
+    if (raw && process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `BlockBrevoForm "${blockId}": expected Brevo's iframe embed code or an https://*.sibforms.com/serve/… URL; nothing rendered.`
+      );
     }
-  }, []); // html is static per mount
-
-  if (!html) return null;
+    return null;
+  }
 
   return (
     <div id={blockId} className={css.root}>
-      <div ref={wrapRef} className={css.formWrap} dangerouslySetInnerHTML={{ __html: html }} />
+      <iframe
+        className={css.frame}
+        src={src}
+        title={intl.formatMessage({ id: 'BlockBrevoForm.title' })}
+        sandbox={SANDBOX}
+        referrerPolicy="strict-origin-when-cross-origin"
+        loading="lazy"
+      />
     </div>
   );
 };

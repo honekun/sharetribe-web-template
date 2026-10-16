@@ -35,13 +35,17 @@ const mergeCurrentUser = (oldCurrentUser, newCurrentUser) => {
 // Fetch ownListings to check if currentUser has published listings //
 //////////////////////////////////////////////////////////////////////
 
+/**
+ * Fetch derived user data: whether the current user has published listings.
+ *
+ * Called from `fetchCurrentUser`'s authorized branch before that thunk
+ * fulfills, so `currentUser` may not be in the store yet. Safe without it:
+ * `ownListings` is scoped to the caller's token.
+ *
+ * @returns {Promise<{ hasListings: boolean }>}
+ */
 const fetchCurrentUserHasListingsPayloadCreator = (_, thunkAPI) => {
-  const { getState, extra: sdk, rejectWithValue } = thunkAPI;
-  const { currentUser } = getState().user;
-
-  if (!currentUser) {
-    return Promise.resolve({ hasListings: false });
-  }
+  const { extra: sdk, rejectWithValue } = thunkAPI;
 
   const params = {
     // Since we are only interested in if the user has published
@@ -71,17 +75,26 @@ export const fetchCurrentUserHasListingsThunk = createAsyncThunk(
 
 // Backward compatible wrapper for the thunk
 export const fetchCurrentUserHasListings = () => (dispatch, getState, sdk) => {
-  return dispatch(fetchCurrentUserHasListingsThunk()).unwrap();
+  return dispatch(fetchCurrentUserHasListingsThunk())
+    .unwrap()
+    .catch(() => {});
 };
 
 ///////////////////////////////////////////////////////////
 // Fetch transactions to check if currentUser has orders //
 ///////////////////////////////////////////////////////////
 
-const fetchCurrentUserHasOrdersPayloadCreator = (_, { getState, extra: sdk, rejectWithValue }) => {
-  if (!getState().user.currentUser) {
-    return Promise.resolve({ hasOrders: false });
-  }
+/**
+ * Fetch derived user data: whether the current user has orders.
+ *
+ * Called from `fetchCurrentUser`'s authorized branch before that thunk
+ * fulfills, so `currentUser` may not be in the store yet. Safe without it:
+ * `transactions` is scoped to the caller's token.
+ *
+ * @returns {Promise<{ hasOrders: boolean }>}
+ */
+const fetchCurrentUserHasOrdersPayloadCreator = (_, thunkAPI) => {
+  const { extra: sdk, rejectWithValue } = thunkAPI;
 
   const params = {
     only: 'order',
@@ -105,7 +118,9 @@ export const fetchCurrentUserHasOrdersThunk = createAsyncThunk(
 
 // Backward compatible wrapper for the thunk
 export const fetchCurrentUserHasOrders = () => (dispatch, getState, sdk) => {
-  return dispatch(fetchCurrentUserHasOrdersThunk()).unwrap();
+  return dispatch(fetchCurrentUserHasOrdersThunk())
+    .unwrap()
+    .catch(() => {});
 };
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -137,8 +152,8 @@ const fetchCurrentUserNotificationsPayloadCreator = (_, { extra: sdk, rejectWith
     sdk.transactions.query(paramsForOrders),
   ])
     .then(([sales, orders]) => {
-      const saleNotificationsCount = sales.data.data.length;
-      const orderNotificationsCount = orders.data.data.length;
+      const saleNotificationsCount = sales?.data?.data?.length ?? 0;
+      const orderNotificationsCount = orders?.data?.data?.length ?? 0;
       return { saleNotificationsCount, orderNotificationsCount };
     })
     .catch(e => rejectWithValue(storableError(e)));
@@ -151,7 +166,9 @@ export const fetchCurrentUserNotificationsThunk = createAsyncThunk(
 
 // Backward compatible wrapper for the thunk
 export const fetchCurrentUserNotifications = () => (dispatch, getState, sdk) => {
-  return dispatch(fetchCurrentUserNotificationsThunk()).unwrap();
+  return dispatch(fetchCurrentUserNotificationsThunk())
+    .unwrap()
+    .catch(() => {});
 };
 
 const fetchCurrentUserPayloadCreator = (options, thunkAPI) => {
@@ -315,8 +332,9 @@ const userSlice = createSlice({
       state.currentUserHasListingsError = null;
       state.currentUserSaleNotificationCount = 0;
       state.currentUserOrderNotificationCount = 0;
-
       state.currentUserNotificationCountError = null;
+      state.currentUserHasOrders = null;
+      state.currentUserHasOrdersError = null;
     },
     setCurrentUser: (state, action) => {
       state.currentUser = mergeCurrentUser(state.currentUser, action.payload);

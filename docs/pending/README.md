@@ -5,13 +5,13 @@ explicitly requested future-use component record. Completed work belongs in the 
 implementation guides linked from [`docs/README.md`](../README.md), not in a historical archive
 inside `docs/`.
 
-Last reviewed: 2026-10-09.
+Last reviewed: 2026-10-15 (after the Live cutover).
 
 ## Release and operations
 
-- Close the [Live launch readiness](live-launch.md) gaps first: missing Heroku production variables,
-  dependency advisories, repository gates, and the Sharetribe Live, Stripe, eShip, and Brevo setup
-  the release checklist assumes is already done.
+- Production (Heroku, Sharetribe Live) is deployed since 2026-10-12 but **not signed off**. Close
+  the [Live launch readiness](live-launch.md) items in the order of its §0 tracker: the Render Test
+  gate, Live Console content fixes, Live configuration to confirm, and the Live smoke gate.
 - Merge upstream v12.4.0 **after launch** (decided 2026-10-09; the fork is on v12.1.0). Do it on a
   branch, validate on Render/Test, then release normally. It brings Sentry 11, which clears the
   seven remaining `@opentelemetry/*` audit advisories, plus `user.duck` hardening, the inquiry

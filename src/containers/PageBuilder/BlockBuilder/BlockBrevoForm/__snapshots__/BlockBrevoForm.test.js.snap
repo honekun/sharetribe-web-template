@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BlockBrevoForm matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="root"
+    id="brevo-6"
+  >
+    <iframe
+      class="frame"
+      loading="lazy"
+      referrerpolicy="strict-origin-when-cross-origin"
+      sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+      src="https://0aed740b.sibforms.com/serve/MUIFAPHTGoxblxygKiPZd=="
+      title="BlockBrevoForm.title"
+    />
+  </div>
+</DocumentFragment>
+`;
