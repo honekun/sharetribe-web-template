@@ -149,7 +149,7 @@ checks were never completed in any hosted Test environment.
       sends an enforcing `Content-Security-Policy` header (not `-Report-Only`), so the whole
       2026-10-16 critical path (purchase, label, bulk import, Brevo iframe, Stripe onboarding) ran
       in block mode; the browser console showed no CSP violations on the landing, contact, listing,
-      search, and payout pages. Render's server-side `/csp-report` log was not reviewed.
+      search, and payout pages, and no `CSP:` violation line appears in Render's or Heroku's logs.
 - [x] Restart staging; sessions survive and the poller resumes from its PostgreSQL cursor without
       duplicate sends. Done 2026-10-16 with a manual Render restart: the browser stayed signed in as
       `alex+vendedor_av@rewav.co`; readiness returned `200`; a new process took the poller lease

@@ -28,9 +28,8 @@ dashboards), _Dev_ (repository), _Business_ (decision or sign-off).
 
 ### B. Render Test gate — must pass before Live sign-off
 
-✅ Passed 2026-10-16: every item in release checklist §2 is ticked. Render's server-side
-`/csp-report` log is the one thing not reviewed (the browser console showed no violations); check it
-before A4.
+✅ Passed 2026-10-16: every item in release checklist §2 is ticked, and neither Render's nor
+Heroku's logs contain a `CSP:` violation line.
 
 ### C. Live content and configuration (Console) — fix before announcing
 
