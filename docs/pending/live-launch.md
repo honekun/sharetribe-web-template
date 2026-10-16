@@ -28,9 +28,9 @@ dashboards), _Dev_ (repository), _Business_ (decision or sign-off).
 
 ### B. Render Test gate — must pass before Live sign-off
 
-| #   | Item                                                                            | Owner | Where    |
-| --- | ------------------------------------------------------------------------------- | ----- | -------- |
-| B8  | Note the Render Postgres expiry date (free tier, 30 days) and plan its renewal. | Ops   | §7 below |
+| #   | Item | Owner | Where |
+| --- | ---- | ----- | ----- |
+
 
 ### C. Live content and configuration (Console) — fix before announcing
 
@@ -418,8 +418,13 @@ Remaining:
       by `archivovintach_v102026`, migrations 001–009 were applied with the `migrate-test-db`
       procedure, and the web service's `DATABASE_URL` now uses the internal URL. After the redeploy,
       readiness returns `200` with `migrated: true`, one poller owner, and clean polls (2026-10-15).
-      A free Render Postgres expires again after 30 days; record its expiry and repeat this before
-      then.
+      This free database expires on **2026-11-14** (Render dashboard). Replace it a few days before
+      (by 2026-11-10): create a new free Postgres, apply migrations with the `migrate-test-db`
+      procedure, set the web service's `DATABASE_URL` to the new internal URL, copy the
+      `av_instagram_token` row from production's database (the Render seed token is expired), and
+      redeploy; then check readiness `200` and the Instagram feed. The poller restarts from its
+      10-minute lookback, and the old delivery ledger, consent records, and label attempts are not
+      carried over.
 - [x] Render's tracking emails are off: `AV_ESHIP_TRACKING_EMAILS_ENABLED=false` since 2026-10-16
       (readiness `eshipTracking.enabled: false`; the webhook returns `404`). To test them later,
       first point the eShip **QA** dashboard webhook at
