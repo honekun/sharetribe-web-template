@@ -398,10 +398,10 @@ hosts the selector slot + surfaces address values via `FormSpy` + gates the Pay 
 `POST /api/shipping/eship-webhook` (`server/api/eship-webhook.js`) takes eShip's tracking
 checkpoints, queues only `TRANSIT`/`picked_up` in PostgreSQL (migration `009`), and lets the poller
 send one native buyer email; everything else is `202`-ignored and duplicates return `200`. Auth is a
-shared secret presented **either** as the `X-AV-Webhook-Secret` header or `?secret=`, compared in
-constant time — `requestSecretMatches` accepts whichever matches, so a stale header next to a valid
-URL still delivers. Configure eShip with the header: Render/Heroku router logs and `@sentry/node`'s
-`request.query_string` both persist query strings. The route 404s unless
+shared secret presented **only** as the `X-AV-Webhook-Secret` header, compared in constant time. A
+`?secret=` query parameter is ignored even when correct (the legacy fallback was removed 2026-10-15):
+Render/Heroku router logs and `@sentry/node`'s `request.query_string` both persist query strings, so
+a secret that was ever configured in the URL must be rotated. The route 404s unless
 `AV_ESHIP_TRACKING_EMAILS_ENABLED=true`, so enable the flag before saving the dashboard webhook.
 
 Env vars: `ESHIP_API_KEY` (server secret, required to quote), `ESHIP_BASE_URL` (required; no

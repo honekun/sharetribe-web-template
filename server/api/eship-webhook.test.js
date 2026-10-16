@@ -58,13 +58,13 @@ describe('eShip tracking webhook', () => {
 
   test('rejects an invalid secret before touching the database', async () => {
     const res = createRes();
-    await eshipWebhook({ query: { secret: 'wrong' }, body: validBody }, res);
+    await eshipWebhook({ headers: { 'x-av-webhook-secret': 'wrong' }, body: validBody }, res);
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(createEshipTrackingStore).not.toHaveBeenCalled();
   });
 
-  test('accepts the shared secret from the webhook header when the URL carries none', async () => {
+  test('accepts the shared secret from the webhook header', async () => {
     const store = { enqueue: jest.fn().mockResolvedValue({ id: 1, duplicate: false }) };
     createEshipTrackingStore.mockReturnValue(store);
     const res = createRes();
@@ -79,7 +79,7 @@ describe('eShip tracking webhook', () => {
     expect(res.json).toHaveBeenCalledWith({ ok: true, queued: true, duplicate: false });
   });
 
-  test('rejects a wrong header secret when the URL carries none', async () => {
+  test('rejects a wrong header secret', async () => {
     const res = createRes();
 
     await eshipWebhook(
@@ -91,7 +91,16 @@ describe('eShip tracking webhook', () => {
     expect(createEshipTrackingStore).not.toHaveBeenCalled();
   });
 
-  test('keeps accepting the query secret while a stale header is still configured', async () => {
+  test('rejects a correct secret sent in the query string', async () => {
+    const res = createRes();
+
+    await eshipWebhook({ headers: {}, query: { secret: SECRET }, body: validBody }, res);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(createEshipTrackingStore).not.toHaveBeenCalled();
+  });
+
+  test('rejects a wrong header even when the query string carries the right secret', async () => {
     const res = createRes();
 
     await eshipWebhook(
@@ -99,15 +108,15 @@ describe('eShip tracking webhook', () => {
       res
     );
 
-    expect(res.status).toHaveBeenCalledWith(202);
-    expect(res.json).toHaveBeenCalledWith({ ok: true, queued: true, duplicate: false });
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(createEshipTrackingStore).not.toHaveBeenCalled();
   });
 
   test('acknowledges unrelated tracking statuses without enqueueing them', async () => {
     const res = createRes();
     await eshipWebhook(
       {
-        query: { secret: SECRET },
+        headers: { 'x-av-webhook-secret': SECRET },
         body: { ...validBody, substatus: 'in_transit' },
       },
       res
@@ -123,7 +132,7 @@ describe('eShip tracking webhook', () => {
     createEshipTrackingStore.mockReturnValue(store);
     const res = createRes();
 
-    await eshipWebhook({ query: { secret: SECRET }, body: validBody }, res);
+    await eshipWebhook({ headers: { 'x-av-webhook-secret': SECRET }, body: validBody }, res);
 
     expect(store.enqueue).toHaveBeenCalledWith({
       shipmentId: '60e37902e86e1',
@@ -141,7 +150,7 @@ describe('eShip tracking webhook', () => {
     });
     const res = createRes();
 
-    await eshipWebhook({ query: { secret: SECRET }, body: validBody }, res);
+    await eshipWebhook({ headers: { 'x-av-webhook-secret': SECRET }, body: validBody }, res);
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ ok: true, queued: false, duplicate: true });
@@ -151,7 +160,7 @@ describe('eShip tracking webhook', () => {
     isEshipTrackingEmailsEnabled.mockReturnValue(false);
     const res = createRes();
 
-    await eshipWebhook({ query: { secret: SECRET }, body: validBody }, res);
+    await eshipWebhook({ headers: { 'x-av-webhook-secret': SECRET }, body: validBody }, res);
 
     expect(res.status).toHaveBeenCalledWith(404);
     expect(createEshipTrackingStore).not.toHaveBeenCalled();
