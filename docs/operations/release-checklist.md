@@ -105,9 +105,15 @@ checks were never completed in any hosted Test environment.
       `POST /api/shipping/label` returned the same shipment (no second purchase). The seller's sale
       page shows \$450.00 − \$114.00 = \$336.00 with no shipping line. Fersaanch's `6ad1d15e…` still
       has no label.
-- [ ] Verify `Contactar AV` when a seller origin is missing or the item is `especial`. Missing
+- [x] Verify `Contactar AV` when a seller origin is missing or the item is `especial`. Missing
       origin done at the API on 2026-10-16: quotes for `alex+av_store1@rewav.co` listings returned
-      `409 NO_ORIGIN` before its origin was saved and `200` with QA rates after. `especial` is open.
+      `409 NO_ORIGIN` before its origin was saved and `200` with QA rates after. `especial` done
+      2026-10-16 (test listing `6ad26889…` set to `avPackageSize: especial` and opened through the
+      Integration API, then restored to `M` and closed): as buyer `alex+vendedor_av@rewav.co`,
+      checkout showed "El envío automático no está disponible para este artículo" with a **Contactar
+      al vendedor** button instead of Express/Estándar, made no quote request, and kept **Confirma y
+      paga** disabled with a complete address and no shipping line; the button opened the listing's
+      inquiry form (closed unsent); a direct quote returned `422 ESPECIAL`.
 - [ ] Verify negotiation request/offer/counter/payment behavior if its hosted process is active.
 - [x] Verify bulk import as a regular seller and an allowlisted operator. Regular seller done
       2026-10-16: a one-row CSV created listing `6ad1d1dc…` (`closed` per `publish=no`, placeholder
