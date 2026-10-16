@@ -130,10 +130,47 @@ const VideoPlayer = ({ src, intl }) => {
   );
 };
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), video[controls], [tabindex]:not([tabindex="-1"])';
+
 const PostModal = ({ post, profile, onClose, intl }) => {
+  const modalRef = useRef(null);
+  const closeRef = useRef(null);
+
+  // Focus entry and restoration: move focus into the dialog on open and hand it
+  // back to whatever opened it (the grid thumbnail) on close.
+  useEffect(() => {
+    const opener = document.activeElement;
+    closeRef.current?.focus();
+    return () => {
+      if (opener && typeof opener.focus === 'function' && document.contains(opener)) {
+        opener.focus();
+      }
+    };
+  }, []);
+
+  // Escape closes; Tab / Shift+Tab cycle within the dialog instead of escaping
+  // to the page behind the overlay.
   useEffect(() => {
     const onKey = e => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab' || !modalRef.current) return;
+      const focusable = Array.from(modalRef.current.querySelectorAll(FOCUSABLE));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      const outside = !modalRef.current.contains(active);
+      if (e.shiftKey && (active === first || outside)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || outside)) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
@@ -157,8 +194,9 @@ const PostModal = ({ post, profile, onClose, intl }) => {
       aria-modal="true"
       aria-label={intl.formatMessage({ id: 'InstagramFeed.dialogLabel' })}
     >
-      <div className={css.modal} onClick={e => e.stopPropagation()}>
+      <div className={css.modal} ref={modalRef} onClick={e => e.stopPropagation()}>
         <button
+          ref={closeRef}
           className={css.closeBtn}
           onClick={onClose}
           aria-label={intl.formatMessage({ id: 'InstagramFeed.closePost' })}

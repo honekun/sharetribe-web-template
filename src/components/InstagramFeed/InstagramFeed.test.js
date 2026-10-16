@@ -41,4 +41,33 @@ describe('InstagramFeed', () => {
     expect(screen.getByRole('button', { name: 'Close feed post' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Social feed image' })).toBeInTheDocument();
   });
+
+  it('moves focus into the dialog, traps Tab inside it and restores focus on close', async () => {
+    const user = userEvent.setup();
+
+    render(<InstagramFeed profile={profile} posts={posts} />, {
+      messages: {
+        'InstagramFeed.closePost': 'Close feed post',
+        'InstagramFeed.viewPost': 'Open feed post {index}',
+      },
+    });
+
+    const opener = screen.getByRole('button', { name: 'Open feed post 1' });
+    await user.click(opener);
+
+    const closeButton = screen.getByRole('button', { name: 'Close feed post' });
+    const usernameLink = screen.getByRole('link', { name: 'archivovintach' });
+    expect(closeButton).toHaveFocus();
+
+    await user.tab();
+    expect(usernameLink).toHaveFocus();
+    await user.tab();
+    expect(closeButton).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(usernameLink).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(opener).toHaveFocus();
+  });
 });
