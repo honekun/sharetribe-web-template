@@ -50,10 +50,11 @@ initial launch, the Heroku app passed the infrastructure checks below in Test mo
 2026-10-10), but those results describe Heroku, not Render. Re-run them on Render. The functional
 checks were never completed in any hosted Test environment.
 
-- [ ] Deploy the release candidate to Render with Test variables and record its commit and tree.
-      Redeploy and re-run this gate if the candidate changes. On 2026-10-16 Render served bundle
-      `main.6b17a693.js`, which carries #116's `BrandFilter.noResults`; confirm in the Render
-      dashboard that it is `main` at `042a56f61` (#117).
+- [x] Deploy the release candidate to Render with Test variables and record its commit and tree.
+      Redeploy and re-run this gate if the candidate changes. Render deploys `main`; since
+      2026-10-16 it serves bundle `main.20acea97.js`, which carries #118's bag-owner key. #118
+      (`1a6e0198e` on `pre-release`) is the last code change; #119–#123 are docs and an
+      `.env-template` comment only.
 - [x] Confirm the application uses Test Marketplace/Integration credentials, Stripe test mode
       (bundle carries `pk_test_…`, verified 2026-10-15), eShip QA, the Render root URL, and
       `AV_NOINDEX=true`. eShip QA confirmed 2026-10-16: quotes return `TESTRATE` rates.
@@ -82,10 +83,20 @@ checks were never completed in any hosted Test environment.
       with a new account (`alex+buyer@rewav.co`); login worked throughout. There is no second
       language: the Console localization asset sets a single locale (`es`) and the app has no
       language switcher.
-- [ ] Verify seller payout onboarding, shipping origin, listing create/edit/publish, and welcome
+- [x] Verify seller payout onboarding, shipping origin, listing create/edit/publish, and welcome
       popup. Store seller `alex+av_store1@rewav.co` completed Stripe test payout onboarding and
       saved a Guadalajara origin on 2026-10-16: `/account/payments` reports the account up to date,
-      and `/account/shipping-origin` reloads the saved address.
+      and `/account/shipping-origin` reloads the saved address. Welcome popup (2026-10-16, seller
+      `alex+vendedor_av@rewav.co` with `onboardingCompleted` cleared through the Integration API):
+      it showed on the home page, and **Subir mi primer drop** saved `onboardingCompleted: true` and
+      opened the wizard. Listing `6ad2a742…` created through the wizard: one photo was rejected
+      ("Agrega almenos 3 fotos"), three were accepted; category, brand search, sizes, color, and the
+      other fields saved; the estimator showed \$350 − \$92 (22 % + \$15) = \$258; the package size
+      offers only S/M/L (`especial` is not seller-selectable). Publishing first stopped at the
+      payout modal because Stripe asked this seller for more verification ("Completa la
+      verificación"); after **Verifícate** it published (`published`, stock 1, three images,
+      original-price strike-through). Editing the price to \$380 saved and shows on the listing
+      page.
 - [x] Verify live eShip quote, one Stripe test purchase, order breakdown, and
       `protectedData.avShipping`. Quote done 2026-10-16 (CDMX seller → `64000` Monterrey): four QA
       rates; Estándar = cheapest (Estafeta 6 d, 145 → \$172.00), Express = fastest, cheapest on a

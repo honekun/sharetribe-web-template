@@ -21,20 +21,17 @@ dashboards), _Dev_ (repository), _Business_ (decision or sign-off).
 
 ### A. Release mechanics
 
-| #   | Item                                                                                                                                                                                                                       | Owner | Where            |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ---------------- |
-| A1  | Merge the post-cutover docs realignment (`pre-release` working tree) to `main`.                                                                                                                                            | Dev   | —                |
-| A2  | Confirm which commit Render runs after PR #116 merges. Heroku is still `cdb36026c` (v48); everything since (#115, #116: bulk-import, Brevo form, eShip webhook header-only, my-balance, bag, user duck) is Live-pending.   | Ops   | checklist §2     |
-| A3  | ✅ Code gate passed on `pre-release` at `741187829` (PR #116) on 2026-10-16: server and client tests, `format-ci`, `av-translation-check`, `config-check`, `env-template-check`, `build`. Re-run if the candidate changes. | Dev   | checklist §1     |
-| A4  | After the Render gate passes, rebuild that commit on Heroku (Live) and record the first known-good Live release. Never roll back past v48.                                                                                 | Ops   | checklist §4, §5 |
+| #   | Item                                                                                                                                                                                                                                                                                                                                                     | Owner | Where            |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ---------------- |
+| A3  | ✅ Code gate passed on `pre-release` at `1a6e0198e` (PR #118, the last code change) on 2026-10-16: server and client tests, `format-ci`, `av-translation-check`, `config-check`, `env-template-check`, `build`. Render serves that code (`main.20acea97.js`); later merges are docs only. Re-run if the candidate changes.                               | Dev   | checklist §1     |
+| A4  | After the Render gate passes, rebuild `main` on Heroku (Live) and record the first known-good Live release. Heroku is still `cdb36026c` (v48); everything since (#115–#118: bulk import, Brevo form, eShip webhook header-only, my-balance, bag and bag sign-out, user duck, topbar remeasure, checkout seed) is Live-pending. Never roll back past v48. | Ops   | checklist §4, §5 |
 
 ### B. Render Test gate — must pass before Live sign-off
 
-| #   | Item                                                                                                                                                                             | Owner   | Where        |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------------ |
-| B1  | Functional run: listing create/edit/publish and the welcome popup (SSR, search, filters, signup, verification, login, payout onboarding, and shipping origin passed 2026-10-16). | Ops/Dev | checklist §2 |
-| B7  | Check one built-in Test email's links (Test Console's Marketplace URL can't point at Render).                                                                                    | Ops     | checklist §2 |
-| B8  | Note the Render Postgres expiry date (free tier, 30 days) and plan its renewal.                                                                                                  | Ops     | §7 below     |
+| #   | Item                                                                                          | Owner | Where        |
+| --- | --------------------------------------------------------------------------------------------- | ----- | ------------ |
+| B7  | Check one built-in Test email's links (Test Console's Marketplace URL can't point at Render). | Ops   | checklist §2 |
+| B8  | Note the Render Postgres expiry date (free tier, 30 days) and plan its renewal.               | Ops   | §7 below     |
 
 ### C. Live content and configuration (Console) — fix before announcing
 
