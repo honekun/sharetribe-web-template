@@ -306,6 +306,10 @@ AV keeps upstream files unmodified via extension architecture in `src/extensions
   registry, never inline.
 - `pageBuilder/av/` — registers `avHero2`/`avHero3`/`avVideo` for CMSPage; `sectionStyles.js`
   (`parseSectionCustomOptions`, `parseSectionCtaClass`); `constants.js`; `transform.js`.
+- `checkout/checkoutSession.js` — `persistCheckoutSeed` writes the checkout seed to CheckoutPage's
+  sessionStorage key for **every** user before navigating (AVListingPageCarousel, bag checkout), so a
+  ChunkLoadError reload or SSO redirect before CheckoutPage mounts can resume. Stopgap until upstream
+  `52d708460` (CheckoutPage.duck `setInitialValues` persists itself) is synced; then remove it.
 - `accountNav/` (`getAccountSettingsTabs()`), `topbar/` (custom link config +
   `topbarDataProvider.js`), `searchFilters/`.
 - `topbar/topbarDataProvider.js` — single source for the topbar's category-dropdown config and
