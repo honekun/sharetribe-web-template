@@ -6,8 +6,12 @@
 
 /*
  * Brevo/Sibforms iframes send no postMessage resize events, so the frame height
- * is set here. Heights are tuned per breakpoint: the form fields stack taller on
- * mobile.
+ * is set here, per breakpoint, for the narrowest frame in each range. Each value
+ * fits the form while Brevo's success message is shown (its tallest state, taller
+ * than the error message) plus ~10px; measured 2026-10-16 against the `contacto`
+ * form, frame widths noted per rule. Adding fields to the form in Brevo means
+ * re-measuring. The layout goes two-column at ~975px, so 900–1023 holds both a
+ * wide one-column frame and the narrowest two-column one (~550px).
  */
 .frame {
   display: block;
@@ -17,25 +21,36 @@
   border: none;
   overflow: hidden;
 
-  /* mobile — fields wrap and need extra vertical room */
-  height: 900px;
+  /* <360px viewport — 241px frame at 320 needs 1301 */
+  height: 1310px;
+
+  /* Small phones: the form's height rises steeply as the frame narrows. */
+  @media (min-width: 360px) {
+    height: 1150px; /* 281px frame: 1138 */
+  }
+  @media (min-width: 375px) {
+    height: 1040px; /* 296px frame: 1029 */
+  }
+  @media (min-width: 390px) {
+    height: 1015px; /* 311px frame: 1005 */
+  }
 
   @media (--viewportXSmall) {
-    height: 850px;
+    height: 925px; /* 353px frame: 914 */
   }
   @media (--viewportSmall) {
-    height: 756px;
+    height: 860px; /* 471px frame: 848 */
   }
 
   @media (--viewportMedium) {
-    height: 805px;
+    height: 780px; /* 689px frame: 770 */
   }
 
   @media (--viewportXMedium) {
-    height: 728px;
+    height: 830px; /* ~550px two-column frame from ~975px: 818 */
   }
 
   @media (--viewportLarge) {
-    height: 680px;
+    height: 780px; /* 587px frame and wider: 770 */
   }
 }
