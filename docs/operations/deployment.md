@@ -1,50 +1,60 @@
-# Current deployment topology and approved production path
+# Current deployment topology
 
-## Current state
+## Current state (2026-10-15)
 
-Repository metadata identifies `https://archivo-vintach.onrender.com/` as the current staging URL,
-connected to Sharetribe Test and the matching test-mode providers. Until the Live cutover is signed
-off, the repository does not claim that a public production application is active.
+| Purpose        | Host and URL                                                           | External environment                           | Database                                                        | State                                                                          |
+| -------------- | ---------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Test / staging | Render, `https://archivo-vintach.onrender.com/`                        | Sharetribe Test, Stripe test, eShip QA         | Staging-only Render Postgres (free tier, expires after 30 days) | Hosts the Test gate. Readiness `200` after the 2026-10-15 database replacement |
+| Production     | Heroku `archivo-vintach-marketplace`, `https://www.archivovintach.com` | Sharetribe Live, Stripe live, eShip production | Heroku Postgres `essential-0`, reset at cutover, Live rows only | Deployed and serving. **Overall Live validation pending**                      |
+
+Heroku was converted from Test to Live on 2026-10-12 (releases v37–v49; Live build v48 from `main`
+at `cdb36026c`). Public DNS points at it: `www` is the canonical host and the apex `301`-forwards to
+it. The Live validation gate is release checklist §5, with open items in
+[Live launch readiness](../pending/live-launch.md). Until it is signed off, don't open Brevo
+campaigns or announce the marketplace.
 
 Before any release, record the actual hosting application, Sharetribe environment, provider modes,
-database, custom domain, and rollback control. Never infer the active target from an old hostname or
-place secrets in this file.
+database, custom domain, and rollback control. Never infer the active target from an old hostname,
+and never place secrets in this file.
 
-As of 2026-10-09 the Heroku app `archivo-vintach-marketplace` exists in runbook Phase 1 (Test mode):
-stack `heroku-26`, one Basic `web` dyno, `heroku-postgresql` `essential-0` with daily backups,
-Sharetribe Test / Stripe test / eShip QA. `www.archivovintach.com` (canonical) and
-`archivovintach.com` are attached with ACM enabled, but public DNS still points at the GoDaddy
-placeholder site.
+## Roles of the two environments
 
-## Approved initial Live deployment
+- **Render is the only Test environment.** Every release candidate is validated there against
+  Sharetribe Test, Stripe test mode, and eShip QA. Use [test accounts](test-accounts.md) only there
+  or locally, never on production.
+- **Heroku is production.** It stays connected to Sharetribe Live. It is never switched back to
+  Test, for testing or for rollback.
 
-The approved plan is [one Heroku Test-to-Live cutover](heroku-deployment.md):
+The Heroku app ran in Test mode between 2026-08-14 and 2026-10-12. That phase verified migrations,
+readiness, poller leadership, Brevo, and the welcome email. It did not complete the functional Test
+gate (Stripe test purchase, **Generar guía → Descargar guía**, `Contactar AV`, restart/no-duplicate,
+CSP review). Those checks now run on Render: release checklist §2.
 
-1. Create one Heroku app with its intended long-term production identity.
-2. Provision one web dyno formation and one Heroku Postgres add-on.
-3. Deploy and validate it against Sharetribe Test, Stripe test mode, and eShip QA.
-4. Freeze the app after the full Test release gate passes.
-5. Capture and verify a PostgreSQL Test backup.
-6. Retain the same PostgreSQL add-on but reset all Test tables and rows.
-7. Replace all environment-bound settings with Sharetribe Live, Stripe live, eShip production, and
-   the production domain.
-8. Perform a complete rebuild because `REACT_APP_*` values are compiled into the browser bundle.
-9. Run database migrations before enabling notifications or shipping labels.
-10. Start one web dyno, pass readiness and the controlled Live smoke test, then open public traffic.
+## Where the marketplace URL is defined
 
-The app, dyno formation, and database billing resource are reused. The actual dyno process and all
-Test database contents are not. Sharetribe Test users, listings, transactions, Stripe Connect
-accounts, and Integration events never transfer to Live.
+With custom code, the marketplace address is not a Console setting:
 
-## Steady state after launch
+- **The host attaches the domain**: `heroku domains` plus GoDaddy DNS for production, the
+  `onrender.com` name for staging.
+- **The app reads its own address from `REACT_APP_MARKETPLACE_ROOT_URL`.** The value feeds the
+  client config, API CORS origin, social-login callbacks, sitemap and canonical URLs, web manifest,
+  and the non-canonical-host noindex guard. It is a `REACT_APP_*` value, so a change needs a full
+  rebuild.
+- **Console's Marketplace URL can't be edited in Sharetribe Test.** Sharetribe fixes it at the
+  `…mysharetribe-test.com` address, so the Test Console URL cannot point at Render. Links in
+  Sharetribe's built-in Test emails may therefore use that address. Check one during the Render
+  gate.
+- **Live:** confirm that Sharetribe's built-in Live emails link to `https://www.archivovintach.com`
+  (release checklist §5).
 
-| Purpose         | Host   | Provider modes                                 |
-| --------------- | ------ | ---------------------------------------------- |
-| Staging/testing | Render | Sharetribe Test, Stripe test, eShip QA         |
-| Production      | Heroku | Sharetribe Live, Stripe live, eShip production |
+## Routine release flow
 
-After launch, Heroku remains Live. Routine releases are tested on Render/Test and rebuilt
-independently on Heroku with Live variables. The production Heroku app is not switched back to Test.
+1. Merge the reviewed branch and pass the code gate (release checklist §1).
+2. Deploy it to Render with Test variables and pass the Render Test gate (§2).
+3. Rebuild the same commit on Heroku with its Live variables (§4). Never promote or copy a Render or
+   Test build artifact: `REACT_APP_*` values are compiled into the browser bundle.
+4. Run `yarn db:migrate` on Heroku before enabling any feature that needs a new migration.
+5. Run the Live smoke checks for the changed areas and record the release.
 
 ## Current application constraints
 
@@ -54,13 +64,15 @@ independently on Heroku with Live variables. The production Heroku app is not sw
   it to `24` or delete it. A leftover `22.x` value fails the build at `Validating package.json`.
 - Keep exactly one web process while bulk-import jobs and rate/concurrency state remain
   process-local. See [scaling constraints](scaling.md).
-- Do not promote or copy a Test build artifact into Live. Build the approved code again with Live
-  public variables.
-- Run `yarn db:migrate` on the clean database before enabling notifications or shipping labels.
-- Keep notification and label start flags `false` during database reset, config replacement, build,
-  and migration.
-- Keep WhatsApp, Brevo campaigns, and eShip label auto-buy behind their documented pending gates.
-- Never use a pre-cutover Test release as a production rollback target.
+- Render's database must be migrated (the `migrate-test-db` procedure, from a local machine over the
+  database's External URL) before its notification or shipping-label flags are useful. Readiness
+  reports `notification_database_unavailable_or_unmigrated` until then. The web service itself must
+  use the **Internal** URL: the app's pool (`server/services/postgres.js`) sets no TLS. A free
+  Render Postgres expires after 30 days, so replace and re-migrate it before then.
+- Keep WhatsApp, Brevo campaigns, and eShip label auto-buy behind their documented pending gates in
+  both environments.
+- Never roll production back past v48, the first Live-built release. v37–v47 only changed config on
+  the v36 slug, so their browser bundle still carries Test credentials and URLs.
 
-Use the [release checklist](release-checklist.md) for the go/no-go decision and the
-[Heroku deployment runbook](heroku-deployment.md) for the exact initial cutover sequence.
+Use the [release checklist](release-checklist.md) for the go/no-go decision. The
+[Heroku Test-to-Live runbook](heroku-deployment.md) records how the initial cutover was performed.

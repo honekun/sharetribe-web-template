@@ -1806,7 +1806,7 @@ this up per environment; the test and production marketplaces use different secr
 | **HTTPS** (`REACT_APP_SHARETRIBE_USING_SSL`)       | `true` on every deployed site: redirects HTTP to HTTPS and marks login cookies secure.                                                                 |
 | **Proxy hops** (`SERVER_SHARETRIBE_TRUST_PROXY`)   | `1` on Heroku, so the server sees each visitor's real address (rate limits, consent records). Never `true`.                                            |
 | **Content Security Policy** (`REACT_APP_CSP`)      | `report` while testing, `block` in production.                                                                                                         |
-| **Hide from search engines** (`AV_NOINDEX`)        | `true` on staging and on the Heroku app before launch; unset in production. Any address other than the main site address is always hidden from search. |
+| **Hide from search engines** (`AV_NOINDEX`)        | `true` on Render staging; unset on Heroku production (removed at the Live cutover). Any address other than the main site address is always hidden from search. |
 
 ### Seller earnings estimator
 
@@ -2523,9 +2523,16 @@ environment and record IDs first, then take the smallest reversible action that 
 Archivo Vintach has separate Sharetribe **Test** and **Live** environments. Their users, listings,
 transactions, API applications, Integration API credentials, Stripe modes, and operational data are
 separate. Content and configuration may be copied between environments, but marketplace records are
-not copied. For the initial Live deployment, the approved plan reuses one Heroku app and its
-PostgreSQL add-on only after the Test database contents are backed up and completely erased. No Test
-poller, notification, consent, or label record may remain when Live credentials are installed.
+not copied. Each environment has its own site:
+
+| Environment | Site                                             | Use it for                                                        |
+| ----------- | ------------------------------------------------ | ----------------------------------------------------------------- |
+| **Test**    | `https://archivo-vintach.onrender.com/` (Render) | Trying changes, test accounts, Stripe test cards, eShip QA labels |
+| **Live**    | `https://www.archivovintach.com` (Heroku)        | Real users, listings, payments, and labels only                   |
+
+The Heroku app ran against Test before launch and was converted to Live on 2026-10-12, after its
+Test database was backed up and erased. It is never switched back to Test. Never create test
+accounts or test orders on the Live site.
 
 Before any change:
 
@@ -2738,9 +2745,10 @@ Escalate immediately when an issue may create duplicate charges or labels, expos
 misdirect notifications, alter payouts, block all checkout, or affect multiple Live users. Stop
 retries while the external outcome is unknown.
 
-For the initial deployment boundary, follow the approved
-[Heroku Test-to-Live runbook](operations/heroku-deployment.md) and
-[release checklist](operations/release-checklist.md). Do not switch the production app between Test
-and Live as an ordinary support action. After an operator-visible fix, update this canonical guide
+Releases are tested on Render (Test) and then rebuilt on Heroku (Live): see the
+[deployment topology](operations/deployment.md) and the
+[release checklist](operations/release-checklist.md). The
+[Heroku Test-to-Live runbook](operations/heroku-deployment.md) records the initial cutover. Never
+switch the production app to Test, whether for support or for testing. After an operator-visible fix, update this canonical guide
 first, rebuild the English shareable HTML, and synchronize every translated edition intended for
 distribution.

@@ -67,6 +67,20 @@ Rules that follow from this:
 
 ## Setup status (audited 2026-10-09)
 
+> **After the Live cutover (2026-10-12, re-checked 2026-10-15).** The table below describes the
+> Heroku app while it ran against Sharetribe Test. Heroku is now production on Sharetribe Live; the
+> Test-phase role moved to Render. Current state:
+>
+> - **Heroku (Live):** welcome email enabled and healthy (`/api/brevo/health` `200`). A11 is partly
+>   done: the root URL is `https://www.archivovintach.com` (v37) and `BREVO_LIST_ID` was changed at
+>   v45. Still to confirm: that it is `6`, that webhook 2241911 now targets `www.archivovintach.com`
+>   (it pointed at the herokuapp host, which still serves the same app), the cleanup of test
+>   contacts in list 7, and a repeat of A8/A9 step 1 with a real Live signup.
+> - **Render (Test):** welcome email enabled and healthy (2026-10-15) on the same Brevo account and
+>   sender, with the Test list. It has no Brevo webhook, so Render bounces are not recorded. That is
+>   acceptable for Test.
+> - The consent and webhook tables on Heroku were emptied by the cutover reset, as A11 expects.
+
 Re-checked after the domain was authenticated. Read-only checks against the Brevo API (using the key
 configured on Heroku), the Heroku app `archivo-vintach-marketplace`, and its database:
 
@@ -105,9 +119,9 @@ and readiness passes (A8). **What does not work yet:** every lifecycle campaign 
 3. **Capacity.** The free plan's 300 sends per day covers the seller welcome at launch volumes.
    Before Phase B, size the plan for campaign volume (each consented user can receive up to two
    promotional emails per seven days).
-4. **Test-phase list.** ✅ The Heroku app runs against Sharetribe Test until cutover, so footer
-   signups made while testing go to list 7 "Test ArchivoVintach" (`BREVO_LIST_ID=7`, set
-   2026-10-10). Switch to 6 "Live ArchivoVintach" at cutover (step A11).
+4. **Test-phase list.** ✅ Test signups go to list 7 "Test ArchivoVintach" (`BREVO_LIST_ID=7`). That
+   list was used on Heroku before the cutover, and Render uses it now. Production uses 6 "Live
+   ArchivoVintach" (step A11; confirm the Heroku value).
 5. **Existing list members** (109 in "ARCHIVO — Seller Waitlist"). They have no first-party consent
    evidence in the Live database, and PostgreSQL is authoritative, so campaigns will never mail
    them. Either leave them (manual Brevo newsletters still reach them) or ask them to opt in again
@@ -318,8 +332,8 @@ out-of-repo notes (`ArchivoVintach/docs/brevo-inventory.md`). Owner, key name, m
 domain holder confirmed. It records: Brevo account owner, API key name and rotation date, sender
 address, domain owner, test and production list IDs, welcome template ID, webhook ID.
 
-**A11. At the Live cutover** (in addition to the
-[Heroku runbook](../operations/heroku-deployment.md) §5):
+**A11. At the Live cutover** (performed 2026-10-12; see the status note above for what remains to
+confirm) (in addition to the [Heroku runbook](../operations/heroku-deployment.md) §5):
 
 - `BREVO_LIST_ID` → the production list 6 "Live ArchivoVintach"
   (`heroku config:set BREVO_LIST_ID=6`), then delete the test contacts left in list 7.
