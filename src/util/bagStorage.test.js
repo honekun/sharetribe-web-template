@@ -1,4 +1,11 @@
-import { readBag, writeBag, BAG_STORAGE_KEY } from './bagStorage';
+import {
+  readBag,
+  writeBag,
+  readBagOwner,
+  writeBagOwner,
+  BAG_STORAGE_KEY,
+  BAG_OWNER_STORAGE_KEY,
+} from './bagStorage';
 
 describe('bagStorage', () => {
   beforeEach(() => window.localStorage.clear());
@@ -21,5 +28,14 @@ describe('bagStorage', () => {
   it('returns [] for non-array payloads', () => {
     window.localStorage.setItem(BAG_STORAGE_KEY, '{"a":1}');
     expect(readBag()).toEqual([]);
+  });
+
+  it('stores the bag owner under its own key and removes it for null', () => {
+    expect(readBagOwner()).toBeNull();
+    writeBagOwner('user-1');
+    expect(readBagOwner()).toBe('user-1');
+    expect(window.localStorage.getItem(BAG_STORAGE_KEY)).toBeNull();
+    writeBagOwner(null);
+    expect(window.localStorage.getItem(BAG_OWNER_STORAGE_KEY)).toBeNull();
   });
 });

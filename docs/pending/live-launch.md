@@ -33,11 +33,10 @@ dashboards), _Dev_ (repository), _Business_ (decision or sign-off).
 | #   | Item                                                                                                                                                                                                                                                                                                                                               | Owner   | Where        |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------------ |
 | B1  | Functional run: SSR/search/filters, signup, verification, login, both languages; seller payout onboarding, shipping origin, listing create/publish, welcome popup.                                                                                                                                                                                 | Ops/Dev | checklist §2 |
-| B2  | eShip QA quote → Stripe test purchase → breakdown → `protectedData.avShipping`; **Generar guía → Descargar guía**; `Contactar AV` for missing origin / `especial`.                                                                                                                                                                                 | Ops/Dev | §5 below     |
-| B3  | Bulk import as a regular seller and as an allowlisted operator (`BULK_IMPORT_OPERATOR_EMAILS` on Render).                                                                                                                                                                                                                                          | Ops     | checklist §2 |
+| B2  | `Contactar AV` for an `especial` item (quote, purchase, breakdown, label, and missing origin passed 2026-10-16).                                                                                                                                                                                                                                   | Ops/Dev | §5 below     |
 | B4  | Restart Render: sessions survive, poller resumes from its cursor, no duplicate sends.                                                                                                                                                                                                                                                              | Ops     | checklist §2 |
 | B5  | Tracking emails are `true` on Render: point the eShip **QA** dashboard webhook at Render with the `X-AV-Webhook-Secret` header, or set the flag back to `false`. The `?secret=` URL form is rejected since 2026-10-15: if the dashboard URL ever carried it, rotate `ESHIP_WEBHOOK_SECRET` and confirm a real checkpoint returns `202`, not `401`. | Ops     | §7 below     |
-| B6  | `SERVER_SHARETRIBE_TRUST_PROXY` on Render is a hop count, not `true`; confirm `ESHIP_LABEL_AUTOBUY=false`.                                                                                                                                                                                                                                         | Ops     | §2.1 below   |
+| B6  | `SERVER_SHARETRIBE_TRUST_PROXY` on Render is a hop count, not `true` (`ESHIP_LABEL_AUTOBUY` is off: paid orders got no label until **Generar guía**, 2026-10-16).                                                                                                                                                                                  | Ops     | §2.1 below   |
 | B7  | Check one built-in Test email's links (Test Console's Marketplace URL can't point at Render).                                                                                                                                                                                                                                                      | Ops     | checklist §2 |
 | B8  | Note the Render Postgres expiry date (free tier, 30 days) and plan its renewal.                                                                                                                                                                                                                                                                    | Ops     | §7 below     |
 
@@ -414,9 +413,11 @@ Checked and prepared on 2026-10-09:
   enabled. DNS is at GoDaddy (`domaincontrol.com`), which has no ALIAS/ANAME, so `www` is a CNAME to
   Heroku and the apex is forwarded to it (runbook §4 step 9 and §5.7). Today both still serve the
   GoDaddy placeholder site, with HSTS `includeSubDomains`.
-- **Instagram**: the feed works on Heroku (12 posts); the stored token expires 2026-11-28 and
-  auto-refreshes under 20 days. `INSTAGRAM_ACCESS_TOKEN` is an older seed than the stored token, so
-  the runbook (§5.2) now copies the stored token into it before `pg:reset`.
+- **Instagram**: the feed works on Heroku (12 posts); the stored token was refreshed 2026-10-12,
+  expires 2026-12-11, and auto-refreshes under 20 days. `INSTAGRAM_ACCESS_TOKEN` is an older seed
+  than the stored token, so the runbook (§5.2) now copies the stored token into it before
+  `pg:reset`. On 2026-10-16 the same stored row was copied into Render's new database (its seed had
+  expired); both environments now refresh their own copy independently.
 
 Remaining:
 

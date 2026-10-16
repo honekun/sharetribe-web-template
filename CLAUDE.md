@@ -351,7 +351,8 @@ there is no static shipping-price table or fallback. Flow: buyer enters MX desti
 payment form → client `POST /api/shipping/quote` → server resolves the seller's stored origin
 (`integrationSdk.users.show` → `profile.protectedData.shippingOrigin`) + the parcel
 (`packageSizes[resolvePackageSize(listing)]`) → eShip `POST /rest/quotation` (one call → `rates[]`)
-→ bucket **FASTEST→Express (`nacionalExpress`)** / **CHEAPEST→Estándar (`nacionalEstandar`)**, apply
+→ bucket **fewest days (cheapest on a tie) → Express (`nacionalExpress`)** / **cheapest → Estándar
+(`nacionalEstandar`)** — eShip's FASTEST/CHEAPEST tags are shown but not trusted — apply
 `applyBuyerMarkup` (markup + round up) → cache under a `quoteToken` (15-min TTL) → return buckets +
 raw rates. Buyer picks a bucket → `avShippingType`/`avQuoteToken`/`avDestination`/`buyerEmail` flow
 through `getOrderParams` into `orderData`.
@@ -390,7 +391,8 @@ their object via **`object_id`** (there is **no** `quot_id`/`shipment_id`) — `
 captures the quotation `object_id` as `quot_id`, `shipmentService` maps the shipment `object_id` to
 `shipmentId`. `/shipment` needs only the rate's `rate_id` (the `quot_id` is traceability-only).
 `tracking_number`/`label_url` are as named. QA returns test rates tagged `TESTRATE` with `TEST…`
-rate_ids and a "Test Label - Do not print" label.
+rate_ids and a test label: "Test Label - Do not print", or for Estafeta a "SIN VALOR" stamp with
+the sender prefixed `TEST` (seen on Render 2026-10-16).
 
 Modules: `server/api-util/eshipClient.js` (HTTP: `quote` + `createShipment`),
 `server/services/shippingQuoteService.js` (orchestration + cache),

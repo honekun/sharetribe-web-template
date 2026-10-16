@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 
 import { syncFavoritesFromUser } from '../../ducks/favorites.duck';
-import { hydrateBag } from '../../ducks/bag.duck';
+import { hydrateBag, syncBagOwner } from '../../ducks/bag.duck';
 import { canShowWelcomePopup, welcomePopupSuppressedPaths } from '../../config/configAV';
 import AVWelcomePopup from '../../components/AVWelcomePopup';
 
@@ -62,6 +62,16 @@ const AVTopbarExtras = props => {
   useEffect(() => {
     dispatch(hydrateBag());
   }, [dispatch]);
+
+  // Empty a signed-in user's bag once their session ends (or another account
+  // signs in on this browser); a guest bag is adopted on sign-in. Waits for a
+  // known session, like favorites, so a loading session never clears it.
+  useEffect(() => {
+    if (!isUserSessionKnown) {
+      return;
+    }
+    dispatch(syncBagOwner(currentUserId));
+  }, [dispatch, isUserSessionKnown, currentUserId]);
 
   const publicData = currentUser?.attributes?.profile?.publicData || {};
   // Suppressed on the signup page, where it would cover the "check your email"

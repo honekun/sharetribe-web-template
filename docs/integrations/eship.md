@@ -35,7 +35,9 @@ not the seller. That single fact drives the payout decision in §9.
   `apiqa` and vice-versa. Retrieve a key from **Settings → API Keys** in the matching dashboard.
 - Auth is a Bearer token on every request: `Authorization: Bearer <ESHIP_API_KEY>`.
 - QA returns **test rates** (tagged `TESTRATE`, `rate_id` prefixed `TEST…`) and test labels stamped
-  _"Test Label - Do not print"_ — safe to exercise end-to-end.
+  _"Test Label - Do not print"_ — or, for Estafeta, _"SIN VALOR"_ with the sender name prefixed
+  `TEST` (seen on Render 2026-10-16) — safe to exercise end-to-end. The label PDF is still served
+  from eShip's `eship-prod` S3 bucket; the bucket name does not mean a production label.
 - If your Segmail account has no QA counterpart provisioned, ask the eShip / MBE Global account
   contact to create one and issue a QA key.
 
@@ -51,7 +53,7 @@ not the seller. That single fact drives the payout decision in §9.
 | `ESHIP_API_DEBUG`                              | no                 | `false`                        | `true` echoes the carrier's error text in the API response (`{ code, detail }`). Leave off in prod.                                                                                              |
 | `AV_SHIPPING_LABELS_ENABLED`                   | yes (explicit)     | `false`                        | Enables the label-purchase capability and its shared Integration API poller path. Independent of notification delivery; it does not enable automatic purchase by itself.                         |
 | `AV_ESHIP_TRACKING_EMAILS_ENABLED`             | yes (explicit)     | `false`                        | Accepts durable eShip tracking events and processes the `TRANSIT/picked_up` buyer email through the shared poller.                                                                               |
-| `ESHIP_WEBHOOK_SECRET`                         | yes (tracking)     | —                              | At least 32 random bytes. Presented by eShip as the `X-AV-Webhook-Secret` header only (`?secret=` is ignored); the webhook is also verified through an authenticated eShip API read.                |
+| `ESHIP_WEBHOOK_SECRET`                         | yes (tracking)     | —                              | At least 32 random bytes. Presented by eShip as the `X-AV-Webhook-Secret` header only (`?secret=` is ignored); the webhook is also verified through an authenticated eShip API read.             |
 | `SHIPPING_LABEL_OPERATOR_EMAILS`               | no                 | —                              | Comma-separated emails allowed to retry **any** seller's label. Sellers can always retry their own.                                                                                              |
 | `ESHIP_LABEL_AUTOBUY`                          | no                 | `false`                        | `true` → buy the label automatically on `confirm-payment` (poller). Unset/`false` → manual only: the seller buys it via the **Generar guía** button. Requires `AV_SHIPPING_LABELS_ENABLED=true`. |
 | `DATABASE_URL`                                 | yes (labels)       | —                              | Shared durable PostgreSQL ledger used by both manual and automatic label purchase. Required whenever `AV_SHIPPING_LABELS_ENABLED=true`.                                                          |
@@ -105,10 +107,12 @@ NODE_ENV=development node -e "require('./server/env').configureEnv(); \
    `profile.protectedData.shippingOrigin`) and the **parcel**
    (`packageSizes[resolvePackageSize(listing)]`).
 3. `POST {base}/quotation` (one call → `rates[]`).
-4. Bucket the rates: **`FASTEST` → Express (`nacionalExpress`)**, **`CHEAPEST` → Estándar
-   (`nacionalEstandar`)** (`bucketForRate`), apply `applyBuyerMarkup`, cache under a `quoteToken`
-   (15-min TTL, 1,000-entry process cap), return buckets. The token is cryptographically bound to
-   the listing, seller, parcel, and normalized destination.
+4. Bucket the rates by price and transit time (`buildBuckets`): **Express (`nacionalExpress`)** is
+   the fewest days, cheapest on a tie; **Estándar (`nacionalEstandar`)** is the cheapest, fewest
+   days on a tie. eShip's `FASTEST`/`CHEAPEST` tags are passed through in `rawRates` but not trusted
+   for picking. Apply `applyBuyerMarkup`, cache under a `quoteToken` (15-min TTL, 1,000-entry
+   process cap), return buckets. The token is cryptographically bound to the listing, seller,
+   parcel, and normalized destination.
 5. Buyer picks a bucket → `avShippingType` / `avQuoteToken` / `avDestination` / `buyerEmail` flow
    through `getOrderParams` into `orderData`.
 
@@ -177,8 +181,8 @@ webhook URL but no request-signature scheme, so the integration uses two checks:
    `GET {base}/shipment?shipment_id=…&eventList=true` before trusting the checkpoint, provider, or
    tracking link.
 
-The secret is accepted **only** as a header. Configure it under **Settings → webhook/custom
-tracking URL → Encabezados**:
+The secret is accepted **only** as a header. Configure it under **Settings → webhook/custom tracking
+URL → Encabezados**:
 
 ```text
 URL:    https://MARKETPLACE_HOST/api/shipping/eship-webhook

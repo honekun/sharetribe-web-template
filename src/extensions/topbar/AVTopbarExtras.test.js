@@ -4,6 +4,8 @@ import '@testing-library/jest-dom';
 
 import { renderWithProviders as render, testingLibrary } from '../../util/testHelpers';
 import { selectFavoriteIds } from '../../ducks/favorites.duck';
+import { selectBagIds } from '../../ducks/bag.duck';
+import { readBag, writeBag, writeBagOwner } from '../../util/bagStorage';
 
 import AVTopbarExtras from './AVTopbarExtras';
 
@@ -130,5 +132,41 @@ describe('AVTopbarExtras — favorites hydration', () => {
     renderWithProbe({ isAuthenticated: true, currentUser: null });
 
     expect(screen.getByTestId('favorites')).toHaveTextContent('');
+  });
+});
+
+describe('AVTopbarExtras — bag ownership', () => {
+  const BagProbe = () => {
+    const ids = useSelector(selectBagIds);
+    return <div data-testid="bag">{ids.join(',')}</div>;
+  };
+  const renderWithProbe = props =>
+    render(
+      <>
+        <AVTopbarExtras {...defaults} {...props} />
+        <BagProbe />
+      </>
+    );
+
+  beforeEach(() => window.localStorage.clear());
+
+  it("empties a signed-in user's bag after they sign out", async () => {
+    writeBag(['l1']);
+    writeBagOwner('user-1');
+
+    renderWithProbe({ isAuthenticated: false, currentUser: null });
+
+    await waitFor(() => expect(screen.getByTestId('bag')).toHaveTextContent(''));
+    expect(readBag()).toEqual([]);
+  });
+
+  it('keeps the bag while an authenticated session is still loading', () => {
+    writeBag(['l1']);
+    writeBagOwner('user-1');
+
+    renderWithProbe({ isAuthenticated: true, currentUser: null });
+
+    expect(screen.getByTestId('bag')).toHaveTextContent('l1');
+    expect(readBag()).toEqual(['l1']);
   });
 });

@@ -2431,6 +2431,9 @@ the wording.
   storage). It works without signing in, but it **does not follow the shopper across devices or
   browsers**, and clearing browser data empties it. It is intentionally different from favorites,
   which are saved to the account.
+- **Signing out empties it.** Items added while signed out stay when the shopper signs in. Once a
+  signed-in shopper signs out — or a different account signs in on the same browser — the bag is
+  emptied, so the next person on a shared computer does not see it.
 - **Up to 50 items**, newest first. Adding beyond 50 drops the oldest item. A listing can be in the
   bag only once (this is a one-item marketplace).
 - **Checkout is one item at a time.** There is no combined "cart" order — each Sharetribe

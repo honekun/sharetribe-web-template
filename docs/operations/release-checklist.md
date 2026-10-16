@@ -51,10 +51,12 @@ initial launch, the Heroku app passed the infrastructure checks below in Test mo
 checks were never completed in any hosted Test environment.
 
 - [ ] Deploy the release candidate to Render with Test variables and record its commit and tree.
-      Redeploy and re-run this gate if the candidate changes.
-- [ ] Confirm the application uses Test Marketplace/Integration credentials, Stripe test mode
+      Redeploy and re-run this gate if the candidate changes. On 2026-10-16 Render served bundle
+      `main.6b17a693.js`, which carries #116's `BrandFilter.noResults`; confirm in the Render
+      dashboard that it is `main` at `042a56f61` (#117).
+- [x] Confirm the application uses Test Marketplace/Integration credentials, Stripe test mode
       (bundle carries `pk_test_…`, verified 2026-10-15), eShip QA, the Render root URL, and
-      `AV_NOINDEX=true`.
+      `AV_NOINDEX=true`. eShip QA confirmed 2026-10-16: quotes return `TESTRATE` rates.
 - [x] Run `yarn db:migrate` against Render's database before relying on notifications or labels. New
       database `archivovintach_v102026`, migrations 001–009 via the `migrate-test-db` procedure
       (2026-10-15).
@@ -71,18 +73,63 @@ checks were never completed in any hosted Test environment.
 - [ ] Check one built-in Sharetribe Test email: Console's Test Marketplace URL can't be edited, so
       its links may point at the `…mysharetribe-test.com` address rather than Render. Record which.
 - [ ] Verify SSR, search/filters, signup, email verification, login, and both configured languages.
+      Done 2026-10-16: SSR of the landing, CMS, legal, search, and auth routes (`200`); search 276
+      results, with keyword, `genero`, `brand`, `all_sizes`, `color`, and category filters
+      narrowing; the brand filter's "Sin resultados". `pub_tags` is ignored until `tags` is
+      searchable (live-launch C3). Signup and the verification email confirmed 2026-10-16 with a new
+      account (`alex+buyer@rewav.co`). The second language still needs a manual pass.
 - [ ] Verify seller payout onboarding, shipping origin, listing create/edit/publish, and welcome
-      popup.
-- [ ] Verify live eShip quote, one Stripe test purchase, order breakdown, and
-      `protectedData.avShipping`.
-- [ ] With `ESHIP_LABEL_AUTOBUY=false`, verify **Generar guía** then **Descargar guía** against QA.
-- [ ] Verify `Contactar AV` when a seller origin is missing or the item is `especial`.
+      popup. Store seller `alex+av_store1@rewav.co` completed Stripe test payout onboarding and
+      saved a Guadalajara origin on 2026-10-16: `/account/payments` reports the account up to date,
+      and `/account/shipping-origin` reloads the saved address.
+- [x] Verify live eShip quote, one Stripe test purchase, order breakdown, and
+      `protectedData.avShipping`. Quote done 2026-10-16 (CDMX seller → `64000` Monterrey): four QA
+      rates; Estándar = cheapest (Estafeta 6 d, 145 → \$172.00), Express = fastest, cheapest on a
+      tie (Estafeta 3 d, 237.80 → \$281.00); the 18 % markup rounds up. Checkout opens from the
+      listing and survives a full reload (#117 seed fix). Purchase done 2026-10-16 with the saved
+      Stripe test card: order `6ad1d15e…` reached `transition/confirm-payment`; payin \$672.00 (item
+      \$500.00 + Estándar \$172.00), shipping fee customer-only, commission \$110.00 (22 %) +
+      \$15.00 fixed, payout \$375.00; `protectedData.avShipping` holds the QA rate and `quot_id`;
+      `metadata.avLabel` empty until the seller buys the label. Second purchase 2026-10-16, buyer
+      `alex+vendedor_av@rewav.co` from store seller `alex+av_store1@rewav.co` (Guadalajara origin):
+      order `6ad26852…`, Express (Estafeta 3 d, \$281.00) to `06700` CDMX; payin \$731.00, shipping
+      fee customer-only, commission \$99.00 (22 %) + \$15.00 fixed, payout \$336.00; the buyer's
+      order page shows the same breakdown; `avShipping` holds bucket `nacionalExpress`; listing
+      stock went 1 → 0.
+- [x] With `ESHIP_LABEL_AUTOBUY=false`, verify **Generar guía** then **Descargar guía** against QA.
+      Done 2026-10-16 on order `6ad26852…` as seller `alex+av_store1@rewav.co`: neither paid order
+      had a label after `confirm-payment` (auto-buy is off); **Generar guía** bought an Estafeta
+      "Dia Sig." QA label (`SIN VALOR`, sender `TEST Archivo Vintach`, 44160 → 06700) and switched
+      to **Descargar guía**, a new-tab link to the `200 application/pdf` label; `metadata.avLabel`
+      is `purchased` with shipment, tracking number, and URLs; the link survives a reload; a second
+      `POST /api/shipping/label` returned the same shipment (no second purchase). The seller's sale
+      page shows \$450.00 − \$114.00 = \$336.00 with no shipping line. Fersaanch's `6ad1d15e…` still
+      has no label.
+- [ ] Verify `Contactar AV` when a seller origin is missing or the item is `especial`. Missing
+      origin done at the API on 2026-10-16: quotes for `alex+av_store1@rewav.co` listings returned
+      `409 NO_ORIGIN` before its origin was saved and `200` with QA rates after. `especial` is open.
 - [ ] Verify negotiation request/offer/counter/payment behavior if its hosted process is active.
-- [ ] Verify bulk import as a regular seller and an allowlisted operator.
+- [x] Verify bulk import as a regular seller and an allowlisted operator. Regular seller done
+      2026-10-16: a one-row CSV created listing `6ad1d1dc…` (`closed` per `publish=no`, placeholder
+      image, system keys set, stock 1); re-uploading it reported "1 ya importados (omitidos)"; a CSV
+      with `pub_listingType` was rejected. Operator done 2026-10-16: signed in as
+      `alex+vendedor_av@rewav.co` (in `BULK_IMPORT_OPERATOR_EMAILS`), a one-row CSV with a `user_id`
+      column created listing `6ad26889…` authored by `alex+av_store1@rewav.co` (`closed`,
+      placeholder image, stock 1, `metadata.avBulkImport` set).
 - [ ] Review CSP reports, switch staging to block mode, and repeat the critical path. Production
       already enforces CSP (v47), so a CSP regression found here is a live defect.
 - [ ] Restart staging; sessions survive and the poller resumes from its PostgreSQL cursor without
       duplicate sends.
+
+Other Render results (2026-10-16): `/my-balance` total earnings equal the sum of completed net
+amounts; bag, favorites, `/my-sales`, `/my-purchases`, shipping origin, payout, `/l/new`, and
+`/admin/bulk-import` load signed in; the Brevo contact-form iframe on `/p/contacto` loads sandboxed
+from Sibforms under the enforcing CSP, and a submission (2026-10-16, sender
+`hola+prueba-render@archivovintach.com`) showed Brevo's success message in full. Webhook: no secret,
+a `?secret=` query, and a wrong header all return `401`. Instagram: the feed returned
+`503 token_expired` because Render's `INSTAGRAM_ACCESS_TOKEN` seed had expired; the stored token row
+was copied from production's database into Render's and the feed returns `200` with 12 posts. Every
+page logs a console error that no Mapbox token is set; harmless while no map is used.
 
 Any buyer-flow, payment, payout, shipping-price, duplicate-send, or duplicate-label failure blocks
 production. For the initial launch it is already live, so treat it as a launch blocker and fix it
