@@ -63,16 +63,25 @@ background. The client polls for status updates.
 
 ### Worker Flow (per CSV row, sequential)
 
+0. Before the first row, look up each author's earlier imports (see
+   [Row idempotency and recovery](#row-idempotency-and-recovery)). A row already imported completely
+   is skipped; one an earlier attempt left half-done is resumed at step 3.
 1. Upload images in slot order (`front` → `back` → `horizontal` → `details`) via Integration SDK
    `images.upload()`. A row that references no image at all uploads the bundled placeholder instead
    (`placeholderImage.js`) as its single image, and is stamped `publicData.avPlaceholderImage: true`
-2. Create listing via Integration SDK `listings.create()` with author relationship
-3. Set stock via Integration SDK `stock.compareAndSet()` (only when `stock > 0`)
-4. Publish listing via Integration SDK `listings.open()` (only when `publish` column is `yes`)
-5. 500ms delay before next row (rate limiting)
+2. Create listing via Integration SDK `listings.create()` with author relationship, in state
+   **`pendingApproval`** (hidden from buyers) and stamped `metadata.avBulkImport: { key, complete:
+   false }`. The Integration API creates only `published` or `pendingApproval` listings.
+3. Set stock via Integration SDK `stock.compareAndSet()` (only when `stock > 0` and the listing has
+   no stock yet)
+4. Approve via `listings.approve()` (`pendingApproval` → `published`)
+5. Close via `listings.close()` when the `publish` column is `no`
+6. Mark complete via `listings.update()` (`metadata.avBulkImport.complete: true`). A failure here
+   is logged, not reported: the listing is already correct
+7. 500ms delay before next row (rate limiting)
 
 Rows are processed sequentially. If a row fails, the error is recorded and processing continues with
-the next row.
+the next row. Rows that timed out are reconciled after the last row.
 
 ---
 
@@ -252,8 +261,9 @@ whole job.
 
 ### Extended Data Columns (`pub_*`)
 
-Any column prefixed with `pub_` (or the legacy `pd_`) is stored in listing `publicData`. The prefix
-is stripped to form the key (e.g. `pub_brand` → `brand`):
+A column prefixed with `pub_` (or the legacy `pd_`) is stored in listing `publicData`. The prefix
+is stripped to form the key (e.g. `pub_brand` → `brand`). Only listing-field keys are accepted —
+see [Allowed publicData keys](#allowed-publicdata-keys) below:
 
 | CSV Column           | publicData Key   | Required | Example Value           | Notes                                                                                                                                          |
 | -------------------- | ---------------- | -------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -278,6 +288,36 @@ display label. E.g. `azul` not `Azul`; `levi-s` not `Levi's`.
 
 The publicData keys must match the field keys configured in Sharetribe Console → Build → Listing
 fields.
+
+### Allowed publicData keys
+
+Any signed-in user can import, so a CSV column must never be able to set the keys that decide how a
+listing transacts. `server/api/bulk-import/publicDataKeys.js` holds the policy, and `validateRows`
+enforces it once per column (a column that is empty in every row is ignored):
+
+- **System keys are always rejected** (`SYSTEM_PUBLIC_DATA_KEYS`): `listingType`,
+  `transactionProcessAlias`, `unitType`, `location`, `pickupEnabled`, `shippingEnabled`,
+  `shippingPriceInSubunits*`, `cardStyle` (upstream's built-in keys from `configHelpers.js`, pinned
+  by `publicDataKeys.test.js`), plus the AV-owned `imageSlots`, `avPackageSize`,
+  `avPackageSizeLocked`, `avPlaceholderImage` and `avPlaceholderImageId`. The error is _La columna
+  "…" la asigna el sistema y no se puede importar._
+- **Ignored keys are dropped silently** (`IGNORED_PUBLIC_DATA_KEYS`): currently only `tags`. It
+  drives the curated carousels (`hot-list`, `ofertas`) and any signed-in user can import, so a
+  `pub_tags`/`pd_tags` column is discarded without an error — even if Console makes `tags` a public
+  field. Older sheets that still carry the column keep importing. Tag listings in Console instead.
+- **Everything else must be allowed**: the template columns in the table above
+  (`TEMPLATE_PUBLIC_DATA_KEYS`, always allowed), or a **public-scope** listing field from Console's
+  `/listings/listing-fields.json`, read per import by `resolveAllowedPublicDataKeys` (the same way
+  the minimum price is read). An unknown column fails with _La columna "…" no corresponde a ningún
+  campo de anuncio configurado._ If the asset cannot be read, only the template columns are allowed
+  and a warning is logged; the import is not blocked.
+
+As defence in depth, `importWorker.js` strips system and ignored keys from `row.publicData` and writes the
+system-owned values (`listingType`, `transactionProcessAlias`, `unitType`, `shippingEnabled`,
+`pickupEnabled`, `avPackageSize`) **after** the CSV values, so a row that skipped validation still
+cannot override them. The listing type, process alias and unit type come from
+`BULK_IMPORT_LISTING_TYPE` / `BULK_IMPORT_TRANSACTION_ALIAS` / `BULK_IMPORT_UNIT_TYPE`; shipping and
+pickup come from the `shipping_enabled` / `pickup_enabled` columns.
 
 ### Automatic package size
 
@@ -431,13 +471,25 @@ user can never poll or confirm the existence of someone else's import.
   "total": 3,
   "processed": 2,
   "succeeded": 1,
+  "existing": 0,
   "failed": 1,
   "errors": [{ "row": 3, "title": "Bad Listing", "error": "API error message" }],
   "results": [
-    { "row": 2, "title": "Vintage Levi's 501", "listingId": "uuid-...", "status": "published" }
+    {
+      "row": 2,
+      "title": "Vintage Levi's 501",
+      "listingId": "uuid-...",
+      "status": "published",
+      "outcome": "created"
+    }
   ]
 }
 ```
+
+`existing` counts rows skipped because an earlier upload already imported them. A result's
+`outcome` is `created`, `resumed` (an earlier attempt's listing was finished), `existing` (skipped)
+or `reconciled` (a timed-out row whose listing turned up and was finished). An error entry for a
+listing that exists but was not finished also carries `listingId` and `listingState`.
 
 **Status values**: `processing`, `completed`, `failed`
 
@@ -611,8 +663,9 @@ Each listing is created with:
 - `publicData`: listing type, transaction process, unit type, shipping/pickup, image slots,
   location, and all `pub_*`/`pd_*` extended data fields
 - `geolocation`: lat/lng if provided
-- Stock set via `stock.compareAndSet()` after creation (skipped when `stock` is 0)
-- Published via `listings.open()` if `publish=yes`
+- `metadata.avBulkImport`: the row's import key and a `complete` flag
+- Created `pendingApproval`; stock set via `stock.compareAndSet()` (skipped when `stock` is 0)
+  before `listings.approve()` publishes it; closed via `listings.close()` if `publish=no`
 
 ### Error Handling
 
@@ -624,6 +677,51 @@ Each listing is created with:
   row
 - A failed row does not affect other rows
 - Orphaned images (from partially failed rows) are harmless in Sharetribe
+- A row that fails after its listing exists is never left published and malformed — see below
+
+### Row idempotency and recovery
+
+`server/api/bulk-import/rowIdempotency.js`. The per-row timeout (`ROW_TIMEOUT_MS`, 90 s) stops the
+worker waiting but cannot cancel the Integration API request, which may still create the listing.
+Without idempotency, re-uploading after a timeout duplicated it; and because listings used to be
+created published before stock was set, a stock failure left a published listing without stock.
+
+- **Row key.** `assignRowKeys` hashes everything a row writes — author, title, description, price,
+  currency, stock, publish flag, shipping/pickup, location, `publicData` (key order ignored) and the
+  **bytes** of each image (not the filename) — plus its occurrence number among identical rows in
+  the file (`<hash>-0`, `<hash>-1`). Identical rows in one file therefore still create one listing
+  each, and the row's position in the file does not matter. The key goes into
+  `metadata.avBulkImport` (operator-only metadata, which a seller cannot edit).
+- **Lookup.** Before the first row, `findImportedListings` reads each author's listings created in
+  the last **24 hours** (`IDEMPOTENCY_WINDOW_MS`; all states, with `currentStock`) and matches keys in
+  code. It does not use a `meta_*` filter: without a search schema Sharetribe silently ignores the
+  filter instead of failing. The lookup is retried once; if it still fails — or the author has more
+  than 2,000 listings in the window — that author's rows fail with `idempotency-check-failed`
+  rather than risk duplicates.
+- **Skip or resume.** A matched listing marked `complete` is skipped (`existing`). An incomplete one
+  is finished: stock only if it has none, approve only if `pendingApproval`, close only for
+  `publish=no`, then marked complete. An incomplete listing that is already `closed` is never
+  reopened — only a seller can have closed it.
+- **Hidden until finished.** The listing is created `pendingApproval` and approved only after stock
+  is set. A failure after creation leaves it hidden; the row fails with `row-incomplete` (plus
+  `listingId` / `listingState`), and re-uploading the file finishes it. If a `publish=no` row was
+  approved but its close failed, the worker closes it again (compensation).
+- **Timeouts.** A timed-out attempt is cancelled at its next step (each API call is preceded by a
+  checkpoint), so it cannot approve a listing after the job reported the row failed. Every attempt
+  is registered in flight (per process) until its request settles; a row whose earlier attempt is
+  still running fails with `row-in-flight` instead of racing it into a duplicate. After the last
+  row, timed-out rows get a 30 s grace period (`RECONCILE_GRACE_MS`), their author is looked up again,
+  and a row whose listing now exists is finished and moved from `errors` to `results` with outcome
+  `reconciled`.
+
+Re-uploading the **same** file within 24 hours therefore finishes what is missing and skips what is
+done. To deliberately create a second, identical listing, change something in the row (e.g. stock).
+The in-flight registry and job store are in memory, so this assumes a single web process — true of
+the current Heroku and Render setups; the metadata lookup still prevents duplicates across a
+restart once the abandoned request has settled.
+
+Not yet verified against the live Integration API: creating `pendingApproval` listings and setting
+their stock before approval (the API reference documents both `create` states and `approve`).
 
 ---
 

@@ -189,7 +189,12 @@ and stamped `publicData.avPlaceholderImage: true` + `avPlaceholderImageId`; a ro
 missing from the ZIP is still an error. The flag is code-managed only — never a Console listing field
 — queryable via a CLI search schema (`flex-cli search set --key avPlaceholderImage --scope public
 --type boolean`), and cleared by `util/avPlaceholderListing.js` from `EditListingPage.duck.js` once
-the placeholder image is no longer among a listing's images. See
+the placeholder image is no longer among a listing's images. **Rows are idempotent**
+(`rowIdempotency.js`): each row's content hash is stamped into `metadata.avBulkImport`, each
+author's last 24 h of listings are matched by key before any row runs, and a re-upload skips
+finished rows and resumes half-done ones. Listings are created `pendingApproval` and approved only
+after stock is set, so a mid-row failure never leaves a published listing without stock; timed-out
+rows are cancelled at their next step and reconciled at the end of the job. See
 `docs/implementation/bulk-import.md`).
 
 ### Custom PageBuilder sections (`SectionBuilder/`)

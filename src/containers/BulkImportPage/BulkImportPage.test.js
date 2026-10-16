@@ -467,6 +467,58 @@ describe('BulkImportPage', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('shows rows already imported by an earlier upload, and the idempotency error messages', async () => {
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true, token: 'action-token' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ jobId: 'job-again', total: 5 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'job-again',
+          status: 'completed',
+          total: 5,
+          processed: 5,
+          succeeded: 0,
+          existing: 2,
+          failed: 3,
+          errors: [
+            {
+              row: 3,
+              title: 'Half done',
+              error: 'stock down',
+              code: 'row-incomplete',
+              listingId: 'l-1',
+              listingState: 'pendingApproval',
+            },
+            { row: 4, title: 'Still running', error: 'running', code: 'row-in-flight' },
+            { row: 5, title: 'Unchecked', error: 'query down', code: 'idempotency-check-failed' },
+          ],
+          results: [],
+        }),
+      });
+
+    render(<BulkImportPage />, { initialState: baseState });
+
+    const csvInput = await screen.findByLabelText('BulkImportPage.simpleCsvLabel');
+    const csvFile = new File(['fake csv content'], 'listings.csv', { type: 'text/csv' });
+    fireEvent.change(csvInput, { target: { files: [csvFile] } });
+
+    await waitFor(() => {
+      expect(screen.getByText('BulkImportPage.completed')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('BulkImportPage.existing')).toBeInTheDocument();
+    expect(screen.getByText('BulkImportPage.rowError.rowIncomplete')).toBeInTheDocument();
+    expect(screen.getByText('BulkImportPage.rowError.rowInFlight')).toBeInTheDocument();
+    expect(screen.getByText('BulkImportPage.rowError.idempotencyCheckFailed')).toBeInTheDocument();
+  });
+
   it('renders row errors translated by code/status, with a raw code hint', async () => {
     global.fetch
       .mockResolvedValueOnce({

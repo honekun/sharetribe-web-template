@@ -17,12 +17,23 @@ jest.mock('../../api-util/listingMinimumPrice', () => ({
   resolveListingMinimumPrice: jest.fn(() => Promise.resolve(2000)),
 }));
 
+jest.mock('./publicDataKeys', () => {
+  const actual = jest.requireActual('./publicDataKeys');
+  return {
+    ...actual,
+    resolveAllowedPublicDataKeys: jest.fn(() =>
+      Promise.resolve(new Set(actual.TEMPLATE_PUBLIC_DATA_KEYS))
+    ),
+  };
+});
+
 const { processImportJob } = require('./importWorker');
 const { extractZip } = require('./zipExtractor');
 const { parseCsv, validateRows } = require('./csvParser');
 const { createJob, getJob, _test: jobStoreTest } = require('./jobStore');
 const { getSdk } = require('../../api-util/sdk');
 const { resolveListingMinimumPrice } = require('../../api-util/listingMinimumPrice');
+const { resolveAllowedPublicDataKeys } = require('./publicDataKeys');
 const router = require('./index');
 const { _test: authTest } = require('./auth');
 const { _test: rateLimiterTest } = require('./rateLimiter');
@@ -147,6 +158,51 @@ describe('bulk import router', () => {
       'Fila 1: "price" debe ser al menos $500.00, se recibió "450.00".',
     ]);
     expect(processImportJob).not.toHaveBeenCalled();
+  });
+
+  it('rejects a CSV that tries to set a system-owned publicData key', async () => {
+    const sdk = { assetsByAlias: jest.fn() };
+    getSdk.mockReturnValue(sdk);
+    const csv = Buffer.from(
+      [
+        'title,description,price,pub_transactionProcessAlias',
+        '"Dress","Nice","450.00","default-inquiry/release-1"',
+      ].join('\n')
+    );
+    extractZip.mockReturnValue({ csvBuffer: csv, imageMap: new Map() });
+    const req = {
+      file: { buffer: Buffer.from('fake-zip') },
+      bulkImportUser: { userId: 'regular-user-id', isAdmin: false },
+    };
+    const res = createMockRes();
+
+    await startHandler(req, res);
+
+    expect(resolveAllowedPublicDataKeys).toHaveBeenCalledWith(sdk);
+    expect(res.statusCode).toBe(400);
+    expect(res.body.details).toEqual([
+      'La columna "pub_transactionProcessAlias" la asigna el sistema y no se puede importar. Elimina la columna.',
+    ]);
+    expect(processImportJob).not.toHaveBeenCalled();
+  });
+
+  it('accepts a publicData column for a field configured in Console', async () => {
+    resolveAllowedPublicDataKeys.mockResolvedValueOnce(new Set(['brand', 'era']));
+    const csv = Buffer.from(
+      ['title,description,price,pub_era', '"Dress","Nice","450.00","80s"'].join('\n')
+    );
+    extractZip.mockReturnValue({ csvBuffer: csv, imageMap: new Map() });
+    const req = {
+      file: { buffer: Buffer.from('fake-zip') },
+      bulkImportUser: { userId: 'regular-user-id', isAdmin: false },
+    };
+    const res = createMockRes();
+
+    await startHandler(req, res);
+
+    expect(res.statusCode).toBe(202);
+    const [, rows] = processImportJob.mock.calls[0];
+    expect(rows[0].publicData.era).toBe('80s');
   });
 
   describe('bare CSV upload', () => {

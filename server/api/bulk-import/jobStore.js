@@ -38,6 +38,8 @@ function createJob(total, ownerId = null) {
     total,
     processed: 0,
     succeeded: 0,
+    // Rows already imported by an earlier upload, skipped (see rowIdempotency).
+    existing: 0,
     failed: 0,
     errors: [],
     results: [],

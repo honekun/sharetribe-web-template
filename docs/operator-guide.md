@@ -980,8 +980,8 @@ The Hot List is a curated carousel of featured listings. Any published listing t
 3. In the Extended Data / Public Data section, find the `tags` field and add `hot-list`.
 4. Save.
 
-**Via the bulk import tool:** Add `hot-list` to the `pub_tags` column for any listing row in your
-CSV.
+**Not via the bulk import tool.** Bulk import no longer sets tags: a `pub_tags` column in the CSV is
+ignored (the rest of the file still imports). Tag imported listings in Console afterwards.
 
 ### Removing a listing from the Hot List
 
@@ -1035,6 +1035,12 @@ rejected.
 
 - You can only run **one import at a time** per account, and the server runs at most **3 imports at
   once** across all users — if it's busy you'll be asked to try again shortly.
+- **Uploading the same file again is safe.** Within 24 hours, rows that were already imported are
+  skipped (the page shows "already imported (skipped)") and listings left unfinished are completed
+  — nothing is duplicated. So when rows fail with a timeout or "created but not finished", just
+  upload the same file again. A listing is only made visible once it is fully set up; until then it
+  shows as pending in Manage listings. To create a second identical listing on purpose, change
+  something in its row (for example the stock).
 
 ---
 
@@ -1185,10 +1191,16 @@ the listing. (The legacy `pd_` prefix is still accepted.)
 | `pub_estilo`         | Yes      | One or more style option keys, pipe-separated                                                                       |
 | `pub_temporada`      | No       | Season slug (e.g. `primavera`, `verano`, `otono`, `invierno`). Saved as data but not currently a searchable filter. |
 | `pub_originalPrice`  | No       | The original retail price in pesos (e.g. `650.00`). Must be higher than `price` to show as a strike-through.        |
-| `pub_tags`           | No       | Pipe-separated tags (e.g. `hot-list` or `hot-list\|nueva-llegada`)                                                  |
 
-> **Multi-value fields** (`pub_color`, `pub_all_sizes`, `pub_estilo`, `pub_tags`): separate multiple
+> **Multi-value fields** (`pub_color`, `pub_all_sizes`, `pub_estilo`): separate multiple
 > values with a pipe character `|`. A single value is also valid. Example: `azul|negro|crema`
+
+> **Only listing fields are accepted.** A `pub_` column must be one of the columns above or a
+> listing field configured in Console (Build → Listing fields). Any other `pub_` column with a value
+> rejects the whole file — including columns the system sets itself, such as `pub_listingType`,
+> `pub_transactionProcessAlias`, `pub_unitType` or `pub_avPackageSize`. Delete the column (or fix a
+> misspelled name) and upload again. An empty extra column is ignored, and so is `pub_tags` —
+> curated tags such as `hot-list` are set in Console only.
 
 ---
 

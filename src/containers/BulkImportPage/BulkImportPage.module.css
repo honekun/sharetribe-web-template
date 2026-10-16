@@ -354,7 +354,8 @@
 }
 
 .successCount,
-.errorCount {
+.errorCount,
+.existingCount {
   font-size: 18px;
   font-weight: var(--fontWeightSemiBold);
 }
@@ -365,6 +366,10 @@
 
 .errorCount {
   color: var(--avPurple);
+}
+
+.existingCount {
+  color: var(--colorBlack);
 }
 
 .completedBadge {
