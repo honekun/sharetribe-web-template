@@ -62,9 +62,9 @@ checks were never completed in any hosted Test environment.
       (2026-10-15).
 - [x] Configure the Test-phase Brevo values on Render. Welcome email enabled, nothing missing
       (2026-10-15).
-- [ ] Confirm all guarded flags are explicit. Readiness shows all six set (2026-10-15); confirm
-      `ESHIP_LABEL_AUTOBUY=false`, and that tracking emails (`true` on Render) have their Test
-      prerequisites.
+- [x] Confirm all guarded flags are explicit. Readiness shows all six set (2026-10-15).
+      `ESHIP_LABEL_AUTOBUY` is off (paid orders got no label until **Generar guía**), and tracking
+      emails were switched off on 2026-10-16 (`eshipTracking.enabled: false`, webhook `404`).
 - [ ] Confirm `SERVER_SHARETRIBE_TRUST_PROXY` is a hop count, not `true`.
 - [ ] Confirm exactly one web process, per [scaling constraints](scaling.md).
 - [x] `GET /api/notifications/readiness` returns `200` and one process owns poller leadership.
@@ -123,8 +123,10 @@ checks were never completed in any hosted Test environment.
 
 Other Render results (2026-10-16): `/my-balance` total earnings equal the sum of completed net
 amounts; bag, favorites, `/my-sales`, `/my-purchases`, shipping origin, payout, `/l/new`, and
-`/admin/bulk-import` load signed in; the Brevo contact-form iframe on `/p/contacto` loads sandboxed
-from Sibforms under the enforcing CSP, and a submission (2026-10-16, sender
+`/admin/bulk-import` load signed in; bag sign-out (#118, bundle `main.20acea97.js`): a guest bag
+survives a reload and is kept on sign-in with the signed-in user recorded as owner, and signing out
+empties it (`/bag` shows the empty state); the Brevo contact-form iframe on `/p/contacto` loads
+sandboxed from Sibforms under the enforcing CSP, and a submission (2026-10-16, sender
 `hola+prueba-render@archivovintach.com`) showed Brevo's success message in full. Webhook: no secret,
 a `?secret=` query, and a wrong header all return `401`. Instagram: the feed returned
 `503 token_expired` because Render's `INSTAGRAM_ACCESS_TOKEN` seed had expired; the stored token row

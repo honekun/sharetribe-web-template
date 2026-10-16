@@ -30,15 +30,14 @@ dashboards), _Dev_ (repository), _Business_ (decision or sign-off).
 
 ### B. Render Test gate — must pass before Live sign-off
 
-| #   | Item                                                                                                                                                                                                                                                                                                                                               | Owner   | Where        |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------------ |
-| B1  | Functional run: SSR/search/filters, signup, verification, login, both languages; seller payout onboarding, shipping origin, listing create/publish, welcome popup.                                                                                                                                                                                 | Ops/Dev | checklist §2 |
-| B2  | `Contactar AV` for an `especial` item (quote, purchase, breakdown, label, and missing origin passed 2026-10-16).                                                                                                                                                                                                                                   | Ops/Dev | §5 below     |
-| B4  | Restart Render: sessions survive, poller resumes from its cursor, no duplicate sends.                                                                                                                                                                                                                                                              | Ops     | checklist §2 |
-| B5  | Tracking emails are `true` on Render: point the eShip **QA** dashboard webhook at Render with the `X-AV-Webhook-Secret` header, or set the flag back to `false`. The `?secret=` URL form is rejected since 2026-10-15: if the dashboard URL ever carried it, rotate `ESHIP_WEBHOOK_SECRET` and confirm a real checkpoint returns `202`, not `401`. | Ops     | §7 below     |
-| B6  | `SERVER_SHARETRIBE_TRUST_PROXY` on Render is a hop count, not `true` (`ESHIP_LABEL_AUTOBUY` is off: paid orders got no label until **Generar guía**, 2026-10-16).                                                                                                                                                                                  | Ops     | §2.1 below   |
-| B7  | Check one built-in Test email's links (Test Console's Marketplace URL can't point at Render).                                                                                                                                                                                                                                                      | Ops     | checklist §2 |
-| B8  | Note the Render Postgres expiry date (free tier, 30 days) and plan its renewal.                                                                                                                                                                                                                                                                    | Ops     | §7 below     |
+| #   | Item                                                                                                                                                               | Owner   | Where        |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | ------------ |
+| B1  | Functional run: SSR/search/filters, signup, verification, login, both languages; seller payout onboarding, shipping origin, listing create/publish, welcome popup. | Ops/Dev | checklist §2 |
+| B2  | `Contactar AV` for an `especial` item (quote, purchase, breakdown, label, and missing origin passed 2026-10-16).                                                   | Ops/Dev | §5 below     |
+| B4  | Restart Render: sessions survive, poller resumes from its cursor, no duplicate sends.                                                                              | Ops     | checklist §2 |
+| B6  | `SERVER_SHARETRIBE_TRUST_PROXY` on Render is a hop count, not `true` (`ESHIP_LABEL_AUTOBUY` is off: paid orders got no label until **Generar guía**, 2026-10-16).  | Ops     | §2.1 below   |
+| B7  | Check one built-in Test email's links (Test Console's Marketplace URL can't point at Render).                                                                      | Ops     | checklist §2 |
+| B8  | Note the Render Postgres expiry date (free tier, 30 days) and plan its renewal.                                                                                    | Ops     | §7 below     |
 
 ### C. Live content and configuration (Console) — fix before announcing
 
@@ -427,11 +426,13 @@ Remaining:
       readiness returns `200` with `migrated: true`, one poller owner, and clean polls (2026-10-15).
       A free Render Postgres expires again after 30 days; record its expiry and repeat this before
       then.
-- [ ] Render has `AV_ESHIP_TRACKING_EMAILS_ENABLED=true` (readiness, 2026-10-15). Confirm its
-      prerequisites in Test: the hosted `default-purchase` version with the `eship-picked-up-*`
-      transitions and Email texts, and the eShip **QA** dashboard webhook pointed at
+- [x] Render's tracking emails are off: `AV_ESHIP_TRACKING_EMAILS_ENABLED=false` since 2026-10-16
+      (readiness `eshipTracking.enabled: false`; the webhook returns `404`). To test them later,
+      first point the eShip **QA** dashboard webhook at
       `https://archivo-vintach.onrender.com/api/shipping/eship-webhook` with the
-      `X-AV-Webhook-Secret` header. Otherwise set it back to `false`.
+      `X-AV-Webhook-Secret` header (rotate `ESHIP_WEBHOOK_SECRET` if the URL ever carried
+      `?secret=`), and confirm the hosted `default-purchase` has the `eship-picked-up-*` transitions
+      and Email texts; then set the flag to `true`.
 - [ ] Run the Test gate in full on **Render** (release checklist §2). It was never completed on
       Heroku: the Stripe test purchase with a QA quote, **Generar guía → Descargar guía**,
       `Contactar AV`, a formal restart/no-duplicate check, and the remaining functional checks are
