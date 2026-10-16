@@ -97,6 +97,7 @@
   "InstagramFeed.pause": "Pausar",
   "InstagramFeed.play": "Reproducir",
   "BrandFilter.searchPlaceholder": "Buscar marca…",
+  "BrandFilter.noResults": "Sin resultados",
   "SearchPage.groupedSizesLabel": "Talla",
   "EditListingPricingForm.originalPrice": "Precio Original (opcional)",
   "EditListingPricingForm.originalPricePlaceholder": "Agrega el precio original…",

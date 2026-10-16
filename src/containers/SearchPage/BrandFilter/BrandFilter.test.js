@@ -27,7 +27,12 @@ const renderFilter = (props = {}) => {
       onSubmit={onSubmit}
       {...props}
     />,
-    { messages: { 'BrandFilter.searchPlaceholder': 'Search brands' } }
+    {
+      messages: {
+        'BrandFilter.searchPlaceholder': 'Search brands',
+        'BrandFilter.noResults': 'No results',
+      },
+    }
   );
   return { ...utils, onSubmit };
 };
@@ -54,7 +59,7 @@ describe('BrandFilter', () => {
 
     await user.type(screen.getByPlaceholderText('Search brands'), 'gucci');
 
-    expect(screen.getByText('Sin resultados')).toBeInTheDocument();
+    expect(screen.getByText('No results')).toBeInTheDocument();
   });
 
   it('pre-checks options from the query param', () => {

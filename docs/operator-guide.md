@@ -1926,6 +1926,7 @@ missing or blank value to hide that optional element. Do not blank a standard ke
 | Area         | Key                             | English default | Spanish default | Operator note                              |
 | ------------ | ------------------------------- | --------------- | --------------- | ------------------------------------------ |
 | Brand filter | `BrandFilter.searchPlaceholder` | `Search brand…` | `Buscar marca…` | Placeholder inside the brand search input. |
+| Brand filter | `BrandFilter.noResults` | `No results` | `Sin resultados` | Shown when the brand search matches nothing. |
 | Size filter  | `SearchPage.groupedSizesLabel`  | `Size`          | `Talla`         | Sidebar grouped size filter label.         |
 
 ### Navigation
