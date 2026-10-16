@@ -149,6 +149,11 @@ async function findImportedListings(sdk, authorId, { now = Date.now() } = {}) {
 // Rows whose processing has not settled yet, across all jobs in this process:
 // importKey -> Promise. A timed-out row stays here until its abandoned request
 // finishes, so a re-upload cannot race it into a duplicate.
+//
+// Process-local by design: correct for the supported single web process. With
+// more than one, two processes can both miss the metadata lookup and create the
+// same row. A durable atomic claim per importKey is required before scaling
+// web past 1 — see docs/pending/scaling.md.
 const inFlight = new Map();
 
 function trackInFlight(key, promise) {

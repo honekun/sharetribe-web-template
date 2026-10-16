@@ -108,6 +108,8 @@ const calculateContainerWidth = (containerRefTarget, parentWidth) => {
  * @param {*} props contains currentPage, customLinks, intl, and hasClientSideContentReady
  * @returns component to be placed inside TopbarDesktop
  */
+const hasVisibleText = linkConfig => !!linkConfig?.text?.trim();
+
 const CustomLinksMenu = ({
   currentPage,
   customLinks = [],
@@ -122,9 +124,12 @@ const CustomLinksMenu = ({
   const [moreLabelWidth, setMoreLabelWidth] = useState(0);
   const [localTopbarData, setLocalTopbarData] = useState(null);
   const [localDesignUsers, setLocalDesignUsers] = useState(null);
+  // AV: an empty label hides a hosted link. Drop those here rather than at
+  // render time, so PriorityLinks' measured nodes line up 1:1 with `links` and
+  // the overflow menu never lists a blank entry.
   const [links, setLinks] = useState([
     /// ...createListingLinkConfigMaybe(intl, showCreateListingsLink),
-    ...customLinks,
+    ...customLinks.filter(hasVisibleText),
   ]);
 
   const [layoutData, setLayoutData] = useState({
@@ -291,7 +296,12 @@ const CustomLinksMenu = ({
         wrapperStyle={wrapperStyle}
       />
 
-      <PriorityLinks links={links} priorityLinks={priorityLinks} setLinks={setLinks} />
+      <PriorityLinks
+        links={links}
+        priorityLinks={priorityLinks}
+        setLinks={setLinks}
+        containerWidth={containerWidth}
+      />
 
       {showLinksMenu ? (
         <LinksMenu

@@ -49,8 +49,9 @@ Last reviewed: 2026-10-15 (after the Live cutover).
   process updates.
 - [eShip policy and reconciliation](eship.md) — decide purchased-label cancellation/refund cost
   ownership and reconcile IVA before considering automatic label purchase.
-- [Bulk-import horizontal scaling](scaling.md) — shared coordination or a durable worker, only when
-  more than one web process or restart-safe imports are required.
+- [Bulk-import horizontal scaling](scaling.md) — shared coordination or a durable worker, plus a
+  durable atomic per-row claim for idempotency, only when more than one web process or
+  restart-safe imports are required.
 
 ## Completion rule
 

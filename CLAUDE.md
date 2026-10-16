@@ -182,8 +182,8 @@ FieldSearchableSelect): clear (×) + toggle (▼/▲) in `.controls` flex group,
 (brand/sizes/condition/colors/category/género) as `/s?pub_*` links + description excerpt with show
 more/less; rendered via OrderPanel `detailsSlot`.
 
-**Custom pages:** `MakeOfferPage`, `RequestQuotePage`, `ManageAccountPage` (negotiation);
-`MyPurchasesPage`, `MySalesPage`, `MyBalancePage`; `BulkImportPage` (`/admin/bulk-import`, CSV+image
+**Custom pages:** `MyPurchasesPage`, `MySalesPage`, `MyBalancePage`; `BulkImportPage`
+(`/admin/bulk-import`, CSV+image
 import open to any signed-in user — listings author to the current user;
 `BULK_IMPORT_OPERATOR_EMAILS` flags "admin" users who may add a `user_id` column to author for
 others. Tiered limits + per-user hourly rate limit + magic-byte image sniffing; blue CTA on
@@ -203,6 +203,11 @@ finished rows and resumes half-done ones. Listings are created `pendingApproval`
 after stock is set, so a mid-row failure never leaves a published listing without stock; timed-out
 rows are cancelled at their next step and reconciled at the end of the job. See
 `docs/implementation/bulk-import.md`).
+
+`MakeOfferPage`, `RequestQuotePage` and `ManageAccountPage` (negotiation, account deletion) are
+**upstream** pages, not AV ones: only their `DetailsSideCard`/`MobileListingImage` image boxes carry AV
+code (and `ManageAccountPage.test.js` is AV-added). The AV testing policy and accessibility fixes
+there belong upstream — e.g. `DeleteAccountForm`'s `<span role="button">` reset/resend controls.
 
 ### Custom PageBuilder sections (`SectionBuilder/`)
 
@@ -301,6 +306,10 @@ AV keeps upstream files unmodified via extension architecture in `src/extensions
   registry, never inline.
 - `pageBuilder/av/` — registers `avHero2`/`avHero3`/`avVideo` for CMSPage; `sectionStyles.js`
   (`parseSectionCustomOptions`, `parseSectionCtaClass`); `constants.js`; `transform.js`.
+- `checkout/checkoutSession.js` — `persistCheckoutSeed` writes the checkout seed to CheckoutPage's
+  sessionStorage key for **every** user before navigating (AVListingPageCarousel, bag checkout), so a
+  ChunkLoadError reload or SSO redirect before CheckoutPage mounts can resume. Stopgap until upstream
+  `52d708460` (CheckoutPage.duck `setInitialValues` persists itself) is synced; then remove it.
 - `accountNav/` (`getAccountSettingsTabs()`), `topbar/` (custom link config +
   `topbarDataProvider.js`), `searchFilters/`.
 - `topbar/topbarDataProvider.js` — single source for the topbar's category-dropdown config and
@@ -565,6 +574,7 @@ On each sync, diff the upstream original against its fork commit and hand-apply 
 | ------------------------------------------------------------ | ----------------------------------------- | --------------------- |
 | `PageBuilder/BlockBuilder/AVBlockDefault/AVBlockDefaultView` | `BlockBuilder/BlockDefault/BlockDefault` | `832f8d66f` (v12.1.0) |
 | `PageBuilder/BlockBuilder/AVBlockFooter/AVBlockFooter`       | `BlockBuilder/BlockFooter/BlockFooter`   | `832f8d66f` (v12.1.0) |
+| `TopbarDesktop/AVLinksMenu/` (`AVCustomLinksMenu`, `AVPriorityLinks`, `AVLinksMenu`) | `TopbarDesktop/CustomLinksMenu/` | `832f8d66f` (v12.1.0) |
 
 The "forked from" SHA is a historical fact — it does not go stale. To see what upstream has changed
 in the original since the fork, and hand-apply what matters:
@@ -573,6 +583,10 @@ in the original since the fork, and hand-apply what matters:
 git fetch upstream
 git diff 832f8d66f upstream/main -- src/containers/PageBuilder/BlockBuilder/BlockDefault/
 ```
+
+`AVLinksMenu` already carries upstream's `be151ebbd` (PriorityLinks remeasures after a mobile→desktop
+resize instead of looping on zero widths; ported 2026-10-16). `9b3de2271` and `33f2a1ec2` do not
+apply: they manage the create-listing priority link, which the AV menu never adds.
 
 ### Watchlist — high merge-conflict risk
 

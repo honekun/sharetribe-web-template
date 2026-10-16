@@ -8,6 +8,11 @@ import { FormattedMessage } from '../../util/reactIntl';
 import { LISTING_STATE_CLOSED, propTypes } from '../../util/types';
 import { OFFER, REQUEST } from '../../transactions/transaction';
 import { useListingEngagement } from '../../extensions/notifications/useListingEngagement';
+import {
+  isCheckoutPageSetInitialValues,
+  persistCheckoutSeed,
+} from '../../extensions/checkout/checkoutSession';
+import { useRouteConfiguration } from '../../context/routeConfigurationContext';
 
 // Global ducks (for Redux actions and thunks)
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
@@ -421,6 +426,7 @@ export const ListingPageComponent = props => {
 const ListingPage = props => {
   const dispatch = useDispatch();
   const store = useStore();
+  const routes = useRouteConfiguration();
 
   const { isAuthenticated } = useSelector(state => state.auth);
   const {
@@ -463,10 +469,16 @@ const ListingPage = props => {
       dispatch(manageDisableScrolling(componentId, disableScrolling)),
     [dispatch]
   );
+  // AV: checkout seeds are persisted for every user (see persistCheckoutSeed);
+  // the same callback also seeds non-checkout state such as the inquiry modal.
   const callSetInitialValues = useCallback(
-    (setInitialValuesFn, values, saveToSessionStorage) =>
-      dispatch(setInitialValuesFn(values, saveToSessionStorage)),
-    [dispatch]
+    (setInitialValuesFn, values, saveToSessionStorage) => {
+      if (isCheckoutPageSetInitialValues(setInitialValuesFn, routes)) {
+        persistCheckoutSeed(values);
+      }
+      return dispatch(setInitialValuesFn(values, saveToSessionStorage));
+    },
+    [dispatch, routes]
   );
   const onFetchTransactionLineItems = useCallback(
     params => dispatch(fetchTransactionLineItems(params)),
