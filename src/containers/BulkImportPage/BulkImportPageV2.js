@@ -32,6 +32,9 @@ const ROW_ERROR_CODE_KEYS = {
   'image-invalid-content': 'BulkImportPage.rowError.imageInvalidContent',
   'user-not-found': 'BulkImportPage.rowError.userNotFound',
   'row-timeout': 'BulkImportPage.rowError.rowTimeout',
+  'row-incomplete': 'BulkImportPage.rowError.rowIncomplete',
+  'row-in-flight': 'BulkImportPage.rowError.rowInFlight',
+  'idempotency-check-failed': 'BulkImportPage.rowError.idempotencyCheckFailed',
   'no-author': 'BulkImportPage.rowError.noAuthor',
   // The bundled placeholder used for image-less rows is missing or corrupt.
   'placeholder-missing': 'BulkImportPage.rowError.placeholderUnavailable',

@@ -2,6 +2,12 @@
 
 const { parse } = require('csv-parse/sync');
 
+const {
+  IGNORED_PUBLIC_DATA_KEYS,
+  SYSTEM_PUBLIC_DATA_KEYS,
+  TEMPLATE_PUBLIC_DATA_KEYS,
+} = require('./publicDataKeys');
+
 // Spanish column names accepted from the Archivo Vintach templates. Keys are
 // trimmed header strings; values are canonical English column names. Two header
 // dialects are supported:
@@ -161,6 +167,11 @@ function parseCsv(buffer) {
  * marketplace minimum listing price, the same floor the listing form enforces.
  * The caller resolves it from Console (api-util/listingMinimumPrice).
  *
+ * allowedPublicDataKeys (default: the template columns) is the set of publicData
+ * keys a `pub_*`/`pd_*` column may write. The caller resolves it from Console
+ * (publicDataKeys.resolveAllowedPublicDataKeys). A system key such as
+ * `listingType` is rejected even if the set contains it.
+ *
  * Returns { valid: boolean, rows: Array, errors: Array<string> }
  */
 function validateRows(rows, imageMap, authorOptions = {}) {
@@ -170,6 +181,7 @@ function validateRows(rows, imageMap, authorOptions = {}) {
     headerMap = {},
     ignoreImages = false,
     minimumPriceSubunits = 0,
+    allowedPublicDataKeys = TEMPLATE_PUBLIC_DATA_KEYS,
   } = authorOptions;
   // Show the operator the actual CSV column header they typed rather than the
   // internal canonical key.
@@ -191,6 +203,34 @@ function validateRows(rows, imageMap, authorOptions = {}) {
   for (const col of REQUIRED_COLUMNS) {
     if (!columns.includes(col)) {
       errors.push(`Falta la columna obligatoria: "${col}".`);
+    }
+  }
+  if (errors.length > 0) {
+    return { valid: false, rows: [], errors };
+  }
+
+  // publicData column policy, checked once per column. A column that is empty in
+  // every row writes nothing, so it is ignored like any other empty column.
+  for (const column of new Set(rows.flatMap(r => Object.keys(r)))) {
+    const prefix = PUBLIC_DATA_PREFIXES.find(p => column.startsWith(p));
+    if (!prefix) continue;
+    const pdKey = column.slice(prefix.length);
+    if (RESERVED_PD_KEYS.has(pdKey)) continue; // reported per row below
+    if (IGNORED_PUBLIC_DATA_KEYS.has(pdKey)) continue; // dropped per row below
+    const hasValue = rows.some(r => r[column] != null && String(r[column]).trim() !== '');
+    if (!hasValue) continue;
+    if (SYSTEM_PUBLIC_DATA_KEYS.has(pdKey)) {
+      errors.push(
+        `La columna "${label(
+          column
+        )}" la asigna el sistema y no se puede importar. Elimina la columna.`
+      );
+    } else if (!allowedPublicDataKeys.has(pdKey)) {
+      errors.push(
+        `La columna "${label(
+          column
+        )}" no corresponde a ningún campo de anuncio configurado. Elimina la columna o revisa el nombre.`
+      );
     }
   }
   if (errors.length > 0) {
@@ -288,6 +328,7 @@ function validateRows(rows, imageMap, authorOptions = {}) {
           );
           continue;
         }
+        if (IGNORED_PUBLIC_DATA_KEYS.has(pdKey)) continue; // e.g. pub_tags — no longer imported
         const trimmed = value.trim();
         if (trimmed.includes('|')) {
           // Pipe-separated → always an array

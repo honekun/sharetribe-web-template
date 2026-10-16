@@ -545,6 +545,18 @@ describe('validateRows', () => {
     expect(result.rows[0].publicData.estilo).toEqual(['vintage']);
   });
 
+  it.each(['pub_tags', 'pd_tags'])('ignores the %s column without an error', column => {
+    const result = validateRows(
+      [validRow({ [column]: 'hot-list|ofertas', pub_brand: 'zara' })],
+      imageMap,
+      // Even when Console exposes `tags` as a public field.
+      { allowedPublicDataKeys: new Set(['brand', 'tags']) }
+    );
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0].publicData).toEqual({ brand: 'zara' });
+  });
+
   it('pd_all_sizes single value is stored as an array', () => {
     const result = validateRows(
       [
@@ -585,9 +597,97 @@ describe('validateRows', () => {
           image_horizontal: 'front.jpg',
         }),
       ],
-      imageMap
+      imageMap,
+      { allowedPublicDataKeys: new Set(['era']) }
     );
     expect(result.rows[0].publicData.era).toBe('80s');
+  });
+
+  // --- publicData key policy ---
+
+  it.each([
+    'pub_listingType',
+    'pd_transactionProcessAlias',
+    'pub_unitType',
+    'pub_shippingEnabled',
+    'pub_pickupEnabled',
+    'pub_location',
+    'pub_imageSlots',
+    'pub_avPackageSize',
+    'pub_avPlaceholderImage',
+  ])('rejects the system-owned column %s', column => {
+    const result = validateRows([validRow({ [column]: 'x' })], imageMap, {
+      // Even an allowlist that names the key does not open it up.
+      allowedPublicDataKeys: new Set([column.replace(/^(pub_|pd_)/, '')]),
+    });
+    expect(result.valid).toBe(false);
+    expect(result.rows).toEqual([]);
+    expect(result.errors).toEqual([
+      `La columna "${column}" la asigna el sistema y no se puede importar. Elimina la columna.`,
+    ]);
+  });
+
+  it('rejects a publicData column that is not a configured listing field', () => {
+    const result = validateRows([validRow({ pub_era: '80s' })], imageMap);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual([
+      'La columna "pub_era" no corresponde a ningún campo de anuncio configurado. Elimina la columna o revisa el nombre.',
+    ]);
+  });
+
+  it('reports a bad column once, not once per row', () => {
+    const rows = [validRow({ pub_listingType: 'a' }), validRow({ pub_listingType: 'b' })];
+    const result = validateRows(rows, imageMap);
+    expect(result.errors).toHaveLength(1);
+  });
+
+  it('checks columns that only appear in a later row', () => {
+    const rows = [
+      validRow(),
+      validRow({ pub_transactionProcessAlias: 'default-inquiry/release-1' }),
+    ];
+    const result = validateRows(rows, imageMap);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toContain('pub_transactionProcessAlias');
+  });
+
+  it('ignores an unknown or system column that is empty in every row', () => {
+    const result = validateRows([validRow({ pub_listingType: '', pub_era: '  ' })], imageMap);
+    expect(result.valid).toBe(true);
+    expect(result.rows[0].publicData).toEqual({});
+  });
+
+  it('accepts every template column by default', () => {
+    const result = validateRows(
+      [
+        validRow({
+          pub_brand: 'zara',
+          pub_categoryLevel1: 'ropa',
+          pub_categoryLevel2: 'ropa-vestidos',
+          pub_categoryLevel3: 'ropa-vestidos-midi',
+          pub_color: 'rosa',
+          pub_all_sizes: 's',
+          pub_genero: 'mujer',
+          pub_estado: 'como-nuevo',
+          pub_estilo: 'vintage',
+          pub_temporada: 'otono',
+          pub_originalPrice: '999',
+        }),
+      ],
+      imageMap
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it('rejects a system column in a Spanish-header CSV', () => {
+    const { rows, headerMap } = parseCsv(
+      buildCsv(
+        ['Título', 'Descripción', 'Precio Venta (mxn)', 'pd_listingType'],
+        ['Item', 'Desc', '100', 'free-listing']
+      )
+    );
+    const result = validateRows(rows, imageMap, { headerMap });
+    expect(result.errors[0]).toContain('"pd_listingType"');
   });
 
   it.each(['pd___proto__', 'pd_constructor', 'pd_prototype'])(

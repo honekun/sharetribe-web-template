@@ -24,6 +24,9 @@ const ROW_ERROR_CODE_KEYS = {
   'image-invalid-content': 'BulkImportPage.rowError.imageInvalidContent',
   'user-not-found': 'BulkImportPage.rowError.userNotFound',
   'row-timeout': 'BulkImportPage.rowError.rowTimeout',
+  'row-incomplete': 'BulkImportPage.rowError.rowIncomplete',
+  'row-in-flight': 'BulkImportPage.rowError.rowInFlight',
+  'idempotency-check-failed': 'BulkImportPage.rowError.idempotencyCheckFailed',
   'no-author': 'BulkImportPage.rowError.noAuthor',
   'placeholder-missing': 'BulkImportPage.rowError.placeholderUnavailable',
   'placeholder-invalid': 'BulkImportPage.rowError.placeholderUnavailable',
@@ -437,6 +440,14 @@ export const BulkImportPageComponent = props => {
                         values={{ count: jobData.failed }}
                       />
                     </span>
+                    {jobData.existing > 0 && (
+                      <span className={css.existingCount}>
+                        <FormattedMessage
+                          id="BulkImportPage.existing"
+                          values={{ count: jobData.existing }}
+                        />
+                      </span>
+                    )}
                   </div>
 
                   {status === STATUS_COMPLETED ? (

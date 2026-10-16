@@ -17,6 +17,7 @@ const { getLimits } = require('./limits');
 const { checkAndRecord } = require('./rateLimiter');
 const { getSdk } = require('../../api-util/sdk');
 const { resolveListingMinimumPrice } = require('../../api-util/listingMinimumPrice');
+const { resolveAllowedPublicDataKeys } = require('./publicDataKeys');
 
 const router = express.Router();
 
@@ -161,7 +162,13 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, async (
     // too, or it publishes listings whose sale cannot cover the provider fixed
     // fee. Resolved before the job checks below, which stay synchronous so the
     // one-job-per-user check and createJob cannot interleave with another request.
-    const minimumPriceSubunits = await resolveListingMinimumPrice(getSdk(req, res));
+    // The allowed publicData keys come from Console the same way, so a `pub_*`
+    // column can only write a configured listing field, never a system key.
+    const sdk = getSdk(req, res);
+    const [minimumPriceSubunits, allowedPublicDataKeys] = await Promise.all([
+      resolveListingMinimumPrice(sdk),
+      resolveAllowedPublicDataKeys(sdk),
+    ]);
 
     // Validate rows against imageMap. Listings author to the signed-in user;
     // admins (req.bulkImportUser.isAdmin) may override per row via `user_id`.
@@ -174,6 +181,7 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, async (
       // dropped rather than reported as missing.
       ignoreImages: isCsvUpload,
       minimumPriceSubunits,
+      allowedPublicDataKeys,
     });
     if (!validation.valid) {
       return res.status(400).json({
@@ -245,6 +253,7 @@ router.get('/status/:jobId', requireUserSession, requireActionToken, (req, res) 
     total: job.total,
     processed: job.processed,
     succeeded: job.succeeded,
+    existing: job.existing || 0,
     failed: job.failed,
     errors: job.errors,
     results: job.results,
