@@ -73,8 +73,11 @@ checks were never completed in any hosted Test environment.
 - [x] `GET /api/notifications/readiness` returns `200` and one process owns poller leadership.
       (2026-10-15)
 - [x] `GET /api/brevo/health` returns `200` for enabled Brevo features. (2026-10-15)
-- [ ] Check one built-in Sharetribe Test email: Console's Test Marketplace URL can't be edited, so
+- [x] Check one built-in Sharetribe Test email: Console's Test Marketplace URL can't be edited, so
       its links may point at the `…mysharetribe-test.com` address rather than Render. Record which.
+      Checked 2026-10-16: Test emails link to `https://archivovintach-test.mysharetribe-test.com`,
+      not Render. Accepted as a Test-only limit; when testing from an email, open the same path on
+      `https://archivo-vintach.onrender.com` instead.
 - [x] Verify SSR, search/filters, signup, email verification, and login, in Spanish (the only
       configured locale). Done 2026-10-16: SSR of the landing, CMS, legal, search, and auth routes
       (`200`); search 276 results, with keyword, `genero`, `brand`, `all_sizes`, `color`, and

@@ -28,10 +28,9 @@ dashboards), _Dev_ (repository), _Business_ (decision or sign-off).
 
 ### B. Render Test gate — must pass before Live sign-off
 
-| #   | Item                                                                                          | Owner | Where        |
-| --- | --------------------------------------------------------------------------------------------- | ----- | ------------ |
-| B7  | Check one built-in Test email's links (Test Console's Marketplace URL can't point at Render). | Ops   | checklist §2 |
-| B8  | Note the Render Postgres expiry date (free tier, 30 days) and plan its renewal.               | Ops   | §7 below     |
+| #   | Item                                                                            | Owner | Where    |
+| --- | ------------------------------------------------------------------------------- | ----- | -------- |
+| B8  | Note the Render Postgres expiry date (free tier, 30 days) and plan its renewal. | Ops   | §7 below |
 
 ### C. Live content and configuration (Console) — fix before announcing
 

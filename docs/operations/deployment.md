@@ -41,9 +41,9 @@ With custom code, the marketplace address is not a Console setting:
   and the non-canonical-host noindex guard. It is a `REACT_APP_*` value, so a change needs a full
   rebuild.
 - **Console's Marketplace URL can't be edited in Sharetribe Test.** Sharetribe fixes it at the
-  `…mysharetribe-test.com` address, so the Test Console URL cannot point at Render. Links in
-  Sharetribe's built-in Test emails may therefore use that address. Check one during the Render
-  gate.
+  `…mysharetribe-test.com` address, so the Test Console URL cannot point at Render. Sharetribe's
+  built-in Test emails link to `https://archivovintach-test.mysharetribe-test.com` (confirmed
+  2026-10-16; accepted as a Test-only limit). To follow one, open the same path on Render.
 - **Live:** confirm that Sharetribe's built-in Live emails link to `https://www.archivovintach.com`
   (release checklist §5).
 
