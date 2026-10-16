@@ -189,9 +189,12 @@ heroku config:set \
 ```
 
 `SERVER_SHARETRIBE_TRUST_PROXY` is a hop count. `true` would make `req.ip` the client-supplied
-`X-Forwarded-For` value; the redirect and rate limiting rely on the router's own hop. Switch
-`REACT_APP_CSP` to `block` after the CSP review in the release checklist. The three `REACT_APP_*`
-values are compiled into the browser bundle, so set them before a build, not after.
+`X-Forwarded-For` value; the redirect and rate limiting rely on the router's own hop. Verified on
+production 2026-10-16: with `1`, empty `POST /api/brevo/engagement` probes with no header, one
+forged entry, and two forged entries were all keyed on the real client IP in `av_rate_limit` (only
+`heroku-router` is in front; Render, behind Cloudflare, needs `3`). Switch `REACT_APP_CSP` to
+`block` after the CSP review in the release checklist. The three `REACT_APP_*` values are compiled
+into the browser bundle, so set them before a build, not after.
 
 While the app runs against Test, keep it out of search engines with `AV_NOINDEX=true` (runtime only,
 no rebuild needed); remove it in the Live configuration (§5.4).
