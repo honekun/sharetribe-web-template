@@ -124,8 +124,13 @@ checks were never completed in any hosted Test environment.
       placeholder image, stock 1, `metadata.avBulkImport` set).
 - [ ] Review CSP reports, switch staging to block mode, and repeat the critical path. Production
       already enforces CSP (v47), so a CSP regression found here is a live defect.
-- [ ] Restart staging; sessions survive and the poller resumes from its PostgreSQL cursor without
-      duplicate sends.
+- [x] Restart staging; sessions survive and the poller resumes from its PostgreSQL cursor without
+      duplicate sends. Done 2026-10-16 with a manual Render restart: the browser stayed signed in as
+      `alex+vendedor_av@rewav.co`; readiness returned `200`; a new process took the poller lease
+      (21:58:28Z) at the saved cursor `441280017` instead of the 10-minute lookback, and picked up a
+      probe `listing/updated` event (`441283102`) on its next poll (22:03:28Z); the delivery ledger
+      still held the one `seller_welcome` send from 16:03Z, which also survived four earlier
+      redeploys that day, with no repeat sends and no retries.
 
 Other Render results (2026-10-16): `/my-balance` total earnings equal the sum of completed net
 amounts; bag, favorites, `/my-sales`, `/my-purchases`, shipping origin, payout, `/l/new`, and
