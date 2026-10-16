@@ -33,7 +33,6 @@ const BagPopup = () => {
   const isOpen = useSelector(state => state.bag.isPopupOpen);
   const bagIds = useSelector(selectBagIds);
   const count = useSelector(selectBagCount);
-  const currentUser = useSelector(state => state.user.currentUser);
   const [refs, setRefs] = useState([]);
   const listings = useSelector(state => getMarketplaceEntities(state, refs));
   const rootRef = useRef(null);
@@ -89,7 +88,6 @@ const BagPopup = () => {
       listing,
       history,
       routes,
-      currentUser,
       callSetInitialValues: (setInitialValuesFn, values, saveToSessionStorage) =>
         dispatch(setInitialValuesFn(values, saveToSessionStorage)),
       onInitializeCardPaymentData: () => dispatch(initializeCardPaymentData()),

@@ -14,7 +14,6 @@ export const checkoutBagItem = ({
   listing,
   history,
   routes,
-  currentUser,
   callSetInitialValues,
   onInitializeCardPaymentData,
 }) => {
@@ -40,8 +39,11 @@ export const checkoutBagItem = ({
     orderData: { quantity: 1, deliveryMethod: onlyMethod },
     confirmPaymentError: null,
   };
-  // Match ListingPage.shared.js: only persist to sessionStorage for logged-out users.
-  const saveToSessionStorage = !currentUser;
+  // Persist for every user, not only signed-out ones, so a full reload before
+  // CheckoutPage mounts (ChunkLoadError recovery, SSO redirect) can resume the
+  // flow. Matches upstream 52d708460; the hosted route's setInitialValues only
+  // honours this flag once that commit is synced.
+  const saveToSessionStorage = true;
   const { setInitialValues } = findRouteByRouteName('CheckoutPage', routes);
   callSetInitialValues(setInitialValues, initialValues, saveToSessionStorage);
   onInitializeCardPaymentData();
