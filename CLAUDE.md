@@ -274,8 +274,12 @@ props to restructure without forking. Full detail: `memory/listing-page-carousel
 
 `/my-purchases` + `/my-sales` reuse `InboxItem` + `getStateData` from InboxPage; ducks hard-code
 `only: 'order'` / `only: 'sale'`. `/my-balance` is a seller financial dashboard: **no direct Stripe
-balance API** — totals computed client-side from transaction `payoutTotal` via `Promise.all` of
-paginated + 3 summary `sdk.transactions.query()` calls. Shared util
+balance API** — the list is a paginated client `sdk.transactions.query()`; the totals come from
+`GET /api/my-balance/summary` (`server/api/my-balance/`), which takes **no** client parameters: it
+reads the process/transition lists from `balanceTransitions.js` (kept in step with the client
+helpers by `MyBalancePage/balanceTransitions.test.js`), walks the caller's sales in one capped
+pagination chain (5000 tx, `truncated` flag), and coalesces in-flight requests per user behind an
+IP rate limit and a bounded per-user 60 s cache. Shared util
 `src/transactions/transactionHelpers.js`: `getStatusFromLastTransition`, `getCompletedTransitions`,
 `getRefundedTransitions`, `buildFilteredQueryParams`. All three registered in
 `routeConfiguration.js`/`pageDataLoadingAPI.js`/`reducers.js`; linked from TopbarDesktop,
