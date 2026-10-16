@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-import { readBag, writeBag } from '../util/bagStorage';
+import { readBag, readBagOwner, writeBag, writeBagOwner } from '../util/bagStorage';
 import { createImageVariantConfig } from '../util/sdkLoader';
 import { storableError } from '../util/errors';
 import * as log from '../util/log';
@@ -60,6 +60,30 @@ export const selectIsInBag = (state, listingId) => state.bag.bagListingIds.inclu
 // Client-side only: load ids from localStorage into Redux (call once on mount).
 export const hydrateBag = () => dispatch => {
   dispatch(bagHydrated(readBag()));
+};
+
+/**
+ * Tie the browser-stored bag to the signed-in user, so it does not outlive
+ * their session on a shared device. Call once the session is known (signed
+ * out, or signed in with currentUser loaded); `currentUserId` is null when
+ * signed out.
+ *
+ * - A guest bag (no owner) is adopted by whoever signs in.
+ * - A bag owned by someone else than the current session — signed out, or a
+ *   different account — is emptied (and, if signed in, adopted afresh).
+ *
+ * @param {string|null} currentUserId
+ */
+export const syncBagOwner = currentUserId => dispatch => {
+  const owner = readBagOwner();
+  if (owner && owner !== currentUserId) {
+    writeBag([]);
+    writeBagOwner(null);
+    dispatch(bagHydrated([]));
+  }
+  if (currentUserId && readBagOwner() !== currentUserId) {
+    writeBagOwner(currentUserId);
+  }
 };
 
 export const addToBag = listingId => (dispatch, getState) => {
