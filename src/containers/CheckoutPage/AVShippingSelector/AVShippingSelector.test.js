@@ -27,6 +27,11 @@ const base = {
 };
 
 describe('AVShippingSelector', () => {
+  it('matches snapshot when quoted', () => {
+    const { asFragment } = render(<AVShippingSelector status="quoted" {...base} />);
+    expect(asFragment().firstChild).toMatchSnapshot();
+  });
+
   it('renders Express and Estándar buckets when quoted', () => {
     render(<AVShippingSelector status="quoted" {...base} />);
     expect(screen.getByText('AVShippingSelector.express')).toBeInTheDocument();

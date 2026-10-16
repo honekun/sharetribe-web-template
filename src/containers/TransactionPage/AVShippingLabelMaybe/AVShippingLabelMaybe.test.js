@@ -8,6 +8,20 @@ const { screen, userEvent } = testingLibrary;
 const RATE = { bucket: 'nacionalExpress', rate_id: 'rate-1', carrier: 'Estafeta' };
 
 describe('AVShippingLabelMaybe', () => {
+  it('matches snapshot for the download and generate states', () => {
+    const purchased = render(
+      <AVShippingLabelMaybe
+        avShipping={RATE}
+        avLabel={{ status: 'purchased', labelUrl: 'https://eship/labels/1.pdf' }}
+      />
+    );
+    expect(purchased.asFragment().firstChild).toMatchSnapshot();
+    purchased.unmount();
+
+    const generate = render(<AVShippingLabelMaybe avShipping={RATE} avLabel={null} />);
+    expect(generate.asFragment().firstChild).toMatchSnapshot();
+  });
+
   it('renders nothing when there is no shippable rate (especial / non-shipping)', () => {
     const { container } = render(<AVShippingLabelMaybe avShipping={null} avLabel={null} />);
     expect(container).toBeEmptyDOMElement();

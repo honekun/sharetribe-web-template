@@ -47,6 +47,11 @@ const renderCard = publicData => {
 };
 
 describe('AVListingCard', () => {
+  it('matches snapshot', () => {
+    const { asFragment } = renderCard({ all_sizes: ['m', 's'] });
+    expect(asFragment().firstChild).toMatchSnapshot();
+  });
+
   it('displays mapped all_sizes labels in stored order without a label', () => {
     renderCard({ all_sizes: ['m', 's'] });
 
