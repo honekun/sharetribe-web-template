@@ -231,6 +231,12 @@ upstream BlockBuilder → options.blockComponents
 ```
 
 `AVBlockDefault` is a dispatcher, not a renderer. It calls `buildAvBlockProps` (token props + CTA
+`blockBrevoForm` (`av-contact-form`) renders **only** a sandboxed `<iframe>` whose URL is pulled
+from the block text and allowlisted by `BlockBrevoForm/sibformsEmbed.js` (https
+`*.sibforms.com/serve/…`, matching CSP `frame-src`). Never render the hosted text as HTML or copy
+its scripts into the page: that ran Console content as script on our origin, and the CSP blocked
+the inline Brevo embed anyway.
+
 class layering, both in `av/blocks.js`) and `resolveAvBlockComponent` (routes by `blockId` /
 `blockName`), then renders either the matched AV block or `AVBlockDefaultView`. **AV blocks must
 render `AVBlockDefaultView`, never `AVBlockDefault`** — otherwise a `photoSlider ::` block

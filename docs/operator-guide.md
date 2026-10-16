@@ -901,6 +901,14 @@ need to set the Block Type field.
 | `av-table-*`      | Markdown table (e.g. `av-table-fees`); content from block text |
 | `av-contact-form` | Brevo contact form                                             |
 
+**Brevo contact form (`av-contact-form`).** In the block's text, paste the **iframe** embed code
+from Brevo (Forms → your form → Share → _Embed as an iframe_), or just its URL
+(`https://….sibforms.com/serve/…`). Only that URL is used: the form is shown in a sandboxed frame,
+and anything else in the text is ignored. Brevo's other embed option — the HTML/JavaScript snippet
+— is **not supported** and renders nothing, because it would run Brevo's scripts on the marketplace
+itself. The frame has a fixed height per screen size; if you add many fields to the form in Brevo,
+ask a developer to raise it (`BlockBrevoForm.module.css`).
+
 ---
 
 ## 6. Navigation Bar

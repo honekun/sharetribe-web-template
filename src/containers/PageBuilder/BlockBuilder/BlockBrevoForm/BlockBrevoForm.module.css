@@ -4,20 +4,16 @@
   width: 100%;
 }
 
-.formWrap {
-  width: 100%;
-}
-
 /*
- * Brevo/Sibforms iframes have a hardcoded height in the embed code and send no
- * postMessage resize events. The JS strips that inline height so CSS controls it.
- * Heights are tuned per breakpoint: the form fields stack taller on mobile.
+ * Brevo/Sibforms iframes send no postMessage resize events, so the frame height
+ * is set here. Heights are tuned per breakpoint: the form fields stack taller on
+ * mobile.
  */
-.formWrap :global(iframe) {
+.frame {
   display: block;
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 0 auto !important;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
   border: none;
   overflow: hidden;
 
@@ -42,13 +38,4 @@
   @media (--viewportLarge) {
     height: 680px;
   }
-}
-
-/* Inline JS embed — override Brevo's fixed max-width so form fills column */
-.formWrap :global(#sib-form-container),
-.formWrap :global(.sib-form) {
-  max-width: 100% !important;
-  width: 100% !important;
-  font-family: inherit;
-  box-sizing: border-box;
 }

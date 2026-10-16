@@ -142,6 +142,7 @@
   "MySalesPage.loadingError": "No se pudieron cargar las ventas. Inténtalo de nuevo.",
   "MySalesPage.noResults": "Aún no tienes ninguna venta.",
   "MySalesPage.title": "Mis Ventas | Archivo Vintach",
+  "BlockBrevoForm.title": "Formulario de contacto",
   "BulkImportPage.title": "Importación Masiva | Archivo Vintach",
   "BulkImportPage.simpleHeading": "Sube varios productos",
   "BulkImportPage.simpleDescription": "Carga tu inventario en 3 pasos.",

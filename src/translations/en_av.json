@@ -142,6 +142,7 @@
   "MySalesPage.loadingError": "Failed to load sales. Please try again.",
   "MySalesPage.noResults": "You don't have any sales yet.",
   "MySalesPage.title": "My Sales | Archivo Vintach",
+  "BlockBrevoForm.title": "Contact form",
   "BulkImportPage.title": "Bulk Import | Archivo Vintach",
   "BulkImportPage.simpleHeading": "Upload multiple products",
   "BulkImportPage.simpleDescription": "Upload your inventory in 3 steps.",
