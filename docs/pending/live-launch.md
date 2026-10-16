@@ -33,7 +33,6 @@ dashboards), _Dev_ (repository), _Business_ (decision or sign-off).
 | #   | Item                                                                                                                                                                             | Owner   | Where        |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------------ |
 | B1  | Functional run: listing create/edit/publish and the welcome popup (SSR, search, filters, signup, verification, login, payout onboarding, and shipping origin passed 2026-10-16). | Ops/Dev | checklist §2 |
-| B6  | `SERVER_SHARETRIBE_TRUST_PROXY` on Render is a hop count, not `true` (`ESHIP_LABEL_AUTOBUY` is off: paid orders got no label until **Generar guía**, 2026-10-16).                | Ops     | §2.1 below   |
 | B7  | Check one built-in Test email's links (Test Console's Marketplace URL can't point at Render).                                                                                    | Ops     | checklist §2 |
 | B8  | Note the Render Postgres expiry date (free tier, 30 days) and plan its renewal.                                                                                                  | Ops     | §7 below     |
 
@@ -127,12 +126,13 @@ Done on Heroku 2026-10-09: the trust-proxy change was deployed first, then
 rebuilt. HTTPS serves, HTTP redirects once, the SDK token cookie is `Secure`, and CSP runs in
 report-only mode. Live must carry the same four values.
 
-- [ ] Render staging: confirm in the Render dashboard that `SERVER_SHARETRIBE_TRUST_PROXY` is a hop
-      count, not `true`. It is set to something — HTTPS serves without the `express-enforces-ssl`
-      redirect loop an unset value would cause (2026-10-10) — but the value cannot be read from
-      outside. `true` makes `req.ip` the client-supplied `X-Forwarded-For`, so rate limits can be
-      dodged; a too-small count puts every visitor in one bucket. To find the count, log
-      `req.ips.length` once with `true`, or compare `req.ip` against your own address.
+- [x] Render staging: `SERVER_SHARETRIBE_TRUST_PROXY=3` since 2026-10-16. Render puts Cloudflare and
+      an internal proxy in front of the app, so the client is the third hop. Measured by posting an
+      empty body to `POST /api/brevo/engagement` (it `400`s after the rate limiter records `req.ip`)
+      and reading `av_rate_limit.identifier`, with no `X-Forwarded-For` and with a forged two-entry
+      one: the old value trusted the forged leftmost entry; `1` gave Render-internal `10.x`
+      addresses; `2` gave Cloudflare addresses; `3` gave the real client address for all three
+      requests.
 - [x] Render staging: `REACT_APP_SHARETRIBE_USING_SSL=true` and `AV_NOINDEX=true` are in effect
       (verified 2026-10-10 from outside): canonical, `og:url`, and the sitemap index use `https://`,
       `http://` answers `301`, every response carries `X-Robots-Tag: noindex, nofollow`, and

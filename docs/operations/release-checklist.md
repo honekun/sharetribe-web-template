@@ -65,7 +65,9 @@ checks were never completed in any hosted Test environment.
 - [x] Confirm all guarded flags are explicit. Readiness shows all six set (2026-10-15).
       `ESHIP_LABEL_AUTOBUY` is off (paid orders got no label until **Generar guía**), and tracking
       emails were switched off on 2026-10-16 (`eshipTracking.enabled: false`, webhook `404`).
-- [ ] Confirm `SERVER_SHARETRIBE_TRUST_PROXY` is a hop count, not `true`.
+- [x] Confirm `SERVER_SHARETRIBE_TRUST_PROXY` is a hop count, not `true`. Render needs `3`
+      (Cloudflare and an internal proxy in front), measured 2026-10-16 with a forged
+      `X-Forwarded-For` probe (live-launch §2.1); it previously trusted the forged entry.
 - [ ] Confirm exactly one web process, per [scaling constraints](scaling.md).
 - [x] `GET /api/notifications/readiness` returns `200` and one process owns poller leadership.
       (2026-10-15)
