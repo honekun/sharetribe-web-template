@@ -95,9 +95,23 @@ jobs:
       - run:
           name: Audit dependencies
           command: yarn run audit
+  # AV-owned repository checks. Both scripts use only Node built-ins, so the job
+  # skips `yarn install`.
+  av-checks:
+    docker:
+      - image: cimg/node:24.22
+    steps:
+      - checkout
+      - run:
+          name: Check AV translation overlays are symmetric
+          command: node scripts/check-av-translations.js
+      - run:
+          name: Check .env-template exposes no secrets to the browser
+          command: node scripts/check-env-template.js
 workflows:
   format_test_build_audit:
     jobs:
       - format
       - test
       - build
+      - av-checks

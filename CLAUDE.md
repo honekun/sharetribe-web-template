@@ -41,7 +41,11 @@ yarn run config                            # Config validation/setup wizard
 yarn run config:compare <baseId> <targetId> # Diff hosted Console config of two envs (public client IDs)
 yarn run translate                         # Translation management
 yarn av-translation-check                  # en_av.json / es_av.json key symmetry
+yarn env-template-check                    # .env-template exposes no REACT_APP_ secrets
 ```
+
+CircleCI (`.circleci/config.yml`) runs `format`, `test`, `build` and the AV-owned `av-checks` job (the
+two checks above). Upstream's `audit` job is defined but, as upstream, not in the workflow.
 
 **Node:** `24.x` (pinned for Heroku, which warns on and caps upstream's wide `^22.22.0 || >=24.0.0`;
 re-apply on upstream syncs, together with the `cimg/node:24.x` images in `.circleci/config.yml` —
