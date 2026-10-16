@@ -33,7 +33,6 @@ dashboards), _Dev_ (repository), _Business_ (decision or sign-off).
 | #   | Item                                                                                                                                                               | Owner   | Where        |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | ------------ |
 | B1  | Functional run: SSR/search/filters, signup, verification, login, both languages; seller payout onboarding, shipping origin, listing create/publish, welcome popup. | Ops/Dev | checklist §2 |
-| B2  | `Contactar AV` for an `especial` item (quote, purchase, breakdown, label, and missing origin passed 2026-10-16).                                                   | Ops/Dev | §5 below     |
 | B4  | Restart Render: sessions survive, poller resumes from its cursor, no duplicate sends.                                                                              | Ops     | checklist §2 |
 | B6  | `SERVER_SHARETRIBE_TRUST_PROXY` on Render is a hop count, not `true` (`ESHIP_LABEL_AUTOBUY` is off: paid orders got no label until **Generar guía**, 2026-10-16).  | Ops     | §2.1 below   |
 | B7  | Check one built-in Test email's links (Test Console's Marketplace URL can't point at Render).                                                                      | Ops     | checklist §2 |
