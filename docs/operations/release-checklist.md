@@ -69,7 +69,8 @@ checks were never completed in any hosted Test environment.
 - [x] Confirm `SERVER_SHARETRIBE_TRUST_PROXY` is a hop count, not `true`. Render needs `3`
       (Cloudflare and an internal proxy in front), measured 2026-10-16 with a forged
       `X-Forwarded-For` probe (live-launch §2.1); it previously trusted the forged entry.
-- [ ] Confirm exactly one web process, per [scaling constraints](scaling.md).
+- [x] Confirm exactly one web process, per [scaling constraints](scaling.md). Render runs one
+      instance (dashboard, 2026-10-16).
 - [x] `GET /api/notifications/readiness` returns `200` and one process owns poller leadership.
       (2026-10-15)
 - [x] `GET /api/brevo/health` returns `200` for enabled Brevo features. (2026-10-15)
@@ -132,7 +133,10 @@ checks were never completed in any hosted Test environment.
       al vendedor** button instead of Express/Estándar, made no quote request, and kept **Confirma y
       paga** disabled with a complete address and no shipping line; the button opened the listing's
       inquiry form (closed unsent); a direct quote returned `422 ESPECIAL`.
-- [ ] Verify negotiation request/offer/counter/payment behavior if its hosted process is active.
+- [x] Verify negotiation request/offer/counter/payment behavior if its hosted process is active. Not
+      applicable (2026-10-16): the only listing type, `av-listing`, uses
+      `default-purchase/release-1` in both Test and Live; `default-negotiation` exists but no
+      listing type uses it.
 - [x] Verify bulk import as a regular seller and an allowlisted operator. Regular seller done
       2026-10-16: a one-row CSV created listing `6ad1d1dc…` (`closed` per `publish=no`, placeholder
       image, system keys set, stock 1); re-uploading it reported "1 ya importados (omitidos)"; a CSV
@@ -140,8 +144,12 @@ checks were never completed in any hosted Test environment.
       `alex+vendedor_av@rewav.co` (in `BULK_IMPORT_OPERATOR_EMAILS`), a one-row CSV with a `user_id`
       column created listing `6ad26889…` authored by `alex+av_store1@rewav.co` (`closed`,
       placeholder image, stock 1, `metadata.avBulkImport` set).
-- [ ] Review CSP reports, switch staging to block mode, and repeat the critical path. Production
-      already enforces CSP (v47), so a CSP regression found here is a live defect.
+- [x] Review CSP reports, switch staging to block mode, and repeat the critical path. Production
+      already enforces CSP (v47), so a CSP regression found here is a live defect. Render already
+      sends an enforcing `Content-Security-Policy` header (not `-Report-Only`), so the whole
+      2026-10-16 critical path (purchase, label, bulk import, Brevo iframe, Stripe onboarding) ran
+      in block mode; the browser console showed no CSP violations on the landing, contact, listing,
+      search, and payout pages, and no `CSP:` violation line appears in Render's or Heroku's logs.
 - [x] Restart staging; sessions survive and the poller resumes from its PostgreSQL cursor without
       duplicate sends. Done 2026-10-16 with a manual Render restart: the browser stayed signed in as
       `alex+vendedor_av@rewav.co`; readiness returned `200`; a new process took the poller lease

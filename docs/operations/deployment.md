@@ -4,7 +4,7 @@
 
 | Purpose        | Host and URL                                                           | External environment                           | Database                                                        | State                                                                          |
 | -------------- | ---------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Test / staging | Render, `https://archivo-vintach.onrender.com/`                        | Sharetribe Test, Stripe test, eShip QA         | Staging-only Render Postgres (free tier, expires after 30 days) | Hosts the Test gate. Readiness `200` after the 2026-10-15 database replacement |
+| Test / staging | Render, `https://archivo-vintach.onrender.com/`                        | Sharetribe Test, Stripe test, eShip QA         | Staging-only Render Postgres (free tier, expires 2026-11-14)    | Hosts the Test gate. Readiness `200` after the 2026-10-15 database replacement |
 | Production     | Heroku `archivo-vintach-marketplace`, `https://www.archivovintach.com` | Sharetribe Live, Stripe live, eShip production | Heroku Postgres `essential-0`, reset at cutover, Live rows only | Deployed and serving. **Overall Live validation pending**                      |
 
 Heroku was converted from Test to Live on 2026-10-12 (releases v37–v49; Live build v48 from `main`
@@ -68,7 +68,8 @@ With custom code, the marketplace address is not a Console setting:
   database's External URL) before its notification or shipping-label flags are useful. Readiness
   reports `notification_database_unavailable_or_unmigrated` until then. The web service itself must
   use the **Internal** URL: the app's pool (`server/services/postgres.js`) sets no TLS. A free
-  Render Postgres expires after 30 days, so replace and re-migrate it before then.
+  Render Postgres expires after 30 days, so replace and re-migrate it before then. The current one
+  expires on 2026-11-14 ([live launch](../pending/live-launch.md) §7 has the replacement steps).
 - Keep WhatsApp, Brevo campaigns, and eShip label auto-buy behind their documented pending gates in
   both environments.
 - Never roll production back past v48, the first Live-built release. v37–v47 only changed config on
