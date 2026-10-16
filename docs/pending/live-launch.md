@@ -28,9 +28,9 @@ dashboards), _Dev_ (repository), _Business_ (decision or sign-off).
 
 ### B. Render Test gate — must pass before Live sign-off
 
-| #   | Item                                                                                                                                             | Owner | Where        |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----- | ------------ |
-| B9  | Confirm Render runs exactly one web instance (dashboard → Scaling; the free plan has one). Everything else in checklist §2 passed on 2026-10-16. | Ops   | checklist §2 |
+✅ Passed 2026-10-16: every item in release checklist §2 is ticked. Render's server-side
+`/csp-report` log is the one thing not reviewed (the browser console showed no violations); check it
+before A4.
 
 ### C. Live content and configuration (Console) — fix before announcing
 

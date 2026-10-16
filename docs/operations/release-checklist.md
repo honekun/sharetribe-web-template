@@ -69,7 +69,8 @@ checks were never completed in any hosted Test environment.
 - [x] Confirm `SERVER_SHARETRIBE_TRUST_PROXY` is a hop count, not `true`. Render needs `3`
       (Cloudflare and an internal proxy in front), measured 2026-10-16 with a forged
       `X-Forwarded-For` probe (live-launch §2.1); it previously trusted the forged entry.
-- [ ] Confirm exactly one web process, per [scaling constraints](scaling.md).
+- [x] Confirm exactly one web process, per [scaling constraints](scaling.md). Render runs one
+      instance (dashboard, 2026-10-16).
 - [x] `GET /api/notifications/readiness` returns `200` and one process owns poller leadership.
       (2026-10-15)
 - [x] `GET /api/brevo/health` returns `200` for enabled Brevo features. (2026-10-15)
