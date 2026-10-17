@@ -238,7 +238,9 @@ needed, confirm readiness, and record the release.
 - [x] Confirm `/api/notifications/readiness` and enabled-provider health checks return `200`.
       (2026-10-15)
 - [ ] Record the first known-good Live-configured Heroku release. Public traffic is already open, so
-      record it as soon as §5 passes.
+      record it as soon as §5 passes. Candidate: v51 (2026-10-16), `main` at `08db5ebf8` with
+      `REACT_APP_GOOGLE_ANALYTICS_ID` (v50); its bundle carries only Live values, readiness is
+      `200`, and the logs show no CSP violations or 5xx responses.
 
 ## 5. Live smoke and launch gate
 
