@@ -43,6 +43,7 @@ Heroku's logs contain a `CSP:` violation line.
 | C6  | Legal review of the terms of service and privacy policy (Brevo consent, Stripe, eShip address sharing).                                                                                                                                                  | Business    | §3 below |
 | C7  | Live operator/admin account and the `BULK_IMPORT_OPERATOR_EMAILS` / `SHIPPING_LABEL_OPERATOR_EMAILS` users.                                                                                                                                              | Console/Ops | §3 below |
 | C8  | Fix Test's landing page (8 dead references) so Render's logs stay clean.                                                                                                                                                                                 | Console     | §3 below |
+| C9  | **22 Live Yiknal listings store labels, no category.** Bulk-imported before value validation (2026-10-16): `Negro`, `Ropa / M`, `YIKNAL`, no category, placeholder photo, so no filter or category page matches them. Deploy the fix to Heroku, then have the seller re-import (or fix each in the wizard) and close the old 22. `YIKNAL` must first be added as a Console brand. | Seller/Ops  | bulk-import.md|
 
 ### D. Live configuration to confirm (not readable from outside)
 

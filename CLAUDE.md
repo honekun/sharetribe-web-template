@@ -201,7 +201,12 @@ the placeholder image is no longer among a listing's images. **Rows are idempote
 author's last 24 h of listings are matched by key before any row runs, and a re-upload skips
 finished rows and resumes half-done ones. Listings are created `pendingApproval` and approved only
 after stock is set, so a mid-row failure never leaves a published listing without stock; timed-out
-rows are cancelled at their next step and reconciled at the end of the job. See
+rows are cancelled at their next step and reconciled at the end of the job. **Values are
+validated** (`listingFieldOptions.js`, since 2026-10-16): an enum/multi-enum value must be an option
+key or its label (case/accent-insensitive; the key is stored), against code `configListingAV.js`
+(CommonJS so the server can `require` it) plus Console; an unknown brand is an error; every row needs
+a category path down to a leaf. `listingImportConfig.js` reads the fields + categories assets per
+upload and a failed read is a `503`, never an unchecked import. See
 `docs/implementation/bulk-import.md`).
 
 `MakeOfferPage`, `RequestQuotePage` and `ManageAccountPage` (negotiation, account deletion) are

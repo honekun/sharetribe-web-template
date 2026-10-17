@@ -17,12 +17,18 @@ jest.mock('../../api-util/listingMinimumPrice', () => ({
   resolveListingMinimumPrice: jest.fn(() => Promise.resolve(2000)),
 }));
 
-jest.mock('./publicDataKeys', () => {
-  const actual = jest.requireActual('./publicDataKeys');
+// Default: Console defines no extra fields and no categories, so only the
+// code-defined fields (color, all_sizes, brand) have option sets.
+jest.mock('./listingImportConfig', () => {
+  const { TEMPLATE_PUBLIC_DATA_KEYS } = jest.requireActual('./publicDataKeys');
+  const { buildFieldOptions } = jest.requireActual('./listingFieldOptions');
   return {
-    ...actual,
-    resolveAllowedPublicDataKeys: jest.fn(() =>
-      Promise.resolve(new Set(actual.TEMPLATE_PUBLIC_DATA_KEYS))
+    resolveListingImportConfig: jest.fn(() =>
+      Promise.resolve({
+        allowedPublicDataKeys: new Set(TEMPLATE_PUBLIC_DATA_KEYS),
+        fieldOptions: buildFieldOptions([]),
+        categoryTree: [],
+      })
     ),
   };
 });
@@ -33,7 +39,9 @@ const { parseCsv, validateRows } = require('./csvParser');
 const { createJob, getJob, _test: jobStoreTest } = require('./jobStore');
 const { getSdk } = require('../../api-util/sdk');
 const { resolveListingMinimumPrice } = require('../../api-util/listingMinimumPrice');
-const { resolveAllowedPublicDataKeys } = require('./publicDataKeys');
+const { resolveListingImportConfig } = require('./listingImportConfig');
+const { TEMPLATE_PUBLIC_DATA_KEYS } = require('./publicDataKeys');
+const { buildFieldOptions, buildCategoryTree } = require('./listingFieldOptions');
 const router = require('./index');
 const { _test: authTest } = require('./auth');
 const { _test: rateLimiterTest } = require('./rateLimiter');
@@ -178,7 +186,7 @@ describe('bulk import router', () => {
 
     await startHandler(req, res);
 
-    expect(resolveAllowedPublicDataKeys).toHaveBeenCalledWith(sdk);
+    expect(resolveListingImportConfig).toHaveBeenCalledWith(sdk);
     expect(res.statusCode).toBe(400);
     expect(res.body.details).toEqual([
       'La columna "pub_transactionProcessAlias" la asigna el sistema y no se puede importar. Elimina la columna.',
@@ -187,7 +195,11 @@ describe('bulk import router', () => {
   });
 
   it('accepts a publicData column for a field configured in Console', async () => {
-    resolveAllowedPublicDataKeys.mockResolvedValueOnce(new Set(['brand', 'era']));
+    resolveListingImportConfig.mockResolvedValueOnce({
+      allowedPublicDataKeys: new Set(['brand', 'era']),
+      fieldOptions: buildFieldOptions([]),
+      categoryTree: [],
+    });
     const csv = Buffer.from(
       ['title,description,price,pub_era', '"Dress","Nice","450.00","80s"'].join('\n')
     );
@@ -203,6 +215,83 @@ describe('bulk import router', () => {
     expect(res.statusCode).toBe(202);
     const [, rows] = processImportJob.mock.calls[0];
     expect(rows[0].publicData.era).toBe('80s');
+  });
+
+  describe('listing values', () => {
+    const consoleConfig = () => ({
+      allowedPublicDataKeys: new Set(TEMPLATE_PUBLIC_DATA_KEYS),
+      fieldOptions: buildFieldOptions([
+        {
+          key: 'temporada',
+          scope: 'public',
+          schemaType: 'enum',
+          enumOptions: [
+            { option: 'invierno', label: 'Invierno' },
+            { option: 'todo-el-ano', label: 'Todo el Año' },
+          ],
+        },
+      ]),
+      categoryTree: buildCategoryTree([
+        {
+          id: 'ropa',
+          name: 'Ropa',
+          subcategories: [{ id: 'ropa-maternidad', name: 'Maternidad', subcategories: [] }],
+        },
+      ]),
+    });
+    const startWith = async lines => {
+      extractZip.mockReturnValue({ csvBuffer: Buffer.from(lines.join('\n')), imageMap: new Map() });
+      const req = {
+        file: { buffer: Buffer.from('fake-zip') },
+        bulkImportUser: { userId: 'regular-user-id', isAdmin: false },
+      };
+      const res = createMockRes();
+      await startHandler(req, res);
+      return res;
+    };
+
+    it('stores option keys and category ids for values typed as labels', async () => {
+      resolveListingImportConfig.mockResolvedValueOnce(consoleConfig());
+      const res = await startWith([
+        'title,description,price,pub_categoryLevel1,pub_categoryLevel2,pub_color,pub_all_sizes,pub_temporada',
+        '"Dress","Nice","450.00","Ropa","Maternidad","Negro","Ropa / M","Todo el año"',
+      ]);
+
+      expect(res.statusCode).toBe(202);
+      const [, rows] = processImportJob.mock.calls[0];
+      expect(rows[0].publicData).toEqual({
+        categoryLevel1: 'ropa',
+        categoryLevel2: 'ropa-maternidad',
+        color: ['negro'],
+        all_sizes: ['m'],
+        temporada: 'todo-el-ano',
+      });
+    });
+
+    it('rejects an unknown brand and a missing category', async () => {
+      resolveListingImportConfig.mockResolvedValueOnce(consoleConfig());
+      const res = await startWith([
+        'title,description,price,pub_brand',
+        '"Dress","Nice","450.00","YIKNAL"',
+      ]);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.details).toEqual([
+        expect.stringMatching(/^Fila 1: "pub_brand": "YIKNAL" no es una opción válida\./),
+        'Fila 1: Falta la categoría ("pub_categoryLevel1"). Valores válidos: ropa.',
+      ]);
+      expect(processImportJob).not.toHaveBeenCalled();
+    });
+
+    it('returns 503 and starts nothing when the listing config cannot be read', async () => {
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+      resolveListingImportConfig.mockRejectedValueOnce(new Error('network down'));
+      const res = await startWith(['title,description,price', '"Dress","Nice","450.00"']);
+
+      expect(res.statusCode).toBe(503);
+      expect(processImportJob).not.toHaveBeenCalled();
+      console.error.mockRestore();
+    });
   });
 
   describe('bare CSV upload', () => {

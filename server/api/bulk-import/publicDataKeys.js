@@ -43,10 +43,9 @@ const SYSTEM_PUBLIC_DATA_KEYS = new Set([
 const IGNORED_PUBLIC_DATA_KEYS = new Set(['tags']);
 
 // The publicData columns of the seller template (GET /api/bulk-import/template),
-// as documented in docs/implementation/bulk-import.md. Always allowed, so an
-// import still works when the Console asset cannot be read, and so `temporada` —
-// saved but not a Console field — keeps importing. `color`/`all_sizes`/`brand`
-// are code-defined (configListingAV.js) and may be absent from the hosted asset.
+// as documented in docs/implementation/bulk-import.md. Always allowed, whatever
+// Console defines. `color`/`all_sizes`/`brand` are code-defined
+// (configListingAV.js) and may be absent from the hosted asset.
 const TEMPLATE_PUBLIC_DATA_KEYS = new Set([
   'brand',
   'categoryLevel1',
@@ -61,39 +60,25 @@ const TEMPLATE_PUBLIC_DATA_KEYS = new Set([
   'originalPrice',
 ]);
 
-const ASSET_PATH = '/listings/listing-fields.json';
-
 /**
- * Resolve the set of publicData keys a CSV may write: the template columns plus
- * every public-scope listing field in Console. A failed fetch falls back to the
- * template columns alone, with a warning, rather than blocking the import.
- * System and ignored keys are excluded even if Console defines them.
+ * The set of publicData keys a CSV may write: the template columns plus every
+ * public-scope listing field in Console's listing-fields asset. System and
+ * ignored keys are excluded even if Console defines them.
  *
- * @param {Object} sdk Sharetribe Marketplace SDK instance
- * @returns {Promise<Set<string>>}
+ * @param {Array} hostedFields listingFields from the listing-fields asset
+ * @returns {Set<string>}
  */
-const resolveAllowedPublicDataKeys = sdk =>
-  Promise.resolve()
-    .then(() => sdk.assetsByAlias({ paths: [ASSET_PATH], alias: 'latest' }))
-    .then(response => {
-      const asset = response?.data?.data?.[0];
-      const hostedFields = asset?.attributes?.data?.listingFields;
-      const hostedKeys = (Array.isArray(hostedFields) ? hostedFields : [])
-        // Console omits scope for public fields in some assets; configHelpers
-        // defaults it to 'public' the same way.
-        .filter(f => typeof f?.key === 'string' && (f.scope || 'public') === 'public')
-        .map(f => f.key);
-      const allowed = new Set([...TEMPLATE_PUBLIC_DATA_KEYS, ...hostedKeys]);
-      SYSTEM_PUBLIC_DATA_KEYS.forEach(key => allowed.delete(key));
-      IGNORED_PUBLIC_DATA_KEYS.forEach(key => allowed.delete(key));
-      return allowed;
-    })
-    .catch(e => {
-      console.warn(
-        `[bulk-import] Could not read ${ASSET_PATH}, allowing template columns only: ${e.message}`
-      );
-      return new Set(TEMPLATE_PUBLIC_DATA_KEYS);
-    });
+const allowedPublicDataKeysFromFields = hostedFields => {
+  const hostedKeys = (Array.isArray(hostedFields) ? hostedFields : [])
+    // Console omits scope for public fields in some assets; configHelpers
+    // defaults it to 'public' the same way.
+    .filter(f => typeof f?.key === 'string' && (f.scope || 'public') === 'public')
+    .map(f => f.key);
+  const allowed = new Set([...TEMPLATE_PUBLIC_DATA_KEYS, ...hostedKeys]);
+  SYSTEM_PUBLIC_DATA_KEYS.forEach(key => allowed.delete(key));
+  IGNORED_PUBLIC_DATA_KEYS.forEach(key => allowed.delete(key));
+  return allowed;
+};
 
 /**
  * Copy of `publicData` without system-owned or ignored keys. The worker applies
@@ -108,10 +93,9 @@ const omitSystemPublicDataKeys = publicData =>
   );
 
 module.exports = {
-  ASSET_PATH,
   SYSTEM_PUBLIC_DATA_KEYS,
   IGNORED_PUBLIC_DATA_KEYS,
   TEMPLATE_PUBLIC_DATA_KEYS,
-  resolveAllowedPublicDataKeys,
+  allowedPublicDataKeysFromFields,
   omitSystemPublicDataKeys,
 };

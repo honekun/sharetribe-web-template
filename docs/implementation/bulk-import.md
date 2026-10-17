@@ -267,27 +267,62 @@ see [Allowed publicData keys](#allowed-publicdata-keys) below:
 
 | CSV Column           | publicData Key   | Required | Example Value           | Notes                                                                                                                                          |
 | -------------------- | ---------------- | -------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pub_categoryLevel1` | `categoryLevel1` | Yes      | `ropa`                  | Console category key                                                                                                                           |
-| `pub_categoryLevel2` | `categoryLevel2` | Yes      | `ropa-vestidos`         | Console category key                                                                                                                           |
-| `pub_categoryLevel3` | `categoryLevel3` | No       | `ropa-vestidos-midi`    | Optional sub-category                                                                                                                          |
+| `pub_categoryLevel1` | `categoryLevel1` | Yes      | `ropa`                  | Console category id (or name). **Enforced**: see [Value validation](#value-validation)                                                        |
+| `pub_categoryLevel2` | `categoryLevel2` | Yes\*    | `ropa-vestidos`         | Subcategory of level 1. \*Required while the chosen category has subcategories (enforced)                                                      |
+| `pub_categoryLevel3` | `categoryLevel3` | Yes\*    | `ropa-vestidos-midi`    | Subcategory of level 2. \*Required while the chosen category has subcategories (enforced)                                                      |
 | `pub_color`          | `color`          | Yes      | `azul` or `azul\|negro` | **Multi-enum.** One or more option keys, pipe-separated. Always stored as an array.                                                            |
 | `pub_all_sizes`      | `all_sizes`      | Yes      | `s\|m\|l`               | **Multi-enum.** Valid keys: `xs`, `s`, `m`, `l`, `xl`, `mx_32`, `mx_shoes_24x`, `curvy_2x`, etc.                                               |
 | `pub_brand`          | `brand`          | Yes      | `levi-s`                | Option **slug** — not the display name (use `levi-s`, not `Levi's`)                                                                            |
 | `pub_genero`         | `genero`         | Yes      | `mujer`                 | Options: `hombre`, `mujer`, `unisex`                                                                                                           |
 | `pub_estado`         | `estado`         | Yes      | `como-nuevo`            | Options: `nuevo-sin-etiqueta`, `nuevo-con-etiqueta`, `como-nuevo`, `buen-estado`, `usado`                                                      |
 | `pub_estilo`         | `estilo`         | Yes      | `vintage`               | **Multi-enum.** Options: `vintage`, `urbano_streetwear`, `fiesta_noche`, `formal`, `casual`, `boho`, `retro`, `oficina`, `vacaciones`, `seda`  |
-| `pub_temporada`      | `temporada`      | No       | `invierno`              | Season slug (`primavera`/`verano`/`otono`/`invierno`/`todo-el-ano`). Saved as public data but **not** currently a configured/searchable field. |
+| `pub_temporada`      | `temporada`      | No       | `invierno`              | Options: `primavera`, `verano`, `otono`, `invierno`, `todo-el-ano` (a Console enum field in Test and Live)                                     |
 | `pub_originalPrice`  | `originalPrice`  | No       | `650.00`                | Strike-through "was" price in major currency units. Must be > `price` to display. Converted to `{ amount, currency }` automatically.           |
 
 **Multi-enum fields** (`color`, `all_sizes`, `estilo`): pipe-separated values become arrays — e.g.
 `azul|negro` → `["azul", "negro"]`. A single value (e.g. `azul`) is also stored as an array
 `["azul"]`. The Sharetribe API requires arrays for multi-enum fields.
 
-**Option keys vs labels**: All enum/multi-enum fields require the Console option **key** — not the
-display label. E.g. `azul` not `Azul`; `levi-s` not `Levi's`.
+**Option keys vs labels**: listings store the option **key** (`azul`, `levi-s`, `todo-el-ano`),
+which is what search filters and category pages match on. A CSV may use the key or the display label
+(`Azul`, `LEVI'S`, `Todo el año`); the importer stores the key. Any other value fails the upload.
 
 The publicData keys must match the field keys configured in Sharetribe Console → Build → Listing
 fields.
+
+### Value validation
+
+`validateRows` checks every value, not just the column names, against the same options the listing
+wizard offers (`server/api/bulk-import/listingFieldOptions.js`). Before 2026-10-16 it stored values
+verbatim and did not require a category. Live listings imported that way kept labels (`Negro`,
+`Ropa / M`, `Todo el año`) and had no category, so no filter, category page or category slider
+matched them.
+
+- **Enum and multi-enum fields.** Each value must be an option key or its label. Matching ignores
+  case, accents and repeated spaces. A value written as `Grupo / Opción` (the Google Sheets size
+  dropdown writes `Ropa / M`) is retried with its last segment when the whole value matches
+  nothing. Multi-enum values are pipe-separated and de-duplicated. A single-value (`enum`) field
+  with several values is an error. A label shared by two options is an error that asks for the key.
+  Current cases: `Rat & Boa` is both the code option `rat-boa` and the Console option `rat_boa`,
+  and the labels `MX 24`–`MX 29` are both clothing (`mx_24`) and shoe (`mx_shoes_24x`) sizes.
+- **Where the options come from.** This mirrors the client's merge in `configHelpers.js`.
+  - The code-defined fields in `src/config/configListingAV.js` (`color`, `all_sizes`, `brand`)
+    replace a Console field with the same key. That file is CommonJS so the server can `require`
+    it, like `configAVShipping.js`.
+  - `brand` also takes the Console options, as in `configAV.mergeHostedBrandOptions`.
+  - Every other public enum/multi-enum Console field (`genero`, `estado`, `estilo`, `temporada`)
+    uses its Console options.
+  - A field with no options (text, numbers) is stored as typed.
+- **Unknown brand.** A brand that is neither a code option nor a Console option is an error, not
+  `other`. Add the brand in Console → Listing fields → `brand` first, then import.
+- **Categories.** The three category columns must form a path in Console's
+  `/listings/listing-categories.json`. Every row needs a top-level category, plus each deeper level
+  until the chosen category has no subcategories, as the wizard requires. A level below a category
+  with no subcategories must be empty. Each level accepts the id or the name, and the ids are
+  stored. A marketplace without categories requires none.
+- **Errors** name the operator's column header and list up to ten valid values, e.g. _Fila 1:
+  "Marca": "YIKNAL" no es una opción válida. Valores válidos: other, … (627 en total)._ and _Fila 1:
+  Falta la categoría ("pub_categoryLevel1"). Valores válidos: ropa, bolsas, …_
 
 ### Allowed publicData keys
 
@@ -307,10 +342,16 @@ enforces it once per column (a column that is empty in every row is ignored):
   field. Older sheets that still carry the column keep importing. Tag listings in Console instead.
 - **Everything else must be allowed**: the template columns in the table above
   (`TEMPLATE_PUBLIC_DATA_KEYS`, always allowed), or a **public-scope** listing field from Console's
-  `/listings/listing-fields.json`, read per import by `resolveAllowedPublicDataKeys` (the same way
-  the minimum price is read). An unknown column fails with _La columna "…" no corresponde a ningún
-  campo de anuncio configurado._ If the asset cannot be read, only the template columns are allowed
-  and a warning is logged; the import is not blocked.
+  `/listings/listing-fields.json`. An unknown column fails with _La columna "…" no corresponde a
+  ningún campo de anuncio configurado._
+
+`listingImportConfig.resolveListingImportConfig` reads the listing-fields and listing-categories
+assets once per upload, in one `assetsByAlias` call, alongside the minimum price. It builds the
+allowed keys, the option sets and the category tree. An asset that does not exist counts as empty.
+**A failed fetch refuses the upload with `503`** (_No se pudo leer la configuración de anuncios del
+marketplace…_). Without the assets no value or category can be checked, and an unchecked import is
+how the label-valued Live listings got in. Until 2026-10-16 a failed fetch fell back to the template
+columns and the import went ahead.
 
 As defence in depth, `importWorker.js` strips system and ignored keys from `row.publicData` and writes the
 system-owned values (`listingType`, `transactionProcessAlias`, `unitType`, `shippingEnabled`,

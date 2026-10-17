@@ -7,6 +7,17 @@ const {
   SYSTEM_PUBLIC_DATA_KEYS,
   TEMPLATE_PUBLIC_DATA_KEYS,
 } = require('./publicDataKeys');
+const {
+  CATEGORY_KEYS,
+  buildFieldOptions,
+  describeValues,
+  resolveCategoryPath,
+  resolveOption,
+} = require('./listingFieldOptions');
+
+// Without a Console asset, values are still checked against the code-defined
+// fields (color, all_sizes, brand).
+const CODE_FIELD_OPTIONS = buildFieldOptions([]);
 
 // Spanish column names accepted from the Archivo Vintach templates. Keys are
 // trimmed header strings; values are canonical English column names. Two header
@@ -74,7 +85,8 @@ const RESERVED_PD_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 // is stripped to get the publicData key (e.g. pub_color / pd_color -> color).
 const PUBLIC_DATA_PREFIXES = ['pub_', 'pd_'];
 // Fields defined as multi-enum in the Console — single values are wrapped in arrays
-// so the Sharetribe API always receives an array for these fields.
+// so the Sharetribe API always receives an array for these fields. Used only for a
+// field with no option set (fieldOptions carries its own schemaType).
 const MULTI_ENUM_PD_FIELDS = new Set(['color', 'all_sizes', 'estilo']);
 
 /**
@@ -169,8 +181,19 @@ function parseCsv(buffer) {
  *
  * allowedPublicDataKeys (default: the template columns) is the set of publicData
  * keys a `pub_*`/`pd_*` column may write. The caller resolves it from Console
- * (publicDataKeys.resolveAllowedPublicDataKeys). A system key such as
+ * (listingImportConfig.resolveListingImportConfig). A system key such as
  * `listingType` is rejected even if the set contains it.
+ *
+ * fieldOptions (default: the code-defined fields) maps an enum/multi-enum
+ * publicData key to its options (listingFieldOptions.buildFieldOptions). A value
+ * may be the option key or its label, in any case and with or without accents;
+ * the key is stored. Anything else is a row error.
+ *
+ * categoryTree (default: none) is the Console category tree
+ * (listingFieldOptions.buildCategoryTree). When it has categories, every row
+ * needs a category path down to a category without subcategories, as in the
+ * listing wizard; ids or names are accepted and ids are stored. Callers resolve
+ * both from Console (listingImportConfig.resolveListingImportConfig).
  *
  * Returns { valid: boolean, rows: Array, errors: Array<string> }
  */
@@ -182,6 +205,8 @@ function validateRows(rows, imageMap, authorOptions = {}) {
     ignoreImages = false,
     minimumPriceSubunits = 0,
     allowedPublicDataKeys = TEMPLATE_PUBLIC_DATA_KEYS,
+    fieldOptions = CODE_FIELD_OPTIONS,
+    categoryTree = [],
   } = authorOptions;
   // Show the operator the actual CSV column header they typed rather than the
   // internal canonical key.
@@ -318,6 +343,8 @@ function validateRows(rows, imageMap, authorOptions = {}) {
     // Extract publicData from pub_*/pd_* columns. Use a null-prototype object and
     // reject reserved keys to prevent prototype pollution from CSV headers.
     const publicData = Object.create(null);
+    // publicData key -> the column it was read from, for error messages.
+    const sourceColumn = Object.create(null);
     for (const [key, value] of Object.entries(row)) {
       const prefix = PUBLIC_DATA_PREFIXES.find(p => key.startsWith(p));
       if (prefix && value && value.trim() !== '') {
@@ -329,8 +356,50 @@ function validateRows(rows, imageMap, authorOptions = {}) {
           continue;
         }
         if (IGNORED_PUBLIC_DATA_KEYS.has(pdKey)) continue; // e.g. pub_tags — no longer imported
+        sourceColumn[pdKey] = key;
         const trimmed = value.trim();
-        if (trimmed.includes('|')) {
+        const field = fieldOptions.get(pdKey);
+        if (CATEGORY_KEYS.includes(pdKey)) {
+          publicData[pdKey] = trimmed; // resolved as a path below
+        } else if (field) {
+          // Enum field: every value must be one of its options; the key is stored.
+          const rawValues = trimmed
+            .split('|')
+            .map(v => v.trim())
+            .filter(v => v !== '');
+          if (field.schemaType === 'enum' && rawValues.length > 1) {
+            rowErrors.push(
+              `Fila ${rowNum}: "${label(key)}" admite un solo valor, se recibió "${trimmed}".`
+            );
+            continue;
+          }
+          const resolved = [];
+          for (const raw of rawValues) {
+            const match = resolveOption(field, raw);
+            if (match.value) {
+              if (!resolved.includes(match.value)) resolved.push(match.value);
+            } else if (match.ambiguous) {
+              rowErrors.push(
+                `Fila ${rowNum}: "${label(
+                  key
+                )}": "${raw}" coincide con varias opciones (${match.ambiguous.join(
+                  ', '
+                )}). Usa la clave de la opción.`
+              );
+            } else {
+              rowErrors.push(
+                `Fila ${rowNum}: "${label(
+                  key
+                )}": "${raw}" no es una opción válida. Valores válidos: ${describeValues(
+                  field.values
+                )}.`
+              );
+            }
+          }
+          if (resolved.length > 0) {
+            publicData[pdKey] = field.schemaType === 'enum' ? resolved[0] : resolved;
+          }
+        } else if (trimmed.includes('|')) {
           // Pipe-separated → always an array
           publicData[pdKey] = trimmed.split('|').map(v => v.trim());
         } else if (MULTI_ENUM_PD_FIELDS.has(pdKey)) {
@@ -340,6 +409,22 @@ function validateRows(rows, imageMap, authorOptions = {}) {
           publicData[pdKey] = trimmed;
         }
       }
+    }
+
+    // Categories: the three columns must form a path in the Console tree. The
+    // resolved ids replace whatever was typed; levels the path does not reach
+    // are left unset.
+    if (categoryTree.length > 0) {
+      const { values, errors: categoryErrors } = resolveCategoryPath(
+        categoryTree,
+        CATEGORY_KEYS.map(k => publicData[k]),
+        level => label(sourceColumn[CATEGORY_KEYS[level]] || `pub_${CATEGORY_KEYS[level]}`)
+      );
+      categoryErrors.forEach(e => rowErrors.push(`Fila ${rowNum}: ${e}`));
+      CATEGORY_KEYS.forEach(k => {
+        if (values[k]) publicData[k] = values[k];
+        else delete publicData[k];
+      });
     }
 
     // Store the original price as the parsed number. Operators type it the same

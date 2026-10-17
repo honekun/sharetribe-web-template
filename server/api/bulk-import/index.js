@@ -17,7 +17,7 @@ const { getLimits } = require('./limits');
 const { checkAndRecord } = require('./rateLimiter');
 const { getSdk } = require('../../api-util/sdk');
 const { resolveListingMinimumPrice } = require('../../api-util/listingMinimumPrice');
-const { resolveAllowedPublicDataKeys } = require('./publicDataKeys');
+const { resolveListingImportConfig } = require('./listingImportConfig');
 
 const router = express.Router();
 
@@ -162,13 +162,26 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, async (
     // too, or it publishes listings whose sale cannot cover the provider fixed
     // fee. Resolved before the job checks below, which stay synchronous so the
     // one-job-per-user check and createJob cannot interleave with another request.
-    // The allowed publicData keys come from Console the same way, so a `pub_*`
-    // column can only write a configured listing field, never a system key.
+    // The listing config comes from Console the same way: a `pub_*` column can
+    // only write a configured listing field, never a system key; an enum value
+    // must be one of the field's options; the category must exist. Without it
+    // nothing can be checked, so the upload is refused rather than imported
+    // unchecked.
     const sdk = getSdk(req, res);
-    const [minimumPriceSubunits, allowedPublicDataKeys] = await Promise.all([
-      resolveListingMinimumPrice(sdk),
-      resolveAllowedPublicDataKeys(sdk),
-    ]);
+    let minimumPriceSubunits;
+    let listingConfig;
+    try {
+      [minimumPriceSubunits, listingConfig] = await Promise.all([
+        resolveListingMinimumPrice(sdk),
+        resolveListingImportConfig(sdk),
+      ]);
+    } catch (err) {
+      console.error('[bulk-import] Could not read the listing config:', err.message);
+      return res.status(503).json({
+        error:
+          'No se pudo leer la configuración de anuncios del marketplace. Inténtalo de nuevo en unos minutos.',
+      });
+    }
 
     // Validate rows against imageMap. Listings author to the signed-in user;
     // admins (req.bulkImportUser.isAdmin) may override per row via `user_id`.
@@ -181,7 +194,9 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, async (
       // dropped rather than reported as missing.
       ignoreImages: isCsvUpload,
       minimumPriceSubunits,
-      allowedPublicDataKeys,
+      allowedPublicDataKeys: listingConfig.allowedPublicDataKeys,
+      fieldOptions: listingConfig.fieldOptions,
+      categoryTree: listingConfig.categoryTree,
     });
     if (!validation.valid) {
       return res.status(400).json({

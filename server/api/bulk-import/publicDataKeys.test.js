@@ -4,17 +4,12 @@ const fs = require('fs');
 const path = require('path');
 
 const {
-  ASSET_PATH,
   SYSTEM_PUBLIC_DATA_KEYS,
   IGNORED_PUBLIC_DATA_KEYS,
   TEMPLATE_PUBLIC_DATA_KEYS,
-  resolveAllowedPublicDataKeys,
+  allowedPublicDataKeysFromFields,
   omitSystemPublicDataKeys,
 } = require('./publicDataKeys');
-
-const assetResponse = listingFields => ({
-  data: { data: [{ attributes: { data: { listingFields } } }] },
-});
 
 describe('SYSTEM_PUBLIC_DATA_KEYS', () => {
   it('covers every built-in public data key in configHelpers except the categories', () => {
@@ -52,28 +47,14 @@ describe('SYSTEM_PUBLIC_DATA_KEYS', () => {
   });
 });
 
-describe('resolveAllowedPublicDataKeys', () => {
-  beforeEach(() => jest.spyOn(console, 'warn').mockImplementation(() => {}));
-  afterEach(() => console.warn.mockRestore());
-
-  it('reads the listing-fields asset', async () => {
-    const sdk = { assetsByAlias: jest.fn().mockResolvedValue(assetResponse([])) };
-    await resolveAllowedPublicDataKeys(sdk);
-    expect(sdk.assetsByAlias).toHaveBeenCalledWith({ paths: [ASSET_PATH], alias: 'latest' });
-  });
-
-  it('adds public Console fields to the template columns', async () => {
-    const sdk = {
-      assetsByAlias: jest.fn().mockResolvedValue(
-        assetResponse([
-          { key: 'decada', scope: 'public' },
-          { key: 'era' }, // no scope = public
-          { key: 'internalNote', scope: 'private' },
-          { key: 'adminFlag', scope: 'metadata' },
-        ])
-      ),
-    };
-    const allowed = await resolveAllowedPublicDataKeys(sdk);
+describe('allowedPublicDataKeysFromFields', () => {
+  it('adds public Console fields to the template columns', () => {
+    const allowed = allowedPublicDataKeysFromFields([
+      { key: 'decada', scope: 'public' },
+      { key: 'era' }, // no scope = public
+      { key: 'internalNote', scope: 'private' },
+      { key: 'adminFlag', scope: 'metadata' },
+    ]);
     expect(allowed.has('decada')).toBe(true);
     expect(allowed.has('era')).toBe(true);
     expect(allowed.has('internalNote')).toBe(false);
@@ -81,38 +62,24 @@ describe('resolveAllowedPublicDataKeys', () => {
     TEMPLATE_PUBLIC_DATA_KEYS.forEach(key => expect(allowed.has(key)).toBe(true));
   });
 
-  it('never allows a system key, even when Console defines one', async () => {
-    const sdk = {
-      assetsByAlias: jest
-        .fn()
-        .mockResolvedValue(assetResponse([{ key: 'listingType', scope: 'public' }])),
-    };
-    const allowed = await resolveAllowedPublicDataKeys(sdk);
-    expect(allowed.has('listingType')).toBe(false);
+  it('never allows a system key, even when Console defines one', () => {
+    expect(allowedPublicDataKeysFromFields([{ key: 'listingType' }]).has('listingType')).toBe(
+      false
+    );
   });
 
-  it('never allows an ignored key, even when Console makes it public', async () => {
-    const sdk = {
-      assetsByAlias: jest.fn().mockResolvedValue(assetResponse([{ key: 'tags', scope: 'public' }])),
-    };
-    const allowed = await resolveAllowedPublicDataKeys(sdk);
-    expect(allowed.has('tags')).toBe(false);
+  it('never allows an ignored key, even when Console makes it public', () => {
+    expect(allowedPublicDataKeysFromFields([{ key: 'tags', scope: 'public' }]).has('tags')).toBe(
+      false
+    );
   });
 
-  it('falls back to the template columns when the fetch fails', async () => {
-    const sdk = { assetsByAlias: jest.fn().mockRejectedValue(new Error('network down')) };
-    const allowed = await resolveAllowedPublicDataKeys(sdk);
-    expect([...allowed].sort()).toEqual([...TEMPLATE_PUBLIC_DATA_KEYS].sort());
-    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('network down'));
-  });
-
-  it('falls back when the SDK is unusable or the asset is missing', async () => {
-    const fromBadSdk = await resolveAllowedPublicDataKeys(undefined);
-    expect(fromBadSdk.has('brand')).toBe(true);
-
-    const sdk = { assetsByAlias: jest.fn().mockResolvedValue({ data: { data: [] } }) };
-    const fromEmpty = await resolveAllowedPublicDataKeys(sdk);
-    expect([...fromEmpty].sort()).toEqual([...TEMPLATE_PUBLIC_DATA_KEYS].sort());
+  it('allows the template columns alone when Console has no fields', () => {
+    [undefined, null, [], 'not-an-array'].forEach(hostedFields =>
+      expect([...allowedPublicDataKeysFromFields(hostedFields)].sort()).toEqual(
+        [...TEMPLATE_PUBLIC_DATA_KEYS].sort()
+      )
+    );
   });
 });
 
