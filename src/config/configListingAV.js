@@ -8,9 +8,16 @@
 //                                                                    //
 // Field-option documentation lives in `configListing.js`.            //
 // Display-only input overrides live in `configListingDisplay.js`.    //
+//                                                                    //
+// CommonJS, like configAVShipping.js, so the ESM client (via webpack //
+// interop) and the plain-Node server share one source: bulk import   //
+// validates CSV values against these options                         //
+// (server/api/bulk-import/listingFieldOptions.js).                   //
 ////////////////////////////////////////////////////////////////////////
 
-export const avListingFields = [
+'use strict';
+
+const avListingFields = [
   {
     key: 'color',
     scope: 'public',
@@ -790,3 +797,5 @@ export const avListingFields = [
     },
   },
 ];
+
+module.exports = { avListingFields };

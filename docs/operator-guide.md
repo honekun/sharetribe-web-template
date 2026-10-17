@@ -1189,19 +1189,24 @@ the listing. (The legacy `pd_` prefix is still accepted.)
 | CSV Column           | Required | Valid values                                                                                                        |
 | -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
 | `pub_categoryLevel1` | Yes      | See [Category IDs](#category-ids) below                                                                             |
-| `pub_categoryLevel2` | Yes      | See [Category IDs](#category-ids) below                                                                             |
-| `pub_categoryLevel3` | No       | See [Category IDs](#category-ids) below                                                                             |
+| `pub_categoryLevel2` | Yes\*    | A subcategory of level 1. \*Needed whenever the level-1 category has subcategories                                  |
+| `pub_categoryLevel3` | Yes\*    | A subcategory of level 2. \*Needed whenever the level-2 category has subcategories                                  |
 | `pub_color`          | Yes      | One or more color option keys, pipe-separated (e.g. `azul` or `azul\|negro`)                                        |
 | `pub_all_sizes`      | Yes      | One or more size option keys, pipe-separated (e.g. `s\|m\|l`)                                                       |
 | `pub_brand`          | Yes      | One brand option key (e.g. `zara`, `gucci`)                                                                         |
 | `pub_genero`         | Yes      | One gender option key                                                                                               |
 | `pub_estado`         | Yes      | One condition option key                                                                                            |
 | `pub_estilo`         | Yes      | One or more style option keys, pipe-separated                                                                       |
-| `pub_temporada`      | No       | Season slug (e.g. `primavera`, `verano`, `otono`, `invierno`). Saved as data but not currently a searchable filter. |
+| `pub_temporada`      | No       | One season option key: `primavera`, `verano`, `otono`, `invierno` or `todo-el-ano`                                  |
 | `pub_originalPrice`  | No       | The original retail price in pesos (e.g. `650.00`). Must be higher than `price` to show as a strike-through.        |
 
 > **Multi-value fields** (`pub_color`, `pub_all_sizes`, `pub_estilo`): separate multiple
 > values with a pipe character `|`. A single value is also valid. Example: `azul|negro|crema`
+
+> **Keys or names.** Each value can be the option key (`negro`, `todo-el-ano`, `levi-s`) or the
+> name shown in the listing form (`Negro`, `Todo el año`, `LEVI'S`). Capitals and accents don't
+> matter, and the listing always saves the key. Anything else rejects the file, including a brand
+> that isn't in the brand list: add the brand in Console first ([§3.6](#36-marca-brand-field)).
 
 > **Only listing fields are accepted.** A `pub_` column must be one of the columns above or a
 > listing field configured in Console (Build → Listing fields). Any other `pub_` column with a value
@@ -1601,18 +1606,29 @@ This is the "missing values" check. It runs in two stages.
 | Image columns                   | None are required. A row that leaves all four blank is imported with the placeholder image.                       |
 | Image filenames                 | Every filename referenced in the row **exists in the ZIP**. A typo or wrong extension fails here.                  |
 | `pub_*` keys                    | A `pub_*`/`pd_*` column does not use a reserved name (`__proto__`, `constructor`, `prototype`).                    |
+| Option values                   | Colour, size, brand, `género`, `estado`, `estilo`, `temporada`: each value is an option key or its form name.      |
+| Category                        | A category, then each subcategory level until there are none, forming a path that exists in Console.             |
 | `location_lat` / `location_lng` | If present, both are valid numbers.                                                                                |
 | `stock`                         | Empty defaults to `1`; otherwise must be a whole number that is zero or greater.                                   |
 | `user_id`                       | May only be filled in by an **admin**. A non-admin who sets it gets a clear error and the row is rejected.         |
 
-**What is _not_ checked at this stage** (important):
+**Option values and categories are checked here** (since 2026-10-16). The Sharetribe API does
+not check them: before that date a typo such as `pub_color = blu`, a name instead of a key, or a
+missing category imported without an error. Such a listing then matched no filter or category
+page. Now the row fails with a message naming the column and listing valid values, e.g.:
 
-- **Option values are not verified against the Console.** Values for fields like colour, size,
-  brand, `categoría`, `género`, `estado`, `estilo`, and `temporada` are passed through as-is. A typo
-  such as `pub_color = blu` **passes** the pre-flight check and only fails later, per row, as an API
-  error in the errors table. Always use the exact option keys from
-  [8.5 Field Values Quick Reference](#85-field-values-quick-reference).
-- **Category existence** is likewise confirmed by the Sharetribe API during processing, not here.
+```
+Fila 3: "pub_color": "blu" no es una opción válida. Valores válidos: rojo, rosa, amarillo, … (17 en total).
+Fila 4: Falta la categoría ("pub_categoryLevel1"). Valores válidos: ropa, bolsas, zapatos, accesorios, home-antiques.
+Fila 5: Falta "pub_categoryLevel2": "ropa" tiene subcategorías. Valores válidos: ropa-tops, ropa-camisetas, …
+```
+
+A few form names belong to two options: `Rat & Boa` (two brand keys) and the sizes `MX 24`–`MX 29`
+(clothing and shoes). For those the error asks for the key, e.g. `mx_24` or `mx_shoes_24x`. See
+[8.5 Field Values Quick Reference](#85-field-values-quick-reference) for the keys.
+
+If the marketplace configuration can't be read at upload time, the upload is refused (_No se pudo
+leer la configuración de anuncios del marketplace…_). Try again in a few minutes.
 
 #### What you see when it fails
 
@@ -1655,7 +1671,8 @@ header your file uses:
 | Internal English names      | `image_front`             | `Fila N: La imagen "x.jpg" (image_front) no se encontró…` |
 
 This applies to **all** the per-row value errors — empty title/description, invalid price, an
-unresolved image, and an invalid `stock` — not just the image columns.
+unresolved image, an invalid `stock`, an invalid option value or category — not just the image
+columns.
 
 **Two edge cases where you'll still see the field's generic name:**
 

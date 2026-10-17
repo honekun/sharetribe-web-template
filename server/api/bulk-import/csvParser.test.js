@@ -1,6 +1,7 @@
 'use strict';
 
 const { parseCsv, validateRows, normalizeColumns, COLUMN_ALIASES } = require('./csvParser');
+const { buildFieldOptions, buildCategoryTree } = require('./listingFieldOptions');
 
 // Helper to build a CSV buffer from header + row arrays
 function buildCsv(headers, ...rows) {
@@ -488,7 +489,7 @@ describe('validateRows', () => {
       [
         validRow({
           pd_color: 'azul',
-          pd_brand: 'Levi',
+          pd_brand: "LEVI'S",
           image_front: 'front.jpg',
           image_back: 'back.jpg',
           image_horizontal: 'front.jpg',
@@ -496,8 +497,8 @@ describe('validateRows', () => {
       ],
       imageMap
     );
-    // color is multi-enum: single value becomes an array
-    expect(result.rows[0].publicData).toEqual({ color: ['azul'], brand: 'Levi' });
+    // color is multi-enum: single value becomes an array; the brand label maps to its key
+    expect(result.rows[0].publicData).toEqual({ color: ['azul'], brand: 'levi-s' });
   });
 
   it('pd_color single value is stored as an array', () => {
@@ -1220,5 +1221,155 @@ describe('validateRows', () => {
       expect(result.valid).toBe(true);
       expect(result.rows[0].authorId).toBe('other-uuid');
     });
+  });
+});
+
+describe('validateRows — option values and categories', () => {
+  // A cut-down Console config: hosted enum fields plus a small category tree.
+  const fieldOptions = buildFieldOptions([
+    {
+      key: 'genero',
+      scope: 'public',
+      schemaType: 'enum',
+      enumOptions: [{ option: 'mujer', label: 'Mujer' }, { option: 'unisex', label: 'Unisex' }],
+    },
+    {
+      key: 'estilo',
+      scope: 'public',
+      schemaType: 'multi-enum',
+      enumOptions: [{ option: 'vintage', label: 'Vintage' }, { option: 'casual', label: 'Casual' }],
+    },
+    {
+      key: 'temporada',
+      scope: 'public',
+      schemaType: 'enum',
+      enumOptions: [{ option: 'todo-el-ano', label: 'Todo el Año' }],
+    },
+  ]);
+  const categoryTree = buildCategoryTree([
+    {
+      id: 'ropa',
+      name: 'Ropa',
+      subcategories: [
+        {
+          id: 'ropa-sacos-chamarras',
+          name: 'Chamarras / Abrigos / Sacos',
+          subcategories: [{ id: 'ropa-sacos-chamarras-chamarras', name: 'Chamarras' }],
+        },
+      ],
+    },
+    { id: 'bolsas', name: 'Bolsas' },
+  ]);
+  const options = { fieldOptions, categoryTree };
+  const row = (overrides = {}) => ({
+    title: 'Chamarra',
+    description: 'Chamarra negra',
+    price: '450',
+    pub_categoryLevel1: 'bolsas',
+    ...overrides,
+  });
+  const validate = (rows, extra = {}) => validateRows(rows, new Map(), { ...options, ...extra });
+
+  it('stores option keys for values typed as labels', () => {
+    const result = validate([
+      row({
+        pub_color: 'Negro|negro|Café',
+        pub_all_sizes: 'Ropa / M',
+        pub_genero: 'UNISEX',
+        pub_estilo: 'Vintage | casual',
+        pub_temporada: 'Todo el año',
+        pub_brand: 'Prada',
+      }),
+    ]);
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0].publicData).toEqual({
+      categoryLevel1: 'bolsas',
+      color: ['negro', 'cafe'],
+      all_sizes: ['m'],
+      genero: 'unisex',
+      estilo: ['vintage', 'casual'],
+      temporada: 'todo-el-ano',
+      brand: 'prada',
+    });
+  });
+
+  it('rejects a value that is not an option, naming the column and valid values', () => {
+    const result = validate([row({ pub_genero: 'Otro', pub_color: 'negro|Fucsia' })]);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual([
+      'Fila 1: "pub_genero": "Otro" no es una opción válida. Valores válidos: mujer, unisex.',
+      expect.stringMatching(
+        /^Fila 1: "pub_color": "Fucsia" no es una opción válida\. Valores válidos: rojo, /
+      ),
+    ]);
+  });
+
+  it('rejects a brand that is not in the brand list', () => {
+    const result = validate([row({ pub_brand: 'YIKNAL' })]);
+    expect(result.errors).toEqual([
+      expect.stringMatching(
+        /^Fila 1: "pub_brand": "YIKNAL" no es una opción válida\..*en total\)\.$/
+      ),
+    ]);
+  });
+
+  it('rejects several values for a single-value field', () => {
+    const result = validate([row({ pub_genero: 'mujer|unisex' })]);
+    expect(result.errors).toEqual([
+      'Fila 1: "pub_genero" admite un solo valor, se recibió "mujer|unisex".',
+    ]);
+  });
+
+  it('keeps a field without an option set as typed', () => {
+    const result = validate([row({ pub_era: '80s' })], {
+      allowedPublicDataKeys: new Set(['categoryLevel1', 'era']),
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0].publicData.era).toBe('80s');
+  });
+
+  it('requires a category path and stores its ids', () => {
+    const missing = validate([row({ pub_categoryLevel1: '' })]);
+    expect(missing.errors).toEqual([
+      'Fila 1: Falta la categoría ("pub_categoryLevel1"). Valores válidos: ropa, bolsas.',
+    ]);
+
+    const partial = validate([row({ pub_categoryLevel1: 'Ropa' })]);
+    expect(partial.errors).toEqual([
+      'Fila 1: Falta "pub_categoryLevel2": "ropa" tiene subcategorías. Valores válidos: ropa-sacos-chamarras.',
+    ]);
+
+    const full = validate([
+      row({
+        pub_categoryLevel1: 'Ropa',
+        pub_categoryLevel2: 'Chamarras / Abrigos / Sacos',
+        pub_categoryLevel3: 'chamarras',
+      }),
+    ]);
+    expect(full.errors).toEqual([]);
+    expect(full.rows[0].publicData).toEqual({
+      categoryLevel1: 'ropa',
+      categoryLevel2: 'ropa-sacos-chamarras',
+      categoryLevel3: 'ropa-sacos-chamarras-chamarras',
+    });
+  });
+
+  it('names the Google Sheets columns in errors', () => {
+    const { rows, headerMap } = parseCsv(
+      buildCsv(
+        ['Título', 'Descripción', 'Precio Venta (mxn)', 'Categoría', 'Subcategoría 1', 'Marca'],
+        ['Chamarra', 'Negra', '450', 'Ropa', 'Ropa / Chamarras', 'YIKNAL']
+      )
+    );
+    const result = validate(rows, { headerMap });
+    expect(result.errors).toEqual([
+      expect.stringMatching(/^Fila 1: "Marca": "YIKNAL" no es una opción válida\./),
+      'Fila 1: "Subcategoría 1": "Ropa / Chamarras" no es una subcategoría de "ropa". Valores válidos: ropa-sacos-chamarras.',
+    ]);
+  });
+
+  it('checks no category when the marketplace has none', () => {
+    const result = validateRows([row({ pub_categoryLevel1: '' })], new Map(), { fieldOptions });
+    expect(result.errors).toEqual([]);
   });
 });
