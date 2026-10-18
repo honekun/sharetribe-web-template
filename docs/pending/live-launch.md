@@ -24,7 +24,7 @@ dashboards), _Dev_ (repository), _Business_ (decision or sign-off).
 | #   | Item                                                                                                                                                                                                                                                                                                                                                                                                                                      | Owner | Where            |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ---------------- |
 | A3  | ✅ Code gate passed on `pre-release` at `1a6e0198e` (PR #118, the last code change) on 2026-10-16: server and client tests, `format-ci`, `av-translation-check`, `config-check`, `env-template-check`, `build`. Render serves that code (`main.20acea97.js`); later merges are docs only. Re-run if the candidate changes.                                                                                                                | Dev   | checklist §1     |
-| A4  | Rebuilt 2026-10-16: v50 set `REACT_APP_GOOGLE_ANALYTICS_ID`, v51 deployed `main` at `08db5ebf8` (bundle `main.9ab84f88.js`). Verified: `pk_live_` and the Live client ID only, the #118 bag fix, the GA ID; one web dyno; readiness `200` with an active poller owner; no `CSP:` or 5xx log lines (only C1's landing 404s). Record v51 as the first known-good Live release once §5 passes; roll back only to v49 or v51, never past v48. | Ops   | checklist §4, §5 |
+| A4  | Rebuilt 2026-10-16: v50 set `REACT_APP_GOOGLE_ANALYTICS_ID`, v51 deployed `main` at `08db5ebf8` (bundle `main.9ab84f88.js`). Verified: `pk_live_` and the Live client ID only, the #118 bag fix, the GA ID; one web dyno; readiness `200` with an active poller owner; no `CSP:` or 5xx log lines (only C1's landing 404s). v52 deployed `main` at `f6cde567b` (PR #128, bulk-import value validation; bundle `main.ad24b9f3.js`) the same evening: clean boot, poller leadership acquired, readiness and `/api/bulk-import/template` `200`, no 5xx. Record v52 as the first known-good Live release once §5 passes; roll back only to v49, v51 or v52, never past v48. | Ops   | checklist §4, §5 |
 
 ### B. Render Test gate — must pass before Live sign-off
 
@@ -35,9 +35,7 @@ Heroku's logs contain a `CSP:` violation line.
 
 | #   | Item                                                                                                                                                                                                                                                     | Owner       | Where    |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | -------- |
-| C1  | **Live landing page:** all 20 hand-picked references are Test IDs, so three sections are empty. Hide them, then rebuild with Live listings and users.                                                                                                    | Console     | §3 below |
 | C2  | Paste the corrected email texts into Live and Test (36 `YYYY` date skeletons in both). Optionally re-paste the marketplace texts reference too: it now has 2,009 keys (adds `BrandFilter.noResults`); without it the bundled `es_av.json` value applies. | Console     | §3 below |
-| C3  | Turn on `tags` "include in search" in Live and Test (Hot List and tag carousels show arbitrary listings).                                                                                                                                                | Console     | §3 below |
 | C4  | Real Spanish landing meta description (still `Archivo Vintach Marketplace`; production is now crawlable).                                                                                                                                                | Console     | §8 below |
 | C5  | Outgoing-email sender, sender name, and reply-to for Sharetribe Live, plus its sending-domain DNS records (SPF merge, shared DMARC).                                                                                                                     | Console/Ops | §3, §6   |
 | C6  | Legal review of the terms of service and privacy policy (Brevo consent, Stripe, eShip address sharing).                                                                                                                                                  | Business    | §3 below |
@@ -70,7 +68,8 @@ Heroku's logs contain a `CSP:` violation line.
 
 ### F. After launch (does not block sign-off)
 
-Real `TRANSIT` webhook test and enabling tracking emails on Live (checklist §5, eShip §5.3); Brevo
+Fill the Live landing's Nuevo Drop, Favoritos and Closets Destacados sections with Live listings
+and users, and tag Hot List / ofertas listings (§3); real `TRANSIT` webhook test and enabling tracking emails on Live (checklist §5, eShip §5.3); Brevo
 campaigns (Phase B); eShip cancellation policy and IVA ([pending eShip](eship.md)); WhatsApp
 WA-01–08 ([notifications](notifications.md)); upstream v12.4.0 merge and Sentry 11; Spanish
 shareable operator guide; per-seller commission override; bulk-import scaling
@@ -223,10 +222,11 @@ Remaining (Console or owner actions):
 - [x] Categories (5 top-level, 150 total) and Console listing fields (`genero`, `brand`, `estado`,
       `estilo`, `temporada`, `tags`) exactly as in Test. Bulk-import option keys in the operator
       guide §8.5 must match Live. (Identical to Test, 2026-10-15.)
-- [ ] **`tags`: turn on "include in search" (indexForSearch) in Console, in Test and Live.** Still
-      off in both (2026-10-15), so the `pub_tags` query behind the tag carousels and the Hot List
-      (`av-tag-listings`) is ignored and those sections show arbitrary listings. The CLI cannot
-      change a Console-owned field.
+- [x] **`tags` is searchable in Test and Live** (2026-10-17): both now have the Console-owned
+      `metadata` multi-enum schema, so the `meta_tags` query behind the tag carousels and the Hot
+      List (`av-tag-listings`) narrows results instead of being ignored. No listing carries
+      `hot-list` or `ofertas` yet in either marketplace, so those sections stay empty until an
+      operator tags listings in Console.
 - [x] `transactions/commission.json` **22 %** and **Minimum transaction size `$20.00`** (`2000`
       subunits), as in Test. (Identical, 2026-10-15.)
 - [x] Process and alias in Live (`archivovintach`): `default-purchase` v1 with
@@ -265,12 +265,11 @@ Remaining (Console or owner actions):
       to Test (2026-10-15).
 - [ ] Review the terms of service and privacy policy for Live. They must cover Brevo marketing
       consent, Stripe, and eShip address sharing.
-- [ ] **Live landing page:** it is a copy of Test's, so **all 20** hand-picked references resolve to
-      nothing in Live (2026-10-15): 13 distinct listings in `av-selections-nuevo-drop` and
-      `av-selections-favoritos`, and 4 users in `av-selected-users-closets-destacados`. Those
-      sections render empty, and every landing render logs `av-landing-listings-failed` /
-      `av-landing-user-failed`. Rebuild them with Live listings and users once those exist, or hide
-      the sections until then.
+- [x] **Live landing page:** the 20 Test references were removed in Console on 2026-10-17, and the
+      `av-landing-listings-failed` / `av-landing-user-failed` log lines stopped. Accepted as is for
+      launch: `av-selections-nuevo-drop` and `av-selections-favoritos` show their heading and "Ver
+      todo" with no listings, and `av-selected-users-closets-destacados` renders nothing. Filling
+      them with Live listings and users is listed under §0 F.
 - [ ] Fix Test's landing page, which has 8 references that no longer resolve (re-checked 2026-10-15;
       Render logs `av-landing-user-failed` for `69e25982…` on every landing render, including the
       deploy health check — handled, not a deploy failure): 3 listings in `av-selections-nuevo-drop`
