@@ -33,15 +33,10 @@ Heroku's logs contain a `CSP:` violation line.
 
 ### C. Live content and configuration (Console) — fix before announcing
 
-| #   | Item                                                                                                                                                                                                                                                     | Owner       | Where    |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | -------- |
-| C2  | Paste the corrected email texts into Live and Test (36 `YYYY` date skeletons in both). Optionally re-paste the marketplace texts reference too: it now has 2,009 keys (adds `BrandFilter.noResults`); without it the bundled `es_av.json` value applies. | Console     | §3 below |
-| C4  | Real Spanish landing meta description (still `Archivo Vintach Marketplace`; production is now crawlable).                                                                                                                                                | Console     | §8 below |
-| C5  | Outgoing-email sender, sender name, and reply-to for Sharetribe Live, plus its sending-domain DNS records (SPF merge, shared DMARC).                                                                                                                     | Console/Ops | §3, §6   |
-| C6  | Legal review of the terms of service and privacy policy (Brevo consent, Stripe, eShip address sharing).                                                                                                                                                  | Business    | §3 below |
-| C7  | Live operator/admin account and the `BULK_IMPORT_OPERATOR_EMAILS` / `SHIPPING_LABEL_OPERATOR_EMAILS` users.                                                                                                                                              | Console/Ops | §3 below |
-| C8  | Fix Test's landing page (8 dead references) so Render's logs stay clean.                                                                                                                                                                                 | Console     | §3 below |
-| C9  | **22 Live Yiknal listings still show the placeholder photo.** They were bulk-imported before value validation (2026-10-16) with labels (`Negro`, `Ropa / M`, `YIKNAL`) and no category. On 2026-10-17 a one-off Integration API script rewrote them in place, Test first and then Live: option keys, a category path each, `Beige`→`crema`, `Estampado`→`multicolor`, `Home / Talla única`→`unitalla`. The validation fix is live (v52), `yiknal` is a Console brand and `temporada` is now a Console search filter in both environments. Left: the seller replaces the placeholder with real photos on each listing in the edit form. | Seller      | bulk-import.md|
+✅ Closed 2026-10-18: every item is done, accepted as is, or moved to after launch (F). C5, the
+Live outgoing email, was the last: Sharetribe sends through SendGrid from the verified
+`archivovintach.com` domain, and Live previews passed SPF, DKIM and DMARC with the set sender and
+reply-to.
 
 ### D. Live configuration to confirm (not readable from outside)
 
@@ -69,7 +64,12 @@ Heroku's logs contain a `CSP:` violation line.
 ### F. After launch (does not block sign-off)
 
 Fill the Live landing's Nuevo Drop, Favoritos and Closets Destacados sections with Live listings
-and users, and tag Hot List / ofertas listings (§3); real `TRANSIT` webhook test and enabling tracking emails on Live (checklist §5, eShip §5.3); Brevo
+and users, and tag Hot List / ofertas listings (§3); legal review of the terms of service and
+privacy policy (Brevo consent, Stripe, eShip address sharing; §3); real photos for the 22 Live Yiknal
+listings, which still show the bulk-import placeholder (their values and categories were fixed in
+place on 2026-10-17; the seller replaces the photo in each listing's edit form); the Live
+operator/admin account and the `BULK_IMPORT_OPERATOR_EMAILS` / `SHIPPING_LABEL_OPERATOR_EMAILS`
+users (§2.1, §3); real `TRANSIT` webhook test and enabling tracking emails on Live (checklist §5, eShip §5.3); Brevo
 campaigns (Phase B); eShip cancellation policy and IVA ([pending eShip](eship.md)); WhatsApp
 WA-01–08 ([notifications](notifications.md)); upstream v12.4.0 merge and Sentry 11; Spanish
 shareable operator guide; per-seller commission override; bulk-import scaling
@@ -214,6 +214,8 @@ Remaining (Console or owner actions):
       reply-to mailbox. The dispute acknowledgement relies on replies reaching a monitored Archivo
       Vintach mailbox. The site address itself comes from `REACT_APP_MARKETPLACE_ROOT_URL` (custom
       code); confirm that Live's built-in emails link to `https://www.archivovintach.com`.
+      Sender and reply-to set on 2026-10-18 (§6); the name, the `www` links and a reply reaching the
+      mailbox are checked with E5.
 - [x] User types `vendedor` ("Persona") and `vendedor-tienda` ("Tienda"); user fields `tipoTienda`
       (private enum) and `localDesign` (metadata enum), both limited to `vendedor-tienda`. Keep the
       phone field out — WhatsApp is release-locked. (Identical to Test, 2026-10-15.)
@@ -255,27 +257,27 @@ Remaining (Console or owner actions):
       ```
 
 - [x] Marketplace texts: identical to Test (2026-10-15).
-- [ ] Email texts: paste the corrected [`email-texts-es.json`](../reference/email-texts-es.json)
-      into **both Live and Test**. Both still carry the 36 uncorrected `YYYY` date skeletons
-      (2026-10-15); the reference file has none. Every key the process templates use exists in Live
-      (604 keys, same set as the reference). Send previews with `flex-cli notifications send` for
-      each purchase template.
+- [x] Email texts: the corrected [`email-texts-es.json`](../reference/email-texts-es.json) is in
+      **Test and Live** (2026-10-17): both hold the reference's 604 keys with identical values and
+      no `YYYY` date skeleton. Previews of `purchase-mark-order-received-reminder` (the only
+      purchase email that prints a date) and `purchase-new-order` were sent from Test.
+- [ ] Optional: re-paste the marketplace texts reference
+      ([`marketplace-texts-es.json`](../reference/marketplace-texts-es.json), 2,009 keys) into Test
+      and Live. Both hosted copies have 1,992 keys and lack `BrandFilter.noResults`; until then the
+      bundled `es_av.json` value applies (2026-10-17).
 - [x] Content pages, footer, and top bar copied: landing, `acerca-archivo-vintach`, `como-funciona`,
       `como-vender-persona`, `contacto`, `faqs`, terms of service, and privacy policy are identical
       to Test (2026-10-15).
 - [ ] Review the terms of service and privacy policy for Live. They must cover Brevo marketing
-      consent, Stripe, and eShip address sharing.
+      consent, Stripe, and eShip address sharing. Moved to after launch (§0 F, 2026-10-18).
 - [x] **Live landing page:** the 20 Test references were removed in Console on 2026-10-17, and the
       `av-landing-listings-failed` / `av-landing-user-failed` log lines stopped. Accepted as is for
       launch: `av-selections-nuevo-drop` and `av-selections-favoritos` show their heading and "Ver
       todo" with no listings, and `av-selected-users-closets-destacados` renders nothing. Filling
       them with Live listings and users is listed under §0 F.
-- [ ] Fix Test's landing page, which has 8 references that no longer resolve (re-checked 2026-10-15;
-      Render logs `av-landing-user-failed` for `69e25982…` on every landing render, including the
-      deploy health check — handled, not a deploy failure): 3 listings in `av-selections-nuevo-drop`
-      (`69e27e64…`, `69e25c40…`, `69e27942…`), 3 in `av-selections-favoritos` (`69e25a4d…`,
-      `69e25b5e…`, `69e25b9d…`), and 2 users in `av-selected-users-closets-destacados` (`69e25982…`,
-      `69eb22db…`). A listing that is closed rather than deleted also reports as missing.
+- [x] Test's landing page fixed in Console (2026-10-17): its 8 dead references are gone and all 12
+      remaining hand-picked references resolve. A listing that is closed rather than deleted also
+      reports as missing, so recheck after closing a featured listing.
 - [x] Marketplace API application (client ID + secret) and Integration API application, both from
       **Live** (Heroku v42).
 - [ ] Social login (Google, Facebook): production apps, Live callback URLs on the production domain.
@@ -283,7 +285,7 @@ Remaining (Console or owner actions):
       (2026-10-15); a real sign-in proves the secret. Facebook: an app ID is in the Live bundle;
       confirm it is the production app with the `www` callback, or remove it.
 - [ ] At least one operator admin account and the `BULK_IMPORT_OPERATOR_EMAILS` /
-      `SHIPPING_LABEL_OPERATOR_EMAILS` users created in Live.
+      `SHIPPING_LABEL_OPERATOR_EMAILS` users created in Live. Moved to after launch (§0 F, 2026-10-18).
 - [x] Run `yarn run config:compare <testClientId> <liveClientId>` and resolve every unexpected
       difference. No differences (2026-10-15).
 
@@ -383,9 +385,13 @@ was deleted on 2026-10-10.
 - [x] Render (Test): Brevo configured for the welcome email (2026-10-15): readiness shows it enabled
       with nothing missing and `/api/brevo/health` returns `200`. The forbidden public
       `REACT_APP_BREVO_LIST_ID` (it was `9` in the Render bundle) is gone from the rebuilt bundle.
-- [ ] Sharetribe Live outgoing email uses the production domain (separate from Brevo), with the same
+- [x] Sharetribe Live outgoing email uses the production domain (separate from Brevo), with the same
       visible sender name and reply-to mailbox as Brevo's `hola@archivovintach.com` sender (Brevo
-      guide, "Which system sends which email").
+      guide, "Which system sends which email"). Done 2026-10-18: Sharetribe sends through SendGrid,
+      and `em7377` (return path, own SPF), `flx._domainkey` and `flx2._domainkey` are CNAMEs to
+      `u116477629.wl130.sendgrid.net`. The domain is verified in Console, the sender and reply-to
+      are set, and Live previews of `purchase-new-order` and
+      `purchase-mark-order-received-reminder` passed SPF, DKIM (`d=archivovintach.com`) and DMARC.
 - [ ] Campaigns (Phase B: seven templates, capacity, smoke tests) wait until after launch;
       `AV_BREVO_CAMPAIGNS_ENABLED` stays `false`.
 
@@ -447,7 +453,9 @@ Remaining:
       marketplace; see
       [deployment topology](../operations/deployment.md#where-the-marketplace-url-is-defined).
 - [x] DMARC record added (`_dmarc.archivovintach.com`, `p=none`) with the Brevo domain (§6, Brevo
-      guide step A1). Re-check it when adding Sharetribe's Live sending-domain records.
+      guide step A1). Re-checked after Sharetribe's SendGrid records were added (2026-10-18):
+      unchanged, and the apex keeps a single SPF record (Google Workspace only; Brevo and SendGrid
+      use their own return-path domains).
 - [x] Before `pg:reset`, carry the Instagram token across (runbook §5.2): done at v43–v44.
 
 ## 8. Content, SEO, and operations
@@ -483,9 +491,10 @@ Remaining:
 - [x] `AV_NOINDEX` removed at v46: `www` serves the normal `robots.txt`, and the herokuapp host
       still sends `X-Robots-Tag: noindex, nofollow` (2026-10-15).
 - [x] Render: `AV_NOINDEX=true` is in effect (verified 2026-10-10, see §2.1).
-- [ ] Console (Test and Live): write a real Spanish meta description for the landing page — it is
-      still `Archivo Vintach Marketplace` in both (2026-10-15), and production is now crawlable —
-      and remove the trailing space in the footer's TikTok URL.
+- [x] Console (Test and Live): the landing page description and the **social** description (SEO &
+      Social → "Page description for social media") are written, and the footer's TikTok URL no
+      longer has a trailing space (2026-10-17). `www` serves the new text as `description`,
+      `og:description` and `twitter:description`. The copy is interim; the final text is pending.
 - [ ] Spanish shareable operator guide is still a draft (see [pending README](README.md)); decide
       whether operators get the English edition at launch.
 - [ ] Assign the launch roles from the runbook §1 (operator, approver, rollback owner, monitoring
