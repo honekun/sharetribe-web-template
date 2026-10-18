@@ -26,6 +26,7 @@ application settings. No technical background is required.
    - [Tallas (Sizes)](#35-tallas-sizes-field)
    - [Marca (Brand)](#36-marca-brand-field)
 4. [Landing Page and CMS Sections](#4-landing-page-and-cms-sections)
+   - [SEO and Social Settings](#seo-and-social-settings-for-each-page)
    - [Hand-Picked Listing Carousel](#41-hand-picked-listing-carousel-avselections)
    - [Category Card Carousel](#42-category-card-carousel-avselectedcats)
    - [Tag or Category Filtered Carousel](#43-tag-or-category-filtered-carousel-avtaglistings)
@@ -442,6 +443,48 @@ every custom type is available on every page:
 
 Do not add a landing-only section to another CMS page; those rendering components are not registered
 there.
+
+### SEO and Social settings for each page
+
+Complete these settings whenever you create a page or make a substantial change to its purpose.
+They control the page title and description that search engines may show and the title, description,
+and image that services such as Facebook, LinkedIn, and X may show when someone shares the page.
+Well-written, page-specific metadata makes the result clearer and more trustworthy, improves the
+chance that the right visitor opens it, and prevents placeholder content such as `Change Me` from
+appearing publicly. Metadata is guidance: search and social platforms may still choose a different
+excerpt or crop.
+
+**Quick setup:**
+
+1. In the correct Console environment, open **Content → Pages** and select the page.
+2. Open the **SEO & Social** tab.
+3. Complete every field:
+   - **Page title** — write a concise, unique title that states what this page is about. Include the
+     marketplace name only when it helps identify the result.
+   - **Page description** — summarize the page accurately in one or two natural sentences and give
+     the visitor a reason to open it.
+   - **Page title for social media** — normally use the page title, or a slightly more engaging but
+     still accurate version.
+   - **Page description for social media** — normally use the page description; make sure it still
+     makes sense when seen without the rest of the page.
+   - **Social media image** — upload a relevant image with a **1.91:1 ratio** and at least
+     **1200 × 630 px**. Keep important faces, products, logos, and text away from the edges because
+     platforms may crop the image.
+4. Save the page, use **View page**, and confirm the browser-tab title and the visible page content
+   agree. Test the public URL in a social-link preview tool when the page will be promoted.
+5. After approval in Test, copy the page changes to Live using the release process in
+   [Section 14.2](#142-content-and-configuration-releases), then verify the production URL while
+   signed out.
+
+Use the same language as the page and write for people, not just search engines. Avoid duplicate
+titles across pages, keyword lists, vague descriptions, unsupported claims, and promotional text
+that does not match the visible content. SEO metadata does not replace a clear on-page title: keep
+one meaningful page-title (H1) in the page content as well.
+
+Changes can take several days to appear because search engines and social platforms recrawl and
+cache pages on their own schedules. These per-page settings apply to content pages. Listing and
+other dynamic pages usually build their metadata from the listing or user content and should not be
+changed through this workflow.
 
 ### How sections work
 
