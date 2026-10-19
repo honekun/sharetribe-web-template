@@ -185,10 +185,13 @@ before announcing.
 - [x] Configure Stripe live mode and the matching publishable key. The bundle carries `pk_live_…`
       (v38).
 - [ ] Verify the production root URL, DNS, TLS, email sender domain, social callbacks, and Mapbox.
-      Root URL, DNS, and TLS are verified (2026-10-15); the email sender domain and social callbacks
-      are not.
-- [ ] Use the explicit production eShip base URL/key and disable eShip debug output. Key and base
-      URL set at v39–v40; confirm `ESHIP_API_DEBUG` is unset.
+      Root URL, DNS, and TLS are verified (2026-10-15); the Sharetribe sender domain is verified and
+      passes SPF, DKIM and DMARC (2026-10-18). Google and Facebook both redirect with the `www`
+      callback, and Google sign-in returns a profile (secret works), but Sharetribe Live rejects
+      sign-up with "Identity provider ID and client ID are invalid": the Live Console social-login
+      entries are missing (2026-10-19, launch tracker D4).
+- [x] Use the explicit production eShip base URL/key and disable eShip debug output. Key and base
+      URL set at v39–v40; `ESHIP_API_DEBUG` unset (operator, 2026-10-19).
 - [x] Add the production domains and certificate to the same Heroku app. Both domains attached
       (2026-10-09); DNS moved and `www` serves valid HTTPS (2026-10-15).
 - [x] Confirm the approved cutover reuses the PostgreSQL add-on only after a completed Test backup
@@ -212,16 +215,18 @@ evidenced by the release log or public endpoints stay unticked until the operato
 later releases, replace this section with: rebuild the Render-validated commit on Heroku, migrate if
 needed, confirm readiness, and record the release.
 
-- [ ] Confirm the exact Heroku app and PostgreSQL add-on with an independent approver.
+- [ ] Confirm the exact Heroku app and PostgreSQL add-on with an independent approver. Deferred to
+      after launch with the launch roles (2026-10-19).
 - [ ] Scale the Heroku app to `web=0` and set all guarded capabilities to `false`. The flags changed
-      at v41; the scale-down is not recorded.
+      at v41. The operator switched the site off for the cutover, but the scale-down was not
+      recorded, so it stays unticked; accepted as not done (2026-10-19).
 - [x] Capture the Test PostgreSQL backup, wait for completion, and record its backup ID. `b007`.
 - [x] Reset the attached `DATABASE_URL` in accordance with the approved destructive cutover step.
       Readiness shows no Test deliveries, marketing preferences, or poller cursor.
 - [ ] Replace all Marketplace, Integration, Stripe, eShip, Brevo, social-login, root URL, and public
       build values with their matching Live values. Done for Marketplace, Integration, Stripe,
-      eShip, root URL, Google client ID, and `BREVO_LIST_ID` (v37–v45). Confirm the Brevo webhook
-      URL and the remaining social-login values.
+      eShip, root URL, Google client ID, and `BREVO_LIST_ID` (v37–v45); the Brevo webhook URL
+      points at `www` (2026-10-19). Confirm the remaining social-login values.
 - [x] Trigger a complete Heroku rebuild with Live variables. v48 deployed `cdb36026c`; its bundle
       carries `pk_live_…`.
 - [x] Confirm the Live build's source tree matches the tested release candidate. `cdb36026c` differs
@@ -231,14 +236,16 @@ needed, confirm readiness, and record the release.
       Readiness reports `migrated: true`.
 - [ ] Scale to `web=1` and perform baseline SSR/database checks with guarded capabilities still off.
 - [x] Enable only the approved welcome/manual-label capabilities; keep campaigns, WhatsApp, and
-      label auto-buy false. v49; readiness shows campaigns, tracking, and WhatsApp disabled. Confirm
-      `ESHIP_LABEL_AUTOBUY=false` in config.
+      label auto-buy false. v49; readiness shows campaigns, tracking, and WhatsApp disabled;
+      `ESHIP_LABEL_AUTOBUY=false` confirmed in config (2026-10-19).
 - [x] Confirm exactly one web process. (2026-10-15)
-- [ ] Confirm build and boot logs contain no recurring errors.
+- [x] Confirm build and boot logs contain no recurring errors. v52, 2026-10-18: ~3 h of logs with
+      no 5xx, H-code or R14 line; the daily restart booted cleanly and reacquired poller leadership.
 - [x] Confirm `/api/notifications/readiness` and enabled-provider health checks return `200`.
       (2026-10-15)
 - [ ] Record the first known-good Live-configured Heroku release. Public traffic is already open, so
-      record it as soon as §5 passes. Candidate: v51 (2026-10-16), `main` at `08db5ebf8` with
+      record it as soon as §5 passes. Candidate: v52 (2026-10-16), `main` at `f6cde567b` (bundle
+      `main.ad24b9f3.js`, bulk-import value validation) on top of v51's
       `REACT_APP_GOOGLE_ANALYTICS_ID` (v50); its bundle carries only Live values, readiness is
       `200`, and the logs show no CSP violations or 5xx responses.
 
