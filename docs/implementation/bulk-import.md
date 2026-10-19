@@ -47,15 +47,17 @@ Browser (BulkImportPage)             Server (Express)
   |-- Poll every 2s ----------------> GET /api/bulk-import/status/:jobId
   |                                    |-- Return progress, results, errors
   |                                    |
-  |-- Download template ------------> GET /api/bulk-import/template
+  |-- Generated template (unlinked) -> GET /api/bulk-import/template
   |                                    |-- Return generated CSV + example row
 ```
 
-The "Open template" button links directly to the public `GET /api/bulk-import/template` endpoint. It
+The "Open template" button links to a shared Google Drive template
+(`TEMPLATE_URL` in `BulkImportPage.js`, currently `https://drive.google.com/file/d/1W0g58WNilLwQAmLlJvxjkK2YGwqvrQ5a/view?usp=sharing`) and opens it in a new tab
+(`target="_blank"`), so an in-progress import page is never replaced. The file is maintained by hand
+in Drive: when listing fields, enum options or categories change, update it there as well, and keep
+its link shared as "anyone with the link". The public `GET /api/bulk-import/template` endpoint still
 generates a CSV with the current machine headers and one valid example row
-(`server/api/bulk-import/index.js`). Because the URL is same-origin and the response sets
-`Content-Disposition: attachment`, the browser downloads it without replacing an in-progress import
-page or depending on an external file permission.
+(`server/api/bulk-import/index.js`) and remains available, but the page no longer links to it.
 
 Processing is **asynchronous** so uploads do not depend on a hosting platform's HTTP request
 timeout. The server accepts the upload, returns a job ID immediately, and processes rows in the
@@ -380,10 +382,11 @@ title,description,price,pub_brand,pub_categoryLevel1,pub_categoryLevel2,pub_cate
 "Jeans Levi's Retro","Jeans de los 90s en buen estado","$950.00",levi-s,ropa,ropa-jeans,ropa-jeans-momfit,azul,mx_28,unisex,buen-estado,retro,todo-el-ano,jeans-1.jpg,jeans-2.jpg,jeans-3.jpg,
 ```
 
-The template link on the import page points to `/api/bulk-import/template`. The route generates the
-same `pub_*` and `imagen_*` format shown above, is public, and is covered by a round-trip test that
-parses and validates its example row. Updating the generated template requires a deploy, but the
-operator workflow no longer depends on a separately shared Drive file.
+The template link on the import page points to the shared Google Drive file (see above), so the
+operator workflow depends on that file's sharing permission and on it being kept in step with the
+listing configuration by hand. `/api/bulk-import/template` still generates the same `pub_*` and
+`imagen_*` format shown above, is public, and is covered by a round-trip test that parses and
+validates its example row.
 
 Nothing links to `public/static/files/PLANTILLA_CARGA_MASIVA.csv` at runtime any more — not the
 page, not `docs/operator-guide.md`. It is still _named_ in several places, which is why it should

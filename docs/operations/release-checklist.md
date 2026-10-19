@@ -23,14 +23,14 @@ Open gaps are in [Live launch readiness](../pending/live-launch.md).
 - Database reset and migration evidence: readiness `migrated: true` with no Test rows (2026-10-15)
 - Live Heroku release ID: v48 (build), v49 (flags)
 - Release operator:
-- Approver:
+- Approver: Alex for the tests the AV team runs; the client for the tests they run and the
+  overall launch approval (2026-10-19)
 - Started/completed time and timezone:
-- First known-good Live-configured rollback release: pending Live validation (candidate: the
-  Talla-fix release after v56)
+- First known-good Live-configured rollback release: pending Live validation (candidate v58)
 
 ## 1. Code and configuration gate
 
-Run 2026-10-19 on the Live candidate (the Talla filter fix after v56).
+Run 2026-10-19 on the Live candidate (v57/v58 code).
 
 - [x] The reviewed release branch is merged and the worktree is clean. Merged to `main` with the
       Talla fix PR.
@@ -259,17 +259,20 @@ needed, confirm readiness, and record the release.
       `main.ad24b9f3.js`, unchanged since v52; v55–v56 are the server-only Brevo unsubscribe fixes,
       PRs #133–#134) on top of v51's `REACT_APP_GOOGLE_ANALYTICS_ID` (v50); its bundle carries
       only Live values, readiness is `200`, and the logs show no CSP violations or 5xx responses.
-      Superseded by the next deploy, the Talla filter fix (`df0cd65e6`), which changes the bundle.
+      Superseded by v57 (`c37b994d8`, the Talla filter fix, bundle `main.639f579a.js`) and v58
+      (`ESHIP_MARKUP_PCT=0`): **candidate v58**, verified the same way on 2026-10-19.
 
 ## 5. Live smoke and launch gate
 
 This is the pending "overall validation" for the initial launch.
 
 - [x] Move public DNS only after the Live build and readiness gates pass. `www` CNAME to Heroku,
-      apex `301` to `www` (verified 2026-10-15).
+      apex `301` to `www` (verified 2026-10-15) — for `/` only: GoDaddy's forward-only forwarding
+      returns `404` for every apex path (`/s`, `/admin/bulk-import`, `/api/bulk-import/template`;
+      re-checked 2026-10-19), so apex deep links are broken. See live-launch "Domains".
 - [ ] Production domain, redirects, SSR, login, search, and CMS pages work. Redirects, SSR,
       canonical URL, and crawlable `robots.txt` verified (2026-10-15); CMS pages, search filters and
-      Google sign-in (2026-10-19). Left: email/password login and a Facebook sign-in.
+      Google sign-in and email/password login (2026-10-19). Left: a Facebook sign-in.
 - [ ] Create one real seller/listing and complete real Stripe Connect onboarding.
 - [ ] Complete one approved low-value real purchase with a live eShip quote.
 - [ ] Verify order math, platform-retained shipping fee, seller payout, and transaction shipping

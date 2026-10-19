@@ -193,7 +193,8 @@ describe('BulkImportPage', () => {
     );
   });
 
-  const TEMPLATE_URL = '/api/bulk-import/template';
+  const TEMPLATE_URL =
+    'https://drive.google.com/file/d/1W0g58WNilLwQAmLlJvxjkK2YGwqvrQ5a/view?usp=sharing';
 
   it('renders the template link', async () => {
     render(<BulkImportPage />, { initialState: baseState });
@@ -205,15 +206,16 @@ describe('BulkImportPage', () => {
     });
   });
 
-  it('downloads the same-origin template without navigating away from an import', async () => {
+  it('opens the shared template in a new tab without navigating away from an import', async () => {
     render(<BulkImportPage />, { initialState: baseState });
 
     const link = (await screen.findByText('BulkImportPage.simpleTemplateCta')).closest('a');
 
-    // The route is same-origin and sends Content-Disposition: attachment. The
-    // attribute makes the intended browser behaviour explicit as well.
-    expect(link).toHaveAttribute('download');
-    expect(link).not.toHaveAttribute('target');
+    // The template is a cross-origin Drive file, so `download` would be ignored;
+    // a new tab keeps an in-progress import page open.
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(link).not.toHaveAttribute('download');
   });
 
   it('shows validation error returned from start endpoint', async () => {
