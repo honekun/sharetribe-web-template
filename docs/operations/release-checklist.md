@@ -267,7 +267,9 @@ needed, confirm readiness, and record the release.
 This is the pending "overall validation" for the initial launch.
 
 - [x] Move public DNS only after the Live build and readiness gates pass. `www` CNAME to Heroku,
-      apex `301` to `www` (verified 2026-10-15).
+      apex `301` to `www` (verified 2026-10-15) — for `/` only: GoDaddy's forward-only forwarding
+      returns `404` for every apex path (`/s`, `/admin/bulk-import`, `/api/bulk-import/template`;
+      re-checked 2026-10-19), so apex deep links are broken. See live-launch "Domains".
 - [ ] Production domain, redirects, SSR, login, search, and CMS pages work. Redirects, SSR,
       canonical URL, and crawlable `robots.txt` verified (2026-10-15); CMS pages, search filters and
       Google sign-in and email/password login (2026-10-19). Left: a Facebook sign-in.

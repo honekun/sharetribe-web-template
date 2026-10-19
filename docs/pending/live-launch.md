@@ -418,6 +418,13 @@ Checked and prepared on 2026-10-09:
   enabled. DNS is at GoDaddy (`domaincontrol.com`), which has no ALIAS/ANAME, so `www` is a CNAME to
   Heroku and the apex is forwarded to it (runbook §4 step 9 and §5.7). Today both still serve the
   GoDaddy placeholder site, with HSTS `includeSubDomains`.
+  **Open (2026-10-19):** the apex forward only covers `/`. `https://archivovintach.com/` answers
+  `301` to `www`, but any other apex path gets a `404` from the forwarder (`/s`,
+  `/admin/bulk-import`, `/api/bulk-import/template`), so a link someone shares or types without
+  `www` breaks. The app is fine: the same paths on `www` and Render return `200`. Fix it at GoDaddy,
+  by making the forward keep the path if it can, or else by moving DNS to a provider that can point
+  the apex at Heroku (ALIAS/flattened CNAME) together with an app-side apex→`www` redirect, which
+  the app does not have today.
 - **Instagram**: the feed works on Heroku (12 posts); the stored token was refreshed 2026-10-12,
   expires 2026-12-11, and auto-refreshes under 20 days. `INSTAGRAM_ACCESS_TOKEN` is an older seed
   than the stored token, so the runbook (§5.2) now copies the stored token into it before
