@@ -3,6 +3,7 @@ import classNames from 'classnames';
 
 import { listingFieldDisplayOverrides } from '../../config/configListingDisplay';
 import { useIntl } from '../../util/reactIntl';
+import { resolveOptionGroups } from '../../util/avGroupedOptions';
 import { CustomExtendedDataField } from '../../components';
 import FieldColorDropdown from '../FieldColorDropdown/FieldColorDropdown';
 import FieldGroupedMultiSelect from '../FieldGroupedMultiSelect/FieldGroupedMultiSelect';
@@ -17,20 +18,7 @@ import css from './DisplayOverrideField.module.css';
 const groupedMultiSelectInput = props => {
   const { name, id, label, saveConfig, enumOptions, validate } = props;
   const intl = useIntl();
-  const enumLabels = (enumOptions || []).reduce((labels, option) => {
-    labels[option.option] = option.label;
-    return labels;
-  }, {});
-  const groups = (saveConfig?.groups || []).map(group => ({
-    ...group,
-    label: group.labelTranslationKey
-      ? intl.formatMessage({ id: group.labelTranslationKey })
-      : group.label,
-    options: (group.options || []).map(optionKey => ({
-      option: optionKey,
-      label: enumLabels[optionKey] || optionKey,
-    })),
-  }));
+  const groups = resolveOptionGroups(saveConfig?.groups, enumOptions, intl);
 
   return (
     <FieldGroupedMultiSelect

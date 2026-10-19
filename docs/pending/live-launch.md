@@ -23,8 +23,8 @@ dashboards), _Dev_ (repository), _Business_ (decision or sign-off).
 
 | #   | Item                                                                                                                                                                                                                                                                                                                                                                                                                                      | Owner | Where            |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ---------------- |
-| A3  | ✅ Code gate passed on `pre-release` at `1a6e0198e` (PR #118, the last code change) on 2026-10-16: server and client tests, `format-ci`, `av-translation-check`, `config-check`, `env-template-check`, `build`. Render serves that code (`main.20acea97.js`); later merges are docs only. Re-run if the candidate changes.                                                                                                                | Dev   | checklist §1     |
-| A4  | Rebuilt 2026-10-16: v50 set `REACT_APP_GOOGLE_ANALYTICS_ID`, v51 deployed `main` at `08db5ebf8` (bundle `main.9ab84f88.js`). Verified: `pk_live_` and the Live client ID only, the #118 bag fix, the GA ID; one web dyno; readiness `200` with an active poller owner; no `CSP:` or 5xx log lines (only C1's landing 404s). v52 deployed `main` at `f6cde567b` (PR #128, bulk-import value validation; bundle `main.ad24b9f3.js`) the same evening: clean boot, poller leadership acquired, readiness and `/api/bulk-import/template` `200`, no 5xx. Record v52 as the first known-good Live release once §5 passes; roll back only to v49, v51 or v52, never past v48. | Ops   | checklist §4, §5 |
+| A3  | ✅ Code gate re-run on `pre-release` at `df0cd65e6` (tree `978e54f70`, the Talla filter fix; the last code change) on 2026-10-19: server 61 suites / 782 tests, client 190 suites / 1,999 tests / 168 snapshots, `format-ci`, `av-translation-check`, `config-check`, `env-template-check`, `build`. No migrations since `009`; the Brevo fixes (PRs #133–#134) are server-only, and the filter fix restores labels operators already expect. Later commits are docs only. Re-run if the candidate changes. | Dev   | checklist §1     |
+| A4  | Rebuilt 2026-10-16: v50 set `REACT_APP_GOOGLE_ANALYTICS_ID`, v51 deployed `main` at `08db5ebf8` (bundle `main.9ab84f88.js`). Verified: `pk_live_` and the Live client ID only, the #118 bag fix, the GA ID; one web dyno; readiness `200` with an active poller owner; no `CSP:` or 5xx log lines (only C1's landing 404s). v52 deployed `main` at `f6cde567b` (PR #128, bulk-import value validation; bundle `main.ad24b9f3.js`) the same evening: clean boot, poller leadership acquired, readiness and `/api/bulk-import/template` `200`, no 5xx. v53 (2026-10-19, `cdc6bcdce`) was docs only, same bundle. v54 set the seven `BREVO_TEMPLATE_*` IDs. v55 deployed `b9a8693b6` (PR #133, webhook unlinks suppressed addresses from the Brevo list) and v56 `6cb1ac358` (PR #134, re-consent clears Brevo's transactional block; verified on Live with TEST STORE): both server-only, same bundle, clean boot, poller leadership acquired, readiness `200`, no 5xx. The Talla filter fix (`df0cd65e6`) changes the bundle and is the next deploy: record that release as the first known-good Live release once it is verified and §5 passes; roll back only to v49, v51–v56 or it, never past v48. | Ops   | checklist §4, §5 |
 
 ### B. Render Test gate — must pass before Live sign-off
 
@@ -40,15 +40,17 @@ reply-to.
 
 ### D. Live configuration to confirm (not readable from outside)
 
-| #   | Item                                                                                                                                                                                            | Owner    | Where                  |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---------------------- |
-| D4  | **Social sign-up fails on Live** (2026-10-19). Google sign-in reaches `/confirm` with the profile filled in, so the Google client ID, secret and `www` callback work, but "Registrarse" shows "Error en el registro": Sharetribe answers `create_with_idp` with `403 forbidden` "Identity provider ID and client ID are invalid". Sharetribe **Live** Console has no Google identity provider (`google`) with the client ID the app sends (`781395730665-clple5e8l8kcfsdrp7vjpkb2t7n4gtdn.apps.googleusercontent.com`). Add it under the Live social-login settings and retry; existing users signing in with Google hit the same check. Facebook (app `2518143721971209`, `www` callback verified) needs the same Live IdP entry and the Meta app in Live mode, or remove Facebook login. | Console  | §3                     |
+✅ Closed 2026-10-19. D2, D3 and D5 were confirmed by the operator and Fernanda, D6 is recorded
+(boot logs clean; the cutover `web=0` happened but was not recorded), and D1 and the launch roles
+moved to F. D4 was the last: after the Live Console got its Google identity provider, a Google
+sign-up created a Live account (`Alejandro C`); the Facebook IdP entry and Heroku variables are set,
+and a Facebook sign-in is part of E1.
 
 ### E. Live smoke and sign-off (release checklist §5)
 
 | #   | Item                                                                                                                                               | Owner    |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| E1  | Login, search, and CMS pages on `www`.                                                                                                             | Ops      |
+| E1  | Login, search, and CMS pages on `www`. **Done 2026-10-18/19:** home, the six CMS pages, terms, privacy, `/login`, `/signup`, a profile, a listing page, sitemap and `robots.txt` serve SSR in ~0.5 s; search filters return the expected counts (30 all, 22 `yiknal`, 27 `ropa`, 5 `invierno`, 10 `negro`); Google sign-up and sign-in work. The **Talla** filter showed blank size groups and options (a regression from `00aa95edf`, 2026-06-24); fixed in `df0cd65e6` and verified locally: 6 labelled groups, 56 options, selecting M filters to `pub_all_sizes=has_any:m`. **Left:** re-check Talla on `www` after the deploy, email/password login and a Facebook sign-in. Content follow-up (not a gate): the About, Terms and Privacy page titles are still in English. | Ops      |
 | E2  | One real seller with real Stripe Connect onboarding and a complete shipping origin; one approved listing.                                          | Business |
 | E3  | One approved low-value purchase with a production eShip quote; verify order math, retained shipping fee, payout, `avShipping`.                     | Business |
 | E4  | Buy and download the production label manually; record the carrier charge.                                                                         | Ops      |
@@ -278,7 +280,9 @@ Remaining (Console or owner actions):
       reports as missing, so recheck after closing a featured listing.
 - [x] Marketplace API application (client ID + secret) and Integration API application, both from
       **Live** (Heroku v42).
-- [ ] Social login (Google, Facebook): production apps, Live callback URLs on the production domain.
+- [x] Social login (Google, Facebook): production apps, Live callback URLs on the production domain.
+      Google sign-up works on Live (2026-10-19); Facebook's Live IdP entry and Heroku variables are
+      set, and its sign-in is tested in E1.
       Google: client ID set at v45, and `/api/auth/google` redirects with the `www` callback
       (2026-10-15); a real sign-in proves the secret. Facebook: an app ID is in the Live bundle;
       confirm it is the production app with the `www` callback, or remove it.
@@ -325,8 +329,8 @@ Checked on 2026-10-09:
 
 Remaining:
 
-- [ ] Test **Generar guía → Descargar guía** on **Render** against QA with a paid test order. It was
-      never run on Heroku before the cutover, and Render's database must be migrated first (§7).
+- [x] Test **Generar guía → Descargar guía** on **Render** against QA with a paid test order. Done
+      2026-10-16 on order `6ad26852…` (release checklist §2).
 - [x] Production API key and `ESHIP_BASE_URL=https://api.myeship.co/rest`; `ESHIP_API_DEBUG` unset.
       Key and base URL set at v39–v40; the operator confirmed the values, debug unset and
       `ESHIP_LABEL_AUTOBUY=false` on Heroku (2026-10-19).
@@ -436,18 +440,18 @@ Remaining:
       `X-AV-Webhook-Secret` header (rotate `ESHIP_WEBHOOK_SECRET` if the URL ever carried
       `?secret=`), and confirm the hosted `default-purchase` has the `eship-picked-up-*` transitions
       and Email texts; then set the flag to `true`.
-- [ ] Run the Test gate in full on **Render** (release checklist §2). It was never completed on
+- [x] Run the Test gate in full on **Render** (release checklist §2); passed 2026-10-16 (§0 B). It was never completed on
       Heroku: the Stripe test purchase with a QA quote, **Generar guía → Descargar guía**,
       `Contactar AV`, a formal restart/no-duplicate check, and the remaining functional checks are
       open. The Heroku Test-mode infrastructure results (migrations, readiness, Brevo A9) don't
       carry over to Render.
 - [ ] Run the Live smoke gate on Heroku (release checklist §5) and record the first known-good
-      Live-configured release (candidate v49).
+      Live-configured release (candidate: the Talla-fix release after v56).
 - [ ] Watch `sample#memory_total` and R14 during a large bulk import; revisit Standard-2X (1 GB,
       preboot) or a lower concurrent-import cap if it nears 512 MB.
 - [x] GoDaddy DNS pointed as in runbook §5.7: `www` resolves to its Heroku target and serves valid
-      HTTPS, and the apex answers `301` to `https://www.archivovintach.com` (2026-10-15). Confirm
-      the Google Workspace MX/SPF records still resolve.
+      HTTPS, and the apex answers `301` to `https://www.archivovintach.com` (2026-10-15). The
+      Google Workspace MX and SPF records still resolve (2026-10-18).
 - [x] `REACT_APP_MARKETPLACE_ROOT_URL` set at v37, before the Live build; the canonical link is
       `https://www.archivovintach.com/`. Console has no editable Marketplace URL for a custom-code
       marketplace; see

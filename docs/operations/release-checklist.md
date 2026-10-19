@@ -25,23 +25,31 @@ Open gaps are in [Live launch readiness](../pending/live-launch.md).
 - Release operator:
 - Approver:
 - Started/completed time and timezone:
-- First known-good Live-configured rollback release: pending Live validation (candidate v49)
+- First known-good Live-configured rollback release: pending Live validation (candidate: the
+  Talla-fix release after v56)
 
 ## 1. Code and configuration gate
 
-- [ ] The reviewed release branch is merged and the worktree is clean.
-- [ ] Record the tested commit and Git tree hash. If an empty release commit is required to trigger
-      the Live rebuild, require the same tree hash.
-- [ ] `CI=true yarn test-ci` passes. Without `CI=true` the client half runs in Jest watch mode,
-      tests only changed files, and never exits.
-- [ ] `yarn format-ci` and `yarn av-translation-check` pass.
-- [ ] `yarn run config-check` passes.
-- [ ] `yarn run env-template-check` passes.
-- [ ] `yarn run build` passes.
-- [ ] Database migrations and rollback implications are reviewed.
-- [ ] Operator-visible changes are documented in [`operator-guide.md`](../operator-guide.md), the
+Run 2026-10-19 on the Live candidate (the Talla filter fix after v56).
+
+- [x] The reviewed release branch is merged and the worktree is clean. Merged to `main` with the
+      Talla fix PR.
+- [x] Record the tested commit and Git tree hash. If an empty release commit is required to trigger
+      the Live rebuild, require the same tree hash. Commit `df0cd65e6`, tree `978e54f70`; later commits
+      are docs only.
+- [x] `CI=true yarn test-ci` passes. Without `CI=true` the client half runs in Jest watch mode,
+      tests only changed files, and never exits. Server 61 suites / 782 tests; client 190 suites /
+      1,999 tests / 168 snapshots.
+- [x] `yarn format-ci` and `yarn av-translation-check` pass.
+- [x] `yarn run config-check` passes.
+- [x] `yarn run env-template-check` passes.
+- [x] `yarn run build` passes.
+- [x] Database migrations and rollback implications are reviewed. None since `009`; v49–v56 share
+      the schema, so any of them is a valid rollback.
+- [x] Operator-visible changes are documented in [`operator-guide.md`](../operator-guide.md), the
       English shareable guide is regenerated, and every translated edition intended for this release
-      is synchronized.
+      is synchronized. The per-page SEO section shipped in PR #130; PRs #133–#134 are server-only
+      Brevo fixes with nothing operator-visible. The Spanish edition is a draft (tracker F).
 
 ## 2. Render Test gate
 
@@ -184,12 +192,12 @@ before announcing.
       (v42)
 - [x] Configure Stripe live mode and the matching publishable key. The bundle carries `pk_live_…`
       (v38).
-- [ ] Verify the production root URL, DNS, TLS, email sender domain, social callbacks, and Mapbox.
+- [x] Verify the production root URL, DNS, TLS, email sender domain, social callbacks, and Mapbox.
       Root URL, DNS, and TLS are verified (2026-10-15); the Sharetribe sender domain is verified and
       passes SPF, DKIM and DMARC (2026-10-18). Google and Facebook both redirect with the `www`
-      callback, and Google sign-in returns a profile (secret works), but Sharetribe Live rejects
-      sign-up with "Identity provider ID and client ID are invalid": the Live Console social-login
-      entries are missing (2026-10-19, launch tracker D4).
+      callback. After the Live Console got its identity-provider entries, a Google sign-up created
+      a Live account (2026-10-19); Facebook's entry and variables are set and its sign-in is part of
+      §5. Mapbox is not used (no location listing type or map search).
 - [x] Use the explicit production eShip base URL/key and disable eShip debug output. Key and base
       URL set at v39–v40; `ESHIP_API_DEBUG` unset (operator, 2026-10-19).
 - [x] Add the production domains and certificate to the same Heroku app. Both domains attached
@@ -197,15 +205,18 @@ before announcing.
 - [x] Confirm the approved cutover reuses the PostgreSQL add-on only after a completed Test backup
       and full reset; no Test tables or rows may enter Live. Backup `b007`; readiness shows no Test
       rows.
-- [ ] Confirm all notification/channel flags are explicitly `true` or `false` and readiness is
-      complete for every enabled feature.
-- [ ] Keep `AV_BREVO_CAMPAIGNS_ENABLED=false` until Live campaign triggers are smoke-tested.
-- [ ] Confirm `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false`; WhatsApp is code-level release-locked out
+- [x] Confirm all notification/channel flags are explicitly `true` or `false` and readiness is
+      complete for every enabled feature. v56 (2026-10-19): readiness `200`, every channel
+      `configured` with nothing missing; poller, labels and Brevo welcome enabled; campaigns,
+      tracking emails and WhatsApp disabled.
+- [x] Keep `AV_BREVO_CAMPAIGNS_ENABLED=false` until Live campaign triggers are smoke-tested. Off at
+      v56; templates 7–13 are active and their IDs set (v54), so enabling it is the only step left.
+- [x] Confirm `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false`; WhatsApp is code-level release-locked out
       of the first release. Do not remove the lock until [WA-01–03](../pending/notifications.md) are
       resolved.
-- [ ] Keep `ESHIP_LABEL_AUTOBUY=false` until the purchased-label cancellation/refund policy is
-      approved.
-- [ ] Keep `AV_ESHIP_TRACKING_EMAILS_ENABLED=false` until migration 009, the hosted purchase
+- [x] Keep `ESHIP_LABEL_AUTOBUY=false` until the purchased-label cancellation/refund policy is
+      approved. Confirmed false (2026-10-19).
+- [x] Keep `AV_ESHIP_TRACKING_EMAILS_ENABLED=false` until migration 009, the hosted purchase
       process/templates, Spanish Email texts, and the environment-matched eShip webhook are ready.
 
 ## 4. In-place Test-to-Live cutover gate (initial launch only)
@@ -223,10 +234,10 @@ needed, confirm readiness, and record the release.
 - [x] Capture the Test PostgreSQL backup, wait for completion, and record its backup ID. `b007`.
 - [x] Reset the attached `DATABASE_URL` in accordance with the approved destructive cutover step.
       Readiness shows no Test deliveries, marketing preferences, or poller cursor.
-- [ ] Replace all Marketplace, Integration, Stripe, eShip, Brevo, social-login, root URL, and public
+- [x] Replace all Marketplace, Integration, Stripe, eShip, Brevo, social-login, root URL, and public
       build values with their matching Live values. Done for Marketplace, Integration, Stripe,
       eShip, root URL, Google client ID, and `BREVO_LIST_ID` (v37–v45); the Brevo webhook URL
-      points at `www` (2026-10-19). Confirm the remaining social-login values.
+      points at `www`, and the Google and Facebook values are Live (2026-10-19).
 - [x] Trigger a complete Heroku rebuild with Live variables. v48 deployed `cdb36026c`; its bundle
       carries `pk_live_…`.
 - [x] Confirm the Live build's source tree matches the tested release candidate. `cdb36026c` differs
@@ -244,10 +255,11 @@ needed, confirm readiness, and record the release.
 - [x] Confirm `/api/notifications/readiness` and enabled-provider health checks return `200`.
       (2026-10-15)
 - [ ] Record the first known-good Live-configured Heroku release. Public traffic is already open, so
-      record it as soon as §5 passes. Candidate: v52 (2026-10-16), `main` at `f6cde567b` (bundle
-      `main.ad24b9f3.js`, bulk-import value validation) on top of v51's
-      `REACT_APP_GOOGLE_ANALYTICS_ID` (v50); its bundle carries only Live values, readiness is
-      `200`, and the logs show no CSP violations or 5xx responses.
+      record it as soon as §5 passes. Candidate: v56 (2026-10-19), `main` at `6cb1ac358` (bundle
+      `main.ad24b9f3.js`, unchanged since v52; v55–v56 are the server-only Brevo unsubscribe fixes,
+      PRs #133–#134) on top of v51's `REACT_APP_GOOGLE_ANALYTICS_ID` (v50); its bundle carries
+      only Live values, readiness is `200`, and the logs show no CSP violations or 5xx responses.
+      Superseded by the next deploy, the Talla filter fix (`df0cd65e6`), which changes the bundle.
 
 ## 5. Live smoke and launch gate
 
@@ -256,7 +268,8 @@ This is the pending "overall validation" for the initial launch.
 - [x] Move public DNS only after the Live build and readiness gates pass. `www` CNAME to Heroku,
       apex `301` to `www` (verified 2026-10-15).
 - [ ] Production domain, redirects, SSR, login, search, and CMS pages work. Redirects, SSR,
-      canonical URL, and crawlable `robots.txt` verified (2026-10-15).
+      canonical URL, and crawlable `robots.txt` verified (2026-10-15); CMS pages, search filters and
+      Google sign-in (2026-10-19). Left: email/password login and a Facebook sign-in.
 - [ ] Create one real seller/listing and complete real Stripe Connect onboarding.
 - [ ] Complete one approved low-value real purchase with a live eShip quote.
 - [ ] Verify order math, platform-retained shipping fee, seller payout, and transaction shipping

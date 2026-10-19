@@ -111,6 +111,7 @@ export const getAvFilter = ({
           initialValues={initialValues(queryParamNames, liveEdit)}
           onSubmit={getHandleChangedValueFn(useHistoryPush)}
           groups={groups}
+          enumOptions={enumOptions}
           searchMode={searchMode}
           {...rest}
         />
