@@ -67,7 +67,7 @@ operator/admin account and the `BULK_IMPORT_OPERATOR_EMAILS` / `SHIPPING_LABEL_O
 users (§2.1, §3); Sentry error monitoring (`REACT_APP_SENTRY_DSN` and a rebuild, §2.1); the
 launch roles from the runbook §1 (operator, independent approver, rollback owner, monitoring owner)
 and the observation window (§8, checklist §4); real `TRANSIT` webhook test and enabling tracking emails on Live (checklist §5, eShip §5.3); Brevo
-campaigns (Phase B); eShip cancellation policy and IVA ([pending eShip](eship.md)); WhatsApp
+campaigns (Phase B; templates 7–13 active with the approved footer since 2026-10-19); eShip cancellation policy and IVA ([pending eShip](eship.md)); WhatsApp
 WA-01–08 ([notifications](notifications.md)); upstream v12.4.0 merge and Sentry 11; Spanish
 shareable operator guide; per-seller commission override; bulk-import scaling
 ([scaling](scaling.md)); listings-sheet and bidding decisions.

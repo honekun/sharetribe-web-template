@@ -2,8 +2,12 @@
 
 Create these as hosted Brevo transactional templates. Keep parameter names exactly as shown.
 Promotional templates (all except the seller welcome) must include Brevo's unsubscribe link and a
-legal sender footer (sender identity plus postal/contact address). The footer text has not been
-written yet; it blocks Phase B, not the welcome.
+legal sender footer (sender identity plus postal/contact address). The seven promotional templates
+are **active** in Brevo as IDs 7–13 (2026-10-19, see the [Brevo guide](brevo.md)) with the approved
+footer, built from the Live `/p/contacto` page: the line "Recibes este correo porque tienes una
+cuenta en Archivo Vintach y aceptaste recibir novedades.", then `ARCHIVO VINTACH · Ámsterdam 212,
+piso 6, Condesa, 06100, CDMX, México`, `hola@archivovintach.com · WhatsApp 55 3131 4247`, and a
+"Darme de baja de estos correos" `{{ unsubscribe }}` link.
 
 These eight are the complete set: one per `BREVO_TEMPLATE_*` variable in
 `server/services/marketingCampaigns.js` (`TEMPLATE_ENV`). Params are built there by

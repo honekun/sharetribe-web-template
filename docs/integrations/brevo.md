@@ -92,7 +92,7 @@ configured on Heroku), the Heroku app `archivo-vintach-marketplace`, and its dat
 | Senders                       | `ARCHIVO VINTACH <hola@archivovintach.com>`, active.                                                                                                                                                                                                                                                                                                                                          |
 | `archivovintach.com` mail DNS | MX points to Google Workspace. DMARC `_dmarc` TXT is now `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com`. Google Workspace DKIM not yet checked.                                                                                                                                                                                                                                           |
 | Contact list                  | `BREVO_LIST_ID` is **7**, "Test ArchivoVintach", for the Test phase; a footer signup on Heroku landed there on 2026-10-10. Production list: 6 "Live ArchivoVintach", 0 subscribers. Also present: 4 "ARCHIVO — Seller Waitlist" (109), 3, 2.                                                                                                                                                  |
-| Transactional templates       | Seller welcome is **ID 6** "AV seller welcome", active (created via API on 2026-10-10). ID 5 is an empty, inactive draft of the same name. The seven campaign templates don't exist yet.                                                                                                                                                                                                      |
+| Transactional templates       | Seller welcome is **ID 6** "AV seller welcome", active (created via API on 2026-10-10; re-checked 2026-10-19: subject, sender, reply-to and `NOMBRE`/`CREATE_LISTING_URL`/`GUIDE_URL` as specified). ID 5 has been deleted. The seven campaign templates were created via API on 2026-10-19 and activated the same day with the approved legal footer: 7 viewed listing A, 8 viewed listing B, 9 abandoned checkout, 10 matching listings A, 11 matching listings B, 12 signup no listing, 13 listing no activity. |
 | Transactional webhook         | **ID 2241911**, transactional, unbatched, events `delivered`, `softBounce`, `hardBounce`, `blocked`, `spam`, `unsubscribed`, pointing at `https://archivo-vintach-marketplace-ee5adafa97a8.herokuapp.com/api/brevo/webhook`. Its `x-av-brevo-webhook-secret` header matches Heroku `BREVO_WEBHOOK_SECRET` (created 2026-10-10).                                                               |
 | Consent contact attributes    | None of the five exist, so `BREVO_CONSENT_ATTRIBUTES_ENABLED` must stay `false`.                                                                                                                                                                                                                                                                                                              |
 | Heroku variables set          | `BREVO_API_KEY`, `BREVO_LIST_ID=7` (Test phase), `BREVO_SENDER_EMAIL=hola@archivovintach.com`, `BREVO_SENDER_NAME=ARCHIVO VINTACH`, `BREVO_CONSENT_ATTRIBUTES_ENABLED=false`, Integration credentials, `DATABASE_URL`.                                                                                                                                                                        |
@@ -360,7 +360,24 @@ Keep `AV_BREVO_CAMPAIGNS_ENABLED=false` until all of this is done:
 2. Create and activate the seven promotional templates from
    [`brevo-templates-es.md`](brevo-templates-es.md), following A5, each with Brevo's unsubscribe
    link and the approved legal sender footer (sender identity and postal/contact address). Record
-   their IDs.
+   their IDs. Created on 2026-10-19 in template 6's layout and activated with the approved footer
+   (data from `/p/contacto`):
+
+   | Variable                             | ID  |
+   | ------------------------------------ | --- |
+   | `BREVO_TEMPLATE_VIEWED_LISTING_A`    | 7   |
+   | `BREVO_TEMPLATE_VIEWED_LISTING_B`    | 8   |
+   | `BREVO_TEMPLATE_ABANDONED_CHECKOUT`  | 9   |
+   | `BREVO_TEMPLATE_MATCHING_LISTINGS_A` | 10  |
+   | `BREVO_TEMPLATE_MATCHING_LISTINGS_B` | 11  |
+   | `BREVO_TEMPLATE_SIGNUP_NO_LISTING`   | 12  |
+   | `BREVO_TEMPLATE_LISTING_NO_ACTIVITY` | 13  |
+
+   Rendering checked 2026-10-19: templates 6–13 were sent through the API to the operator with
+   real Live listings as params (tag `av-template-test`) and approved: no visible `{{ … }}`,
+   images, prices, the three-listing loop and absolute `www` links all render. Left: set the
+   seven variables on Heroku (no effect while `AV_BREVO_CAMPAIGNS_ENABLED=false`), and click
+   unsubscribe once to confirm Brevo emits `event: "unsubscribed"` before enabling campaigns.
 3. Optional Brevo-side consent evidence: create the five attributes, then set
    `BREVO_CONSENT_ATTRIBUTES_ENABLED=true` and restart:
 
@@ -524,7 +541,8 @@ Runtime behavior is:
 - granting consent upserts the normalized email with `updateEnabled: true` and links it to this
   list;
 - withdrawing consent unlinks it from this list but does not delete the Brevo contact;
-- provider suppression is retained in PostgreSQL and cancels pending promotional jobs; and
+- provider suppression (unsubscribe, spam, hard bounce, blocked) is retained in PostgreSQL,
+  cancels pending promotional jobs, and unlinks the address from this list; and
 - promotional send eligibility is always rechecked in PostgreSQL.
 
 Do not manually import non-consented users into this list. Existing rows in the legacy
@@ -632,7 +650,10 @@ unsubscribed
 Brevo's webhook-configuration API uses names such as `softBounce` and `hardBounce`; delivered
 payloads may contain `soft_bounce` and `hard_bounce`. The application records every selected event.
 It locally suppresses and cancels pending promotional jobs for `unsubscribed`, `spam`,
-`hard_bounce`/`hardBounce`, and `blocked`. Soft bounces and delivered events update audit/delivery
+`hard_bounce`/`hardBounce`, and `blocked`, then unlinks the address from `BREVO_LIST_ID`. Brevo's
+own handling of a template unsubscribe only adds the address to the transactional blocklist and
+leaves it on the list, so without the unlink a newsletter sent to the list would still reach it.
+If the unlink fails the route answers `503` and Brevo retries; the suppression is idempotent. Soft bounces and delivered events update audit/delivery
 status but do not suppress.
 
 Suppression is **sticky**: once a contact is suppressed, the anonymous footer subscribe form cannot

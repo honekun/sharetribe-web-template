@@ -342,7 +342,56 @@ describe('POST /webhook', () => {
         source: 'brevo_webhook',
       })
     );
+    expect(mockRemoveContact).toHaveBeenCalledWith('person@example.com');
     expect(res.statusCode).toBe(204);
+  });
+
+  it('does not touch the list for non-suppressing events', async () => {
+    const req = createReq(
+      { event: 'delivered', email: 'person@example.com' },
+      { headers: { 'x-av-brevo-webhook-secret': 'webhook-test-secret' } }
+    );
+    const res = createRes();
+    await handler(req, res);
+
+    expect(mockRecordWebhook).toHaveBeenCalled();
+    expect(mockSetPreference).not.toHaveBeenCalled();
+    expect(mockRemoveContact).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(204);
+  });
+
+  it('answers 503 so Brevo retries when the list removal fails', async () => {
+    mockRemoveContact.mockRejectedValueOnce(new Error('Brevo list removal failed: 500'));
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const req = createReq(
+      { event: 'unsubscribed', email: 'person@example.com' },
+      { headers: { 'x-av-brevo-webhook-secret': 'webhook-test-secret' } }
+    );
+    const res = createRes();
+    await handler(req, res);
+
+    expect(mockSetPreference).toHaveBeenCalledWith(
+      expect.objectContaining({ enabled: false, suppressed: true })
+    );
+    expect(res.statusCode).toBe(503);
+    expect(res.body).toEqual({ ok: false, error: 'list_removal_failed' });
+    consoleError.mockRestore();
+  });
+
+  it('does not unlink the contact when the local suppression fails', async () => {
+    mockSetPreference.mockRejectedValueOnce(new Error('db down'));
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const req = createReq(
+      { event: 'unsubscribed', email: 'person@example.com' },
+      { headers: { 'x-av-brevo-webhook-secret': 'webhook-test-secret' } }
+    );
+    const res = createRes();
+    await handler(req, res);
+
+    expect(mockRemoveContact).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(503);
+    expect(res.body).toEqual({ ok: false, error: 'suppression_failed' });
+    consoleError.mockRestore();
   });
 
   it('uses Brevo event timestamps and suppresses hard bounces', async () => {
@@ -367,6 +416,7 @@ describe('POST /webhook', () => {
     expect(mockSetPreference).toHaveBeenCalledWith(
       expect.objectContaining({ enabled: false, suppressed: true })
     );
+    expect(mockRemoveContact).toHaveBeenCalledWith('person@example.com');
     expect(res.statusCode).toBe(204);
   });
 });

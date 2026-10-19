@@ -296,10 +296,21 @@ router.post('/webhook', async (req, res) => {
       locale: 'es',
       policyVersion: DEFAULT_POLICY_VERSION,
     });
-    return res.status(204).end();
   } catch (err) {
     console.error('[brevo] webhook suppression failed:', err);
     return res.status(503).json({ ok: false, error: 'suppression_failed' });
+  }
+
+  // An unsubscribe from a template email only blocks Brevo's transactional
+  // sends; the contact stays on the marketing list. Unlink it too, so a
+  // newsletter sent to the list never reaches a suppressed address. A failure
+  // answers 503 so Brevo retries; the suppression above is idempotent.
+  try {
+    await removeMarketingContact(email);
+    return res.status(204).end();
+  } catch (err) {
+    console.error('[brevo] webhook list removal failed:', err);
+    return res.status(503).json({ ok: false, error: 'list_removal_failed' });
   }
 });
 
