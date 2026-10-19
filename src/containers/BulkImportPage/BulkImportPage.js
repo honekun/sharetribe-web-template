@@ -61,7 +61,8 @@ const rowErrorHint = error => {
   return hints.filter(Boolean).join(', ');
 };
 
-const TEMPLATE_URL = '/api/bulk-import/template';
+const TEMPLATE_URL =
+  'https://drive.google.com/file/d/1W0g58WNilLwQAmLlJvxjkK2YGwqvrQ5a/view?usp=sharing';
 const WHATSAPP_URL = 'https://wa.me/525531314247';
 
 const ExternalArrowIcon = () => (
@@ -303,7 +304,12 @@ export const BulkImportPageComponent = props => {
                     <p className={css.stepText}>
                       <FormattedMessage id="BulkImportPage.simpleStep1Text" />
                     </p>
-                    <a href={TEMPLATE_URL} className={css.templateButton} download>
+                    <a
+                      href={TEMPLATE_URL}
+                      className={css.templateButton}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <FormattedMessage id="BulkImportPage.simpleTemplateCta" />
                       <ExternalArrowIcon />
                     </a>

@@ -74,8 +74,9 @@ exports[`BulkImportPage renders page heading 1`] = `
                   </p>
                   <a
                     class="templateButton"
-                    download=""
-                    href="/api/bulk-import/template"
+                    href="https://drive.google.com/file/d/1W0g58WNilLwQAmLlJvxjkK2YGwqvrQ5a/view?usp=sharing"
+                    rel="noopener noreferrer"
+                    target="_blank"
                   >
                     <span>
                       BulkImportPage.simpleTemplateCta
