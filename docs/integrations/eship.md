@@ -49,7 +49,7 @@ not the seller. That single fact drives the payout decision in §9.
 | ---------------------------------------------- | ------------------ | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `ESHIP_API_KEY`                                | yes (to quote/buy) | —                              | Bearer secret. Without it, shipping purchases fall back to **Contactar AV**.                                                                                                                     |
 | `ESHIP_BASE_URL`                               | yes                | **none** (must be set per env) | `…/rest` base. QA `https://apiqa.myeship.co/rest`; prod `https://api.myeship.co/rest`.                                                                                                           |
-| `ESHIP_MARKUP_PCT`                             | no                 | `0.18`                         | Buyer markup over raw carrier cost (see §7).                                                                                                                                                     |
+| `ESHIP_MARKUP_PCT`                             | no                 | `0.18`                         | Buyer markup over raw carrier cost (see §7). **Live: `0`** (2026-10-19).                                                                                                                                                     |
 | `ESHIP_API_DEBUG`                              | no                 | `false`                        | `true` echoes the carrier's error text in the API response (`{ code, detail }`). Leave off in prod.                                                                                              |
 | `AV_SHIPPING_LABELS_ENABLED`                   | yes (explicit)     | `false`                        | Enables the label-purchase capability and its shared Integration API poller path. Independent of notification delivery; it does not enable automatic purchase by itself.                         |
 | `AV_ESHIP_TRACKING_EMAILS_ENABLED`             | yes (explicit)     | `false`                        | Accepts durable eShip tracking events and processes the `TRANSIT/picked_up` buyer email through the shared poller.                                                                               |
@@ -294,7 +294,10 @@ buyerPrice = roundUp( carrierAmount × (1 + ESHIP_MARKUP_PCT) , to nearest 1 pes
 ```
 
 `applyBuyerMarkup` (`configAVShipping.js`): markup default `0.18`, rounded **up** to the nearest
-peso (`roundUpToSubunits = 100`) so AV never under-recovers and prices look clean.
+peso (`roundUpToSubunits = 100`) so AV never under-recovers and prices look clean. **Live runs with
+`ESHIP_MARKUP_PCT=0`** (decided 2026-10-19): the client's commission already includes the shipping
+margin, so the buyer pays the carrier rate rounded up to the peso. That also removes the IVA
+buffer described next.
 `eshipAmountIncludesIva = false` — the current calculation treats IVA as part of the markup buffer,
 not as already included in the carrier amount. Reconciliation and any future policy change are
 tracked in [pending eShip policy](../pending/eship.md).

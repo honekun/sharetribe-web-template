@@ -24,7 +24,7 @@ dashboards), _Dev_ (repository), _Business_ (decision or sign-off).
 | #   | Item                                                                                                                                                                                                                                                                                                                                                                                                                                      | Owner | Where            |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ---------------- |
 | A3  | ✅ Code gate re-run on `pre-release` at `df0cd65e6` (tree `978e54f70`, the Talla filter fix; the last code change) on 2026-10-19: server 61 suites / 782 tests, client 190 suites / 1,999 tests / 168 snapshots, `format-ci`, `av-translation-check`, `config-check`, `env-template-check`, `build`. No migrations since `009`; the Brevo fixes (PRs #133–#134) are server-only, and the filter fix restores labels operators already expect. Later commits are docs only. Re-run if the candidate changes. | Dev   | checklist §1     |
-| A4  | Rebuilt 2026-10-16: v50 set `REACT_APP_GOOGLE_ANALYTICS_ID`, v51 deployed `main` at `08db5ebf8` (bundle `main.9ab84f88.js`). Verified: `pk_live_` and the Live client ID only, the #118 bag fix, the GA ID; one web dyno; readiness `200` with an active poller owner; no `CSP:` or 5xx log lines (only C1's landing 404s). v52 deployed `main` at `f6cde567b` (PR #128, bulk-import value validation; bundle `main.ad24b9f3.js`) the same evening: clean boot, poller leadership acquired, readiness and `/api/bulk-import/template` `200`, no 5xx. v53 (2026-10-19, `cdc6bcdce`) was docs only, same bundle. v54 set the seven `BREVO_TEMPLATE_*` IDs. v55 deployed `b9a8693b6` (PR #133, webhook unlinks suppressed addresses from the Brevo list) and v56 `6cb1ac358` (PR #134, re-consent clears Brevo's transactional block; verified on Live with TEST STORE): both server-only, same bundle, clean boot, poller leadership acquired, readiness `200`, no 5xx. The Talla filter fix (`df0cd65e6`) changes the bundle and is the next deploy: record that release as the first known-good Live release once it is verified and §5 passes; roll back only to v49, v51–v56 or it, never past v48. | Ops   | checklist §4, §5 |
+| A4  | Rebuilt 2026-10-16: v50 set `REACT_APP_GOOGLE_ANALYTICS_ID`, v51 deployed `main` at `08db5ebf8` (bundle `main.9ab84f88.js`). Verified: `pk_live_` and the Live client ID only, the #118 bag fix, the GA ID; one web dyno; readiness `200` with an active poller owner; no `CSP:` or 5xx log lines (only C1's landing 404s). v52 deployed `main` at `f6cde567b` (PR #128, bulk-import value validation; bundle `main.ad24b9f3.js`) the same evening: clean boot, poller leadership acquired, readiness and `/api/bulk-import/template` `200`, no 5xx. v53 (2026-10-19, `cdc6bcdce`) was docs only, same bundle. v54 set the seven `BREVO_TEMPLATE_*` IDs. v55 deployed `b9a8693b6` (PR #133, webhook unlinks suppressed addresses from the Brevo list) and v56 `6cb1ac358` (PR #134, re-consent clears Brevo's transactional block; verified on Live with TEST STORE): both server-only, same bundle, clean boot, poller leadership acquired, readiness `200`, no 5xx. v57 deployed `main` at `c37b994d8` (PR #135, the Talla filter fix; bundle `main.639f579a.js`) and v58 set `ESHIP_MARKUP_PCT=0` (2026-10-19): clean restarts, poller leadership reacquired, readiness `200`, bundle with `pk_live_`, the Live client ID and GA only, no 5xx, H-code, R14 or `CSP:` lines; on `www` the Talla dropdown shows its 6 labelled groups and 56 sizes, and M returns 10 results (the API agrees). Record **v58** as the first known-good Live release once §5 passes; roll back only to v49, v51–v58, never past v48. | Ops   | checklist §4, §5 |
 
 ### B. Render Test gate — must pass before Live sign-off
 
@@ -50,13 +50,13 @@ and a Facebook sign-in is part of E1.
 
 | #   | Item                                                                                                                                               | Owner    |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| E1  | Login, search, and CMS pages on `www`. **Done 2026-10-18/19:** home, the six CMS pages, terms, privacy, `/login`, `/signup`, a profile, a listing page, sitemap and `robots.txt` serve SSR in ~0.5 s; search filters return the expected counts (30 all, 22 `yiknal`, 27 `ropa`, 5 `invierno`, 10 `negro`); Google sign-up and sign-in work. The **Talla** filter showed blank size groups and options (a regression from `00aa95edf`, 2026-06-24); fixed in `df0cd65e6` and verified locally: 6 labelled groups, 56 options, selecting M filters to `pub_all_sizes=has_any:m`. **Left:** re-check Talla on `www` after the deploy, email/password login and a Facebook sign-in. Content follow-up (not a gate): the About, Terms and Privacy page titles are still in English. | Ops      |
+| E1  | Login, search, and CMS pages on `www`. **Done 2026-10-18/19:** home, the six CMS pages, terms, privacy, `/login`, `/signup`, a profile, a listing page, sitemap and `robots.txt` serve SSR in ~0.5 s; search filters return the expected counts (30 all, 22 `yiknal`, 27 `ropa`, 5 `invierno`, 10 `negro`); Google sign-up and sign-in work. The **Talla** filter showed blank size groups and options (a regression from `00aa95edf`, 2026-06-24); fixed in `df0cd65e6` and verified locally: 6 labelled groups, 56 options, selecting M filters to `pub_all_sizes=has_any:m`. Re-checked on `www` at v57. **Left:** email/password login and a Facebook sign-in. Content follow-up (not a gate): the About, Terms and Privacy page titles are still in English. | Ops      |
 | E2  | One real seller with real Stripe Connect onboarding and a complete shipping origin; one approved listing.                                          | Business |
-| E3  | One approved low-value purchase with a production eShip quote; verify order math, retained shipping fee, payout, `avShipping`.                     | Business |
-| E4  | Buy and download the production label manually; record the carrier charge.                                                                         | Ops      |
+| E3  | One approved low-value purchase with a production eShip quote; verify order math, retained shipping fee, payout, `avShipping`. Run by the client with a real buyer; with `ESHIP_MARKUP_PCT=0` the buyer's shipping is the carrier rate rounded up to the peso. | Business |
+| E4  | Buy and download the production label manually; record the carrier charge and compare it with the shipping the buyer paid (with no markup, this is the IVA check: [pending eShip](eship.md) §2). | Ops      |
 | E5  | Welcome email and built-in Sharetribe emails use the production sender and `www` links; dispute reply with an image reaches the monitored mailbox. | Ops      |
-| E6  | Approved refund/cancellation test; reconcile the label separately (needs the eShip policy owner, [pending eShip](eship.md) §1).                    | Business |
-| E7  | Record evidence and the launch approver's sign-off; then start the post-launch observation window (checklist §6).                                  | Business |
+| E6  | Approved refund/cancellation test; reconcile the label separately. Run and owned by the client, who also owns the eShip cancellation policy ([pending eShip](eship.md) §1). | Business |
+| E7  | Record evidence and sign-off: Alex approves the tests the AV team runs, the client approves the tests they run and gives the overall launch approval (2026-10-19). Then start the post-launch observation window (checklist §6). | Business |
 
 ### F. After launch (does not block sign-off)
 
@@ -69,7 +69,7 @@ operator/admin account and the `BULK_IMPORT_OPERATOR_EMAILS` / `SHIPPING_LABEL_O
 users (§2.1, §3); Sentry error monitoring (`REACT_APP_SENTRY_DSN` and a rebuild, §2.1); the
 launch roles from the runbook §1 (operator, independent approver, rollback owner, monitoring owner)
 and the observation window (§8, checklist §4); real `TRANSIT` webhook test and enabling tracking emails on Live (checklist §5, eShip §5.3); Brevo
-campaigns (Phase B; templates 7–13 active with the approved footer since 2026-10-19); eShip cancellation policy and IVA ([pending eShip](eship.md)); WhatsApp
+campaigns (Phase B; templates 7–13 active with the approved footer since 2026-10-19); eShip cancellation policy (owner: the client) and IVA ([pending eShip](eship.md)); WhatsApp
 WA-01–08 ([notifications](notifications.md)); upstream v12.4.0 merge and Sentry 11; Spanish
 shareable operator guide; per-seller commission override; bulk-import scaling
 ([scaling](scaling.md)); listings-sheet and bidding decisions.
@@ -307,8 +307,9 @@ a Stripe fee — correct, because the platform pays Stripe out of its commission
       matches.
 - [ ] Connect onboarding tested with a real MX seller (E2). The payout schedule is confirmed
       (Fernanda, 2026-10-19).
-- [ ] Finance confirms platform margin per sale covers Stripe's Mexico processing fee on the full
-      charge, shipping included (the platform, not the seller, pays it).
+- [x] Finance confirms platform margin per sale covers Stripe's Mexico processing fee on the full
+      charge, shipping included (the platform, not the seller, pays it). Confirmed 2026-10-19: the
+      commission covers Stripe's fee and the shipping margin (the eShip markup is 0).
 - [ ] Confirm the Stripe API version Sharetribe Live uses (`flex-cli stripe update-version` only if
       Sharetribe asks).
 
@@ -337,15 +338,18 @@ Remaining:
 - [ ] Re-run the quote check with the production key and confirm `object_id`/`rate_id` and real
       (non-`TEST`) rates.
 - [x] eShip production wallet funded; billing owner: Fernanda (2026-10-19).
-- [ ] Confirm the buyer markup: `ESHIP_MARKUP_PCT` is unset, so the code default **18 %** applies.
+- [x] Buyer markup decided 2026-10-19: **0 %**, the client's commission already includes the margin.
+      `ESHIP_MARKUP_PCT=0` set on Heroku at v58 (set it on Render too, to match). The buyer pays the
+      carrier rate rounded up to the peso.
 - [ ] Every launch seller has a complete shipping origin (`/account/shipping-origin`).
 - [ ] New production `ESHIP_WEBHOOK_SECRET`; production dashboard webhook with the
       `X-AV-Webhook-Secret` header — only after `AV_ESHIP_TRACKING_EMAILS_ENABLED=true`.
 - [ ] Approve or replace the cancellation/refund policy and name owners ([pending eShip](eship.md)
       §1). Launch can proceed with `ESHIP_LABEL_AUTOBUY=false`, but the first real cancellation
       needs an owner.
-- [ ] IVA treatment remains open ([pending eShip](eship.md) §2); confirm finance accepts launching
-      with the markup buffer.
+- [ ] IVA treatment remains open ([pending eShip](eship.md) §2). With no markup there is no IVA
+      buffer: if eShip charges IVA on top of the quoted amount, the commission absorbs it, which the
+      client accepts (2026-10-19). E4 compares the wallet charge with the buyer's shipping.
 
 ## 6. Email (Brevo + Sharetribe native)
 
@@ -446,7 +450,7 @@ Remaining:
       open. The Heroku Test-mode infrastructure results (migrations, readiness, Brevo A9) don't
       carry over to Render.
 - [ ] Run the Live smoke gate on Heroku (release checklist §5) and record the first known-good
-      Live-configured release (candidate: the Talla-fix release after v56).
+      Live-configured release (candidate v58).
 - [ ] Watch `sample#memory_total` and R14 during a large bulk import; revisit Standard-2X (1 GB,
       preboot) or a lower concurrent-import cap if it nears 512 MB.
 - [x] GoDaddy DNS pointed as in runbook §5.7: `www` resolves to its Heroku target and serves valid
