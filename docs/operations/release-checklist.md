@@ -270,7 +270,7 @@ This is the pending "overall validation" for the initial launch.
       apex `301` to `www` (verified 2026-10-15).
 - [ ] Production domain, redirects, SSR, login, search, and CMS pages work. Redirects, SSR,
       canonical URL, and crawlable `robots.txt` verified (2026-10-15); CMS pages, search filters and
-      Google sign-in (2026-10-19). Left: email/password login and a Facebook sign-in.
+      Google sign-in and email/password login (2026-10-19). Left: a Facebook sign-in.
 - [ ] Create one real seller/listing and complete real Stripe Connect onboarding.
 - [ ] Complete one approved low-value real purchase with a live eShip quote.
 - [ ] Verify order math, platform-retained shipping fee, seller payout, and transaction shipping
