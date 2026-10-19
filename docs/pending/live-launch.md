@@ -42,12 +42,7 @@ reply-to.
 
 | #   | Item                                                                                                                                                                                            | Owner    | Where                  |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---------------------- |
-| D1  | `REACT_APP_SENTRY_DSN`: production has no error monitoring (no Sentry in the Live bundle). Needs a rebuild.                                                                                     | Ops      | §2.1                   |
-| D2  | `ESHIP_API_DEBUG` unset and `ESHIP_LABEL_AUTOBUY=false` on Heroku; eShip production wallet funded, billing owner named.                                                                         | Ops      | §5                     |
-| D3  | `BREVO_LIST_ID=6` on Heroku, and the Brevo transactional webhook moved to `www.archivovintach.com` (it still targets the herokuapp host).                                                       | Ops      | §6                     |
-| D4  | Social login: Google redirects with the `www` callback (verified); confirm `GOOGLE_CLIENT_SECRET`, and the Facebook app (ID present in the bundle) is a production app with the `www` callback. | Ops      | §3                     |
-| D5  | Stripe: Live secret key in Sharetribe Live, platform activated for Mexico, payout schedule.                                                                                                     | Ops      | §4                     |
-| D6  | Release-record gaps: cutover `web=0`, independent approver, boot logs clean, launch roles and observation window.                                                                               | Business | checklist §4, §8 below |
+| D4  | **Social sign-up fails on Live** (2026-10-19). Google sign-in reaches `/confirm` with the profile filled in, so the Google client ID, secret and `www` callback work, but "Registrarse" shows "Error en el registro": Sharetribe answers `create_with_idp` with `403 forbidden` "Identity provider ID and client ID are invalid". Sharetribe **Live** Console has no Google identity provider (`google`) with the client ID the app sends (`781395730665-clple5e8l8kcfsdrp7vjpkb2t7n4gtdn.apps.googleusercontent.com`). Add it under the Live social-login settings and retry; existing users signing in with Google hit the same check. Facebook (app `2518143721971209`, `www` callback verified) needs the same Live IdP entry and the Meta app in Live mode, or remove Facebook login. | Console  | §3                     |
 
 ### E. Live smoke and sign-off (release checklist §5)
 
@@ -69,7 +64,9 @@ privacy policy (Brevo consent, Stripe, eShip address sharing; §3); real photos 
 listings, which still show the bulk-import placeholder (their values and categories were fixed in
 place on 2026-10-17; the seller replaces the photo in each listing's edit form); the Live
 operator/admin account and the `BULK_IMPORT_OPERATOR_EMAILS` / `SHIPPING_LABEL_OPERATOR_EMAILS`
-users (§2.1, §3); real `TRANSIT` webhook test and enabling tracking emails on Live (checklist §5, eShip §5.3); Brevo
+users (§2.1, §3); Sentry error monitoring (`REACT_APP_SENTRY_DSN` and a rebuild, §2.1); the
+launch roles from the runbook §1 (operator, independent approver, rollback owner, monitoring owner)
+and the observation window (§8, checklist §4); real `TRANSIT` webhook test and enabling tracking emails on Live (checklist §5, eShip §5.3); Brevo
 campaigns (Phase B); eShip cancellation policy and IVA ([pending eShip](eship.md)); WhatsApp
 WA-01–08 ([notifications](notifications.md)); upstream v12.4.0 merge and Sentry 11; Spanish
 shareable operator guide; per-seller commission override; bulk-import scaling
@@ -133,14 +130,15 @@ report-only mode. Live must carry the same four values.
       `robots.txt` is `Disallow: /`.
 - [ ] `REACT_APP_SENTRY_DSN` — create a Sentry project and set its DSN on Heroku (a rebuild is
       needed); production has no error monitoring without it. The Live bundle has no Sentry DSN
-      (2026-10-15).
+      (2026-10-15). Moved to after launch (§0 F, 2026-10-19).
 - [x] Brevo welcome: `BREVO_TEMPLATE_SELLER_WELCOME` (`BREVO_SENDER_EMAIL`/`BREVO_SENDER_NAME` are
       set; all three are required by `notificationConfig.js` once welcome email is on). The hosted
       template exists as ID 6 (§6); `BREVO_TEMPLATE_SELLER_WELCOME=6` set 2026-10-10.
       `BREVO_WEBHOOK_SECRET` and the seven campaign IDs wait for campaigns.
 - [ ] `SHIPPING_LABEL_OPERATOR_EMAILS` — optional; set it if support staff must retry a seller's
       label.
-- [ ] Optional analytics: `REACT_APP_GOOGLE_ANALYTICS_ID` or `REACT_APP_PLAUSIBLE_DOMAINS`.
+- [x] Optional analytics: `REACT_APP_GOOGLE_ANALYTICS_ID` set at v50; the Live bundle and page
+      carry `G-TKT6Q39QEG` (2026-10-18).
 
 Not needed: `REACT_APP_MAPBOX_ACCESS_TOKEN`. The Test Console's only listing type, `av-listing`, has
 location, shipping, and pickup off, search is keyword-only, and there is no hosted map asset.
@@ -298,11 +296,13 @@ products, `EditListingPricingAndStockForm`) shows only the 22 % + \$15 commissio
 a Stripe fee — correct, because the platform pays Stripe out of its commission. The US-style
 `REACT_APP_STRIPE_FEE_*` defaults reach only the unused booking form.
 
-- [ ] Stripe platform account fully activated for live payments in Mexico (business details, bank
-      account, Connect platform profile and branding).
-- [ ] Live secret key entered in Sharetribe **Live** Console. `pk_live_…` is on Heroku (v38); a Live
-      payout onboarding or purchase proves the pair matches.
-- [ ] Connect onboarding tested with a real MX seller and the payout schedule confirmed.
+- [x] Stripe platform account fully activated for live payments in Mexico (business details, bank
+      account, Connect platform profile and branding). Confirmed by Fernanda (2026-10-19).
+- [x] Live secret key entered in Sharetribe **Live** Console (confirmed by Fernanda, 2026-10-19).
+      `pk_live_…` is on Heroku (v38); a Live payout onboarding or purchase (E2/E3) proves the pair
+      matches.
+- [ ] Connect onboarding tested with a real MX seller (E2). The payout schedule is confirmed
+      (Fernanda, 2026-10-19).
 - [ ] Finance confirms platform margin per sale covers Stripe's Mexico processing fee on the full
       charge, shipping included (the platform, not the seller, pays it).
 - [ ] Confirm the Stripe API version Sharetribe Live uses (`flex-cli stripe update-version` only if
@@ -327,11 +327,12 @@ Remaining:
 
 - [ ] Test **Generar guía → Descargar guía** on **Render** against QA with a paid test order. It was
       never run on Heroku before the cutover, and Render's database must be migrated first (§7).
-- [ ] Production API key and `ESHIP_BASE_URL=https://api.myeship.co/rest`; `ESHIP_API_DEBUG` unset.
-      Key and base URL set at v39–v40; confirm the value and that debug is unset.
+- [x] Production API key and `ESHIP_BASE_URL=https://api.myeship.co/rest`; `ESHIP_API_DEBUG` unset.
+      Key and base URL set at v39–v40; the operator confirmed the values, debug unset and
+      `ESHIP_LABEL_AUTOBUY=false` on Heroku (2026-10-19).
 - [ ] Re-run the quote check with the production key and confirm `object_id`/`rate_id` and real
       (non-`TEST`) rates.
-- [ ] eShip production wallet funded; billing owner named.
+- [x] eShip production wallet funded; billing owner: Fernanda (2026-10-19).
 - [ ] Confirm the buyer markup: `ESHIP_MARKUP_PCT` is unset, so the code default **18 %** applies.
 - [ ] Every launch seller has a complete shipping origin (`/account/shipping-origin`).
 - [ ] New production `ESHIP_WEBHOOK_SECRET`; production dashboard webhook with the
@@ -379,9 +380,8 @@ was deleted on 2026-10-10.
       blocked the opt-in is fixed in PR #112.
 - [x] Phase A10: inventory recorded outside the repository (2026-10-10). Owner, key name, mailbox
       readers and domain holder confirmed. Domain renews 2027-10-22; confirm auto-renew.
-- [ ] Phase A11 (cutover): `BREVO_LIST_ID` was changed at v45; confirm it is `6` ("Live
-      ArchivoVintach") and that the transactional webhook URL now points at
-      `www.archivovintach.com`.
+- [x] Phase A11 (cutover): `BREVO_LIST_ID` is `6` ("Live ArchivoVintach") and the transactional
+      webhook URL points at `www.archivovintach.com` (operator, 2026-10-19).
 - [x] Render (Test): Brevo configured for the welcome email (2026-10-15): readiness shows it enabled
       with nothing missing and `/api/brevo/health` returns `200`. The forbidden public
       `REACT_APP_BREVO_LIST_ID` (it was `9` in the Render bundle) is gone from the rebuilt bundle.
@@ -498,7 +498,7 @@ Remaining:
 - [ ] Spanish shareable operator guide is still a draft (see [pending README](README.md)); decide
       whether operators get the English edition at launch.
 - [ ] Assign the launch roles from the runbook §1 (operator, approver, rollback owner, monitoring
-      owner) and the observation window.
+      owner) and the observation window. Moved to after launch (§0 F, 2026-10-19).
 
 ## 9. Documentation drift found in this review
 
