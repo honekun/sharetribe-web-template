@@ -7,6 +7,7 @@ const { getSdk } = require('../api-util/sdk');
 const { createSharedRateLimit } = require('../services/rateLimitStore');
 const {
   removeMarketingContact,
+  unblockTransactionalContact,
   upsertMarketingContact,
 } = require('../services/brevoContactService');
 const { createBrevoWebhookStore } = require('../services/brevoWebhookStore');
@@ -183,10 +184,12 @@ router.put('/preference', preferenceRateLimit, async (req, res) => {
       occurredAt,
     };
     const preference = await createMarketingConsentStore().setPreference(evidence);
-    await syncBrevoPreference({
-      ...evidence,
-      enabled: Boolean(preference?.enabled) && !preference?.suppressed,
-    });
+    const optedIn = Boolean(preference?.enabled) && !preference?.suppressed;
+    // A re-consent must also clear Brevo's transactional blocklist entry left by
+    // an earlier email unsubscribe, or Brevo blocks every campaign send and the
+    // `blocked` webhook re-suppresses the address.
+    if (optedIn) await unblockTransactionalContact(user.email);
+    await syncBrevoPreference({ ...evidence, enabled: optedIn });
     await sdk.currentUser.updateProfile({
       protectedData: {
         marketingConsent: enabled,

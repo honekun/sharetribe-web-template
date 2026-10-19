@@ -4,6 +4,7 @@ const mockSetPreference = jest.fn();
 const mockGetPreference = jest.fn();
 const mockUpsertContact = jest.fn();
 const mockRemoveContact = jest.fn();
+const mockUnblockContact = jest.fn();
 const mockRecordEngagement = jest.fn();
 const mockRecordWebhook = jest.fn();
 const mockCurrentUserShow = jest.fn();
@@ -20,6 +21,7 @@ jest.mock('../services/marketingConsent', () => ({
 jest.mock('../services/brevoContactService', () => ({
   upsertMarketingContact: (...args) => mockUpsertContact(...args),
   removeMarketingContact: (...args) => mockRemoveContact(...args),
+  unblockTransactionalContact: (...args) => mockUnblockContact(...args),
 }));
 jest.mock('../services/brevoWebhookStore', () => ({
   createBrevoWebhookStore: () => ({ record: (...args) => mockRecordWebhook(...args) }),
@@ -234,6 +236,40 @@ describe('authenticated marketing preference', () => {
       protectedData: expect.objectContaining({ marketingConsent: true }),
     });
     expect(res.body).toEqual({ ok: true, enabled: true });
+  });
+
+  it('clears the Brevo transactional block left by an email unsubscribe on re-consent', async () => {
+    mockSetPreference.mockResolvedValueOnce({ enabled: true, suppressed: false });
+    const res = createRes();
+    await routeHandler('/preference', 'put')(createReq({ enabled: true }), res);
+
+    expect(mockUnblockContact).toHaveBeenCalledWith('person@example.com');
+    expect(mockUnblockContact.mock.invocationCallOrder[0]).toBeLessThan(
+      mockUpsertContact.mock.invocationCallOrder[0]
+    );
+    expect(res.body).toEqual({ ok: true, enabled: true });
+  });
+
+  it('does not clear the Brevo block on opt-out', async () => {
+    mockSetPreference.mockResolvedValueOnce({ enabled: false, suppressed: false });
+    const res = createRes();
+    await routeHandler('/preference', 'put')(createReq({ enabled: false }), res);
+
+    expect(mockUnblockContact).not.toHaveBeenCalled();
+    expect(mockRemoveContact).toHaveBeenCalledWith('person@example.com');
+  });
+
+  it('reports a failed unblock and does not re-add the contact to the list', async () => {
+    mockSetPreference.mockResolvedValueOnce({ enabled: true, suppressed: false });
+    mockUnblockContact.mockRejectedValueOnce(new Error('Brevo transactional unblock failed: 500'));
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const res = createRes();
+    await routeHandler('/preference', 'put')(createReq({ enabled: true }), res);
+
+    expect(mockUpsertContact).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(502);
+    expect(res.body).toEqual({ ok: false, error: 'preference_update_failed' });
+    consoleError.mockRestore();
   });
 
   it('opts out, removes list membership, and persists withdrawal', async () => {
