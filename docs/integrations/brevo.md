@@ -541,6 +541,10 @@ Runtime behavior is:
 - granting consent upserts the normalized email with `updateEnabled: true` and links it to this
   list;
 - withdrawing consent unlinks it from this list but does not delete the Brevo contact;
+- the account owner's own opt-in (Contact details or signup, `PUT /api/brevo/preference`) also
+  removes the address from Brevo's transactional blocklist. An earlier "Darme de baja" click
+  leaves it there, and Brevo would otherwise block every campaign send and report `blocked`,
+  which re-suppresses the address. The anonymous footer form never lifts a suppression or block;
 - provider suppression (unsubscribe, spam, hard bounce, blocked) is retained in PostgreSQL,
   cancels pending promotional jobs, and unlinks the address from this list; and
 - promotional send eligibility is always rechecked in PostgreSQL.
@@ -768,7 +772,8 @@ seller, category, and listing data are not trusted.
     `av_notification_jobs`, `av_notification_deliveries`, `av_brevo_webhook_events`, and the Brevo
     transactional log.
 13. Click unsubscribe and confirm the account is suppressed, Brevo list membership is removed, and a
-    pending promotional job is cancelled.
+    pending promotional job is cancelled. Then opt in again from Contact details and confirm the
+    address is back on the list and no longer in Brevo's transactional blocked contacts.
 14. Test a hard bounce with a Brevo-approved test method/address and confirm suppression without
     using a real third party's address.
 15. Confirm the seven-day cap and one-digest-per-day behavior with test data.
