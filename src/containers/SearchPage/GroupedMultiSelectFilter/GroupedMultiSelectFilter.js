@@ -2,6 +2,7 @@ import React from 'react';
 
 import { useIntl } from '../../../util/reactIntl';
 import { parseSelectFilterOptions } from '../../../util/search';
+import { resolveOptionGroups } from '../../../util/avGroupedOptions';
 import { FieldGroupedMultiSelect } from '../../../components';
 
 import FilterPlain from '../FilterPlain/FilterPlain';
@@ -32,6 +33,7 @@ const GroupedMultiSelectFilter = props => {
     label,
     getAriaLabel,
     groups,
+    enumOptions,
     initialValues,
     onSubmit,
     queryParamNames,
@@ -75,7 +77,7 @@ const GroupedMultiSelectFilter = props => {
       id={`${id}-grouped`}
       name={name}
       label={null}
-      groups={groups}
+      groups={resolveOptionGroups(groups, enumOptions, intl)}
       className={css.field}
     />
   );
