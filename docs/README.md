@@ -31,6 +31,8 @@ archive.
 ### Integrations
 
 - [eShip shipping](integrations/eship.md)
+- [Stripe Connect setup for Live](integrations/stripe-connect-setup.md) — platform profile,
+  payout settings, Accounts V1
 - [Notification PostgreSQL](integrations/notification-postgres.md)
 - [Brevo email and consent](integrations/brevo.md)
 - [Brevo Spanish templates](integrations/brevo-templates-es.md)
