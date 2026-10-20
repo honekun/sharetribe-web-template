@@ -1,5 +1,8 @@
 # Stripe Connect setup for the Live marketplace
 
+Spanish translation: [stripe-connect-setup-es.md](stripe-connect-setup-es.md). Keep both in step;
+this English version is the reference.
+
 How to configure the Live Stripe account so sellers can set up their payouts. It is all done in the
 Stripe dashboard; no Heroku or Sharetribe Console change is needed. The steps follow Sharetribe's
 own Stripe guides (sources at the end).

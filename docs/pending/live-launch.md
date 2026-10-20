@@ -307,7 +307,8 @@ a Stripe fee — correct, because the platform pays Stripe out of its commission
       connected accounts". Complete the Connect questionnaire, the Connect payout settings and
       Accounts V1 in the Live Stripe dashboard (Stripe-side only; no Heroku or Console change),
       then retry the seller's payout setup. Steps:
-      [Stripe Connect setup](../integrations/stripe-connect-setup.md).
+      [Stripe Connect setup](../integrations/stripe-connect-setup.md)
+      ([Spanish](../integrations/stripe-connect-setup-es.md)).
 - [x] Live secret key entered in Sharetribe **Live** Console (confirmed by Fernanda, 2026-10-19).
       `pk_live_…` is on Heroku (v38); a Live payout onboarding or purchase (E2/E3) proves the pair
       matches.
