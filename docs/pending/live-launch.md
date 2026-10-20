@@ -51,7 +51,7 @@ and a Facebook sign-in is part of E1.
 | #   | Item                                                                                                                                               | Owner    |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | E1  | Login, search, and CMS pages on `www`. **Done 2026-10-18/19:** home, the six CMS pages, terms, privacy, `/login`, `/signup`, a profile, a listing page, sitemap and `robots.txt` serve SSR in ~0.5 s; search filters return the expected counts (30 all, 22 `yiknal`, 27 `ropa`, 5 `invierno`, 10 `negro`); Google sign-up and sign-in work. The **Talla** filter showed blank size groups and options (a regression from `00aa95edf`, 2026-06-24); fixed in `df0cd65e6` and verified locally: 6 labelled groups, 56 options, selecting M filters to `pub_all_sizes=has_any:m`. Re-checked on `www` at v57. Email/password login works (TEST STORE, 2026-10-19). **Left:** a Facebook sign-in. Content follow-up (not a gate): the About, Terms and Privacy page titles are still in English. | Ops      |
-| E2  | One real seller with real Stripe Connect onboarding and a complete shipping origin; one approved listing.                                          | Business |
+| E2  | One real seller with real Stripe Connect onboarding and a complete shipping origin; one approved listing. **Blocked 2026-10-20:** Stripe refuses to create live connected accounts until the Connect platform profile is completed (§4). | Business |
 | E3  | One approved low-value purchase with a production eShip quote; verify order math, retained shipping fee, payout, `avShipping`. Run by the client with a real buyer; with `ESHIP_MARKUP_PCT=0` the buyer's shipping is the carrier rate rounded up to the peso. | Business |
 | E4  | Buy and download the production label manually; record the carrier charge and compare it with the shipping the buyer paid (with no markup, this is the IVA check: [pending eShip](eship.md) §2). | Ops      |
 | E5  | Welcome email and built-in Sharetribe emails use the production sender and `www` links; dispute reply with an image reaches the monitored mailbox. | Ops      |
@@ -300,8 +300,13 @@ products, `EditListingPricingAndStockForm`) shows only the 22 % + \$15 commissio
 a Stripe fee — correct, because the platform pays Stripe out of its commission. The US-style
 `REACT_APP_STRIPE_FEE_*` defaults reach only the unused booking form.
 
-- [x] Stripe platform account fully activated for live payments in Mexico (business details, bank
-      account, Connect platform profile and branding). Confirmed by Fernanda (2026-10-19).
+- [ ] Stripe platform account fully activated for live payments in Mexico (business details, bank
+      account, Connect platform profile and branding). Confirmed by Fernanda (2026-10-19), but **E2
+      found the Connect platform profile incomplete** (2026-10-20): a seller's payout setup on `www`
+      fails with Stripe's "You must complete your platform profile to use Connect and create live
+      connected accounts". Complete the Connect questionnaire, the Connect payout settings and
+      Accounts V1 in the Live Stripe dashboard (Stripe-side only; no Heroku or Console change),
+      then retry the seller's payout setup.
 - [x] Live secret key entered in Sharetribe **Live** Console (confirmed by Fernanda, 2026-10-19).
       `pk_live_…` is on Heroku (v38); a Live payout onboarding or purchase (E2/E3) proves the pair
       matches.
