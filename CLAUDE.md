@@ -357,8 +357,9 @@ there is no static shipping-price table or fallback. Flow: buyer enters MX desti
 payment form → client `POST /api/shipping/quote` → server resolves the seller's stored origin
 (`integrationSdk.users.show` → `profile.protectedData.shippingOrigin`) + the parcel
 (`packageSizes[resolvePackageSize(listing)]`) → eShip `POST /rest/quotation` (one call → `rates[]`)
-→ bucket **fewest days (cheapest on a tie) → Express (`nacionalExpress`)** / **cheapest → Estándar
-(`nacionalEstandar`)** — eShip's FASTEST/CHEAPEST tags are shown but not trusted — apply
+→ bucket **cheapest at 1–3 days → Express (`nacionalExpress`)** / **cheapest at 4+ days (or no
+days) → Estándar (`nacionalEstandar`)**; equal buyer prices collapse into one Estándar carrying the
+faster rate — eShip's FASTEST/CHEAPEST tags are shown but not trusted — apply
 `applyBuyerMarkup` (markup + round up) → cache under a `quoteToken` (15-min TTL) → return buckets +
 raw rates. Buyer picks a bucket → `avShippingType`/`avQuoteToken`/`avDestination`/`buyerEmail` flow
 through `getOrderParams` into `orderData`.

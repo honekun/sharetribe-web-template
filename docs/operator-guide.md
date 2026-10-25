@@ -2316,8 +2316,11 @@ The checkout (step shown after the buyer clicks **Comprar ahora**) has these AV-
    country is always Mexico, so there is no country field. The list of states is fixed in code.
 2. **Delivery options (live quote)** — once the address is complete, the platform requests a **live
    shipping quote** from the carrier (eShip) using the listing's package size (S/M/L) and the
-   buyer's address. The buyer then picks **Express** (the fastest rate) or **Estándar** (the
-   cheapest rate); below them, every rate the carrier returned is listed for transparency. Buyer
+   buyer's address. The buyer then picks **Express** (the cheapest rate delivered in 1–3 days) or
+   **Estándar** (the cheapest rate taking 4 or more days). If both cost the buyer the same, only one
+   card is shown, labelled **Estándar**, using the faster rate. If the carrier returns no rate in
+   one of the two ranges, that card is not shown. Below them, every rate the carrier returned is
+   listed for transparency. Buyer
    prices include a margin buffer over the raw carrier cost. Prices are **not** set in the Console —
    they come from the carrier in real time. The **Pay** button stays disabled until a delivery
    option is chosen.
@@ -2370,8 +2373,8 @@ The current delivery keys are `AVShippingSelector.*`:
 
 | Area             | Key                                                          | English meaning                                      | Spanish (shipped)                               | Operator note                                                                        |
 | ---------------- | ------------------------------------------------------------ | ---------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Delivery options | `AVShippingSelector.express`                                 | `Express`                                            | `Express`                                       | Fastest-rate bucket label.                                                           |
-| Delivery options | `AVShippingSelector.estandar`                                | `Standard`                                           | `Estándar`                                      | Cheapest-rate bucket label.                                                          |
+| Delivery options | `AVShippingSelector.express`                                 | `Express`                                            | `Express`                                       | 1–3 day bucket label.                                                                |
+| Delivery options | `AVShippingSelector.estandar`                                | `Standard`                                           | `Estándar`                                      | 4+ day bucket label (also the single card when prices tie).                          |
 | Delivery options | `AVShippingSelector.days`                                    | `{days} days`                                        | `{days} días`                                   | Transit-time note on each option.                                                    |
 | Delivery options | `AVShippingSelector.loading`                                 | `Calculating shipping…`                              | `Calculando envío…`                             | Shown while the quote loads.                                                         |
 | Delivery options | `AVShippingSelector.errorTransient`                          | `We couldn't calculate shipping right now.`          | `No pudimos calcular el envío en este momento.` | Transient carrier error (shows **Retry**).                                           |

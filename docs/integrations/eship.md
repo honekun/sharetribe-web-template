@@ -107,10 +107,13 @@ NODE_ENV=development node -e "require('./server/env').configureEnv(); \
    `profile.protectedData.shippingOrigin`) and the **parcel**
    (`packageSizes[resolvePackageSize(listing)]`).
 3. `POST {base}/quotation` (one call → `rates[]`).
-4. Bucket the rates by price and transit time (`buildBuckets`): **Express (`nacionalExpress`)** is
-   the fewest days, cheapest on a tie; **Estándar (`nacionalEstandar`)** is the cheapest, fewest
-   days on a tie. eShip's `FASTEST`/`CHEAPEST` tags are passed through in `rawRates` but not trusted
-   for picking. Apply `applyBuyerMarkup`, cache under a `quoteToken` (15-min TTL, 1,000-entry
+4. Bucket the rates by transit time, then price (`buildBuckets`): **Express (`nacionalExpress`)** is
+   the cheapest rate delivered in **1–3 days**; **Estándar (`nacionalEstandar`)** is the cheapest
+   rate taking **4+ days** (a rate with no transit days counts as Estándar). Ties within a bucket go
+   to fewer days. Both cards are shown whenever both exist, whichever is cheaper. When their buyer
+   prices (after markup and rounding) are **equal**, a single **Estándar** card is shown carrying
+   the faster 1–3 day rate. A bucket with no qualifying rate is left out. eShip's
+   `FASTEST`/`CHEAPEST` tags are passed through in `rawRates` but not trusted for picking. Apply `applyBuyerMarkup`, cache under a `quoteToken` (15-min TTL, 1,000-entry
    process cap), return buckets. The token is cryptographically bound to the listing, seller,
    parcel, and normalized destination.
 5. Buyer picks a bucket → `avShippingType` / `avQuoteToken` / `avDestination` / `buyerEmail` flow
