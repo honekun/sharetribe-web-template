@@ -61,6 +61,8 @@ import {
 } from './avOrderParams';
 // AV: prefill checkout shipping fields from the buyer's saved address (MyAddressesPage)
 import { valuesFromShippingOrigin } from '../../util/shippingOrigin';
+// AV: hide the "Additional info" message to the seller above the pay button
+import { showCheckoutInitialMessage } from '../../config/configAV';
 
 // Stripe PaymentIntent statuses, where user actions are already completed
 // https://stripe.com/docs/payments/payment-intents/status
@@ -581,7 +583,8 @@ export const CheckoutPageWithPayment = props => {
 
   const txTransitions = existingTransaction?.attributes?.transitions || [];
   const hasInquireTransition = txTransitions.find(tr => tr.transition === transitions.INQUIRE);
-  const showInitialMessageInput = !hasInquireTransition && !isNegotiation;
+  const showInitialMessageInput =
+    showCheckoutInitialMessage && !hasInquireTransition && !isNegotiation;
 
   // Get first and last name of the current user and use it in the StripePaymentForm to autofill the name field
   const userName = currentUser?.attributes?.profile

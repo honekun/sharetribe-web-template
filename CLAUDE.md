@@ -103,7 +103,8 @@ pinned to its deadline, so moving a window means moving its reminder too.
   fields (`all_sizes`→`groupedMultiSelect`, `color`→`colorGridPicker`, `brand`→`searchableSelect`).
   Read by `EditListingDetailsForm`; does NOT change backend search schema.
 - `configAV.js` — AV defaults kept out of upstream files: `defaultCountry` (Stripe payment/payout,
-  `REACT_APP_AV_DEFAULT_COUNTRY`); `sellerUserTypes` + `canShowOriginalPrice()` (originalPrice
+  `REACT_APP_AV_DEFAULT_COUNTRY`); `showCheckoutInitialMessage` (`false`: no "Additional info"
+  message to the seller above the checkout pay button); `sellerUserTypes` + `canShowOriginalPrice()` (originalPrice
   gate); `storeSellerUserType`/`storeTypeFieldKey`/`getStoreTypeTags()` (StoreTypeTags gate/labels);
   `welcomePopupUserTypes`/`canShowWelcomePopup()`/`welcomePopupSuppressedPaths` (AVWelcomePopup
   gate); `storeSellerHiddenNavPages`/`isNavPageHiddenForUser()` (hides the buyer-side menu entries —
@@ -624,7 +625,7 @@ contain.
 | `containers/SearchPage/FilterComponent.js`                                              | Custom filter type branches (delegates to `searchFilters/avFilters`)                                            |
 | `containers/SearchPage/SearchPageWithGrid.js`                                           | Grouped-sizes filter injection (`injectAvFilters`)                                                              |
 | `PageBuilder/SectionBuilder/SectionBuilder.js`                                          | Custom section registration + AV `blockComponents` injection                                                    |
-| `CheckoutPage/CheckoutPageWithPayment.js`                                               | Default Stripe country (`configAV.defaultCountry`)                                                              |
+| `CheckoutPage/CheckoutPageWithPayment.js`                                               | Default Stripe country (`configAV.defaultCountry`); seller message hidden (`configAV.showCheckoutInitialMessage`) |
 | `CheckoutPage/CheckoutPage.module.css`                                                  | 2-column layout from `--viewportMedium` (not `--viewportLarge`) + fluid `--avCheckoutRamp` sizing               |
 | `CheckoutPage/DetailsSideCard.js`                                                       | Breakdown loading overlay (`speculateInProgress`) + 4:3 image box from `avListingImage.js`                      |
 | `CheckoutPage/MobileListingImage.js`                                                    | 4:3 image box from `avListingImage.js`                                                                          |
