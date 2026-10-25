@@ -34,12 +34,11 @@ Last reviewed: 2026-10-15 (after the Live cutover).
 - [Listings sheet](listings-sheet-proposal.md) — proposal for an in-site spreadsheet that creates
   many listings with validated dropdowns, instead of the CSV/ZIP bulk import. Awaiting client
   approval; no development has started.
-- Per-seller provider commission override — **deferred until after launch** (decided 2026-10-09).
-  The approved [design](../superpowers/specs/2026-08-14-per-seller-commission-override-design.md)
-  and [plan](../superpowers/plans/2026-08-15-per-seller-commission-override.md) remain the starting
-  point; only plan Task 3 (fixed-fee clamp) shipped, as a launch fix. Before resuming, raise the
-  Console and code minimum listing price to `6000`, since overrides may reach 75 % (see the plan's
-  Task 4 note).
+- Per-seller provider commission override — **implemented 2026-10-23** as a Console `metadata`
+  user field `avCommissionPercentage` (0–25 %, percentage only, \$15 fixed fee always charged, no
+  end date; [design](../superpowers/specs/2026-08-14-per-seller-commission-override-design.md)).
+  Remaining: create the field in Console **Test** and **Live** (operator guide §14.6, "One-time
+  setup"), with Show on profile off, then verify one seller in Test end to end.
 - [WhatsApp hardening](notifications.md) — recipient direction, consent, Graph API version, delivery
   status, transition coverage, phone validation, and template governance. WhatsApp notifications are
   release-locked out of the first release; keep `AV_WHATSAPP_NOTIFICATIONS_ENABLED=false` until the
