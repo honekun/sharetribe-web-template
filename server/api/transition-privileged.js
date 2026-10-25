@@ -22,6 +22,7 @@ const {
   serialize,
   fetchCommission,
 } = require('../api-util/sdk');
+const { findListingAuthor, resolveProviderCommission } = require('../api-util/providerCommission');
 
 const { Money } = sharetribeSdk.types;
 
@@ -163,10 +164,11 @@ module.exports = (req, res) => {
       const resolvedRate = avShipping.resolvedRate;
       avShippingProtectedData = avShipping.avShippingProtectedData;
 
+      const author = findListingAuthor(listing, showTransactionResponse.data.included);
       lineItems = await transactionLineItems(
         listing,
         fullOrderData,
-        providerCommission,
+        resolveProviderCommission(providerCommission, author),
         customerCommission,
         { resolvedShippingRate: resolvedRate }
       );

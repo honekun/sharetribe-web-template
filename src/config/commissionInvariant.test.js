@@ -1,4 +1,5 @@
 import defaultConfig from './configDefault';
+import { MAX_PROVIDER_COMMISSION_OVERRIDE_PERCENTAGE } from './configAVCommission';
 
 // The AV provider fixed fee is invisible to Sharetribe, so nothing on their side
 // stops a listing from being priced below what the fee needs. At checkout the
@@ -20,6 +21,17 @@ describe('commission invariant', () => {
     const fixedFee = providerCommissionFixedAmountInSubunits || PRODUCTION_FIXED_FEE;
     const minPrice = defaultConfig.listingMinimumPriceSubUnits;
     const headroom = minPrice * (1 - providerCommissionPercentage / 100);
+
+    expect(headroom).toBeGreaterThanOrEqual(fixedFee);
+  });
+
+  // A per-seller override (configAVCommission.js) may reach the ceiling, and the
+  // fixed fee is still charged on top, so the minimum must also fit it there.
+  it('leaves room for the fixed fee at the highest per-seller override', () => {
+    const { providerCommissionFixedAmountInSubunits } = defaultConfig.earningsEstimate;
+    const fixedFee = providerCommissionFixedAmountInSubunits || PRODUCTION_FIXED_FEE;
+    const minPrice = defaultConfig.listingMinimumPriceSubUnits;
+    const headroom = minPrice * (1 - MAX_PROVIDER_COMMISSION_OVERRIDE_PERCENTAGE / 100);
 
     expect(headroom).toBeGreaterThanOrEqual(fixedFee);
   });
