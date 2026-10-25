@@ -26,7 +26,7 @@ Open gaps are in [Live launch readiness](../pending/live-launch.md).
 - Approver: Alex for the tests the AV team runs; the client for the tests they run and the
   overall launch approval (2026-10-19)
 - Started/completed time and timezone:
-- First known-good Live-configured rollback release: pending Live validation (candidate v58)
+- First known-good Live-configured rollback release: pending Live validation (candidate v60)
 
 ## 1. Code and configuration gate
 
@@ -260,7 +260,9 @@ needed, confirm readiness, and record the release.
       PRs #133–#134) on top of v51's `REACT_APP_GOOGLE_ANALYTICS_ID` (v50); its bundle carries
       only Live values, readiness is `200`, and the logs show no CSP violations or 5xx responses.
       Superseded by v57 (`c37b994d8`, the Talla filter fix, bundle `main.639f579a.js`) and v58
-      (`ESHIP_MARKUP_PCT=0`): **candidate v58**, verified the same way on 2026-10-19.
+      (`ESHIP_MARKUP_PCT=0`), verified the same way on 2026-10-19; then v59 (`5d3213b91`, PR #136) and
+      v60 (`73583009c`, PR #137, bundle `main.ba83c600.js`): **candidate v60**, verified the same way
+      on 2026-10-24.
 
 ## 5. Live smoke and launch gate
 
@@ -273,11 +275,18 @@ This is the pending "overall validation" for the initial launch.
 - [ ] Production domain, redirects, SSR, login, search, and CMS pages work. Redirects, SSR,
       canonical URL, and crawlable `robots.txt` verified (2026-10-15); CMS pages, search filters and
       Google sign-in and email/password login (2026-10-19). Left: a Facebook sign-in.
-- [ ] Create one real seller/listing and complete real Stripe Connect onboarding.
-- [ ] Complete one approved low-value real purchase with a live eShip quote.
-- [ ] Verify order math, platform-retained shipping fee, seller payout, and transaction shipping
-      data.
-- [ ] Purchase and download the real label manually; record the carrier charge.
+- [x] Create one real seller/listing and complete real Stripe Connect onboarding. Seller `6ada7e2b…`
+      (2026-10-23): `stripeConnected: true`, complete shipping origin, 4 published listings
+      (live-launch E2).
+- [ ] Complete one approved low-value real purchase with a live eShip quote. Purchase `6adbf44d…`
+      paid 2026-10-23 (\$50.00 item + \$111.00 Estafeta Express); awaiting the client's approval
+      (live-launch E3).
+- [x] Verify order math, platform-retained shipping fee, seller payout, and transaction shipping
+      data. Checked 2026-10-24 on `6adbf44d…`: payin \$161.00, commission 22 % + \$15.00, payout
+      \$24.00, shipping fee customer-only, `avShipping` stored (live-launch E3).
+- [ ] Purchase and download the real label manually; record the carrier charge. Label bought
+      2026-10-24 (Estafeta, eShip shipment `6adbf623b5f196de83801`); carrier charge not yet recorded
+      (live-launch E4).
 - [ ] Confirm one real `TRANSIT/picked_up` webhook sends exactly one native Sharetribe tracking
       email; replaying the same event sends no duplicate and does not change transaction state.
 - [ ] Reply to the buyer dispute acknowledgement with an image attachment and confirm it reaches the
