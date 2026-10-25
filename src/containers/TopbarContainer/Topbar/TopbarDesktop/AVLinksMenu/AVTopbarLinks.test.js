@@ -58,12 +58,24 @@ describe('AVInboxLink', () => {
     expect(link).toHaveAttribute('href', '/inbox/sales');
   });
 
-  it('shows a notification dot only when there are notifications', () => {
-    const { container: none } = render(<AVInboxLink notificationCount={0} inboxTab="orders" />);
-    expect(none.querySelector('.notificationDot')).not.toBeInTheDocument();
+  // One number for sales and orders together (TopbarContainer adds them up),
+  // the same count the inbox tabs show.
+  it('shows no badge without notifications', () => {
+    const { container } = render(<AVInboxLink notificationCount={0} inboxTab="orders" />);
+    expect(container.querySelector('.inboxBadge')).not.toBeInTheDocument();
+  });
 
-    const { container: some } = render(<AVInboxLink notificationCount={3} inboxTab="orders" />);
-    expect(some.querySelector('.notificationDot')).toBeInTheDocument();
+  it('shows the notification count', () => {
+    const { container } = render(<AVInboxLink notificationCount={3} inboxTab="orders" />);
+    expect(container.querySelector('.inboxBadge')).toHaveTextContent(/^3$/);
+  });
+
+  it('shows 9 as is and anything above as 9+', () => {
+    const { container: nine } = render(<AVInboxLink notificationCount={9} inboxTab="orders" />);
+    expect(nine.querySelector('.inboxBadge')).toHaveTextContent(/^9$/);
+
+    const { container: ten } = render(<AVInboxLink notificationCount={10} inboxTab="orders" />);
+    expect(ten.querySelector('.inboxBadge')).toHaveTextContent(/^9\+$/);
   });
 
   it('carries no id unless one is given', () => {

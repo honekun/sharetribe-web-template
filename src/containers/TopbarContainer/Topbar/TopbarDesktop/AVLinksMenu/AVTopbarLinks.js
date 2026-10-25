@@ -10,6 +10,10 @@ import {
 import { MenuItem, NamedLink } from '../../../../../components';
 
 import css from '../TopbarDesktop.module.css';
+import avCss from './AVTopbarLinks.module.css';
+
+// Counts above this show as "9+", so the badge stays a small circle.
+const MAX_SHOWN_NOTIFICATION_COUNT = 9;
 
 /**
  * The AV-specific links in the desktop topbar, kept out of `TopbarDesktop.js` so
@@ -84,9 +88,13 @@ export const FavoritesLink = ({ id }) => {
  * inbox sidebar's Orders tab is hidden from them, and `inboxTab` is resolved by
  * Topbar so this never points at that tab.
  *
+ * Instead of upstream's dot, a badge shows how many sales and orders need the
+ * user's attention (TopbarContainer adds the two counts the inbox tabs show),
+ * capped at "9+".
+ *
  * @component
  * @param {Object} props
- * @param {number} props.notificationCount
+ * @param {number} props.notificationCount sales + orders notifications
  * @param {string} props.inboxTab
  * @param {string} [props.id]
  * @returns {JSX.Element}
@@ -94,7 +102,16 @@ export const FavoritesLink = ({ id }) => {
 export const AVInboxLink = ({ notificationCount, inboxTab, id }) => {
   const intl = useIntl();
   const label = intl.formatMessage({ id: 'TopbarDesktop.inbox' });
-  const notificationDot = notificationCount > 0 ? <div className={css.notificationDot} /> : null;
+  const shownCount =
+    notificationCount > MAX_SHOWN_NOTIFICATION_COUNT
+      ? `${MAX_SHOWN_NOTIFICATION_COUNT}+`
+      : notificationCount;
+  const notificationBadge =
+    notificationCount > 0 ? (
+      <span className={avCss.inboxBadge} aria-hidden="true">
+        {shownCount}
+      </span>
+    ) : null;
 
   return (
     <NamedLink
@@ -114,7 +131,7 @@ export const AVInboxLink = ({ notificationCount, inboxTab, id }) => {
             fill="currentColor"
           />
         </svg>
-        {notificationDot}
+        {notificationBadge}
       </span>
       <span className={css.srOnly}>{label}</span>
     </NamedLink>

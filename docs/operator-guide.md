@@ -1048,7 +1048,7 @@ The top-right area of the desktop top bar shows a row of actions. From left to r
 | Item                              | Appearance                              | Links to                                                                                     | Shown when                |
 | --------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------- |
 | **VENDE** (Sell / Create listing) | Blue pill button                        | Upload chooser page (`/create-type`) — see [Section 13](#13-upload-chooser-page-create-type) | Signed in                 |
-| **Inbox**                         | Black envelope icon                     | Inbox                                                                                        | Signed in                 |
+| **Inbox**                         | Black envelope icon with a pink count badge | Inbox                                                                                    | Signed in                 |
 | **Favorites**                     | Black heart icon                        | Favorites page (`/favorites`)                                                                | Signed in, except store sellers ([hidden entries](#store-sellers-tienda-hidden-menu-entries)) |
 | **Bag**                           | Black bag icon with a blue item-count badge | Bag page (`/bag`)                                                                        | Always (works logged out) |
 
@@ -1057,6 +1057,11 @@ screen readers, not shown on screen. None of this requires configuration. The re
 `TopbarDesktop.favoritesLink`, `BagLink.label`, and `TopbarDesktop.inbox`. See
 [Section 11 — Favorites](#11-favorites-wish-list) and [Section 12 — Shopping Bag](#12-shopping-bag)
 for the full features.
+
+The envelope's pink badge counts the sales and orders waiting on the user — the same numbers as the
+**Sales** and **Orders** tab badges in the inbox, added together. It shows `1` to `9`, then `9+`, and
+is hidden at zero. It counts transactions that need the user's action, not unread chat messages:
+Sharetribe has no unread-message count.
 
 ---
 
