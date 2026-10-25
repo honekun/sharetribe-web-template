@@ -129,31 +129,75 @@ describe('buildBuckets', () => {
     tags,
   });
 
-  it('estándar = cheapest overall; express = fewest days then cheapest', () => {
-    const out = svc.buildBuckets([rate('a', 2, 100), rate('b', 5, 80)]);
-    expect(out.nacionalEstandar.amountSubunits).toBe(svc.__toSubunitsWithMarkup(80)); // cheapest
-    expect(out.nacionalExpress.amountSubunits).toBe(svc.__toSubunitsWithMarkup(100)); // fewest days
-    expect(out.rawRates).toHaveLength(2);
+  it('express = cheapest at 1–3 days; estándar = cheapest at 4+ days', () => {
+    const out = svc.buildBuckets([
+      rate('exp3', 3, 140),
+      rate('exp1', 1, 160),
+      rate('std4', 4, 120),
+      rate('std7', 7, 90),
+    ]);
+    expect(out.nacionalExpress.rate_id).toBe('exp3');
+    expect(out.nacionalEstandar.rate_id).toBe('std7');
+    expect(out.rawRates).toHaveLength(4);
   });
 
-  it('express picks the cheapest among the rates sharing the fewest days', () => {
-    // days: a,b = 2 (fastest); c = 5. Express must be the cheaper of a/b (b=150).
-    const out = svc.buildBuckets([rate('a', 2, 200), rate('b', 2, 150), rate('c', 5, 80)]);
-    expect(out.nacionalExpress.amountSubunits).toBe(svc.__toSubunitsWithMarkup(150));
-    expect(out.nacionalEstandar.amountSubunits).toBe(svc.__toSubunitsWithMarkup(80));
+  it('shows both buckets even when Express is cheaper than Estándar', () => {
+    // Seen live: Estafeta Metropoli (3 d) undercut every 4+ day rate.
+    const out = svc.buildBuckets([
+      rate('saver', 4, 128),
+      rate('overnight', 3, 138),
+      rate('terrestre', 6, 122),
+      rate('diaSig', 3, 122),
+      rate('metropoli', 3, 94),
+    ]);
+    expect(out.nacionalExpress.rate_id).toBe('metropoli');
+    expect(out.nacionalEstandar.rate_id).toBe('terrestre');
+    expect(out.rawRates.filter(r => r.bucket).map(r => [r.rate_id, r.bucket])).toEqual([
+      ['terrestre', 'nacionalEstandar'],
+      ['metropoli', 'nacionalExpress'],
+    ]);
   });
 
-  it('fills BOTH buckets from a single rate when only one is returned', () => {
-    const out = svc.buildBuckets([rate('solo', 3, 120)]);
-    expect(out.nacionalExpress.amountSubunits).toBe(svc.__toSubunitsWithMarkup(120));
-    expect(out.nacionalEstandar.amountSubunits).toBe(svc.__toSubunitsWithMarkup(120));
+  it('breaks a price tie inside a bucket on fewer days', () => {
+    const out = svc.buildBuckets([rate('a', 3, 100), rate('b', 1, 100), rate('c', 6, 80)]);
+    expect(out.nacionalExpress.rate_id).toBe('b');
+    expect(out.nacionalEstandar.rate_id).toBe('c');
+  });
+
+  it('collapses equal buyer prices into one Estándar bucket carrying the faster rate', () => {
+    // 94 and 94.05 both mark up and round to the same buyer price.
+    expect(svc.__toSubunitsWithMarkup(94)).toBe(svc.__toSubunitsWithMarkup(94.05));
+    const out = svc.buildBuckets([rate('fast', 2, 94.05), rate('slow', 5, 94)]);
+    expect(out.nacionalExpress).toBeUndefined();
+    expect(out.nacionalEstandar.rate_id).toBe('fast');
+    expect(out.nacionalEstandar.days).toBe(2);
+    expect(out.rawRates.find(r => r.rate_id === 'fast').bucket).toBe('nacionalEstandar');
+    expect(out.rawRates.find(r => r.rate_id === 'slow').bucket).toBe(null);
+  });
+
+  it('offers only Express when every rate takes 1–3 days', () => {
+    const out = svc.buildBuckets([rate('a', 3, 120), rate('b', 1, 150)]);
+    expect(out.nacionalExpress.rate_id).toBe('a');
+    expect(out.nacionalEstandar).toBeUndefined();
+  });
+
+  it('offers only Estándar when every rate takes 4+ days', () => {
+    const out = svc.buildBuckets([rate('a', 4, 120), rate('b', 8, 90)]);
+    expect(out.nacionalExpress).toBeUndefined();
+    expect(out.nacionalEstandar.rate_id).toBe('b');
+  });
+
+  it('treats a rate without transit days as Estándar, never Express', () => {
+    const out = svc.buildBuckets([rate('unknown', undefined, 50), rate('fast', 2, 120)]);
+    expect(out.nacionalExpress.rate_id).toBe('fast');
+    expect(out.nacionalEstandar.rate_id).toBe('unknown');
   });
 
   it('selects on price/days, ignoring eShip FASTEST/CHEAPEST tags', () => {
     // Tags deliberately contradict the numbers.
     const out = svc.buildBuckets([rate('a', 2, 100, ['CHEAPEST']), rate('b', 5, 80, ['FASTEST'])]);
-    expect(out.nacionalEstandar.amountSubunits).toBe(svc.__toSubunitsWithMarkup(80)); // truly cheapest
-    expect(out.nacionalExpress.amountSubunits).toBe(svc.__toSubunitsWithMarkup(100)); // truly fastest
+    expect(out.nacionalEstandar.amountSubunits).toBe(svc.__toSubunitsWithMarkup(80));
+    expect(out.nacionalExpress.amountSubunits).toBe(svc.__toSubunitsWithMarkup(100));
   });
 
   it('returns only rawRates when there are no rates', () => {

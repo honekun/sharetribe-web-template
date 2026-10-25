@@ -126,9 +126,14 @@ function quoteContextHash(listing, destination) {
 const rateAmount = r => (typeof r.amount === 'number' ? r.amount : Infinity);
 const rateDays = r => (typeof r.days === 'number' ? r.days : Infinity);
 
-// Estándar = the cheapest delivery, regardless of transit time. Tie-break on
-// fewer days, then keep the first seen (stable).
-function pickEstandarRate(rates) {
+// Express covers rates delivered in up to this many days; anything slower, or
+// with no transit time, is Estándar, so Express speed is never promised blindly.
+const EXPRESS_MAX_DAYS = 3;
+const isExpressRate = r => rateDays(r) <= EXPRESS_MAX_DAYS;
+
+// The cheapest rate of a group. Tie-break on fewer days, then keep the first
+// seen (stable).
+function pickCheapestRate(rates) {
   return rates.reduce((best, r) => {
     if (!best) return r;
     if (rateAmount(r) < rateAmount(best)) return r;
@@ -137,24 +142,7 @@ function pickEstandarRate(rates) {
   }, null);
 }
 
-// Express = the fastest delivery (fewest days); among rates that tie on days,
-// the cheapest. Tie-break otherwise keeps the first seen (stable).
-function pickExpressRate(rates) {
-  return rates.reduce((best, r) => {
-    if (!best) return r;
-    if (rateDays(r) < rateDays(best)) return r;
-    if (rateDays(r) === rateDays(best) && rateAmount(r) < rateAmount(best)) return r;
-    return best;
-  }, null);
-}
-
-function rawRateView(rate, expressRate, estandarRate) {
-  const bucket =
-    expressRate && rate.rate_id === expressRate.rate_id
-      ? 'nacionalExpress'
-      : estandarRate && rate.rate_id === estandarRate.rate_id
-      ? 'nacionalEstandar'
-      : null;
+function rawRateView(rate, bucketByRateId) {
   return {
     rate_id: rate.rate_id,
     provider: rate.provider,
@@ -164,7 +152,7 @@ function rawRateView(rate, expressRate, estandarRate) {
     currency: rate.currency,
     buyerAmountSubunits: __toSubunitsWithMarkup(rate.amount),
     tags: rate.tags || [],
-    bucket,
+    bucket: bucketByRateId[rate.rate_id] || null,
   };
 }
 
@@ -179,16 +167,31 @@ function bucketFromRate(rate) {
   };
 }
 
-// Compute the two selectable buckets from the raw eShip rates. As long as at
-// least one rate is returned, BOTH Express and Estándar are filled (they can be
-// the same rate when only one is returned, or when the cheapest is also the
-// fastest). Selection is derived from price/days here — eShip's FASTEST/CHEAPEST
-// tags are surfaced in rawRates for transparency but are not trusted for picking.
+// Compute the selectable buckets from the raw eShip rates:
+// - Express (`nacionalExpress`): the cheapest rate delivered in 1–3 days.
+// - Estándar (`nacionalEstandar`): the cheapest rate taking 4+ days.
+// Both are shown whenever both exist, whichever is cheaper. When their buyer
+// prices (after markup and rounding) are equal, the buyer sees a single
+// Estándar bucket carrying the faster Express rate. A group with no rates
+// leaves its bucket out. Selection is derived from price/days here — eShip's
+// FASTEST/CHEAPEST tags are surfaced in rawRates for transparency but are not
+// trusted for picking.
 function buildBuckets(rates) {
   const list = rates || [];
-  const expressRate = pickExpressRate(list);
-  const estandarRate = pickEstandarRate(list);
-  const out = { rawRates: list.map(rate => rawRateView(rate, expressRate, estandarRate)) };
+  let expressRate = pickCheapestRate(list.filter(isExpressRate));
+  let estandarRate = pickCheapestRate(list.filter(r => !isExpressRate(r)));
+  if (
+    expressRate &&
+    estandarRate &&
+    __toSubunitsWithMarkup(expressRate.amount) === __toSubunitsWithMarkup(estandarRate.amount)
+  ) {
+    estandarRate = expressRate;
+    expressRate = null;
+  }
+  const bucketByRateId = {};
+  if (expressRate) bucketByRateId[expressRate.rate_id] = 'nacionalExpress';
+  if (estandarRate) bucketByRateId[estandarRate.rate_id] = 'nacionalEstandar';
+  const out = { rawRates: list.map(rate => rawRateView(rate, bucketByRateId)) };
   if (expressRate) out.nacionalExpress = bucketFromRate(expressRate);
   if (estandarRate) out.nacionalEstandar = bucketFromRate(estandarRate);
   return out;

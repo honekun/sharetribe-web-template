@@ -38,6 +38,18 @@ describe('AVShippingSelector', () => {
     expect(screen.getByText('AVShippingSelector.estandar')).toBeInTheDocument();
   });
 
+  it('renders only Express when the server offers no Estándar bucket', () => {
+    render(<AVShippingSelector status="quoted" {...base} estandar={null} />);
+    expect(screen.getByText('AVShippingSelector.express')).toBeInTheDocument();
+    expect(screen.queryByText('AVShippingSelector.estandar')).not.toBeInTheDocument();
+  });
+
+  it('renders only Estándar when the server offers no Express bucket', () => {
+    render(<AVShippingSelector status="quoted" {...base} express={null} />);
+    expect(screen.getByText('AVShippingSelector.estandar')).toBeInTheDocument();
+    expect(screen.queryByText('AVShippingSelector.express')).not.toBeInTheDocument();
+  });
+
   it('lists the raw rates below the buckets', () => {
     render(<AVShippingSelector status="quoted" {...base} />);
     expect(screen.getByText(/DHL/)).toBeInTheDocument();
