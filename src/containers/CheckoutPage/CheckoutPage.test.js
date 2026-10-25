@@ -175,7 +175,9 @@ describe('CheckoutPage', () => {
 
     const billingDetails = 'StripePaymentForm.billingDetails';
     expect(screen.getByRole('heading', { name: billingDetails })).toBeInTheDocument();
-    expect(getTextbox('StripePaymentForm.messageLabel')).toBeInTheDocument();
+    // AV: no "Additional info" message to the seller (configAV.showCheckoutInitialMessage).
+    expect(screen.queryByRole('textbox', { name: 'StripePaymentForm.messageLabel' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'StripePaymentForm.messageHeading' })).toBeNull();
 
     expect(
       screen.getByRole('button', { name: 'StripePaymentForm.submitPaymentInfo' })
@@ -233,7 +235,9 @@ describe('CheckoutPage', () => {
     expect(
       screen.getByRole('combobox', { name: 'ShippingDetails.mxStateLabel' })
     ).toBeInTheDocument();
-    expect(getTextbox('StripePaymentForm.messageLabel')).toBeInTheDocument();
+    // AV: no "Additional info" message to the seller (configAV.showCheckoutInitialMessage).
+    expect(screen.queryByRole('textbox', { name: 'StripePaymentForm.messageLabel' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'StripePaymentForm.messageHeading' })).toBeNull();
 
     expect(
       screen.getByRole('button', { name: 'StripePaymentForm.submitPaymentInfo' })

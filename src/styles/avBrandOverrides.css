@@ -498,7 +498,8 @@ textarea {
   letter-spacing: 1.5px;
 }
 
-/* All user avatars: black border; black initials on light gray only when there is
+/* All user avatars: invisible (transparent) border, kept at 1px so avatar sizes
+   don't shift; black initials on light gray only when there is
    no profile image (`:not(:has(img))`), so photos with transparency keep a white
    backdrop instead of the gray showing through.
    Avatar uses CSS Modules, so its DOM class is the scoped `Avatar_avatarBase__<hash>`.
@@ -509,7 +510,7 @@ textarea {
 :root [class*='Avatar_avatarBase__'] {
   background-image: none;
   background-color: var(--colorWhite);
-  border: 1px solid var(--colorBlack);
+  border: 1px solid transparent;
 }
 
 :root [class*='Avatar_avatarBase__']:not(:has(img)) {

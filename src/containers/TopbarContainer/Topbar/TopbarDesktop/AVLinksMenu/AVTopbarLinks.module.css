@@ -1,0 +1,20 @@
+/* Notification count on the topbar envelope (AVInboxLink): the same pink
+   circle with a white number as the inbox tabs' NotificationBadge, scaled to
+   the icon. Anchored to the top-right corner of `.inboxIcon`, which is the
+   positioned parent. "9+" widens the circle into a pill. */
+.inboxBadge {
+  position: absolute;
+  top: -8px;
+  right: -11px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background-color: var(--colorFail);
+  color: var(--colorWhite);
+  font-size: 11px;
+  font-weight: var(--fontWeightBold);
+  line-height: 18px;
+  text-align: center;
+  white-space: nowrap;
+}

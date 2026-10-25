@@ -16,6 +16,11 @@ export const defaultCountry = process.env.REACT_APP_AV_DEFAULT_COUNTRY || 'MX';
 // a deployment can follow its own locale instead.
 export const priceFormatLocale = process.env.REACT_APP_AV_PRICE_FORMAT_LOCALE || 'en-US';
 
+// Whether CheckoutPage (payment flow) shows the optional "Additional info"
+// message to the seller above the pay button. Off for AV: buyers and sellers
+// can still message each other from the transaction page after purchase.
+export const showCheckoutInitialMessage = false;
+
 // User-type values (set in `currentUser.attributes.profile.publicData.userType`)
 // that may set an `originalPrice` on a listing — i.e. show the strike-through
 // "was" price input in the pricing panels.

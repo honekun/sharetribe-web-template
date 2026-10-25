@@ -1,8 +1,13 @@
 import React from 'react';
+import { useSelector } from 'react-redux';
 import { useIntl } from '../../../../util/reactIntl';
 import { formatMoney } from '../../../../util/currency';
 import { types as sdkTypes } from '../../../../util/sdkLoader';
 import { useConfiguration } from '../../../../context/configurationContext';
+import {
+  applyCommissionOverride,
+  getCommissionOverride,
+} from '../../../../config/configAVCommission';
 
 import css from './EarningsEstimator.module.css';
 
@@ -12,13 +17,20 @@ const EarningsEstimator = props => {
   const { price, marketplaceCurrency, includePaymentProcessing = false } = props;
   const intl = useIntl();
   const config = useConfiguration();
+  const currentUser = useSelector(state => state.user?.currentUser);
 
   const {
-    providerCommissionPercentage = 10,
+    providerCommissionPercentage: marketplaceCommissionPercentage = 10,
     providerCommissionFixedAmountInSubunits = 0,
     stripeFeePercentage = 2.9,
     stripeFeeFixedAmountInSubunits = 30,
   } = config.earningsEstimate || {};
+
+  // Per-seller override (Console metadata), parsed by the same rule checkout uses.
+  const { percentage: providerCommissionPercentage } = applyCommissionOverride(
+    { percentage: marketplaceCommissionPercentage },
+    getCommissionOverride(currentUser)
+  );
 
   if (!price || !price.amount || price.amount <= 0) {
     return (

@@ -103,7 +103,8 @@ pinned to its deadline, so moving a window means moving its reminder too.
   fields (`all_sizes`→`groupedMultiSelect`, `color`→`colorGridPicker`, `brand`→`searchableSelect`).
   Read by `EditListingDetailsForm`; does NOT change backend search schema.
 - `configAV.js` — AV defaults kept out of upstream files: `defaultCountry` (Stripe payment/payout,
-  `REACT_APP_AV_DEFAULT_COUNTRY`); `sellerUserTypes` + `canShowOriginalPrice()` (originalPrice
+  `REACT_APP_AV_DEFAULT_COUNTRY`); `showCheckoutInitialMessage` (`false`: no "Additional info"
+  message to the seller above the checkout pay button); `sellerUserTypes` + `canShowOriginalPrice()` (originalPrice
   gate); `storeSellerUserType`/`storeTypeFieldKey`/`getStoreTypeTags()` (StoreTypeTags gate/labels);
   `welcomePopupUserTypes`/`canShowWelcomePopup()`/`welcomePopupSuppressedPaths` (AVWelcomePopup
   gate); `storeSellerHiddenNavPages`/`isNavPageHiddenForUser()` (hides the buyer-side menu entries —
@@ -464,6 +465,14 @@ Integration credentials (`SHARETRIBE_INTEGRATION_CLIENT_ID/SECRET`) to read sell
   `commissionInvariant.test.js` pins it against the rate and fee; Console's minimum overrides it.
   Bulk import applies the same floor via `server/api-util/listingMinimumPrice.js`
   (`resolveListingMinimumPrice`; its test keeps the fallback in step with `configDefault.js`).
+- **Per-seller commission override** — Console user field `avCommissionPercentage`, scope
+  `metadata` (operator-only write, but **publicly readable** through the API — accepted by the
+  owner; keep "Show on profile" off, `ProfilePage` renders metadata fields that opt in). A valid
+  `0`–`25` replaces the percentage and drops `minimum_amount`; the \$15 fixed fee always applies;
+  anything else is ignored (marketplace rate + server warning). One parser,
+  `src/config/configAVCommission.js` (CommonJS), shared by `server/api-util/providerCommission.js`
+  (the three line-item endpoints, from the listing author; a missing author fails the request) and
+  `EarningsEstimator`. `commissionInvariant.test.js` pins the 25 % ceiling to the `2000` minimum.
 - **EarningsEstimator** — fee breakdown below price input (simple price only). The percentage comes
   from Console `commission.json` at runtime (22 %); `config.earningsEstimate` (`configDefault.js`)
   holds the fallbacks and env overrides `REACT_APP_PROVIDER_COMMISSION_PERCENTAGE` (22),
@@ -616,7 +625,7 @@ contain.
 | `containers/SearchPage/FilterComponent.js`                                              | Custom filter type branches (delegates to `searchFilters/avFilters`)                                            |
 | `containers/SearchPage/SearchPageWithGrid.js`                                           | Grouped-sizes filter injection (`injectAvFilters`)                                                              |
 | `PageBuilder/SectionBuilder/SectionBuilder.js`                                          | Custom section registration + AV `blockComponents` injection                                                    |
-| `CheckoutPage/CheckoutPageWithPayment.js`                                               | Default Stripe country (`configAV.defaultCountry`)                                                              |
+| `CheckoutPage/CheckoutPageWithPayment.js`                                               | Default Stripe country (`configAV.defaultCountry`); seller message hidden (`configAV.showCheckoutInitialMessage`) |
 | `CheckoutPage/CheckoutPage.module.css`                                                  | 2-column layout from `--viewportMedium` (not `--viewportLarge`) + fluid `--avCheckoutRamp` sizing               |
 | `CheckoutPage/DetailsSideCard.js`                                                       | Breakdown loading overlay (`speculateInProgress`) + 4:3 image box from `avListingImage.js`                      |
 | `CheckoutPage/MobileListingImage.js`                                                    | 4:3 image box from `avListingImage.js`                                                                          |
@@ -638,6 +647,7 @@ contain.
 | `components/CustomExtendedDataSection/CustomExtendedDataSection.js`                     | Custom `color`/`all_sizes` display dispatch (key→component map)                                                 |
 | `components/LayoutComposer/LayoutSideNavigation/LayoutWrapperAccountSettingsSideNav.js` | Account tabs from `getAccountSettingsTabs()` extension, fed `currentUser` from the store                        |
 | `util/api.js`                                                                           | `request()` forwards a caller-encoded (JSON) body instead of dropping it; AV Brevo/topbar helpers appended      |
+| `server/api/{transaction-line-items,initiate-privileged,transition-privileged}.js`      | Async line items + eShip rate; provider commission via `resolveProviderCommission` (author `include` added)     |
 
 Also high-conflict on sync: `SearchResultsPanel.js` (AVListingCard swap), `CMSPage.js` (section
 injection), `TopbarDesktop.js`/`TopbarMobileMenu.js`/`UserNav.js` (nav links),

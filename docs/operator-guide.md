@@ -61,9 +61,10 @@ application settings. No technical background is required.
     - [User Management](#143-user-management)
     - [Listing Moderation](#144-listing-moderation)
     - [Transaction and Refund Support](#145-transaction-and-refund-support)
-    - [Shipping and Label Support](#146-shipping-and-label-support)
-    - [Notification Operations](#147-notification-operations)
-    - [Incident Records and Escalation](#148-incident-records-and-escalation)
+    - [Commission Rate Changes](#146-commission-rate-changes)
+    - [Shipping and Label Support](#147-shipping-and-label-support)
+    - [Notification Operations](#148-notification-operations)
+    - [Incident Records and Escalation](#149-incident-records-and-escalation)
 
 ---
 
@@ -957,8 +958,8 @@ ask a developer to raise it (`BlockBrevoForm.module.css`).
 ## 6. Navigation Bar
 
 The desktop and mobile navigation can show up to three custom dropdowns. The labels are translation
-keys (`Topbar.custom.menuOne`, `menuTwo`, and `menuThree`; currently Comprar/Explorar/Marcas in
-Spanish), while the contents come from two different sources.
+keys (`Topbar.custom.menuOne`, `menuTwo`, and `menuThree`; currently Ropa/Accesorios/Diseño Local in
+Spanish and Shop/Explore/Brands in English), while the contents come from two different sources.
 
 ### Editing Dropdowns 1 and 2
 
@@ -968,31 +969,77 @@ tree. Ask the development team to edit and deploy this file.
 
 The current configuration is:
 
-- **Dropdown 1 (Comprar):** Ver Todo, Tops, Camisetas, Camisas, Chamarras/Sacos, Pantalones, Jeans,
+- **Dropdown 1 (Ropa):** Ver Todo, Tops, Camisetas, Camisas, Chamarras/Sacos, Pantalones, Jeans,
   Faldas, Vestidos, Ropa Deportiva, Jumpsuits, and Sets.
-- **Dropdown 2 (Explorar):** empty, so it is not rendered.
+- **Dropdown 2 (Accesorios):** empty, so it is not rendered.
 
 If the local file loads and a dropdown is empty or omitted, no menu is shown for it. If the entire
 file cannot be loaded, the application uses its built-in fallback definitions.
 
-### Dropdown 3 — Marcas (Automatic)
+### Dropdown 3 — Diseño Local (Automatic)
 
-Despite its current **Marcas** label, this menu is a directory of eligible store profiles, not the
-625 listing-brand options. It is built automatically from users who meet both conditions:
+This menu is a directory of store profiles, not the list of listing brands. Nobody edits the menu
+itself: it is rebuilt automatically from the user accounts, and an operator controls who is in it
+from **Console → Manage → Users**. Each entry shows the store's display name and opens its profile
+page. Entries are sorted alphabetically.
 
-- user type is `vendedor-tienda`; and
-- the `localDesign` profile field is truthy.
+A store appears only when **both** of these are true:
 
-The items are sorted by display name and open each store's profile page. Review the user's type,
-display name, and `localDesign` value before expecting the menu to change; results are cached for
-five minutes.
+| Requirement  | Where to see it in Console            | Value it must have             |
+| ------------ | ------------------------------------- | ------------------------------ |
+| User type    | The user's type on their Console page | **Tienda** (`vendedor-tienda`) |
+| Local Design | The **Local Design** user field       | **Si** (stored as `true`)      |
 
-Defining a **user field schema for `userType`** in Console lets the server ask the API for store
-users only. Without it the server has to read every user account (up to 2,000) to find them, which
-makes the first load after each cache expiry slower as the marketplace grows. Nothing breaks either
-way — the menu falls back to reading all users automatically. If the configured user-management flow
-does not expose `localDesign` for editing, request a controlled development/administrative update
-rather than substituting a brand field.
+A **Persona** (`vendedor`) account never appears, whatever its Local Design value: the field only
+exists for Tienda accounts. **No** (`false`) or an empty value keeps the store out of the menu.
+
+New stores are never added automatically. Local Design is an operator-only field: the signup and
+profile forms do not show it, so every new Tienda account starts with no value — out of the menu —
+until an operator sets it.
+
+#### Add a store to the menu
+
+1. In Console, check the environment selector: **Live** for the real menu on
+   `www.archivovintach.com`, **Test** for the Render site. The two have separate users, so a store
+   added in Test does not appear in Live.
+2. Open **Manage → Users** and find the store by email (or user ID, more reliable than the name).
+3. Confirm the user type is **Tienda**. If it is **Persona**, the account cannot be added; ask the
+   development team before changing an existing account's type.
+4. Check the **display name**. It is the exact text shown in the menu, so it should be the store's
+   public name, not a person's name or a placeholder.
+5. Edit the user's fields, set **Local Design** to **Si**, and save.
+6. Wait up to five minutes, then reload the site (see the next heading for why).
+
+#### Remove a store from the menu
+
+Set **Local Design** to **No** and save. The store's account, profile, and listings are not
+affected; only the menu entry disappears. Closing or banning the account is a moderation decision
+([Section 14.3](#143-user-management)), not the way to remove a menu entry.
+
+#### When the change appears
+
+The list is cached twice, each for up to five minutes: once on the server, and once in each
+visitor's open browser tab. After saving in Console, wait five minutes and do a full page reload; a
+tab that stayed open the whole time can show the old list for up to five minutes more. Display-name
+changes follow the same timing.
+
+#### Verify it
+
+1. Open the site signed out, in a private window.
+2. Open **Diseño Local** on desktop, or the mobile menu on a phone width.
+3. Confirm the store appears under its display name, in alphabetical position, and that clicking it
+   opens the right profile.
+
+If it does not appear after ten minutes, recheck the three things above in order: environment, user
+type **Tienda**, Local Design **Si**. If all of them are right, report the user ID to the
+development team.
+
+> **For the development team.** The list comes from `GET /api/topbar/local-design-users`, which
+> reads users through the Integration API. It filters on `pub_userType` when Console has a user
+> field schema for `userType` (created automatically), and otherwise reads every user, up to 2,000,
+> and filters locally; both give the same result. Local Design is the `localDesign` user field,
+> `metadata` scope, enum `true`/`false`, limited to `vendedor-tienda`. The server also accepts `1`,
+> and the same value in `publicData`, but operators should only use the Console field.
 
 ### Top-Right Action Icons (Desktop)
 
@@ -1001,7 +1048,7 @@ The top-right area of the desktop top bar shows a row of actions. From left to r
 | Item                              | Appearance                              | Links to                                                                                     | Shown when                |
 | --------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------- |
 | **VENDE** (Sell / Create listing) | Blue pill button                        | Upload chooser page (`/create-type`) — see [Section 13](#13-upload-chooser-page-create-type) | Signed in                 |
-| **Inbox**                         | Black envelope icon                     | Inbox                                                                                        | Signed in                 |
+| **Inbox**                         | Black envelope icon with a pink count badge | Inbox                                                                                    | Signed in                 |
 | **Favorites**                     | Black heart icon                        | Favorites page (`/favorites`)                                                                | Signed in, except store sellers ([hidden entries](#store-sellers-tienda-hidden-menu-entries)) |
 | **Bag**                           | Black bag icon with a blue item-count badge | Bag page (`/bag`)                                                                        | Always (works logged out) |
 
@@ -1010,6 +1057,11 @@ screen readers, not shown on screen. None of this requires configuration. The re
 `TopbarDesktop.favoritesLink`, `BagLink.label`, and `TopbarDesktop.inbox`. See
 [Section 11 — Favorites](#11-favorites-wish-list) and [Section 12 — Shopping Bag](#12-shopping-bag)
 for the full features.
+
+The envelope's pink badge counts the sales and orders waiting on the user — the same numbers as the
+**Sales** and **Orders** tab badges in the inbox, added together. It shows `1` to `9`, then `9+`, and
+is hidden at zero. It counts transactions that need the user's action, not unread chat messages:
+Sharetribe has no unread-message count.
 
 ---
 
@@ -1874,12 +1926,13 @@ production marketplaces use different secrets.
 
 | Setting                            | What it controls                                                                                                          |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| **Provider commission percentage** | The marketplace fee percentage charged to sellers. Shown in the earnings estimator when sellers set a price. Read from Console (`commission.json`, 22 % in Test and Live); 22 % is also the code fallback. |
+| **Provider commission percentage** | The marketplace fee percentage charged to sellers. Shown in the earnings estimator when sellers set a price. Read from Console (`commission.json`, 22 % in Test and Live); 22 % is also the code fallback. A seller with a **Comisión (%)** value ([Section 14.6](#146-commission-rate-changes)) sees and pays their own percentage instead. |
 | **Provider fixed fee** (`REACT_APP_PROVIDER_COMMISSION_FIXED_FEE`) | Fixed fee in centavos charged to the seller on every sale, on top of the percentage. Set by the dev team, not in Console: 1500 (= MXN \$15.00) on Heroku. The same value drives both the estimate and the fee actually charged, so changing it needs a rebuild. |
 | **Stripe fee** (`REACT_APP_STRIPE_FEE_PERCENTAGE`, `REACT_APP_STRIPE_FEE_FIXED_AMOUNT`) | Not shown to Archivo Vintach sellers. The `av-listing` pricing step shows only the commission and fixed fee, because the platform pays Stripe out of its commission. These values (default 2.9 % + 30 centavos) reach only the booking-style pricing form, which no listing type uses. |
 
 Sellers see an estimate of their net earnings while setting a price. The percentage actually charged
-comes from Console → Build → Transactions; the fixed fee comes from the setting above.
+comes from Console → Build → Transactions; the fixed fee comes from the setting above. To change
+either, including a temporary rate, follow [Section 14.6](#146-commission-rate-changes).
 
 **Minimum listing price.** Console → Build → Transactions → Minimum transaction size must leave room
 for the provider fixed fee: at 22 % plus \$15.00 that is at least \$19.24, and Archivo Vintach uses
@@ -2647,10 +2700,10 @@ full Test-environment transaction pass.
 
 Console defines two user types. There is no buyer type: any signed-in user can buy.
 
-| User type         | Console label | Operational meaning                                                                                                                      |
-| ----------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `vendedor`        | Persona       | Individual seller; receives the seller onboarding experience and may set an original ("was") price.                                     |
-| `vendedor-tienda` | Tienda        | Store seller; receives store wording, hides the buyer-side menu entries, and may appear in the Marcas menu when `localDesign` is truthy. |
+| User type         | Console label | Operational meaning                                                                                                                        |
+| ----------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `vendedor`        | Persona       | Individual seller; receives the seller onboarding experience and may set an original ("was") price.                                        |
+| `vendedor-tienda` | Tienda        | Store seller; receives store wording, hides the buyer-side menu entries, and appears in the Diseño Local menu when Local Design is **Si**. |
 
 `vendedor-stock` is still recognized by the original-price rule in code (`configAV.sellerUserTypes`),
 but no Console user type uses it; do not assign it.
@@ -2661,8 +2714,11 @@ For a user-support or moderation request:
    UUID.
 2. Verify the display name, user type, email-verification state, and current account status.
 3. For seller issues, also verify Stripe payout onboarding and the shipping-origin requirement.
-4. For store-directory issues, confirm the user is `vendedor-tienda`, has a useful display name, and
-   has a truthy `localDesign` value. Allow five minutes for the menu cache to refresh.
+4. For store-directory (Diseño Local menu) issues, follow
+   [Dropdown 3 — Diseño Local](#dropdown-3--diseño-local-automatic): the user must be **Tienda**,
+   have a useful display name, and have **Local Design** set to **Si**.
+   For a negotiated commission rate, follow
+   [Section 14.6](#146-commission-rate-changes): the seller's **Comisión (%)** field.
 5. Use only the moderation/status actions exposed by the current Console. Do not change protected
    data or impersonate a user merely to make the UI look correct.
 6. Record the UUID, reason, action, and operator. Avoid copying phone numbers or addresses unless
@@ -2739,7 +2795,218 @@ Negotiation listings follow a different state machine from purchase listings. Th
 mode begins with a customer quote request and a provider's first numeric offer; it is not a direct
 buyer-bid shortcut. Do not change listing process aliases to resolve an individual support case.
 
-### 14.6 Shipping and Label Support
+### 14.6 Commission Rate Changes
+
+Every sale pays the marketplace a seller commission of **22 % of the item price plus a fixed
+\$15.00**, deducted from the seller's payout. The buyer never pays it: changing it changes what the
+seller receives, not what the buyer is charged. Shipping is not part of it.
+
+There are two ways to change it:
+
+- **For one seller** (a negotiated rate): the **Comisión (%)** user field in Console. Only the
+  percentage changes; the \$15.00 fixed fee is always charged, even at 0 %.
+- **For every seller:** the marketplace percentage in Console, or the fixed fee (development team).
+
+**Per-seller rate at a glance**
+
+| Question                       | Answer                                                                                                     |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Where is it set?               | Console → **Manage → Users** → the seller → **Comisión (%)**, after the one-time setup below.              |
+| What is entered?               | The percentage only, as a plain number from `0` to `25` (`15`, `12.5`). No `%` sign.                       |
+| What does it replace?          | Only the 22 %. The \$15.00 fixed fee is always added on top, even at `0`.                                  |
+| How is it removed?             | Empty the field and save. The seller goes back to 22 % + \$15.00.                                          |
+| Does it expire?                | No. There is no end date; it stays until someone empties the field.                                        |
+| When does it start?            | With the next payment submitted on any of that seller's listings. No restart or redeploy.                  |
+| Does it change existing sales? | No. Every transaction keeps the commission it was created with.                                            |
+| Who can change it?             | Only operators in Console. The seller cannot see or edit the field in their account.                       |
+| What does the buyer see?       | Nothing different. The commission comes out of the seller's payout, never the buyer's total.               |
+| How is it checked?             | The seller's earnings estimator, then the transaction breakdown and Console line items (see Verifying it). |
+
+#### One-time setup: create the field
+
+Do this once in **Test** and once in **Live** (fields are not copied between environments). Until
+the field exists, every seller pays the marketplace rate. First check the field list: if
+`avCommissionPercentage` already exists in that environment, skip to step 5 and only confirm its
+settings.
+
+1. Open **Console → Build → Users → User fields** and add a field.
+2. **Field ID (key):** `avCommissionPercentage`, exactly. The application looks for this name; any
+   other spelling is ignored.
+3. **Label:** `Comisión (%)` (operators see it; sellers do not).
+4. **Type:** Number. If Console offers a minimum and maximum, set `0` and `25`. If Number is not
+   offered, Text also works, as long as the value is only digits (`15`, `12.5`).
+5. **Who can edit:** the option that lets **only the marketplace operator** edit the value
+   (Sharetribe calls this _metadata_). Never choose a user-editable or "private" option: the seller
+   could then change their own rate.
+6. **User types:** Persona and Tienda.
+7. Leave **Show on profile** and **Show in sign-up** **off**. With Show on profile on, the rate is
+   printed on the seller's public profile page.
+8. Save and publish.
+
+**Privacy.** Operator-only fields are still readable through Sharetribe's API by anyone who fetches
+that seller. The site never shows the value, but a technically minded visitor could find it. This
+was accepted when the feature was chosen; do not put anything else confidential in the field.
+
+#### Set or clear a seller's rate
+
+1. Check the Console environment selector (**Live** for real sellers).
+2. Open **Manage → Users**, find the seller by email or user ID, and edit **Comisión (%)**:
+   - a number from `0` to `25` = that seller's percentage (`15` means 15 % + \$15.00);
+   - **empty** = the marketplace rate (22 % + \$15.00).
+3. Save.
+4. Check the seller's earnings estimator (see Verifying it) and fill in the change record (see
+   Change record).
+
+To end a negotiated rate, **empty the field** and save. Do not type `22` instead: it charges the
+same today, but the seller would then stay on 22 % even if the marketplace percentage later changes.
+There is no end date: a rate stays in force until someone clears it, so put a reminder with a named
+owner in the change record if the agreement is temporary.
+
+The rate belongs to the seller, not to a listing: it applies to every listing that seller owns,
+including listings created before the change and purchases that start as an inquiry. It is read from
+the seller who owns the listing at the moment the buyer pays.
+
+**Values the field accepts.** Type the number only. Anything else is **ignored**: that seller pays
+the marketplace rate, nothing fails at checkout, and the server logs a warning (see
+Troubleshooting).
+
+| Entered in Comisión (%)             | Result                                                                               |
+| ----------------------------------- | ------------------------------------------------------------------------------------ |
+| `15`                                | 15 % + \$15.00                                                                       |
+| `12.5`                              | 12.5 % + \$15.00 (decimal point, not a comma)                                        |
+| `0`                                 | No percentage; \$15.00 fixed fee only                                                |
+| `25`                                | 25 % + \$15.00 (the maximum)                                                         |
+| _(empty)_                           | Marketplace rate, 22 % + \$15.00                                                     |
+| `0.15`                              | 0.15 % + \$15.00. Accepted, but it is **not** 15 %: never enter a rate as a fraction |
+| `15%`, `12,5`, `-5`, `30`, `quince` | **Ignored** → 22 % + \$15.00 and a warning                                           |
+
+The 25 % ceiling keeps the \$20.00 minimum listing price valid (see How the fee is calculated). A
+mistyped value fails quietly, as the seller's 22 %, so always check the earnings estimator after a
+change.
+
+**Many sellers at once.** Console edits one seller at a time. For a long list, give the development
+team the seller IDs and rates; they can set the same field in bulk through the Integration API. Do
+not ask them to write it anywhere else: a value in any seller-editable data is ignored.
+
+#### How the fee is calculated
+
+For each sale (one listing per transaction):
+
+- **Percentage:** the seller's percentage × the item price × quantity. Shipping is never included.
+- **Fixed fee:** \$15.00, once per transaction, whatever the quantity or percentage.
+- **Console minimum commission:** if Console → Build → Transactions ever sets a minimum commission
+  amount, it applies only to sellers without a Comisión (%) value. A seller's own rate is never
+  pushed up by it. It is \$0 today.
+- **Seller receives:** item price × quantity − percentage − \$15.00. Stripe's processing fee is paid
+  by the platform, so it is not taken from the seller as well. Amounts are rounded to the centavo.
+
+What the seller receives, by price and percentage:
+
+| Item price | 22 % (marketplace)      | 25 %                    | 15 %                    | 0 %                    |
+| ---------- | ----------------------- | ----------------------- | ----------------------- | ---------------------- |
+| \$20.00    | fee \$19.40 → \$0.60    | fee \$20.00 → \$0.00    | fee \$18.00 → \$2.00    | fee \$15.00 → \$5.00   |
+| \$100.00   | fee \$37.00 → \$63.00   | fee \$40.00 → \$60.00   | fee \$30.00 → \$70.00   | fee \$15.00 → \$85.00  |
+| \$500.00   | fee \$125.00 → \$375.00 | fee \$140.00 → \$360.00 | fee \$90.00 → \$410.00  | fee \$15.00 → \$485.00 |
+| \$1,000.00 | fee \$235.00 → \$765.00 | fee \$265.00 → \$735.00 | fee \$165.00 → \$835.00 | fee \$15.00 → \$985.00 |
+
+At 25 % a \$20.00 item leaves the seller nothing, which is why 25 % is the ceiling while the minimum
+listing price is \$20.00. If a percentage and the fixed fee ever add up to more than the price, the
+sale still completes: the fixed fee is reduced to what is left and the server logs
+`Provider fixed fee clamped` (Section 9, "Minimum listing price").
+
+#### Changing the rate for every seller
+
+| Part                | Where it is changed                                                      | Format                                                    | Who              |
+| ------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------- | ---------------- |
+| Percentage (22 %)   | **Console → Build → Transactions**, provider (seller) commission         | A plain number of percent: `22`, `15`, `0`. No `%` sign.  | Operator         |
+| Fixed fee (\$15.00) | Deployment setting `REACT_APP_PROVIDER_COMMISSION_FIXED_FEE` (Section 9) | Centavos, a whole number: `1500` = \$15.00, `0` = no fee. | Development team |
+
+1. Make and check the change in **Test** first
+   ([Section 14.2](#142-content-and-configuration-releases)). Record the current value, the new
+   value, and the date it must be reverted.
+2. In **Live**, open **Build → Transactions**, set the seller commission percentage, and publish.
+3. Raising the percentage above 25 % also means raising the minimum transaction size on the same
+   page (see "Minimum listing price" in [Section 9](#seller-earnings-estimator)): the minimum must
+   be at least \$15.00 ÷ (1 − percentage). The current \$20.00 covers any percentage up to 25 %.
+   Lowering the percentage never needs a new minimum.
+
+Sellers with a **Comisión (%)** value keep their own percentage when the marketplace percentage
+changes; everyone else follows it. The fixed fee is not in Console: it is compiled into the site, so
+the development team edits the setting on Heroku and **rebuilds and redeploys** the site.
+
+There is no end date or scheduling here either. For a temporary marketplace-wide rate, put a
+reminder with a named owner, and on the end date set the percentage back to **22** (and, if it was
+changed, ask the development team to set the fixed fee back to **1500** and redeploy).
+
+#### When it takes effect, and existing orders
+
+- **New sales:** the commission is calculated by the server at the moment the buyer submits payment,
+  and stored with that transaction. A saved Console change (seller field or marketplace percentage)
+  applies to every payment submitted after it, with no restart. A fixed-fee change applies once the
+  redeploy finishes.
+- **A buyer already on the checkout page** when the rate changes gets the new rate if they submit
+  afterwards. Their own total does not change, because the commission comes out of the seller's
+  side.
+- **Existing transactions are never recalculated.** Orders already paid, awaiting shipping,
+  delivered, or awaiting payout keep the commission they were created with, both when a rate starts
+  and when it ends. A refund or cancellation of an older order also uses that order's own amounts.
+  There is no supported way to reprice a past transaction; do not edit transaction data or issue a
+  manual Stripe adjustment to do it.
+
+#### Verifying it
+
+1. **Earnings estimator (what the seller sees).** Sign in as the seller (in **Test**, with a test
+   account) and open the price step of the listing editor (a new listing, or **Edit** on an existing
+   one), with a fresh page load. Under **Ganancias Estimadas** the fee line reads _Comisión del
+   marketplace (22% + \$15.00)_, or the seller's own percentage, followed by **Tus ganancias**. For
+   a \$500.00 price at 22 %: fee \$125.00 (\$110.00 + \$15.00), earnings \$375.00; at 15 %: fee
+   \$90.00, earnings \$410.00; at 0 %: fee \$15.00, earnings \$485.00. A page loaded before the
+   change still shows the old rate until it is reloaded. If it still shows 22 % after a reload, the
+   field key or value is wrong (see Set or clear a seller's rate).
+2. **In a transaction.** In **Test**, place a test purchase from that seller; in **Live**, check
+   that seller's first real sale after the change. On the seller's side of the transaction page, the
+   breakdown shows one combined **Tarifa de Archivo Vintach** line (percentage and fixed fee
+   together) and the seller's total (**Ganarás**). That line should equal the item price × the
+   seller's percentage + \$15.00. The buyer's breakdown does not show the seller commission.
+3. **In Console.** Open the transaction in **Manage → Transactions**. Its line items list the
+   percentage commission and the fixed fee separately (at 0 % only the fixed fee appears), so you
+   can confirm both parts and the resulting payout. A transaction created before the change shows
+   the old rate; that is expected.
+
+An operator cannot preview another seller's estimator from their own account: the estimator always
+uses the signed-in seller's rate. In Live, rely on the seller's own screenshot or on the first sale
+instead of signing in to a real seller's account.
+
+#### Troubleshooting
+
+| Symptom                                                         | Likely cause                                                                                                                                                           | What to do                                                                                                                                                |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The estimator still shows 22 % after a reload.                  | The value is not accepted (`15%`, `12,5`, above 25; see the values table), the field ID is misspelled, it was set in the other environment, or on a different account. | Check the value and the environment. Then check the field in **Build → Users → User fields**: ID `avCommissionPercentage`, editable only by the operator. |
+| The rate appears on the seller's public profile.                | **Show on profile** is on for the field.                                                                                                                               | Turn it off and publish. The value itself is unaffected.                                                                                                  |
+| A sale was charged the old rate.                                | The buyer paid before the change was saved, or the order is older than the change.                                                                                     | Expected; past transactions are never recalculated (see When it takes effect). Do not adjust it by hand.                                                  |
+| A seller asks what rate they pay.                               | Sellers cannot see the field.                                                                                                                                          | Point them to the earnings estimator in the listing editor, which shows their percentage + \$15.00.                                                       |
+| Buyers get an error at checkout on every listing of one seller. | Rare: the server could not load the seller while pricing, so it stops rather than guess the rate. No sale is created at a wrong rate.                                  | Ask the buyer to retry. If it persists, escalate to development (Section 14.9) with the listing ID; the server log shows `Listing author unavailable`.    |
+
+The development team can search the server logs (Heroku for Live, Render for Test) for
+`[providerCommission] Ignoring invalid avCommissionPercentage for user <id>`, which names the seller
+and the stored value whenever a sale is priced with an ignored value.
+
+#### Change record
+
+Record every per-seller or marketplace-wide change, in the same place as other operator actions
+(Section 14.9):
+
+| Item            | Example                                            |
+| --------------- | -------------------------------------------------- |
+| Environment     | Live                                               |
+| Seller          | User ID and display name (or "all sellers")        |
+| Old → new value | _(empty)_ → `15`                                   |
+| Reason          | Negotiated store agreement                         |
+| Approved by     | Name                                               |
+| Changed by, on  | Name, 2026-11-01                                   |
+| Review / end    | 2027-02-01, owner: name (or "open-ended")          |
+| Verified        | Estimator checked; first sale's line items checked |
+### 14.7 Shipping and Label Support
 
 When checkout shows **Contactar AV** instead of a price, check in this order:
 
@@ -2770,7 +3037,7 @@ transitions because doing so sends the buyer email without carrier verification.
 Keep `ESHIP_LABEL_AUTOBUY=false` until the purchased-label cancellation/refund policy is approved.
 For money-flow and IVA details, use the [eShip integration guide](integrations/eship.md).
 
-### 14.7 Notification Operations
+### 14.8 Notification Operations
 
 The production notification pipeline is healthy only when:
 
@@ -2797,7 +3064,7 @@ For Brevo/newsletter cases:
 When a readiness endpoint returns `503`, capture its named missing/failed checks and escalate the
 configuration or database issue. Do not enable more channels until readiness is restored.
 
-### 14.8 Incident Records and Escalation
+### 14.9 Incident Records and Escalation
 
 For an incident, record enough evidence to reproduce it without exposing secrets:
 
