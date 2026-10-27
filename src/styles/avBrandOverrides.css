@@ -1106,3 +1106,19 @@ textarea {
 :root [class*='AuthenticationPage_error__'] {
   color: var(--colorFail);
 }
+
+/* ================ Checkout pay button spacing (AV) ================
+   Upstream spaces the pay button 72px (desktop) below the "Información
+   adicional" message box, which AV hides (`configAV.showCheckoutInitialMessage`).
+   Without it that gap stacks on the billing block's own margins (48px from
+   MxAddressFields + 48px from `.billingDetails`), leaving ~168px above the
+   button. Drop the inner address margin and the button's desktop offset so the
+   last field sits one section gap (48px) above the button. */
+:root [class*='StripePaymentForm_billingDetails__'] > [class*='MxAddressFields_root__'] {
+  margin-bottom: 0;
+}
+@media (--viewportLarge) {
+  :root [class*='StripePaymentForm_submitContainer__'] {
+    margin-top: 0;
+  }
+}
