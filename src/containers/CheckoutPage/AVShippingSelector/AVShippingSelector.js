@@ -43,7 +43,7 @@ const Bucket = ({ labelId, type, data, selectedType, onSelect, intl }) =>
 
 /**
  * Checkout shipping selector. Shows two buckets (Express / Estándar) sourced from
- * a live eShip quote, plus a transparency list of every raw rate returned.
+ * a live eShip quote, plus an optional server-gated debug list of raw rates.
  *
  * @param {Object} props
  * @param {'idle'|'quoting'|'quoted'|'error'} props.status

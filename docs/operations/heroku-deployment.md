@@ -421,6 +421,7 @@ Replace, do not mix, all environment-bound values:
 | eShip                            | Explicit production base URL and production key       |
 | `ESHIP_WEBHOOK_SECRET`           | New secret; re-point the production eShip dashboard   |
 | `ESHIP_API_DEBUG`                | `false` or unset                                      |
+| `ESHIP_WEB_DEBUG`                | `false` or unset                                      |
 | Brevo                            | Production sender/resources/secrets                   |
 | Social login                     | Production IDs/secrets and callbacks                  |
 | CSP                              | `block`, after the Test CSP gate                      |
