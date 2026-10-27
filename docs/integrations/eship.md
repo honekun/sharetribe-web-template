@@ -51,6 +51,7 @@ not the seller. That single fact drives the payout decision in §9.
 | `ESHIP_BASE_URL`                               | yes                | **none** (must be set per env) | `…/rest` base. QA `https://apiqa.myeship.co/rest`; prod `https://api.myeship.co/rest`.                                                                                                           |
 | `ESHIP_MARKUP_PCT`                             | no                 | `0.18`                         | Buyer markup over raw carrier cost (see §7). **Live: `0`** (2026-10-19).                                                                                                                                                     |
 | `ESHIP_API_DEBUG`                              | no                 | `false`                        | `true` echoes the carrier's error text in the API response (`{ code, detail }`). Leave off in prod.                                                                                              |
+| `ESHIP_WEB_DEBUG`                              | no                 | `false`                        | `true` exposes the raw carrier-rate list below the Express/Estándar cards. Unset/`false` hides the list without affecting quoting, bucket selection, or payment.                               |
 | `AV_SHIPPING_LABELS_ENABLED`                   | yes (explicit)     | `false`                        | Enables the label-purchase capability and its shared Integration API poller path. Independent of notification delivery; it does not enable automatic purchase by itself.                         |
 | `AV_ESHIP_TRACKING_EMAILS_ENABLED`             | yes (explicit)     | `false`                        | Accepts durable eShip tracking events and processes the `TRANSIT/picked_up` buyer email through the shared poller.                                                                               |
 | `ESHIP_WEBHOOK_SECRET`                         | yes (tracking)     | —                              | At least 32 random bytes. Presented by eShip as the `X-AV-Webhook-Secret` header only (`?secret=` is ignored); the webhook is also verified through an authenticated eShip API read.             |
@@ -60,8 +61,10 @@ not the seller. That single fact drives the payout decision in §9.
 | `AV_SHIPPING_LABEL_STALE_CLAIM_MINUTES`        | no                 | `15`                           | Age at which an interrupted purchase becomes `unknown`; it is never retried automatically.                                                                                                       |
 | `SHARETRIBE_INTEGRATION_CLIENT_ID` / `_SECRET` | yes                | —                              | Integration SDK — reads the seller's origin address and writes `metadata.avLabel`.                                                                                                               |
 
-`ESHIP_BASE_URL`, `ESHIP_MARKUP_PCT`, and `ESHIP_API_DEBUG` are **server-only** (no `REACT_APP_`
-prefix) — the client never computes prices, it only displays the server-computed ones.
+`ESHIP_BASE_URL`, `ESHIP_MARKUP_PCT`, `ESHIP_API_DEBUG`, and `ESHIP_WEB_DEBUG` are **server-only**
+(no `REACT_APP_` prefix) — the client never computes prices, it only displays the server-computed
+ones. The quote route strips `rawRates` from its response unless `ESHIP_WEB_DEBUG=true`; the full
+quote remains in the server cache for authoritative pricing and label purchase.
 
 ---
 
@@ -113,9 +116,11 @@ NODE_ENV=development node -e "require('./server/env').configureEnv(); \
    to fewer days. Both cards are shown whenever both exist, whichever is cheaper. When their buyer
    prices (after markup and rounding) are **equal**, a single **Estándar** card is shown carrying
    the faster 1–3 day rate. A bucket with no qualifying rate is left out. eShip's
-   `FASTEST`/`CHEAPEST` tags are passed through in `rawRates` but not trusted for picking. Apply `applyBuyerMarkup`, cache under a `quoteToken` (15-min TTL, 1,000-entry
-   process cap), return buckets. The token is cryptographically bound to the listing, seller,
-   parcel, and normalized destination.
+   `FASTEST`/`CHEAPEST` tags are retained in server-side `rawRates` but not trusted for picking.
+   Apply `applyBuyerMarkup`, cache under a `quoteToken` (15-min TTL, 1,000-entry process cap), and
+   return the buckets. The quote route includes `rawRates` in the browser response only when
+   `ESHIP_WEB_DEBUG=true`. The token is cryptographically bound to the listing, seller, parcel, and
+   normalized destination.
 5. Buyer picks a bucket → `avShippingType` / `avQuoteToken` / `avDestination` / `buyerEmail` flow
    through `getOrderParams` into `orderData`.
 

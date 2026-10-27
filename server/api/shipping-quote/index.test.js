@@ -89,6 +89,46 @@ it('returns 200 with the quote payload', async () => {
   expect(res.body.quoteToken).toBe('t');
 });
 
+describe('ESHIP_WEB_DEBUG raw rates', () => {
+  const ORIGINAL = process.env.ESHIP_WEB_DEBUG;
+  const rawRates = [{ rate_id: 'rate-1', provider: 'DHL' }];
+
+  afterEach(() => {
+    if (ORIGINAL === undefined) delete process.env.ESHIP_WEB_DEBUG;
+    else process.env.ESHIP_WEB_DEBUG = ORIGINAL;
+  });
+
+  const quote = async () => {
+    svc.quoteForCheckout.mockResolvedValue({
+      quoteToken: 't',
+      express: { amountSubunits: 11800 },
+      estandar: null,
+      rawRates,
+    });
+    const res = createRes();
+    await getQuoteHandler()(createReq(body), res);
+    return res;
+  };
+
+  it('hides raw rates by default', async () => {
+    delete process.env.ESHIP_WEB_DEBUG;
+    const res = await quote();
+    expect(res.body.rawRates).toEqual([]);
+  });
+
+  it('hides raw rates when ESHIP_WEB_DEBUG is "false"', async () => {
+    process.env.ESHIP_WEB_DEBUG = 'false';
+    const res = await quote();
+    expect(res.body.rawRates).toEqual([]);
+  });
+
+  it('shows raw rates when ESHIP_WEB_DEBUG is "true"', async () => {
+    process.env.ESHIP_WEB_DEBUG = 'true';
+    const res = await quote();
+    expect(res.body.rawRates).toEqual(rawRates);
+  });
+});
+
 it('returns 400 when listingId or destination is missing', async () => {
   const res = createRes();
   await getQuoteHandler()(createReq({ listingId: 'l1' }), res);

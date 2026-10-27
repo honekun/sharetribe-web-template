@@ -360,10 +360,11 @@ payment form → client `POST /api/shipping/quote` → server resolves the selle
 (`packageSizes[resolvePackageSize(listing)]`) → eShip `POST /rest/quotation` (one call → `rates[]`)
 → bucket **cheapest at 1–3 days → Express (`nacionalExpress`)** / **cheapest at 4+ days (or no
 days) → Estándar (`nacionalEstandar`)**; equal buyer prices collapse into one Estándar carrying the
-faster rate — eShip's FASTEST/CHEAPEST tags are shown but not trusted — apply
-`applyBuyerMarkup` (markup + round up) → cache under a `quoteToken` (15-min TTL) → return buckets +
-raw rates. Buyer picks a bucket → `avShippingType`/`avQuoteToken`/`avDestination`/`buyerEmail` flow
-through `getOrderParams` into `orderData`.
+faster rate — eShip's FASTEST/CHEAPEST tags are retained but not trusted — apply
+`applyBuyerMarkup` (markup + round up) → cache under a `quoteToken` (15-min TTL) → return buckets;
+the browser receives raw rates only when `ESHIP_WEB_DEBUG=true`. Buyer picks a bucket →
+`avShippingType`/`avQuoteToken`/`avDestination`/`buyerEmail` flow through `getOrderParams` into
+`orderData`.
 
 Authoritative price is server-derived in **`transactionLineItems` (now `async`)** via
 `shippingQuoteService.resolveBucketPrice` (cache hit → pinned; **miss → re-quote**); the client
@@ -432,6 +433,8 @@ hardcoded default — set per env: QA `https://apiqa.myeship.co/rest` on test, p
 `https://api.myeship.co/rest` live), `ESHIP_MARKUP_PCT` (optional, default `0.18`),
 `ESHIP_API_DEBUG` (optional; `true` echoes the carrier error text in the `/api/shipping/quote`
 response as `{ code: 'ESHIP_ERROR', detail }` — default/false keeps the opaque live response),
+`ESHIP_WEB_DEBUG` (optional; `true` exposes the raw carrier-rate list in checkout; default/false
+hides it without affecting quotes or payments),
 `SHIPPING_LABEL_OPERATOR_EMAILS` (optional; comma-separated emails allowed to retry any seller's
 label — sellers can always retry their own), `ESHIP_LABEL_AUTOBUY` (optional, default `false`;
 `true` auto-buys the label on `confirm-payment`, otherwise the seller buys it via the Generar guía

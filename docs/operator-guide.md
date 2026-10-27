@@ -2319,11 +2319,11 @@ The checkout (step shown after the buyer clicks **Comprar ahora**) has these AV-
    buyer's address. The buyer then picks **Express** (the cheapest rate delivered in 1–3 days) or
    **Estándar** (the cheapest rate taking 4 or more days). If both cost the buyer the same, only one
    card is shown, labelled **Estándar**, using the faster rate. If the carrier returns no rate in
-   one of the two ranges, that card is not shown. Below them, every rate the carrier returned is
-   listed for transparency. Buyer
-   prices include a margin buffer over the raw carrier cost. Prices are **not** set in the Console —
-   they come from the carrier in real time. The **Pay** button stays disabled until a delivery
-   option is chosen.
+   one of the two ranges, that card is not shown. Buyer prices include a margin buffer over the raw
+   carrier cost. Prices are **not** set in the Console — they come from the carrier in real time.
+   The **Pay** button stays disabled until a delivery option is chosen. When the server-only
+   `ESHIP_WEB_DEBUG=true` flag is enabled, every raw carrier rate is also listed below the cards;
+   the list is hidden by default and in production.
 3. **Confirm-with-seller notice** — an amber notice box sits directly below the two delivery
    options, reminding the buyer that same-day dispatch isn't guaranteed and that they should message
    the seller. It has a bold title line and a body line, both editable (`AVShippingSelector.notice*`
@@ -2383,7 +2383,7 @@ The current delivery keys are `AVShippingSelector.*`:
 | Delivery options | `AVShippingSelector.contactSeller`                           | `Contact AV`                                         | `Contactar al vendedor`                         | Fallback button when no quote is possible.                                           |
 | Delivery options | `AVShippingSelector.noticeTitle`                             | `Remember to confirm with the seller.`               | `Recuerda confirmar con la vendedora.`          | Bold first line of the amber notice under the options. Blank to hide the line.       |
 | Delivery options | `AVShippingSelector.noticeText`                              | `Same-day shipping isn't guaranteed…`                | `Escríbele al vendedor para confirmar…`         | Body copy of the same notice. Blank **both** notice keys to remove the box entirely. |
-| Delivery options | `AVShippingSelector.rawListTitle`                            | `All available rates`                                | `Todas las tarifas disponibles`                 | Heading above the raw rate list.                                                     |
+| Delivery options | `AVShippingSelector.rawListTitle`                            | `All available rates`                                | `Todas las tarifas disponibles`                 | Debug-only raw-rate heading (`ESHIP_WEB_DEBUG=true`).                                |
 | Seller origin    | `ShippingOriginPage.heading`                                 | `Shipping origin address`                            | `Dirección de origen de envíos`                 | Account settings page heading.                                                       |
 | Seller origin    | `ShippingOriginBanner.message`                               | `Add your shipping origin address…`                  | `Agrega tu dirección de origen…`                | Manage-listings reminder banner.                                                     |
 | Seller origin    | `ShippingOriginBanner.cta`                                   | `Complete address`                                   | `Completar dirección`                           | Reminder banner button.                                                              |

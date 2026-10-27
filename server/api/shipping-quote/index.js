@@ -8,6 +8,8 @@ const { checkAndRecord } = require('./rateLimiter');
 
 const router = express.Router();
 
+const isWebDebugEnabled = () => String(process.env.ESHIP_WEB_DEBUG).toLowerCase() === 'true';
+
 // POST /api/shipping/quote  { listingId, destination, buyerEmail? }
 router.post('/quote', express.json(), async (req, res) => {
   const { listingId, destination } = req.body || {};
@@ -39,7 +41,10 @@ router.post('/quote', express.json(), async (req, res) => {
     const listing = showRes?.data?.data;
     const buyerEmail = currentUser?.attributes?.email || destination.email;
     const quote = await svc.quoteForCheckout({ listing, destination, buyerEmail });
-    return res.status(200).json(quote);
+    return res.status(200).json({
+      ...quote,
+      rawRates: isWebDebugEnabled() ? quote.rawRates : [],
+    });
   } catch (e) {
     if (e instanceof svc.NoOriginError) return res.status(409).json({ code: 'NO_ORIGIN' });
     if (e instanceof svc.EspecialError) return res.status(422).json({ code: 'ESPECIAL' });
