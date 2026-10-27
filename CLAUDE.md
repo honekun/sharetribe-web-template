@@ -104,7 +104,8 @@ pinned to its deadline, so moving a window means moving its reminder too.
   Read by `EditListingDetailsForm`; does NOT change backend search schema.
 - `configAV.js` — AV defaults kept out of upstream files: `defaultCountry` (Stripe payment/payout,
   `REACT_APP_AV_DEFAULT_COUNTRY`); `showCheckoutInitialMessage` (`false`: no "Additional info"
-  message to the seller above the checkout pay button); `sellerUserTypes` + `canShowOriginalPrice()` (originalPrice
+  message to the seller above the checkout pay button; `avBrandOverrides.css` tightens the
+  pay-button gap to match, so revisit it if this is turned back on); `sellerUserTypes` + `canShowOriginalPrice()` (originalPrice
   gate); `storeSellerUserType`/`storeTypeFieldKey`/`getStoreTypeTags()` (StoreTypeTags gate/labels);
   `welcomePopupUserTypes`/`canShowWelcomePopup()`/`welcomePopupSuppressedPaths` (AVWelcomePopup
   gate); `storeSellerHiddenNavPages`/`isNavPageHiddenForUser()` (hides the buyer-side menu entries —
