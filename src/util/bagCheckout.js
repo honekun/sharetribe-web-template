@@ -1,6 +1,5 @@
 import { createSlug } from './urlHelpers';
 import { createResourceLocatorString, findRouteByRouteName } from './routes';
-import { persistCheckoutSeed } from '../extensions/checkout/checkoutSession';
 
 /**
  * Navigate into the normal buy flow for one bag item. Mirrors handleSubmit in
@@ -40,12 +39,9 @@ export const checkoutBagItem = ({
     orderData: { quantity: 1, deliveryMethod: onlyMethod },
     confirmPaymentError: null,
   };
-  // Persist for every user, not only signed-out ones, so a full reload before
-  // CheckoutPage mounts (ChunkLoadError recovery, SSO redirect) can resume the
-  // flow. The route's setInitialValues only honours this flag once upstream
-  // 52d708460 is synced, so persistCheckoutSeed writes the storage until then.
+  // Upstream CheckoutPage setInitialValues persists this seed before navigation,
+  // allowing ChunkLoadError recovery and SSO redirects to resume checkout.
   const saveToSessionStorage = true;
-  persistCheckoutSeed(initialValues);
   const { setInitialValues } = findRouteByRouteName('CheckoutPage', routes);
   callSetInitialValues(setInitialValues, initialValues, saveToSessionStorage);
   onInitializeCardPaymentData();

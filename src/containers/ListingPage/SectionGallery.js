@@ -6,7 +6,7 @@ import css from './ListingPage.module.css';
 import avCss from './ListingPageAV.module.css';
 
 const SectionGallery = props => {
-  const { listing, variantPrefix, thumbnailPosition, className } = props;
+  const { listing, variantPrefix, thumbnailPosition, className, aspectWidth, aspectHeight } = props;
   const images = listing.images;
   const imageVariants = ['scaled-small', 'scaled-medium', 'scaled-large', 'scaled-xlarge'];
   const thumbnailVariants = [variantPrefix, `${variantPrefix}-2x`, `${variantPrefix}-4x`];
@@ -21,6 +21,8 @@ const SectionGallery = props => {
         imageVariants={imageVariants}
         thumbnailVariants={thumbnailVariants}
         thumbnailPosition={thumbnailPosition}
+        aspectWidth={aspectWidth}
+        aspectHeight={aspectHeight}
       />
     </section>
   );

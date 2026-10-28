@@ -47,10 +47,9 @@ yarn env-template-check                    # .env-template exposes no REACT_APP_
 CircleCI (`.circleci/config.yml`) runs `format`, `test`, `build` and the AV-owned `av-checks` job (the
 two checks above). Upstream's `audit` job is defined but, as upstream, not in the workflow.
 
-**Node:** `24.x` (pinned for Heroku, which warns on and caps upstream's wide `^22.22.0 || >=24.0.0`;
-re-apply on upstream syncs, together with the `cimg/node:24.x` images in `.circleci/config.yml` —
-upstream pins `22.22` there, which Yarn's engine check rejects at install) | **Package manager:**
-Yarn
+**Node:** `24.x` (pinned to the Heroku/Render major; re-apply on upstream syncs together with the
+`cimg/node:24.x` images in `.circleci/config.yml` when upstream broadens its engine range) |
+**Package manager:** Yarn
 
 ## Architecture
 
@@ -313,10 +312,6 @@ AV keeps upstream files unmodified via extension architecture in `src/extensions
   registry, never inline.
 - `pageBuilder/av/` — registers `avHero2`/`avHero3`/`avVideo` for CMSPage; `sectionStyles.js`
   (`parseSectionCustomOptions`, `parseSectionCtaClass`); `constants.js`; `transform.js`.
-- `checkout/checkoutSession.js` — `persistCheckoutSeed` writes the checkout seed to CheckoutPage's
-  sessionStorage key for **every** user before navigating (AVListingPageCarousel, bag checkout), so a
-  ChunkLoadError reload or SSO redirect before CheckoutPage mounts can resume. Stopgap until upstream
-  `52d708460` (CheckoutPage.duck `setInitialValues` persists itself) is synced; then remove it.
 - `accountNav/` (`getAccountSettingsTabs()`), `topbar/` (custom link config +
   `topbarDataProvider.js`), `searchFilters/`.
 - `topbar/topbarDataProvider.js` — single source for the topbar's category-dropdown config and

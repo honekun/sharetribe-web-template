@@ -1,6 +1,9 @@
 import React from 'react';
 import classNames from 'classnames';
 
+import { isLazyImagesSection } from '../PageBuilder.helpers';
+import { getPrioritySectionId } from './SectionBuilder.helpers';
+
 // Section components
 import SectionArticle from './SectionArticle';
 import SectionCarousel from './SectionCarousel';
@@ -8,6 +11,7 @@ import SectionColumns from './SectionColumns';
 import SectionFeatures from './SectionFeatures';
 import SectionHero from './SectionHero';
 import SectionListings from './SectionListings';
+import SectionFooter from './SectionFooter';
 
 // Styles
 // Note: these contain
@@ -15,7 +19,6 @@ import SectionListings from './SectionListings';
 // - dark theme overrides
 // TODO: alternatively, we could consider more in-place way of theming components
 import css from './SectionBuilder.module.css';
-import SectionFooter from './SectionFooter';
 
 // These are shared classes.
 // Use these to have consistent styles between different section components
@@ -145,6 +148,9 @@ const SectionBuilder = props => {
     ...(section.blocks ? { blocks: normalizeAvBlockTypes(section.blocks) } : {}),
   }));
 
+  // First section may prioritize its above-the-fold images
+  const prioritySectionId = getPrioritySectionId(sectionsWithResolvedIds);
+
   return (
     <>
       {sectionsWithResolvedIds.map((section, index) => {
@@ -164,13 +170,20 @@ const SectionBuilder = props => {
           : DEFAULT_CLASSES;
 
         if (Section) {
+          const isPrioritySection = sectionId === prioritySectionId;
           return (
             <Section
               key={`${sectionId}_i${index}`}
               className={classes}
               defaultClasses={resolvedDefaultClasses}
               isInsideContainer={isInsideContainer}
-              options={{ ...otherOption, blockComponents, defaultClasses: resolvedDefaultClasses }}
+              options={{
+                ...otherOption,
+                blockComponents,
+                defaultClasses: resolvedDefaultClasses,
+                ...(isPrioritySection ? { fetchPriority: 'high' } : {}),
+                lazyImages: isLazyImagesSection(index),
+              }}
               {...section}
               sectionId={sectionId}
               customOption={customOption}

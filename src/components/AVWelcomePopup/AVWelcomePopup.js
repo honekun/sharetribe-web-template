@@ -15,7 +15,13 @@ const t = (intl, id) => {
   return intl.formatMessage({ id }) || null;
 };
 
-const AVWelcomePopup = ({ userType = null, isOpen, onClose, onManageDisableScrolling }) => {
+const AVWelcomePopup = ({
+  userType = null,
+  isOpen,
+  onClose,
+  onManageDisableScrolling,
+  navigate = url => window.location.assign(url),
+}) => {
   const intl = useIntl();
   if (!userType) return null;
   const ns = `AVWelcomePopup.${userType}`;
@@ -39,7 +45,7 @@ const AVWelcomePopup = ({ userType = null, isOpen, onClose, onManageDisableScrol
     e.preventDefault();
     const persisted = Promise.resolve(onClose());
     const capped = new Promise(resolve => window.setTimeout(resolve, 1200));
-    Promise.race([persisted, capped]).finally(() => window.location.assign(url));
+    Promise.race([persisted, capped]).finally(() => navigate(url));
   };
 
   return (
@@ -97,6 +103,7 @@ AVWelcomePopup.propTypes = {
   isOpen: bool.isRequired,
   onClose: func.isRequired,
   onManageDisableScrolling: func.isRequired,
+  navigate: func,
 };
 
 export default AVWelcomePopup;

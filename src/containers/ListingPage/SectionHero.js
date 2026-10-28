@@ -56,6 +56,7 @@ const SectionHero = props => {
           alt={title}
           image={firstImage}
           variants={variants}
+          {...(firstImage ? { fetchpriority: 'high' } : {})}
         />
         {viewPhotosButton}
       </div>
@@ -70,10 +71,12 @@ const SectionHero = props => {
         onManageDisableScrolling={onManageDisableScrolling}
         focusElementId={VIEW_PHOTOS_BUTTON_ID}
       >
-        <ImageCarousel
-          images={listing.images}
-          imageVariants={['scaled-small', 'scaled-medium', 'scaled-large', 'scaled-xlarge']}
-        />
+        {imageCarouselOpen ? (
+          <ImageCarousel
+            images={listing.images}
+            imageVariants={['scaled-small', 'scaled-medium', 'scaled-large', 'scaled-xlarge']}
+          />
+        ) : null}
       </Modal>
     </section>
   );

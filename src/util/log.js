@@ -6,7 +6,6 @@
  *
  */
 
-import * as Sentry from '@sentry/browser';
 import appSettings from '../config/settings';
 
 const ingoreErrorsMap = {
@@ -54,23 +53,46 @@ const pickSelectedErrors = (ignored, entry) => {
 };
 
 /**
+ * Dynamically loads the tree-shakeable Sentry client into its own webpack chunk
+ * and initializes it. Shared promise so concurrent callers share one load + init.
+ *
+ * @returns {Promise<object|null>} Client API ({ init, setUser, withScope, captureException }),
+ *   or null when no DSN is configured
+ */
+const loadSentry = (() => {
+  let sentryPromise = null;
+
+  return () => {
+    if (!appSettings.sentryDsn) {
+      return Promise.resolve(null);
+    }
+    if (!sentryPromise) {
+      // Import the thin wrapper (not @sentry/browser directly) so static named
+      // exports enable tree-shaking of unused SDK features in this async chunk.
+      sentryPromise = import(/* webpackChunkName: "sentry" */ './sentryClient').then(Sentry => {
+        const ignoreErrors = Object.entries(ingoreErrorsMap).reduce(pickSelectedErrors, []);
+
+        // Configures the Sentry client. Adds a handler for
+        // any uncaught exception.
+        Sentry.init({
+          dsn: appSettings.sentryDsn,
+          environment: appSettings.env,
+          ignoreErrors,
+        });
+        return Sentry;
+      });
+    }
+    return sentryPromise;
+  };
+})();
+
+/**
  * Set up error handling. If a Sentry DSN is
  * provided a Sentry client will be installed.
  */
 export const setup = () => {
   suppressBenignResizeObserverErrors();
-
-  if (appSettings.sentryDsn) {
-    const ignoreErrors = Object.entries(ingoreErrorsMap).reduce(pickSelectedErrors, []);
-
-    // Configures the Sentry client. Adds a handler for
-    // any uncaught exception.
-    Sentry.init({
-      dsn: appSettings.sentryDsn,
-      environment: appSettings.env,
-      ignoreErrors,
-    });
-  }
+  loadSentry();
 };
 
 /**
@@ -80,7 +102,11 @@ export const setup = () => {
  * @param {String} userId ID of current user
  */
 export const setUserId = userId => {
-  Sentry.setUser({ id: userId });
+  loadSentry().then(Sentry => {
+    if (Sentry) {
+      Sentry.setUser({ id: userId });
+    }
+  });
 };
 
 /**
@@ -88,7 +114,11 @@ export const setUserId = userId => {
  */
 
 export const clearUserId = () => {
-  Sentry.setUser(null);
+  loadSentry().then(Sentry => {
+    if (Sentry) {
+      Sentry.setUser(null);
+    }
+  });
 };
 
 const printAPIErrorsAsConsoleTable = apiErrors => {
@@ -108,7 +138,18 @@ const printAPIErrorsAsConsoleTable = apiErrors => {
 };
 
 const responseAPIErrors = error => {
-  return error && error.data && error.data.errors ? error.data.errors : [];
+  if (!error) {
+    return [];
+  }
+  // SDK / Axios errors attach Marketplace API errors under data.errors
+  if (error?.data?.errors) {
+    return error.data.errors;
+  }
+  // storableError() plain objects use apiErrors (see util/errors.js)
+  if (error.apiErrors) {
+    return error.apiErrors;
+  }
+  return [];
 };
 
 const responseApiErrorInfo = err =>
@@ -120,6 +161,25 @@ const responseApiErrorInfo = err =>
   }));
 
 /**
+ * Sentry truncates nested plain objects in extra.__serialized__ (normalizeDepth),
+ * which turns apiErrors into useless "[Object]" strings. Always capture a real Error.
+ */
+const toCapturableError = e => {
+  if (e instanceof Error) {
+    return e;
+  }
+  const err = new Error(e?.message || 'Unknown error');
+  err.name = e?.name || 'Error';
+  if (e?.status != null) {
+    err.status = e.status;
+  }
+  if (e?.statusText != null) {
+    err.statusText = e.statusText;
+  }
+  return err;
+};
+
+/**
  * Logs an exception. If Sentry is configured
  * sends the error information there. Otherwise
  * prints the error to the console.
@@ -127,18 +187,26 @@ const responseApiErrorInfo = err =>
  * @param {Error} e Error that occurred
  * @param {String} code Error code
  * @param {Object} data Additional data to be sent to Sentry
+ * @param {Object} [options]
+ * @param {boolean} [options.skipSentry] If true, skip Sentry and only log to console
  */
-export const error = (e, code, data) => {
+export const error = (e, code, data, options = {}) => {
+  const { skipSentry = false } = options;
   const apiErrors = responseApiErrorInfo(e);
-  if (appSettings.sentryDsn) {
+  if (appSettings.sentryDsn && !skipSentry) {
     const extra = { ...data, apiErrorData: apiErrors };
 
-    Sentry.withScope(scope => {
-      scope.setTag('code', code);
-      Object.keys(extra).forEach(key => {
-        scope.setExtra(key, extra[key]);
+    loadSentry().then(Sentry => {
+      if (!Sentry) {
+        return;
+      }
+      Sentry.withScope(scope => {
+        scope.setTag('code', code);
+        Object.keys(extra).forEach(key => {
+          scope.setExtra(key, extra[key]);
+        });
+        Sentry.captureException(toCapturableError(e));
       });
-      Sentry.captureException(e);
     });
 
     printAPIErrorsAsConsoleTable(apiErrors);
@@ -166,8 +234,9 @@ const setCause = (error, cause) => {
   setCauseIfNoExistingCause(error, cause);
 };
 
-export const onRecoverableError = (e, componentStack) => {
-  let data = {};
+export const onRecoverableError = (e, errorInfo) => {
+  const data = {};
+  const componentStack = errorInfo?.componentStack;
 
   if (componentStack) {
     // Generating this synthetic error allows monitoring services to apply sourcemaps
@@ -182,6 +251,5 @@ export const onRecoverableError = (e, componentStack) => {
     data.componentStack = componentStack;
   }
 
-  // Replace with your error monitoring service.
-  error(error, 'recoverable-error', data);
+  error(e, 'recoverable-error', data);
 };

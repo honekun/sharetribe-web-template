@@ -44,11 +44,7 @@ describe('AVWelcomePopup', () => {
   });
 
   it('persists onboarding before navigating when a CTA button is clicked', async () => {
-    // jsdom can't navigate; mock window.location.assign to observe it.
-    const assignMock = jest.fn();
-    const originalLocation = window.location;
-    delete window.location;
-    window.location = { ...originalLocation, assign: assignMock };
+    const navigate = jest.fn();
 
     // onClose returns a resolved promise (mirrors handlePopupClose returning the
     // persistence promise) so the click waits for it before navigating.
@@ -59,6 +55,7 @@ describe('AVWelcomePopup', () => {
         isOpen={true}
         onClose={onClose}
         onManageDisableScrolling={noop}
+        navigate={navigate}
       />,
       {
         withPortals: true,
@@ -73,9 +70,7 @@ describe('AVWelcomePopup', () => {
     // onClose (persistence) fires synchronously on click...
     expect(onClose).toHaveBeenCalledTimes(1);
     // ...and navigation only happens after the persistence promise settles.
-    await testingLibrary.waitFor(() => expect(assignMock).toHaveBeenCalledWith('/listings/new'));
-
-    window.location = originalLocation;
+    await testingLibrary.waitFor(() => expect(navigate).toHaveBeenCalledWith('/listings/new'));
   });
 
   it('renders the eyebrow above the title when set', () => {

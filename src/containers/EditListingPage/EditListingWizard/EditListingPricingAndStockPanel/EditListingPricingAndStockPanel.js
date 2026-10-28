@@ -128,9 +128,9 @@ const EditListingPricingAndStockPanel = props => {
     );
   const showPackageSize = !isEspecialSize(avPackageSize);
   const packageSizeLocked = !!publicData?.avPackageSizeLocked;
-  const unitType = publicData.unitType;
+  const unitType = publicData?.unitType;
   const listingTypeConfig = getListingTypeConfig(publicData, listingTypes);
-  const transactionProcessAlias = listingTypeConfig.transactionType.alias;
+  const transactionProcessAlias = listingTypeConfig?.transactionType?.alias;
 
   const hasInfiniteStock = STOCK_INFINITE_ITEMS.includes(listingTypeConfig?.stockType);
 

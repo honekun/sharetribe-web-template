@@ -7,6 +7,10 @@ import { storableError } from '../../util/errors';
 import * as log from '../../util/log';
 import { setCurrentUserHasOrders, fetchCurrentUser } from '../../ducks/user.duck';
 
+import { storeData } from './CheckoutPageSessionHelpers';
+
+const CHECKOUT_PAGE_SESSION_KEY = 'CheckoutPage';
+
 // ================ Async thunks ================ //
 
 ////////////////////
@@ -19,12 +23,21 @@ const initiateOrderPayloadCreator = (
   // If we already have a transaction ID, we should transition, not initiate.
   const isTransition = !!transactionId;
 
-  const { deliveryMethod, quantity, bookingDates, ...otherOrderParams } = orderParams;
+  const {
+    deliveryMethod,
+    quantity,
+    bookingDates,
+    expectedPayinTotal,
+    ...otherOrderParams
+  } = orderParams;
   const quantityMaybe = quantity ? { stockReservationQuantity: quantity } : {};
   const bookingParamsMaybe = bookingDates || {};
 
   // Parameters only for client app's server
-  const orderData = deliveryMethod ? { deliveryMethod } : {};
+  const orderData = {
+    ...(deliveryMethod ? { deliveryMethod } : {}),
+    ...(expectedPayinTotal ? { expectedPayinTotal } : {}),
+  };
 
   // Parameters for Marketplace API
   const transitionParams = {
@@ -387,6 +400,9 @@ export const speculateTransaction = (
   transitionName,
   isPrivilegedTransition
 ) => dispatch => {
+  // Errors are stored in Redux via rejectWithValue (and logged in the payload creator).
+  // Do not unwrap: fire-and-forget callers would otherwise get unhandled rejections of
+  // plain storableError objects, which Sentry serializes as apiErrors: ["[Object]"].
   return dispatch(
     speculateTransactionThunk({
       orderParams,
@@ -395,7 +411,7 @@ export const speculateTransaction = (
       transitionName,
       isPrivilegedTransition,
     })
-  ).unwrap();
+  );
 };
 
 ///////////////////////////
@@ -424,7 +440,8 @@ export const stripeCustomerThunk = createAsyncThunk(
 );
 // Backward compatible wrapper function for stripeCustomer
 export const stripeCustomer = () => dispatch => {
-  return dispatch(stripeCustomerThunk({})).unwrap();
+  // Same as speculateTransaction: avoid unhandled unwrap rejections for fire-and-forget callers.
+  return dispatch(stripeCustomerThunk({}));
 };
 
 // ================ Slice ================ //
@@ -523,8 +540,24 @@ const checkoutPageSlice = createSlice({
   },
 });
 
-// Export the action creators
-export const { setInitialValues } = checkoutPageSlice.actions;
+const { setInitialValues: setInitialValuesAction } = checkoutPageSlice.actions;
+
+/**
+ * Set CheckoutPage Redux state and optionally persist listing + order data to sessionStorage.
+ * Persistence lets checkout recover after a full page reload before the page mounts
+ * (e.g. ChunkLoadError auto-reload while navigating ListingPage → CheckoutPage).
+ *
+ * @param {Object} initialValues
+ * @param {boolean} [saveToSessionStorage=true]
+ * @returns {Object} Redux action
+ */
+export const setInitialValues = (initialValues, saveToSessionStorage = true) => {
+  if (saveToSessionStorage) {
+    const { listing, orderData, transaction } = initialValues;
+    storeData(orderData, listing, transaction || null, CHECKOUT_PAGE_SESSION_KEY);
+  }
+  return setInitialValuesAction(initialValues);
+};
 
 // Export the reducer
 export default checkoutPageSlice.reducer;

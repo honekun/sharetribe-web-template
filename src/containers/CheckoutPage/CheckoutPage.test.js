@@ -397,6 +397,10 @@ describe('CheckoutPage', () => {
       };
 
       expect(setInitialValues({ listing, orderData })).toEqual(expectedAction);
+      expect(JSON.parse(window.sessionStorage.getItem('CheckoutPage')).orderData).toEqual(
+        orderData
+      );
+      window.sessionStorage.clear();
     });
 
     describe('Reducer', () => {

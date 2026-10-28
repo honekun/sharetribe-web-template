@@ -12,6 +12,7 @@ import { FormattedMessage, useIntl } from '../../../../util/reactIntl';
 import { propTypes } from '../../../../util/types';
 import { nonEmptyArray, composeValidators } from '../../../../util/validators';
 import { isUploadImageOverLimitError } from '../../../../util/errors';
+import { listingImageIdentifierStrings } from '../../EditListingPage.shared';
 
 // Import shared components
 import { Button, Form, AspectRatioWrapper, NamedLink } from '../../../../components';
@@ -21,12 +22,6 @@ import ListingImage from './ListingImage';
 import css from './EditListingPhotosForm.module.css';
 
 const ACCEPT_IMAGES = 'image/*';
-
-// Matches an image across id/imageId as since which one is set changes over its lifecycle
-const imageIdentifiers = image =>
-  [image?.id, image?.imageId]
-    .map(idValue => (typeof idValue === 'string' ? idValue : idValue?.uuid))
-    .filter(Boolean);
 
 // Split out of the main bundle - only fetched once this form actually mounts.
 const Sortable = loadable.lib(() => import(/* webpackChunkName: "sortablejs" */ 'sortablejs'));
@@ -262,12 +257,12 @@ export const EditListingPhotosForm = props => {
     if (!form || propsImages.length === 0) {
       return;
     }
-    const currentImages = form.getState().values.images || [];
     propsImages.forEach(image => {
-      const ids = imageIdentifiers(image);
+      const currentImages = form.getState().values.images || [];
+      const ids = listingImageIdentifierStrings(image);
       // Find index of this image in the form's current images if it exists
       const index = currentImages.findIndex(existing =>
-        imageIdentifiers(existing).some(id => ids.includes(id))
+        listingImageIdentifierStrings(existing).some(id => ids.includes(id))
       );
       if (index === -1) {
         // New upload, not in the form yet
@@ -284,7 +279,15 @@ export const EditListingPhotosForm = props => {
   }, [syncImagesFromProps]);
 
   const onImageUploadHandler = file => {
-    const { listingImageConfig, onImageUpload } = props;
+    const { listingImageConfig, onImageUpload, maxImages } = props;
+
+    // Guard: if there are more images than the limit, don't allow uploading new images.
+    const currentImages = formApiRef.current?.getState()?.values?.images || [];
+    const hasImageLimit = typeof maxImages === 'number';
+    if (hasImageLimit && currentImages.length >= maxImages) {
+      return;
+    }
+
     if (file) {
       setState({ imageUploadRequested: true });
 
@@ -324,6 +327,7 @@ export const EditListingPhotosForm = props => {
           errors,
           values,
           listingImageConfig,
+          maxImages,
           allFilesUploadedAndVerified,
           filesTabParams,
           filesRequired,
@@ -333,6 +337,9 @@ export const EditListingPhotosForm = props => {
 
         const images = values.images || [];
         const { aspectWidth = 1, aspectHeight = 1, variantPrefix } = listingImageConfig;
+        const hasImageLimit = typeof maxImages === 'number';
+        const isAtOrOverImageLimit = hasImageLimit && images.length >= maxImages;
+        const isOverImageLimit = hasImageLimit && images.length > maxImages;
 
         const { publishListingError, showListingsError, updateListingError, uploadImageError } =
           fetchErrors || {};
@@ -349,7 +356,12 @@ export const EditListingPhotosForm = props => {
         const submitReady = (updated && pristineSinceLastSubmit) || ready;
         const submitInProgress = updateInProgress;
         const submitDisabled =
-          invalid || disabled || submitInProgress || state.imageUploadRequested || ready;
+          invalid ||
+          disabled ||
+          submitInProgress ||
+          state.imageUploadRequested ||
+          ready ||
+          isOverImageLimit;
         const imagesError = touched.images && errors?.images && errors.images[ARRAY_ERROR];
 
         const classes = classNames(css.root, className);
@@ -445,29 +457,31 @@ export const EditListingPhotosForm = props => {
                 </Sortable>
               ) : null}
 
-              <FieldAddImage
-                id="addImage"
-                name="addImage"
-                accept={ACCEPT_IMAGES}
-                className={isDragging ? css.addImageWrapperDragging : null}
-                isChoosing={isChoosing}
-                label={
-                  <span className={css.chooseImageText}>
-                    <span className={css.chooseImage}>
-                      <FormattedMessage id="EditListingPhotosForm.chooseImage" />
+              {isAtOrOverImageLimit ? null : (
+                <FieldAddImage
+                  id="addImage"
+                  name="addImage"
+                  accept={ACCEPT_IMAGES}
+                  className={isDragging ? css.addImageWrapperDragging : null}
+                  isChoosing={isChoosing}
+                  label={
+                    <span className={css.chooseImageText}>
+                      <span className={css.chooseImage}>
+                        <FormattedMessage id="EditListingPhotosForm.chooseImage" />
+                      </span>
+                      <span className={css.imageTypes}>
+                        <FormattedMessage id="EditListingPhotosForm.imageTypes" />
+                      </span>
                     </span>
-                    <span className={css.imageTypes}>
-                      <FormattedMessage id="EditListingPhotosForm.imageTypes" />
-                    </span>
-                  </span>
-                }
-                type="file"
-                disabled={state.imageUploadRequested}
-                formApi={form}
-                onImageUploadHandler={onImageUploadHandler}
-                aspectWidth={aspectWidth}
-                aspectHeight={aspectHeight}
-              />
+                  }
+                  type="file"
+                  disabled={state.imageUploadRequested}
+                  formApi={form}
+                  onImageUploadHandler={onImageUploadHandler}
+                  aspectWidth={aspectWidth}
+                  aspectHeight={aspectHeight}
+                />
+              )}
             </div>
 
             {imagesError ? <div className={css.arrayError}>{imagesError}</div> : null}
@@ -496,6 +510,15 @@ export const EditListingPhotosForm = props => {
                         </NamedLink>
                       ),
                     }}
+                  />
+                </p>
+              ) : null}
+
+              {isOverImageLimit ? (
+                <p className={css.error}>
+                  <FormattedMessage
+                    id="EditListingPhotosForm.maxImagesExceeded"
+                    values={{ maxImages }}
                   />
                 </p>
               ) : null}

@@ -30,7 +30,8 @@ describe('NewsletterForm', () => {
   it('shows an inline validation error for an invalid email', async () => {
     const user = userEvent.setup();
     render(<NewsletterForm />, { messages });
-    await user.type(screen.getByPlaceholderText('you@example.com'), 'not-an-email');
+    // Native email validation accepts this shape, while the component requires a dotted domain.
+    await user.type(screen.getByPlaceholderText('you@example.com'), 'a@b');
     await user.click(screen.getByRole('button'));
     expect(await screen.findByText('Invalid email')).toBeInTheDocument();
   });
