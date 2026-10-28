@@ -1,15 +1,15 @@
 const { findListingAuthor, resolveProviderCommission } = require('./providerCommission');
 
-const author = (id, metadata) => ({
+const author = (id, metadata, type = 'user') => ({
   id: { uuid: id },
-  type: 'user',
+  type,
   attributes: { profile: { metadata } },
 });
 
-const listing = authorId => ({
+const listing = (authorId, authorType = 'user') => ({
   id: { uuid: 'listing-1' },
-  type: 'listing',
-  relationships: authorId ? { author: { data: { id: { uuid: authorId }, type: 'user' } } } : {},
+  type: authorType === 'currentUser' ? 'ownListing' : 'listing',
+  relationships: authorId ? { author: { data: { id: { uuid: authorId }, type: authorType } } } : {},
 });
 
 const hosted = { percentage: 22, minimum_amount: 0 };
@@ -19,6 +19,11 @@ describe('findListingAuthor', () => {
     const seller = author('seller-1', {});
     const included = [{ id: { uuid: 'image-1' }, type: 'image' }, seller];
     expect(findListingAuthor(listing('seller-1'), included)).toBe(seller);
+  });
+
+  it('finds a currentUser author included with an own listing', () => {
+    const seller = author('seller-1', {}, 'currentUser');
+    expect(findListingAuthor(listing('seller-1', 'currentUser'), [seller])).toBe(seller);
   });
 
   it('does not take an image or another entity that shares the id', () => {

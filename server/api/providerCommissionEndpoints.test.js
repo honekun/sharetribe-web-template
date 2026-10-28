@@ -42,9 +42,15 @@ const listing = {
   relationships: { author: { data: { id: { uuid: 'seller-1' }, type: 'user' } } },
 };
 
-const author = metadata => ({
+const ownListing = {
+  ...listing,
+  type: 'ownListing',
+  relationships: { author: { data: { id: { uuid: 'seller-1' }, type: 'currentUser' } } },
+};
+
+const author = (metadata, type = 'user') => ({
   id: { uuid: 'seller-1' },
-  type: 'user',
+  type,
   attributes: { profile: { metadata } },
 });
 
@@ -88,9 +94,12 @@ beforeEach(() => {
 
 describe('transaction-line-items', () => {
   const run = async (included, isOwnListing = false) => {
+    const responseListing = isOwnListing ? ownListing : listing;
     const sdk = {
       listings: { show: jest.fn().mockResolvedValue({ data: { data: listing, included } }) },
-      ownListings: { show: jest.fn().mockResolvedValue({ data: { data: listing, included } }) },
+      ownListings: {
+        show: jest.fn().mockResolvedValue({ data: { data: responseListing, included } }),
+      },
     };
     sdkUtils.getSdk.mockReturnValue(sdk);
     const res = mockRes();
@@ -109,9 +118,11 @@ describe('transaction-line-items', () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
-  it('asks for the author on the own-listing preview too', async () => {
-    const { sdk } = await run([author({})], true);
+  it('resolves the currentUser author on an own-listing preview', async () => {
+    const { res, sdk } = await run([author({}, 'currentUser')], true);
     expect(sdk.ownListings.show).toHaveBeenCalledWith({ id: listing.id, include: ['author'] });
+    expect(chargedProviderCommission()).toEqual(hostedCommission.providerCommission);
+    expect(res.status).toHaveBeenCalledWith(200);
   });
 
   it('charges the marketplace rate without an override', async () => {

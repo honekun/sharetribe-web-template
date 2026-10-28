@@ -15,6 +15,9 @@ const {
  * Requires the request to have asked for the author (`include: ['author']` or
  * `include: ['listing.author']`).
  *
+ * Public listings include the author as `user`, while own listings include the
+ * author as `currentUser`.
+ *
  * @returns {Object|null} the author user entity, or null when it is not there
  */
 const findListingAuthor = (listing, included) => {
@@ -22,7 +25,11 @@ const findListingAuthor = (listing, included) => {
   if (!authorId || !Array.isArray(included)) {
     return null;
   }
-  return included.find(entity => entity?.type === 'user' && entity?.id?.uuid === authorId) || null;
+  return (
+    included.find(
+      entity => ['user', 'currentUser'].includes(entity?.type) && entity?.id?.uuid === authorId
+    ) || null
+  );
 };
 
 /**
