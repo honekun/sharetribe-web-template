@@ -480,10 +480,11 @@ credentials are ready.
 Require:
 
 ```text
-GET /api/notifications/readiness → HTTP 200
-GET /api/brevo/health            → HTTP 200 when its features are enabled
-web process count                → exactly 1
-active poller leaders            → exactly 1 when a start flag is enabled
+GET /api/notifications/readiness         → HTTP 200 with only {"ready":true}
+GET /api/notifications/readiness/details → HTTP 200 with the readiness bearer token
+GET /api/brevo/health                    → HTTP 200 when its features are enabled
+web process count                        → exactly 1
+active poller leaders                    → exactly 1 when a start flag is enabled
 ```
 
 ### 5.7 Open production traffic and smoke test

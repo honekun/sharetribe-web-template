@@ -94,14 +94,17 @@ function createMockRes() {
 }
 
 describe('bulk import router', () => {
-  const [authorizeSessionMiddleware, authorizeHandler] = getRouteStack('/authorize', 'post');
+  const [authorizeSessionMiddleware, authorizeRateLimit, authorizeHandler] = getRouteStack(
+    '/authorize',
+    'post'
+  );
   const [, startTokenMiddleware, , startHandler] = getRouteStack('/start', 'post');
   const [, statusTokenMiddleware, statusHandler] = getRouteStack('/status/:jobId', 'get');
   const [templateHandler] = getRouteStack('/template', 'get');
 
   beforeEach(() => {
     jest.clearAllMocks();
-    authTest.tokenStore.clear();
+    authTest.resetTokenStore();
     jobStoreTest.reset();
     rateLimiterTest.store.clear();
     process.env = {
@@ -414,6 +417,58 @@ describe('bulk import router', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.ok).toBe(true);
     expect(res.body.isAdmin).toBe(false);
+  });
+
+  it('replaces the previous action token for the same user', () => {
+    const first = authTest.issueActionToken('operator-user-id');
+    const second = authTest.issueActionToken('operator-user-id');
+
+    expect(first.token).not.toBe(second.token);
+    expect(authTest.validateActionToken(first.token, 'operator-user-id')).toBe(false);
+    expect(authTest.validateActionToken(second.token, 'operator-user-id')).toBe(true);
+    expect(Object.keys(authTest.tokenStore)).toHaveLength(1);
+  });
+
+  it('bounds the action-token cache and evicts the oldest user', () => {
+    const oldest = authTest.issueActionToken('user-0');
+    for (let i = 1; i <= authTest.TOKEN_CACHE_MAX_ENTRIES; i++) {
+      authTest.issueActionToken(`user-${i}`);
+    }
+
+    expect(Object.keys(authTest.tokenStore)).toHaveLength(authTest.TOKEN_CACHE_MAX_ENTRIES);
+    expect(authTest.validateActionToken(oldest.token, 'user-0')).toBe(false);
+  });
+
+  it('expires action tokens after their TTL', () => {
+    const now = Date.now();
+    const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(now);
+    const { token } = authTest.issueActionToken('operator-user-id');
+
+    nowSpy.mockReturnValue(now + authTest.TOKEN_TTL_MS);
+    expect(authTest.validateActionToken(token, 'operator-user-id')).toBe(false);
+    expect(Object.keys(authTest.tokenStore)).toHaveLength(0);
+    nowSpy.mockRestore();
+  });
+
+  it('rate-limits action-token issuance per authenticated user', () => {
+    const req = { bulkImportUser: { userId: 'rate-limited-user' } };
+    const next = jest.fn();
+
+    for (let i = 0; i < router._test.AUTHORIZE_RATE_LIMIT_MAX; i++) {
+      authorizeRateLimit(req, createMockRes(), next);
+    }
+    const blockedRes = createMockRes();
+    authorizeRateLimit(req, blockedRes, next);
+
+    expect(next).toHaveBeenCalledTimes(router._test.AUTHORIZE_RATE_LIMIT_MAX);
+    expect(blockedRes.statusCode).toBe(429);
+    expect(blockedRes.headers['Retry-After']).toBeDefined();
+    expect(blockedRes.body.error).toMatch(/Demasiadas solicitudes/);
+
+    const otherUserRes = createMockRes();
+    authorizeRateLimit({ bulkImportUser: { userId: 'other-user' } }, otherUserRes, next);
+    expect(otherUserRes.statusCode).toBe(200);
+    expect(next).toHaveBeenCalledTimes(router._test.AUTHORIZE_RATE_LIMIT_MAX + 1);
   });
 
   it('returns 401 when the session is missing', async () => {

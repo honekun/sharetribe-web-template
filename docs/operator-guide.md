@@ -3033,9 +3033,11 @@ After payment, the normal launch posture is seller-triggered label purchase with
 | `especial` / Contactar AV             | No automatic quote or label; follow the approved manual arrangement.                                                                                                                                                                 |
 
 For the pickup email, confirm the eShip dashboard webhook uses the correct environment URL and the
-same secret as the deployment. `GET /api/notifications/readiness` reports tracking rows by status.
-Repeated `failed` rows need engineering review; do not manually execute the internal eShip
-transitions because doing so sends the buyer email without carrier verification.
+same secret as the deployment. The public `GET /api/notifications/readiness` probe reports only
+overall health; engineering can inspect tracking rows by status through the bearer-protected
+`GET /api/notifications/readiness/details` endpoint. Repeated `failed` rows need engineering review;
+do not manually execute the internal eShip transitions because doing so sends the buyer email
+without carrier verification.
 
 Keep `ESHIP_LABEL_AUTOBUY=false` until the purchased-label cancellation/refund policy is approved.
 For money-flow and IVA details, use the [eShip integration guide](integrations/eship.md).
@@ -3064,8 +3066,9 @@ For Brevo/newsletter cases:
 - never manually re-add or unsuppress a contact without a new authorized opt-in; and
 - use provider event details and the first-party consent record when investigating a missing send.
 
-When a readiness endpoint returns `503`, capture its named missing/failed checks and escalate the
-configuration or database issue. Do not enable more channels until readiness is restored.
+When the public readiness endpoint returns `503`, record the environment and timestamp and escalate
+it. Engineering can capture named missing/failed checks from the bearer-protected detailed endpoint.
+Do not enable more channels until readiness is restored, and never put its token in a URL or log.
 
 ### 14.9 Incident Records and Escalation
 

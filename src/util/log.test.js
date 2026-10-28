@@ -1,4 +1,40 @@
-import { isBenignResizeObserverError, setup } from './log';
+jest.mock('@sentry/browser', () => ({
+  init: jest.fn(),
+  setUser: jest.fn(),
+  withScope: jest.fn(),
+  captureException: jest.fn(),
+}));
+
+jest.mock('../config/settings', () => ({
+  sentryDsn: 'https://example.invalid/sentry',
+  env: 'test',
+}));
+
+import * as Sentry from '@sentry/browser';
+import { isBenignResizeObserverError, onRecoverableError, setup } from './log';
+
+beforeEach(() => {
+  Sentry.withScope.mockImplementation(callback =>
+    callback({ setTag: jest.fn(), setExtra: jest.fn() })
+  );
+});
+
+describe('onRecoverableError', () => {
+  it('reports the React exception rather than the logger function', async () => {
+    const reactError = new Error('Hydration mismatch');
+    const componentStack = '\n    at ExampleComponent';
+
+    onRecoverableError(reactError, { componentStack });
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(Sentry.captureException).toHaveBeenCalledWith(reactError);
+    expect(reactError.cause).toMatchObject({
+      name: 'React ErrorBoundary Error',
+      message: 'Hydration mismatch',
+      stack: componentStack,
+    });
+  });
+});
 
 describe('isBenignResizeObserverError', () => {
   it('matches the legacy "loop limit exceeded" wording', () => {

@@ -494,6 +494,27 @@ textarea {
   letter-spacing: 1px;
 }
 
+/* Preserve AV's roomier inbox typography without modifying the upstream module.
+   The upstream tiny-font composition remains intact for straightforward merges. */
+:root [class*='InboxPage_itemTitle__'],
+:root [class*='InboxPage_itemDetails__'],
+:root [class*='InboxPage_itemSeats__'],
+:root [class*='InboxPage_itemState__'] {
+  font-family: var(--fontFamily);
+  font-size: 14px;
+  font-weight: var(--fontWeightMedium);
+
+  @media (--viewportMedium) {
+    font-size: 16px;
+  }
+}
+
+:root [class*='InboxPage_itemTitle__'],
+:root [class*='InboxPage_itemDetails__'],
+:root [class*='InboxPage_itemSeats__'] {
+  line-height: 24px;
+}
+
 .buttonPrimary {
   letter-spacing: 1.5px;
 }

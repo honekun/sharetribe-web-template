@@ -642,6 +642,7 @@ contain.
 | `containers/AuthenticationPage/UserFieldDisplayName.js`                                 | Per-userType display-name label (store sellers)                                                                 |
 | `containers/ListingPage/SectionHero.js`                                                 | `StoreTypeTags` overlay on the gallery hero                                                                     |
 | `containers/ListingPage/CustomListingFields.js`                                         | Force-show the hosted-hidden `tags` field                                                                       |
+| `containers/ListingPage/ListingImageGallery/ListingImageGallery.js`                     | Narrow `thumbnailPosition` pass-through for `AVListingImageGallery`; all AV behavior/CSS stays in the adapter   |
 | `PageBuilder/SectionBuilder/SectionColumns/SectionColumns.js`                           | `AVSectionContainer` + `2/3 cols` token                                                                         |
 | `PageBuilder/SectionBuilder/SectionCarousel/SectionCarousel.js`                         | `AVSectionContainer` + `useDebouncedWindowResize`                                                               |
 | `components/CustomExtendedDataSection/CustomExtendedDataSection.js`                     | Custom `color`/`all_sizes` display dispatch (key→component map)                                                 |
@@ -675,6 +676,10 @@ control). Small CSS-module forks (restyles kept inline due to scoped-class/var c
 | `CheckoutPage/CheckoutPageTransactionHelpers.js` | `CheckoutPage/avMxAddress.js` (`getShippingDetailsMaybe`, `getBillingDetails`, `copyShippingAddressToBilling`) |
 | `BlockBuilder/{BlockBuilder,BlockDefault,BlockFooter}` | `options.blockComponents` → `AVBlockDefault`/`AVBlockFooter`   |
 | `styles/marketplaceDefaults.css`, `TabNavHorizontal.module.css` | `avBrandOverrides.css` (commit `c3bfa1b06`)           |
+| `components/Logo/{Logo,LinkedLogo}.js` | `SectionFooter/AVFooterLogo.js` owns the static white footer asset |
+| Signup/confirm/contact-details form CSS modules | Colocated `*.av.module.css` files own AV-only field spacing |
+| `InboxPage/InboxPage.module.css` | `styles/avBrandOverrides.css` owns AV inbox typography |
+| `ListingImageGallery/image-gallery.css` | `ListingImageGalleryAV.module.css` owns AV gallery sizing |
 
 ### Unavoidable upstream files — append AV additions at the bottom
 

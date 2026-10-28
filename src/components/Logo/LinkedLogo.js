@@ -30,7 +30,6 @@ const LinkedLogo = props => {
     layout = 'desktop',
     linkToExternalSite,
     alt,
-    version = '',
     ...rest
   } = props;
   const classes = classNames(rootClassName || css.root, className);
@@ -42,7 +41,6 @@ const LinkedLogo = props => {
         className={logoClassName}
         logoImageClassName={logoImageClassName}
         alt={alt}
-        version={version}
       />
     </ExternalLink>
   ) : (
@@ -52,7 +50,6 @@ const LinkedLogo = props => {
         className={logoClassName}
         logoImageClassName={logoImageClassName}
         alt={alt}
-        version={version}
       />
     </NamedLink>
   );

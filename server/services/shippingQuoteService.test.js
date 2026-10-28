@@ -193,6 +193,34 @@ describe('buildBuckets', () => {
     expect(out.nacionalEstandar.rate_id).toBe('unknown');
   });
 
+  it('filters malformed rates before selecting or converting prices', () => {
+    const invalidRates = [
+      rate('', 2, 10),
+      rate('missing-amount', 2, undefined),
+      rate('zero-amount', 2, 0),
+      rate('negative-amount', 2, -10),
+      rate('infinite-amount', 2, Infinity),
+      rate('invalid-days', -1, 10),
+      rate('fractional-days', 1.5, 10),
+      { ...rate('wrong-currency', 2, 10), currency: 'USD' },
+    ];
+    const out = svc.buildBuckets([...invalidRates, rate('valid', 2, 100)]);
+
+    expect(out.nacionalExpress.rate_id).toBe('valid');
+    expect(out.nacionalEstandar).toBeUndefined();
+    expect(out.rawRates.map(r => r.rate_id)).toEqual(['valid']);
+  });
+
+  it('returns no buckets when every rate is malformed', () => {
+    const out = svc.buildBuckets([
+      rate('missing-amount', 2, undefined),
+      rate('negative-amount', 5, -10),
+      { ...rate('wrong-currency', 2, 10), currency: 'USD' },
+    ]);
+
+    expect(out).toEqual({ rawRates: [] });
+  });
+
   it('selects on price/days, ignoring eShip FASTEST/CHEAPEST tags', () => {
     // Tags deliberately contradict the numbers.
     const out = svc.buildBuckets([rate('a', 2, 100, ['CHEAPEST']), rate('b', 5, 80, ['FASTEST'])]);
@@ -238,6 +266,34 @@ describe('quoteForCheckout', () => {
     });
     expect(res.quoteToken).toEqual(expect.any(String));
     expect(res.express.amountSubunits).toBeGreaterThan(0);
+  });
+  it('throws InvalidRatesError when the carrier returns no valid rates', async () => {
+    mockOrigin(origin);
+    eship.quote.mockResolvedValue({
+      object_id: 'q1',
+      rates: [{ ...fastestRate, amount: -100 }, { ...cheapestRate, currency: 'USD' }],
+    });
+
+    await expect(
+      svc.quoteForCheckout({
+        listing: listing({ avPackageSize: 'M' }),
+        destination,
+        buyerEmail: 'b@x.com',
+      })
+    ).rejects.toBeInstanceOf(svc.InvalidRatesError);
+  });
+
+  it('throws InvalidRatesError when the carrier returns an empty rate list', async () => {
+    mockOrigin(origin);
+    eship.quote.mockResolvedValue({ object_id: 'q1', rates: [] });
+
+    await expect(
+      svc.quoteForCheckout({
+        listing: listing({ avPackageSize: 'M' }),
+        destination,
+        buyerEmail: 'b@x.com',
+      })
+    ).rejects.toBeInstanceOf(svc.InvalidRatesError);
   });
 });
 

@@ -4,10 +4,7 @@ import classNames from 'classnames';
 import { useConfiguration } from '../../context/configurationContext';
 import { ResponsiveImage } from '../../components/';
 
-import logoImageWhite from '../../assets/logo_av_white.png';
-
 import css from './Logo.module.css';
-import avCss from './LogoAV.module.css';
 
 const HEIGHT_24 = 24;
 const HEIGHT_36 = 36;
@@ -46,7 +43,6 @@ export const LogoComponent = props => {
     logoImageDesktop,
     logoImageMobile,
     logoSettings,
-    version,
     ...rest
   } = props;
 
@@ -54,17 +50,11 @@ export const LogoComponent = props => {
   const logoClasses = className || css.root;
   const logoImageClasses = classNames(
     logoImageClassName || css.logo,
-    getHeightClassName(logoSettings?.height),
-    version === 'white' ? avCss.logoWhite : ''
+    getHeightClassName(logoSettings?.height)
   );
 
   // Logo from hosted asset
-  if (
-    version !== 'white' &&
-    isImageAsset(logoImageDesktop) &&
-    hasValidLogoSettings &&
-    layout === 'desktop'
-  ) {
+  if (isImageAsset(logoImageDesktop) && hasValidLogoSettings && layout === 'desktop') {
     const variants = logoImageDesktop.attributes.variants;
     const variantNames = getVariantNames(variants);
     const { width } = getVariantData(variants);
@@ -73,7 +63,7 @@ export const LogoComponent = props => {
         <ResponsiveImage
           rootClassName={logoImageClasses}
           alt={marketplaceName}
-          image={version === 'white' ? logoImageWhite : logoImageDesktop}
+          image={logoImageDesktop}
           variants={variantNames}
           sizes={`${width}px`}
           width={width}
@@ -81,12 +71,7 @@ export const LogoComponent = props => {
         />
       </div>
     );
-  } else if (
-    version !== 'white' &&
-    isImageAsset(logoImageMobile) &&
-    hasValidLogoSettings &&
-    layout === 'mobile'
-  ) {
+  } else if (isImageAsset(logoImageMobile) && hasValidLogoSettings && layout === 'mobile') {
     const variants = logoImageMobile.attributes.variants;
     const variantNames = getVariantNames(variants);
     const { width } = getVariantData(variants);
@@ -107,15 +92,6 @@ export const LogoComponent = props => {
           sizes={sizes}
           width={width}
         />
-      </div>
-    );
-  } else if (version === 'white') {
-    // AV: white logo variant for dark backgrounds (e.g. footer). Renders a static
-    // asset and bypasses the hosted-logo branches above; reached via
-    // LinkedLogo's version="white". Intentional fork of this upstream component.
-    return (
-      <div>
-        <img className={logoImageClasses} src={logoImageWhite} alt={marketplaceName} {...rest} />
       </div>
     );
   } else if (layout === 'desktop') {
@@ -146,7 +122,7 @@ export const LogoComponent = props => {
  */
 const Logo = props => {
   const config = useConfiguration();
-  const { layout = 'desktop', version = '', ...rest } = props;
+  const { layout = 'desktop', ...rest } = props;
   // NOTE: logo images are set in hosted branding.json asset or src/config/brandingConfig.js
   const { logoImageDesktop, logoImageMobile, logoSettings } = config.branding;
 
@@ -158,7 +134,6 @@ const Logo = props => {
       logoImageMobile={logoImageMobile}
       logoSettings={logoSettings}
       marketplaceName={config.marketplaceName}
-      version={version}
     />
   );
 };

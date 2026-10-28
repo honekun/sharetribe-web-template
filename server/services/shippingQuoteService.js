@@ -45,6 +45,12 @@ class OriginLookupError extends Error {
     this.cause = cause;
   }
 }
+class InvalidRatesError extends Error {
+  constructor() {
+    super('eShip quotation contained no valid MXN rates');
+    this.name = 'InvalidRatesError';
+  }
+}
 
 // eShip `amount` is in major units (pesos). Convert to subunits + apply markup.
 function __toSubunitsWithMarkup(amountMajor) {
@@ -122,9 +128,24 @@ function quoteContextHash(listing, destination) {
     .digest('hex');
 }
 
-// Numeric accessors that push missing/invalid values to the end of any pick.
-const rateAmount = r => (typeof r.amount === 'number' ? r.amount : Infinity);
-const rateDays = r => (typeof r.days === 'number' ? r.days : Infinity);
+const EXPECTED_RATE_CURRENCY = 'MXN';
+
+// Omitted transit days are allowed and become Estándar. If eShip supplies a
+// value, it must be a positive whole number so malformed data cannot affect
+// bucket selection or be presented as a delivery estimate.
+const hasValidRateDays = rate =>
+  rate.days == null || (Number.isInteger(rate.days) && rate.days > 0);
+const isValidRate = rate =>
+  rate &&
+  typeof rate.rate_id === 'string' &&
+  rate.rate_id.trim().length > 0 &&
+  Number.isFinite(rate.amount) &&
+  rate.amount > 0 &&
+  rate.currency === EXPECTED_RATE_CURRENCY &&
+  hasValidRateDays(rate);
+
+const rateAmount = rate => rate.amount;
+const rateDays = rate => (rate.days == null ? Infinity : rate.days);
 
 // Express covers rates delivered in up to this many days; anything slower, or
 // with no transit time, is Estándar, so Express speed is never promised blindly.
@@ -177,7 +198,10 @@ function bucketFromRate(rate) {
 // FASTEST/CHEAPEST tags are surfaced in rawRates for transparency but are not
 // trusted for picking.
 function buildBuckets(rates) {
-  const list = rates || [];
+  // Filter before converting amounts to subunits. This prevents missing,
+  // negative, non-finite, or wrong-currency carrier data from reaching order
+  // pricing even when it is the only rate returned.
+  const list = Array.isArray(rates) ? rates.filter(isValidRate) : [];
   let expressRate = pickCheapestRate(list.filter(isExpressRate));
   let estandarRate = pickCheapestRate(list.filter(r => !isExpressRate(r)));
   if (
@@ -213,6 +237,9 @@ async function runQuote({ listing, destination, buyerEmail }) {
   const quot_id = quoteRes.object_id || quoteRes.quot_id || null;
   const rates = quoteRes.rates;
   const buckets = buildBuckets(rates);
+  if (!buckets.nacionalExpress && !buckets.nacionalEstandar) {
+    throw new InvalidRatesError();
+  }
   return { quot_id, buckets };
 }
 
@@ -273,5 +300,6 @@ module.exports = {
   NoOriginError,
   EspecialError,
   OriginLookupError,
+  InvalidRatesError,
   __toSubunitsWithMarkup, // test helper
 };

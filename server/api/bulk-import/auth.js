@@ -2,10 +2,16 @@
 
 const crypto = require('crypto');
 const { getSdk } = require('../../api-util/sdk');
+const { createTTLCache } = require('../../api-util/cache');
 
 const TOKEN_TTL_MS = 30 * 60 * 1000;
 const TOKEN_BYTES = 32;
-const tokenStore = new Map();
+const TOKEN_CACHE_MAX_ENTRIES = 1000;
+// userId -> token. Keying by user guarantees that issuing a replacement
+// invalidates the previous token instead of growing the store on every request.
+const tokenStore = createTTLCache(TOKEN_TTL_MS / 1000, {
+  maxEntries: TOKEN_CACHE_MAX_ENTRIES,
+});
 
 const parseList = value =>
   String(value || '')
@@ -44,24 +50,11 @@ const isAdminUser = ({ email }) => {
   return !!(normalizedEmail && admins.has(normalizedEmail));
 };
 
-const cleanupExpiredTokens = now => {
-  for (const [token, record] of tokenStore.entries()) {
-    if (record.expiresAt <= now) {
-      tokenStore.delete(token);
-    }
-  }
-};
-
 const issueActionToken = userId => {
-  const now = Date.now();
-  cleanupExpiredTokens(now);
-
   const token = crypto.randomBytes(TOKEN_BYTES).toString('base64url');
-  tokenStore.set(token, {
-    userId,
-    expiresAt: now + TOKEN_TTL_MS,
-  });
-  return { token, expiresAt: new Date(now + TOKEN_TTL_MS).toISOString() };
+  tokenStore[userId] = token;
+  const { expiresAt } = tokenStore[userId];
+  return { token, expiresAt: new Date(expiresAt).toISOString() };
 };
 
 const validateActionToken = (token, userId) => {
@@ -69,17 +62,12 @@ const validateActionToken = (token, userId) => {
     return false;
   }
 
-  const record = tokenStore.get(token);
-  if (!record) {
-    return false;
-  }
+  const { data: expectedToken } = tokenStore[userId];
+  return expectedToken === token;
+};
 
-  if (record.expiresAt <= Date.now()) {
-    tokenStore.delete(token);
-    return false;
-  }
-
-  return record.userId === userId;
+const resetTokenStore = () => {
+  Object.keys(tokenStore).forEach(userId => delete tokenStore[userId]);
 };
 
 // Any signed-in Sharetribe user may run bulk imports for themselves. Admins
@@ -121,8 +109,10 @@ module.exports = {
   requireUserSession,
   _test: {
     TOKEN_TTL_MS,
+    TOKEN_CACHE_MAX_ENTRIES,
     issueActionToken,
     validateActionToken,
     tokenStore,
+    resetTokenStore,
   },
 };

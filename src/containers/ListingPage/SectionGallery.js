@@ -1,5 +1,5 @@
 import React from 'react';
-import ListingImageGallery from './ListingImageGallery/ListingImageGallery';
+import ListingImageGallery from './ListingImageGallery/AVListingImageGallery';
 import { StoreTypeTags, FavoriteButton } from '../../components';
 
 import css from './ListingPage.module.css';

@@ -443,8 +443,10 @@ in memory by the page and is not persisted in browser storage.
 
 ### `POST /api/bulk-import/authorize`
 
-Issues a short-lived action token for any signed-in session. The response includes an `isAdmin` flag
-(true when the user's email is in `BULK_IMPORT_OPERATOR_EMAILS`).
+Issues a 30-minute action token for any signed-in session. Only the latest token for each user is
+valid; requesting another immediately invalidates the previous token. Issuance is limited to 10
+requests per user per minute. The in-process token cache holds at most 1,000 users. The response
+includes an `isAdmin` flag (true when the user's email is in `BULK_IMPORT_OPERATOR_EMAILS`).
 
 **Response** (HTTP 200):
 
@@ -566,6 +568,9 @@ Limits are **tiered**. Standard = any signed-in user (imports for themselves); a
 | Total uncompressed size      | 100 MB           |
 | Active jobs per user         | 1 (else 409)     |
 | Global concurrent jobs       | 3 (else 503)     |
+| Action-token issuance        | 10/user/minute   |
+| Action-token TTL             | 30 minutes       |
+| Active action-token cache    | 1/user; 1,000 users/process |
 | Rate between rows            | 500 ms           |
 | Job data TTL                 | 1 hour           |
 

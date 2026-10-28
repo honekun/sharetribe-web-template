@@ -110,12 +110,16 @@ NODE_ENV=development node -e "require('./server/env').configureEnv(); \
    `profile.protectedData.shippingOrigin`) and the **parcel**
    (`packageSizes[resolvePackageSize(listing)]`).
 3. `POST {base}/quotation` (one call → `rates[]`).
-4. Bucket the rates by transit time, then price (`buildBuckets`): **Express (`nacionalExpress`)** is
-   the cheapest rate delivered in **1–3 days**; **Estándar (`nacionalEstandar`)** is the cheapest
-   rate taking **4+ days** (a rate with no transit days counts as Estándar). Ties within a bucket go
-   to fewer days. Both cards are shown whenever both exist, whichever is cheaper. When their buyer
-   prices (after markup and rounding) are **equal**, a single **Estándar** card is shown carrying
-   the faster 1–3 day rate. A bucket with no qualifying rate is left out. eShip's
+4. Discard malformed rates before price conversion. A usable rate has a non-empty string `rate_id`,
+   a finite positive `amount`, `MXN` currency, and either no transit-day value or a positive integer
+   number of days. If no usable rates remain, the quote fails and the buyer sees **Contactar AV**.
+   Bucket the remaining rates by transit time, then price (`buildBuckets`): **Express
+   (`nacionalExpress`)** is the cheapest rate delivered in **1–3 days**; **Estándar
+   (`nacionalEstandar`)** is the cheapest rate taking **4+ days** (a rate with no transit days counts
+   as Estándar). Ties within a bucket go to fewer days. Both cards are shown whenever both exist,
+   whichever is cheaper. When their buyer prices (after markup and rounding) are **equal**, a single
+   **Estándar** card is shown carrying the faster 1–3 day rate. A bucket with no qualifying rate is
+   left out. eShip's
    `FASTEST`/`CHEAPEST` tags are retained in server-side `rawRates` but not trusted for picking.
    Apply `applyBuyerMarkup`, cache under a `quoteToken` (15-min TTL, 1,000-entry process cap), and
    return the buckets. The quote route includes `rawRates` in the browser response only when
@@ -229,8 +233,9 @@ all other carrier events return `202` and are ignored:
 
 PostgreSQL stores one `transit-picked-up` row per shipment. The leader poller claims due rows,
 retries transient failures up to eight times with a 30-second-to-one-hour exponential delay, and
-reports counts under `database.eshipTrackingByStatus` at `GET /api/notifications/readiness`.
-Duplicate webhooks return `200` without creating another transition or email.
+reports counts under `database.eshipTrackingByStatus` at the bearer-protected
+`GET /api/notifications/readiness/details` endpoint. Duplicate webhooks return `200` without
+creating another transition or email.
 
 The worker maps `object_id` through the label-purchase ledger, verifies the authenticated shipment
 and tracking number, prefers `tracking_url_provider` and falls back to `tracking_url_custom`, then

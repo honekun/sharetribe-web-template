@@ -3,7 +3,6 @@ import classNames from 'classnames';
 
 import { pickFieldOptions } from '../../PageBuilder.helpers';
 
-import { LinkedLogo } from '../../../../components';
 import { useIntl } from '../../../../util/reactIntl';
 
 import Field from '../../Field';
@@ -12,6 +11,7 @@ import renderMarkdown from '../../markdownProcessor';
 
 import AVSectionContainer from '../SectionContainer/AVSectionContainer';
 import { hasSocialLinksToken } from '../../../../extensions/pageBuilder/av/blocks';
+import AVFooterLogo from './AVFooterLogo';
 import css from './SectionFooter.module.css';
 
 // The number of columns (numberOfColumns) affects styling
@@ -22,8 +22,6 @@ const GRID_CONFIG = [
   { contentCss: css.contentCol3, gridCss: css.gridCol3 },
   { contentCss: css.contentCol4, gridCss: css.gridCol4 },
 ];
-const MAX_MOBILE_SCREEN_WIDTH = 1024;
-
 const getIndex = numberOfColumns => numberOfColumns - 1;
 
 const getContentCss = numberOfColumns => {
@@ -107,12 +105,6 @@ const SectionFooter = props => {
   });
 
   const showSocialMediaLinks = socialMediaLinks?.length > 0;
-  const hasMatchMedia = typeof window !== 'undefined' && window?.matchMedia;
-  const isMobileLayout = hasMatchMedia
-    ? window.matchMedia(`(max-width: ${MAX_MOBILE_SCREEN_WIDTH}px)`)?.matches
-    : true;
-  const logoLayout = isMobileLayout ? 'mobile' : 'desktop';
-
   // A block carrying `social links ::` renders the icons itself (AVBlockFooter),
   // so the default icon row below the slogan stands down. Both sides read the
   // token through the same helper: tokens are combinable in any order, so a
@@ -132,13 +124,11 @@ const SectionFooter = props => {
       <div className={css.footer}>
         <div className={classNames(css.content, getContentCss(numberOfColumns))}>
           <div>
-            <LinkedLogo
+            <AVFooterLogo
               rootClassName={css.logoLink}
               logoClassName={css.logoWrapper}
               logoImageClassName={css.logoImage}
               linkToExternalSite={linkLogoToExternalSite}
-              layout={logoLayout}
-              version="white"
             />
           </div>
           <div className={css.sloganMobile}>

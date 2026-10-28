@@ -130,8 +130,18 @@ The same acknowledgement can recover a `processing` claim only after it is older
 
 ## 3. Readiness and backlog metrics
 
-`GET /api/notifications/readiness` returns HTTP `200` when the explicit configuration and
-notification database are ready, or `503` otherwise. It distinguishes:
+`GET /api/notifications/readiness` is the public deployment probe. It returns only
+`{"ready":true}` with HTTP `200`, or `{"ready":false}` with HTTP `503`, so configuration names,
+database state, backlog counts, and metrics are not exposed.
+
+Detailed diagnostics require the server-only `AV_NOTIFICATION_READINESS_TOKEN`:
+
+```sh
+curl -H "Authorization: Bearer $AV_NOTIFICATION_READINESS_TOKEN" \
+  https://MARKETPLACE_HOST/api/notifications/readiness/details
+```
+
+The protected response distinguishes:
 
 - shared event poller, shipping-label capability, seller welcome, Brevo campaign, and WhatsApp flags
   plus the eShip tracking-email flag and missing variable names;
@@ -161,7 +171,8 @@ to both Test and Live.
 1. Provision a durable managed PostgreSQL database.
 2. Set its server-only `DATABASE_URL` on every web process. All processes must use the same
    database.
-3. Set `AV_NOTIFICATIONS_ENABLED`, `AV_SHIPPING_LABELS_ENABLED`, and
+3. Set a strong, environment-specific `AV_NOTIFICATION_READINESS_TOKEN`, then set
+   `AV_NOTIFICATIONS_ENABLED`, `AV_SHIPPING_LABELS_ENABLED`, and
    `AV_ESHIP_TRACKING_EMAILS_ENABLED` explicitly. Any enabled capability starts the shared event
    poller. When notifications are enabled, explicitly set seller welcome, Brevo campaign, and
    WhatsApp flags. Labels and tracking email require eShip and Integration API credentials; tracking

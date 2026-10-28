@@ -734,7 +734,8 @@ Rules:
 | `POST /api/brevo/engagement`       | Public view/authenticated favorite, rate-limited | Record server-validated qualified view or favorite                      |
 | `POST /api/brevo/webhook`          | Shared-secret authenticated                      | Record delivery events and apply provider suppression                   |
 | `GET /api/brevo/health`            | Deployment probe                                 | Validate configured welcome/campaign flags and required values          |
-| `GET /api/notifications/readiness` | Deployment probe                                 | Validate flags, PostgreSQL schema, cursor, ledger, jobs, and metrics    |
+| `GET /api/notifications/readiness`         | Public deployment probe                  | Validate only aggregate readiness without exposing operational details |
+| `GET /api/notifications/readiness/details` | Bearer-protected engineering diagnostic | Validate flags, PostgreSQL schema, cursor, ledger, jobs, and metrics    |
 
 The engagement endpoint loads the listing through the Sharetribe SDK and resolves the current user
 when a session exists. Anonymous qualified views are stored without user ID, email, or first name

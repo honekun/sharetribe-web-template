@@ -1,9 +1,20 @@
-/* AV-only ListingImageGallery styles, kept out of the upstream
-   ListingImageGallery.module.css so that file stays pristine. Imported by
-   ListingImageGallery.js for its side effects (only :global rules remain).
+/* AV-only ListingImageGallery styles, kept out of the upstream gallery files.
+   Imported by AVListingImageGallery.js for its side effects (only :global rules remain).
    The two margin rules tweak the vendored react-image-gallery thumbnails;
    they load with the component (same as the original module) so source
    order is preserved. */
+
+:global(.image-gallery) {
+  --ig-thumbnail-size: 102px;
+  --ig-thumbnail-size-small: 88px;
+}
+
+@media (max-width: 768px) {
+  :global(.image-gallery-slide-wrapper.image-gallery-thumbnails-left),
+  :global(.image-gallery-slide-wrapper.image-gallery-thumbnails-right) {
+    width: calc(100% - 96px);
+  }
+}
 
 :global(.image-gallery-thumbnails-left .image-gallery-thumbnail:first-child) {
   margin-left: 0;
@@ -14,8 +25,8 @@
 
 /* Thumbnail selection: thin black border instead of the vendored 4px blue.
    The base border-width shrinks to match so selecting/hovering never shifts
-   layout. Loads after the vendored image-gallery.css (import order in
-   ListingImageGallery.js), so the specificity ties resolve to these rules. */
+   layout. Loads after the vendored image-gallery.css (through the adapter's
+   dependency/import order), so the specificity ties resolve to these rules. */
 :global(.image-gallery-thumbnail) {
   border-width: 1px;
 }

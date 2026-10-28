@@ -1,0 +1,9 @@
+@import '../../../styles/customMediaQueries.css';
+
+.marketingConsent {
+  margin-top: 24px;
+
+  @media (--viewportMedium) {
+    margin-top: 32px;
+  }
+}

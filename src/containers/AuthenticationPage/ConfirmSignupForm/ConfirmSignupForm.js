@@ -22,6 +22,7 @@ import UserFieldDisplayName from '../UserFieldDisplayName';
 // import UserFieldPhoneNumber from '../UserFieldPhoneNumber';
 
 import css from './ConfirmSignupForm.module.css';
+import avCss from './ConfirmSignupForm.av.module.css';
 
 const getSoleUserTypeMaybe = userTypes =>
   Array.isArray(userTypes) && userTypes.length === 1 ? userTypes[0].userType : null;
@@ -178,7 +179,7 @@ const ConfirmSignupFormComponent = props => (
           ) : null}
 
           <FieldCheckbox
-            className={css.marketingConsent}
+            className={avCss.marketingConsent}
             id={formId ? `${formId}.marketingConsent` : 'marketingConsent'}
             name="marketingConsent"
             label={<FormattedMessage id="ConfirmSignupForm.marketingConsentLabel" />}

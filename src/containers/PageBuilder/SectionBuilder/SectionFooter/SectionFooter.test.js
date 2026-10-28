@@ -3,6 +3,7 @@ import '@testing-library/jest-dom';
 
 import { renderWithProviders as render } from '../../../../util/testHelpers';
 import { getAvBlockComponents } from '../../../../extensions/pageBuilder/av/blocks';
+import logoImageWhite from '../../../../assets/logo_av_white.png';
 
 import SectionFooter from './SectionFooter';
 
@@ -34,6 +35,12 @@ const instagramLinkCount = container =>
   container.querySelectorAll('a[href="https://instagram.test/av"]').length;
 
 describe('SectionFooter — social media links', () => {
+  it('renders the footer-only white AV logo', () => {
+    const { getByRole } = renderFooter([]);
+
+    expect(getByRole('img', { name: 'MarketplaceX' })).toHaveAttribute('src', logoImageWhite);
+  });
+
   it('renders its own icon row when no block claims the links', () => {
     const { container } = renderFooter([
       { blockId: 'b1', blockType: 'footerBlock', blockName: 'smallerTitles ::' },

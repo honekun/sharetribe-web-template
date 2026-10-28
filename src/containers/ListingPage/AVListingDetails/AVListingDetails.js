@@ -118,7 +118,7 @@ const AVListingDetails = props => {
       {sizes.length ? (
         <div className={css.sizesRow}>
           {labelFor('all_sizes') ? (
-            <span className={css.label}>{labelFor('all_sizes')}: </span>
+            <span className={css.label}>{labelFor('all_sizes')}:</span>
           ) : null}
           <ul className={css.chipList}>
             {sizes.map(s => (
@@ -153,7 +153,7 @@ const AVListingDetails = props => {
 
       {estado ? (
         <div className={css.row}>
-          {labelFor('estado') ? <span className={css.label}>{labelFor('estado')}: </span> : null}
+          {labelFor('estado') ? <span className={css.label}>{labelFor('estado')}:</span> : null}
           <SearchLink paramKey="estado" value={estado} className={css.link}>
             {enumLabel(cfg('estado'), estado)}
           </SearchLink>
@@ -162,7 +162,7 @@ const AVListingDetails = props => {
 
       {colors.length ? (
         <div className={css.colorRow}>
-          {labelFor('color') ? <span className={css.label}>{labelFor('color')}: </span> : null}
+          {labelFor('color') ? <span className={css.label}>{labelFor('color')}:</span> : null}
           <ul className={css.swatchList}>
             {colors.map(c => (
               <li key={c} className={css.swatchItem}>
@@ -179,7 +179,7 @@ const AVListingDetails = props => {
       {categoryLevels.length ? (
         <div className={css.row}>
           <span className={css.label}>
-            <FormattedMessage id="AVListingDetails.categoryLabel" />:{' '}
+            <FormattedMessage id="AVListingDetails.categoryLabel" />:
           </span>
           {categoryLevels.map((c, i) => (
             <React.Fragment key={c.paramKey}>
@@ -194,7 +194,7 @@ const AVListingDetails = props => {
 
       {genero ? (
         <div className={css.row}>
-          {labelFor('genero') ? <span className={css.label}>{labelFor('genero')}: </span> : null}
+          {labelFor('genero') ? <span className={css.label}>{labelFor('genero')}:</span> : null}
           <SearchLink paramKey="genero" value={genero} className={css.link}>
             {enumLabel(cfg('genero'), genero)}
           </SearchLink>

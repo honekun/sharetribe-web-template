@@ -9,6 +9,25 @@ import { clearCurrentUser, setCurrentUser } from './user.duck';
 // Max ids supported by sdk.listings.query({ ids }) in one call.
 const MAX_FAVORITES = 100;
 
+// Profile updates replace privateData.favoriteListingIds as a whole. Keep one
+// queue per Redux store so concurrent toggles cannot persist out of order. A
+// WeakMap avoids putting promises in Redux state and lets discarded stores be
+// garbage-collected (notably SSR requests and tests).
+const favoriteUpdateQueues = new WeakMap();
+
+const applyFavoriteIntent = (ids, listingId, shouldBeFavorite) => {
+  const without = ids.filter(id => id !== listingId);
+  return shouldBeFavorite ? [listingId, ...without].slice(0, MAX_FAVORITES) : without;
+};
+
+const getFavoriteUpdateQueue = (getState, confirmedIds) => {
+  const existing = favoriteUpdateQueues.get(getState);
+  if (existing) return existing;
+  const queue = { tail: Promise.resolve(), pending: [], confirmedIds };
+  favoriteUpdateQueues.set(getState, queue);
+  return queue;
+};
+
 const favoritesSlice = createSlice({
   name: 'favorites',
   initialState: { favoriteListingIds: [] },
@@ -53,29 +72,65 @@ export const syncFavoritesFromUser = currentUser => dispatch => {
   dispatch(setFavorites(ids));
 };
 
-// Optimistic toggle: flip locally, persist, roll back on failure.
+// Optimistic toggle: flip locally, then serialize full-array profile writes.
+// Pending intents are replayed over the last confirmed array after every
+// response, so a failure rolls back only its own effect and preserves newer
+// clicks.
 export const toggleFavorite = listingId => (dispatch, getState, sdk) => {
   const previous = selectFavoriteIds(getState());
-  const addingFavorite = !previous.includes(listingId);
-  dispatch(favoriteToggled(listingId));
-  const next = selectFavoriteIds(getState());
+  const shouldBeFavorite = !previous.includes(listingId);
+  const queue = getFavoriteUpdateQueue(getState, previous);
+  if (queue.pending.length === 0) {
+    queue.confirmedIds = previous;
+  }
 
-  return sdk.currentUser
-    .updateProfile({ privateData: { favoriteListingIds: next } }, { expand: true })
-    .then(response => {
-      // Keep state.user.currentUser in sync (same pattern as markVendedorOnboarded).
+  dispatch(favoriteToggled(listingId));
+  const operation = { listingId, shouldBeFavorite };
+  queue.pending.push(operation);
+
+  const persistOperation = async () => {
+    const nextConfirmedIds = applyFavoriteIntent(queue.confirmedIds, listingId, shouldBeFavorite);
+    let response;
+    let succeeded = false;
+
+    try {
+      response = await sdk.currentUser.updateProfile(
+        { privateData: { favoriteListingIds: nextConfirmedIds } },
+        { expand: true }
+      );
+      queue.confirmedIds = nextConfirmedIds;
+      succeeded = true;
+    } catch (error) {
+      log.error(error, 'toggle-favorite-failed', { listingId });
+    }
+
+    queue.pending = queue.pending.filter(item => item !== operation);
+    const optimisticIds = queue.pending.reduce(
+      (ids, item) => applyFavoriteIntent(ids, item.listingId, item.shouldBeFavorite),
+      queue.confirmedIds
+    );
+    dispatch(setFavorites(optimisticIds));
+
+    if (!succeeded) return undefined;
+
+    // An older response must not update currentUser while newer intents are
+    // pending: AVTopbarExtras hydrates favorites from currentUser and would
+    // otherwise overwrite the optimistic list with the older array.
+    if (queue.pending.length === 0) {
       const entities = denormalisedResponseEntities(response);
       if (entities.length === 1) {
         dispatch(setCurrentUser(entities[0]));
       }
-      return addingFavorite
-        ? trackMarketingEngagement({ listingId, action: 'favorite' })
-            .catch(error => log.error(error, 'marketing-favorite-tracking-failed', { listingId }))
-            .then(() => response)
-        : response;
-    })
-    .catch(e => {
-      dispatch(setFavorites(previous));
-      log.error(e, 'toggle-favorite-failed', { listingId });
-    });
+    }
+
+    return shouldBeFavorite
+      ? trackMarketingEngagement({ listingId, action: 'favorite' })
+          .catch(error => log.error(error, 'marketing-favorite-tracking-failed', { listingId }))
+          .then(() => response)
+      : response;
+  };
+
+  const queuedUpdate = queue.tail.then(persistOperation, persistOperation);
+  queue.tail = queuedUpdate;
+  return queuedUpdate;
 };

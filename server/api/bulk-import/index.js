@@ -16,6 +16,7 @@ const { authorizeAction, requireActionToken, requireUserSession } = require('./a
 const { getLimits } = require('./limits');
 const { checkAndRecord } = require('./rateLimiter');
 const { getSdk } = require('../../api-util/sdk');
+const { createRateLimiter } = require('../../api-util/rateLimit');
 const { resolveListingMinimumPrice } = require('../../api-util/listingMinimumPrice');
 const { resolveListingImportConfig } = require('./listingImportConfig');
 
@@ -27,6 +28,17 @@ const MAX_ZIP_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 MB compressed ZIP
 
 // Caps total imports running concurrently across all users (memory protection).
 const MAX_GLOBAL_CONCURRENT_JOBS = 3;
+
+const AUTHORIZE_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const AUTHORIZE_RATE_LIMIT_MAX = 10;
+const authorizeRateLimit = createRateLimiter({
+  windowMs: AUTHORIZE_RATE_LIMIT_WINDOW_MS,
+  max: AUTHORIZE_RATE_LIMIT_MAX,
+  keyGenerator: req => req.bulkImportUser.userId,
+  message: {
+    error: 'Demasiadas solicitudes de autorización. Inténtalo de nuevo en un minuto.',
+  },
+});
 
 // Two upload shapes are accepted:
 //  - a .zip holding one CSV plus the listing images, and
@@ -89,7 +101,7 @@ const uploadZip = (req, res, next) => {
 };
 
 // POST /api/bulk-import/authorize
-router.post('/authorize', requireUserSession, authorizeAction);
+router.post('/authorize', requireUserSession, authorizeRateLimit, authorizeAction);
 
 // POST /api/bulk-import/start
 router.post('/start', requireUserSession, requireActionToken, uploadZip, async (req, res) => {
@@ -328,4 +340,4 @@ router.get('/template', (req, res) => {
 });
 
 module.exports = router;
-module.exports._test = { classifyUpload, MAX_ZIP_UPLOAD_BYTES };
+module.exports._test = { classifyUpload, MAX_ZIP_UPLOAD_BYTES, AUTHORIZE_RATE_LIMIT_MAX };

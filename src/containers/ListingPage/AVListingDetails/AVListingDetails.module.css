@@ -21,6 +21,10 @@
   color: var(--colorBlack);
 }
 
+.row > .label {
+  margin-right: 4px;
+}
+
 .link {
   color: var(--marketplaceColor);
 }

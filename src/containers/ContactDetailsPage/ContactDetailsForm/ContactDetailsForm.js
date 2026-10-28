@@ -24,6 +24,7 @@ import {
 } from '../../../components';
 
 import css from './ContactDetailsForm.module.css';
+import avCss from './ContactDetailsForm.av.module.css';
 
 const SHOW_EMAIL_SENT_TIMEOUT = 2000;
 
@@ -403,8 +404,8 @@ class ContactDetailsFormComponent extends Component {
 
                 <PhoneNumberMaybe formId={formId} userTypeConfig={userTypeConfig} intl={intl} />
 
-                <div className={css.marketingPreference}>
-                  <H4 as="h3" className={css.marketingPreferenceTitle}>
+                <div className={avCss.marketingPreference}>
+                  <H4 as="h3" className={avCss.marketingPreferenceTitle}>
                     <FormattedMessage id="ContactDetailsForm.marketingPreferenceTitle" />
                   </H4>
                   <FieldCheckbox
@@ -414,7 +415,7 @@ class ContactDetailsFormComponent extends Component {
                     disabled={marketingPreferenceLoading}
                   />
                   {emailChanged ? (
-                    <p className={css.marketingPreferenceInfo}>
+                    <p className={avCss.marketingPreferenceInfo}>
                       <FormattedMessage id="ContactDetailsForm.emailChangeConsentReset" />
                     </p>
                   ) : null}
