@@ -69,13 +69,22 @@ const lookup = (index, raw) => {
  * Resolve one CSV value against an index: the option key or its label, ignoring
  * case and accents. A value written as "Grupo / Opción" (the Google Sheets
  * template's size dropdown writes "Ropa / M") is retried with its last segment
- * when the whole value matches nothing.
+ * when the whole value matches nothing. The legacy clothing-size group
+ * "Ropa MX / 28" is resolved through its mx_28 key so it cannot be confused
+ * with the shoe option that has the same "MX 28" label.
  *
  * @returns {{ value: string } | { ambiguous: string[] } | { unknown: true }}
  */
 const resolveOption = (index, raw) => {
   const direct = lookup(index, raw);
   if (direct) return direct;
+
+  const clothingMx = normalize(raw).match(/^ropa mx\s*\/\s*(\d+)$/);
+  if (clothingMx) {
+    const keyedClothingSize = lookup(index, `mx_${clothingMx[1]}`);
+    if (keyedClothingSize) return keyedClothingSize;
+  }
+
   const segments = String(raw).split('/');
   if (segments.length > 1) {
     const last = lookup(index, segments[segments.length - 1]);

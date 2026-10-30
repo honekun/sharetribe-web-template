@@ -303,10 +303,12 @@ matched them.
 - **Enum and multi-enum fields.** Each value must be an option key or its label. Matching ignores
   case, accents and repeated spaces. A value written as `Grupo / Opción` (the Google Sheets size
   dropdown writes `Ropa / M`) is retried with its last segment when the whole value matches
-  nothing. Multi-enum values are pipe-separated and de-duplicated. A single-value (`enum`) field
-  with several values is an error. A label shared by two options is an error that asks for the key.
-  Current cases: `Rat & Boa` is both the code option `rat-boa` and the Console option `rat_boa`,
-  and the labels `MX 24`–`MX 29` are both clothing (`mx_24`) and shoe (`mx_shoes_24x`) sizes.
+  nothing. Legacy clothing labels such as `Ropa MX / 28` and `Ropa MX / 30` resolve directly to
+  `mx_28` and `mx_30`; the `Ropa MX` group disambiguates them from shoe sizes. Multi-enum values are
+  pipe-separated and de-duplicated. A single-value (`enum`) field with several values is an error.
+  A label shared by two options is an error that asks for the key. Current cases: `Rat & Boa` is
+  both the code option `rat-boa` and the Console option `rat_boa`, and the bare labels `MX 24`–`MX
+  29` are both clothing (`mx_24`) and shoe (`mx_shoes_24x`) sizes.
 - **Where the options come from.** This mirrors the client's merge in `configHelpers.js`.
   - The code-defined fields in `src/config/configListingAV.js` (`color`, `all_sizes`, `brand`)
     replace a Console field with the same key. That file is CommonJS so the server can `require`
