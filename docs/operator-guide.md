@@ -413,7 +413,7 @@ automatically. The list below documents the canonical options defined in code.
 | Schema type | `enum` (pick one brand per listing) |
 | Scope       | `public`                            |
 
-The code list has 625 options (full list in `docs/data/brand.csv`). The app also reads the options
+The code list has 624 options (full list in `docs/data/brand.csv`). The app also reads the options
 of the Console `brand` listing field and merges them in, so a brand added there appears in the
 listing form, the search filter, the brand search box, and on listing pages after the next page
 load:
@@ -423,8 +423,8 @@ load:
   existing `h-m` key for H&M) splits its listings between two filter values.
 - **Same key in both places:** the Console label wins, so the Console can also correct a label.
 - **Removing a brand:** not possible from the Console. Deleting a Console option only removes brands
-  that exist nowhere else; the 625 code options always remain. Ask the development team.
-- **Ordering:** the merged list is sorted alphabetically, with `Otra...` (`other`) always first.
+  that exist nowhere else; the 624 code options always remain. Ask the development team.
+- **Ordering:** the merged list is sorted alphabetically, with `Otra` (`other`) always first.
 - **Only the options are read.** Changing the Console field's label, filter or display settings
   has no effect, and only `brand` behaves this way — `color` and `all_sizes` ignore Console
   entirely.
@@ -1627,7 +1627,7 @@ value such as `Otoño` is stored as typed and matches no option:
 
 #### Brand option keys
 
-The code brand list has 625 entries. The most common ones are listed here. For the complete list,
+The code brand list has 624 entries. The most common ones are listed here. For the complete list,
 see `docs/data/brand.csv`; brands added in the Console ([§3.6](#36-marca-brand-field)) are valid
 too, using the key entered there.
 
@@ -1645,7 +1645,7 @@ too, using the key entered there.
 | Stradivarius            | `stradivarius` | Isabel Marant | `isabel-marant` |
 | Pull & Bear             | `pull-bear`    | Jacquemus     | `jacquemus`     |
 | Bershka                 | `bershka`      | Ganni         | `ganni`         |
-| Vintage (no brand)      | `vintage`      | Otros         | `otros`         |
+| Vintage (no brand)      | `vintage`      |               |                 |
 
 ---
 

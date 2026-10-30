@@ -147,7 +147,7 @@ const isUsableOption = option =>
   option.label.trim() !== '';
 
 // Hoisted so the comparator isn't re-resolving a collator on every call: measured at
-// 1.5–7ms for 625 options versus 0.05–0.09ms hoisted (~25x), and this runs on both the
+// 1.5–7ms for 624 options versus 0.05–0.09ms hoisted (~25x), and this runs on both the
 // SSR per-request path and the client-boot path.
 // Not `numeric: true`: numeric collation orders "7 For All Mankind" before "525"
 // and would reorder the hand-authored code list. Plain locale collation reproduces

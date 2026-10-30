@@ -210,7 +210,7 @@ describe('mergeHostedBrandOptions', () => {
       scope: 'public',
       schemaType: 'enum',
       enumOptions: [
-        { option: 'other', label: 'Otra...' },
+        { option: 'other', label: 'Otra' },
         { option: 'zara', label: 'Zara' },
         { option: 'prada', label: 'Prada' },
       ],

@@ -86,7 +86,7 @@ describe('mergeConfig listingFields — brand', () => {
     const withoutConsoleBrand = brandOptions(hostedConfig([]));
 
     expect(withoutConsoleBrand).toEqual(withConsoleBrand);
-    expect(withoutConsoleBrand[0]).toEqual({ option: 'other', label: 'Otra...' });
+    expect(withoutConsoleBrand[0]).toEqual({ option: 'other', label: 'Otra' });
   });
 
   // A malformed Console option must not be able to take the whole field down.

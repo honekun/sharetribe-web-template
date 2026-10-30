@@ -13,7 +13,7 @@ const listingFields = [
     scope: 'public',
     schemaType: 'enum',
     enumOptions: [
-      { option: 'other', label: 'Otra...' },
+      { option: 'other', label: 'Otra' },
       { option: 'prada', label: 'Prada' },
       { option: 'a-p-c', label: 'A.P.C.' },
       { option: 'ala-a', label: 'Alaïa' },
@@ -69,7 +69,7 @@ describe('findBrandOption', () => {
   });
 
   it('never matches the catch-all "other" option', () => {
-    expect(findBrandOption('Otra...', listingFields)).toBeNull();
+    expect(findBrandOption('Otra', listingFields)).toBeNull();
     expect(findBrandOption('other', listingFields)).toBeNull();
   });
 
@@ -95,7 +95,7 @@ describe('findBrandOption', () => {
         {
           key: 'brand',
           schemaType: 'enum',
-          enumOptions: [{ option: 'other', label: 'Otra...' }],
+          enumOptions: [{ option: 'other', label: 'Otra' }],
         },
       ],
       [

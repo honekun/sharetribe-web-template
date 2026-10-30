@@ -15,7 +15,7 @@
  * keyword search.
  */
 
-// The catch-all "Otra..." option is a real enum value but a meaningless search
+// The catch-all "Otra" option is a real enum value but a meaningless search
 // target, so it never matches.
 const EXCLUDED_BRAND_OPTIONS = ['other'];
 
