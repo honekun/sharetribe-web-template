@@ -152,7 +152,7 @@ const avListingFields = [
     scope: 'public',
     schemaType: 'enum',
     enumOptions: [
-      { option: 'other', label: 'Otra...' },
+      { option: 'other', label: 'Otra' },
       { option: 'other-stories', label: '& Other Stories' },
       { option: '1-state', label: '1.STATE' },
       { option: '1-8-takamura', label: '1/8 Takamura' },
@@ -549,7 +549,6 @@ const avListingFields = [
       { option: 'oscar-de-la-renta', label: 'Oscar de la Renta' },
       { option: 'os-ree', label: 'Oséree' },
       { option: 'osklen', label: 'Osklen' },
-      { option: 'otros', label: 'Otros' },
       { option: 'outerknown', label: 'Outerknown' },
       { option: 'oysho', label: 'Oysho' },
       { option: 'p-e-nation', label: 'P.E Nation' },
