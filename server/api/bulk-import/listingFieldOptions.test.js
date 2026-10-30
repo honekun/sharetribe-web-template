@@ -128,6 +128,15 @@ describe('resolveOption', () => {
     expect(resolveOption(fieldOptions.get('all_sizes'), 'Ropa / M')).toEqual({ value: 'm' });
   });
 
+  it('resolves legacy Ropa MX labels to clothing keys instead of ambiguous shoe labels', () => {
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'Ropa MX / 28')).toEqual({
+      value: 'mx_28',
+    });
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'Ropa MX / 30')).toEqual({
+      value: 'mx_30',
+    });
+  });
+
   it('reports an unknown value', () => {
     expect(resolveOption(fieldOptions.get('brand'), 'Marca Inventada')).toEqual({ unknown: true });
     // A brand added in Console resolves by its label.
