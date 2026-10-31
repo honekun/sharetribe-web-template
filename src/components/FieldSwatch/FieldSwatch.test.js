@@ -20,6 +20,7 @@ describe('FieldSwatch', () => {
     expect(swatchColors.rojo).toBe('#ff0000');
     expect(swatchColors.negro).toBe('black');
     expect(swatchColors.blanco).toBe('white');
+    expect(swatchColors.beige).toBe('beige');
     expect(Object.keys(swatchColors).length).toBeGreaterThanOrEqual(14);
   });
 

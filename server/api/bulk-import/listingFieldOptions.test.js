@@ -116,6 +116,7 @@ describe('resolveOption', () => {
     expect(resolveOption(temporada, 'Todo el año')).toEqual({ value: 'todo-el-ano' });
     expect(resolveOption(temporada, 'OTOÑO')).toEqual({ value: 'otono' });
     expect(resolveOption(fieldOptions.get('color'), 'Negro')).toEqual({ value: 'negro' });
+    expect(resolveOption(fieldOptions.get('color'), 'Beige')).toEqual({ value: 'beige' });
   });
 
   it('matches a label that itself contains a slash as a whole', () => {

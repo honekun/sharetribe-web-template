@@ -225,6 +225,7 @@ the fields there so they appear in the listing form.
 | Gris         | `gris`         |
 | Blanco       | `blanco`       |
 | Crema        | `crema`        |
+| Beige        | `beige`        |
 | Café         | `cafe`         |
 | Animal Print | `animal-print` |
 | Floral       | `floral-print` |
@@ -1513,6 +1514,7 @@ Use these IDs in `pub_categoryLevel1`, `pub_categoryLevel2`, and `pub_categoryLe
 | Gris         | `gris`         |
 | Blanco       | `blanco`       |
 | Crema        | `crema`        |
+| Beige        | `beige`        |
 | Café         | `cafe`         |
 | Animal Print | `animal-print` |
 | Floral       | `floral-print` |
@@ -1714,7 +1716,7 @@ missing category imported without an error. Such a listing then matched no filte
 page. Now the row fails with a message naming the column and listing valid values, e.g.:
 
 ```
-Fila 3: "pub_color": "blu" no es una opción válida. Valores válidos: rojo, rosa, amarillo, … (17 en total).
+Fila 3: "pub_color": "blu" no es una opción válida. Valores válidos: rojo, rosa, amarillo, … (18 en total).
 Fila 4: Falta la categoría ("pub_categoryLevel1"). Valores válidos: ropa, bolsas, zapatos, accesorios, home-antiques.
 Fila 5: Falta "pub_categoryLevel2": "ropa" tiene subcategorías. Valores válidos: ropa-tops, ropa-camisetas, …
 ```

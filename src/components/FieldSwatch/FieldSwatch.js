@@ -122,6 +122,7 @@ export const swatchColors = {
   gris: 'gray',
   blanco: 'white',
   crema: 'wheat',
+  beige: 'beige',
   cafe: 'brown',
 };
 

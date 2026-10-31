@@ -36,6 +36,7 @@ const avListingFields = [
       { option: 'gris', label: 'Gris' },
       { option: 'blanco', label: 'Blanco' },
       { option: 'crema', label: 'Crema' },
+      { option: 'beige', label: 'Beige' },
       { option: 'cafe', label: 'Café' },
       { option: 'animal-print', label: 'Animal Print' },
       { option: 'floral-print', label: 'Floral' },
