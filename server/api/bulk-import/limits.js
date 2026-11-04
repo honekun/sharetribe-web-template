@@ -7,7 +7,7 @@
 // per-user caps applied after authentication.
 const LIMITS = {
   standard: {
-    maxRows: 25,
+    maxRows: 100,
     maxImages: 100,
     maxZipBytes: 20 * 1024 * 1024, // 20 MB compressed
     maxImportsPerHour: 3,

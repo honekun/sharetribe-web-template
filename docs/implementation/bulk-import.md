@@ -557,7 +557,7 @@ Limits are **tiered**. Standard = any signed-in user (imports for themselves); a
 
 | Limit                | Standard | Admin |
 | -------------------- | -------- | ----- |
-| Max rows per CSV     | 25       | 100   |
+| Max rows per CSV     | 100      | 100   |
 | Max bare CSV size    | 5 MB     | 5 MB  |
 | Max images in ZIP    | 100      | 400   |
 | Max ZIP upload size  | 20 MB    | 50 MB |
@@ -780,7 +780,7 @@ their stock before approval (the API reference documents both `create` states an
 
 ```sh
 # Server tests (zipExtractor, csvParser, jobStore, importWorker, router)
-yarn test-server --testPathPattern=bulk-import
+yarn test-server --testPathPatterns=bulk-import
 
 # Client test (BulkImportPage rendering)
 yarn test -- --watchAll=false --testPathPattern=BulkImportPage

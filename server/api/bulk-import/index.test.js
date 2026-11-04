@@ -355,20 +355,19 @@ describe('bulk import router', () => {
       expect(processImportJob).not.toHaveBeenCalled();
     });
 
-    it('still enforces the per-tier row cap on a CSV upload', async () => {
+    it('allows a standard-tier bare CSV upload with 100 rows', async () => {
       const header = 'title,description,price';
-      const rows = Array.from({ length: 26 }, (_, i) => `"Item ${i}","Descripción","100.00"`);
+      const rows = Array.from({ length: 100 }, (_, i) => `"Item ${i}","Descripción","100.00"`);
       const req = {
         file: csvFile(Buffer.from([header, ...rows].join('\n'))),
-        // Standard tier: 25 rows.
         bulkImportUser: { userId: 'seller-user-id', isAdmin: false },
       };
       const res = createMockRes();
 
       await startHandler(req, res);
 
-      expect(res.statusCode).toBe(400);
-      expect(res.body.error).toMatch(/Tu límite es 25/);
+      expect(res.statusCode).toBe(202);
+      expect(res.body.total).toBe(100);
     });
   });
 
@@ -638,7 +637,7 @@ describe('bulk import router', () => {
         'title,description,price,currency,image_front,image_back,image_horizontal,image_details';
       const row =
         '"Dress","desc","100","MXN","front.jpg","back.jpg","horizontal.jpg","details.jpg"';
-      const manyRows = Buffer.from([header, ...Array.from({ length: 26 }, () => row)].join('\n'));
+      const manyRows = Buffer.from([header, ...Array.from({ length: 101 }, () => row)].join('\n'));
       extractZip.mockReturnValue({ csvBuffer: manyRows, imageMap: defaultImageMap });
 
       const req = {
@@ -650,7 +649,7 @@ describe('bulk import router', () => {
       await startHandler(req, res);
 
       expect(res.statusCode).toBe(400);
-      expect(res.body.error).toMatch(/Tu límite es 25/);
+      expect(res.body.error).toMatch(/Tu límite es 100/);
     });
   });
 
