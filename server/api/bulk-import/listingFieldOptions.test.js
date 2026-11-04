@@ -136,6 +136,36 @@ describe('resolveOption', () => {
     expect(resolveOption(fieldOptions.get('all_sizes'), 'Ropa MX / 30')).toEqual({
       value: 'mx_30',
     });
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'Ropa MX / 35')).toEqual({
+      value: 'mx_35',
+    });
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'Ropa MX / 44')).toEqual({
+      value: 'mx_44',
+    });
+  });
+
+  it('resolves legacy Ropa US labels to clothing keys', () => {
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'Ropa US / 0')).toEqual({
+      value: 'us_0',
+    });
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'Ropa US / 4')).toEqual({
+      value: 'us_4',
+    });
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'Ropa US / 12')).toEqual({
+      value: 'us_12',
+    });
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'Ropa US / 20')).toEqual({
+      value: 'us_20',
+    });
+  });
+
+  it('resolves grouped ring labels to their ring keys', () => {
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'Anillos / 4 / 14.8mm')).toEqual({
+      value: 'rings_4',
+    });
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'Anillos / 10 / 19.8mm')).toEqual({
+      value: 'rings_10',
+    });
   });
 
   it('reports an unknown value', () => {

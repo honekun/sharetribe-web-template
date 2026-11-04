@@ -341,6 +341,16 @@ automatically. The list below documents the canonical options defined in code.
 | MX 32        | `mx_32`    |
 | MX 33        | `mx_33`    |
 | MX 34        | `mx_34`    |
+| MX 35        | `mx_35`    |
+| MX 36        | `mx_36`    |
+| MX 37        | `mx_37`    |
+| MX 38        | `mx_38`    |
+| MX 39        | `mx_39`    |
+| MX 40        | `mx_40`    |
+| MX 41        | `mx_41`    |
+| MX 42        | `mx_42`    |
+| MX 43        | `mx_43`    |
+| MX 44        | `mx_44`    |
 
 **US group**
 
@@ -354,6 +364,10 @@ automatically. The list below documents the canonical options defined in code.
 | US 8         | `us_8`     |
 | US 10        | `us_10`    |
 | US 12        | `us_12`    |
+| US 14        | `us_14`    |
+| US 16        | `us_16`    |
+| US 18        | `us_18`    |
+| US 20        | `us_20`    |
 
 **Curvy group**
 
@@ -399,6 +413,9 @@ automatically. The list below documents the canonical options defined in code.
 | 10 / 19.8mm  | `rings_10` |
 | 11 / 20.6mm  | `rings_11` |
 | 12 / 21.4mm  | `rings_12` |
+
+The bulk importer also accepts the grouped Google Sheets values, such as `Anillos / 4 / 14.8mm`,
+and stores the corresponding option key (`rings_4`).
 
 ---
 
@@ -1588,6 +1605,16 @@ value such as `Otoño` is stored as typed and matches no option:
 | MX 32        | `mx_32`          | MX       |
 | MX 33        | `mx_33`          | MX       |
 | MX 34        | `mx_34`          | MX       |
+| MX 35        | `mx_35`          | MX       |
+| MX 36        | `mx_36`          | MX       |
+| MX 37        | `mx_37`          | MX       |
+| MX 38        | `mx_38`          | MX       |
+| MX 39        | `mx_39`          | MX       |
+| MX 40        | `mx_40`          | MX       |
+| MX 41        | `mx_41`          | MX       |
+| MX 42        | `mx_42`          | MX       |
+| MX 43        | `mx_43`          | MX       |
+| MX 44        | `mx_44`          | MX       |
 | US 00        | `us_00`          | US       |
 | US 0         | `us_0`           | US       |
 | US 2         | `us_2`           | US       |
@@ -1596,6 +1623,10 @@ value such as `Otoño` is stored as typed and matches no option:
 | US 8         | `us_8`           | US       |
 | US 10        | `us_10`          | US       |
 | US 12        | `us_12`          | US       |
+| US 14        | `us_14`          | US       |
+| US 16        | `us_16`          | US       |
+| US 18        | `us_18`          | US       |
+| US 20        | `us_20`          | US       |
 | 0XL          | `curvy_0x`       | Curvy    |
 | 1XL          | `curvy_1x`       | Curvy    |
 | 2XL          | `curvy_2x`       | Curvy    |

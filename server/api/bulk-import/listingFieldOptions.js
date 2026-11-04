@@ -70,8 +70,9 @@ const lookup = (index, raw) => {
  * case and accents. A value written as "Grupo / Opción" (the Google Sheets
  * template's size dropdown writes "Ropa / M") is retried with its last segment
  * when the whole value matches nothing. The legacy clothing-size group
- * "Ropa MX / 28" is resolved through its mx_28 key so it cannot be confused
- * with the shoe option that has the same "MX 28" label.
+ * "Ropa MX / 28" and "Ropa US / 4" are resolved through their clothing-size
+ * keys so they cannot be confused with a shoe option or rejected as a bare
+ * numeric label.
  *
  * @returns {{ value: string } | { ambiguous: string[] } | { unknown: true }}
  */
@@ -83,6 +84,21 @@ const resolveOption = (index, raw) => {
   if (clothingMx) {
     const keyedClothingSize = lookup(index, `mx_${clothingMx[1]}`);
     if (keyedClothingSize) return keyedClothingSize;
+  }
+
+  const clothingUs = normalize(raw).match(/^ropa us\s*\/\s*(00|0|2|4|6|8|10|12|14|16|18|20)$/);
+  if (clothingUs) {
+    const keyedClothingSize = lookup(index, `us_${clothingUs[1]}`);
+    if (keyedClothingSize) return keyedClothingSize;
+  }
+
+  // The Google Sheets dropdown exports ring sizes as e.g.
+  // "Anillos / 4 / 14.8mm". Resolve the remaining canonical label so the
+  // measurement must still match the configured ring option.
+  const ringGroup = normalize(raw).match(/^anillos\s*\/\s*(.+)$/);
+  if (ringGroup) {
+    const keyedRingSize = lookup(index, ringGroup[1]);
+    if (keyedRingSize) return keyedRingSize;
   }
 
   const segments = String(raw).split('/');

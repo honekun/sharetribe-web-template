@@ -303,9 +303,13 @@ matched them.
 - **Enum and multi-enum fields.** Each value must be an option key or its label. Matching ignores
   case, accents and repeated spaces. A value written as `Grupo / Opción` (the Google Sheets size
   dropdown writes `Ropa / M`) is retried with its last segment when the whole value matches
-  nothing. Legacy clothing labels such as `Ropa MX / 28` and `Ropa MX / 30` resolve directly to
-  `mx_28` and `mx_30`; the `Ropa MX` group disambiguates them from shoe sizes. Multi-enum values are
+  nothing. Legacy clothing labels such as `Ropa MX / 28`, `Ropa MX / 35`, and `Ropa MX / 44` resolve
+  directly to `mx_28`, `mx_35`, and `mx_44`; the `Ropa MX` group disambiguates them from shoe sizes.
+  Legacy `Ropa US / 14`–`Ropa US / 20` labels resolve to their respective `us_*` keys. Multi-enum
+  values are
   pipe-separated and de-duplicated. A single-value (`enum`) field with several values is an error.
+  Ring labels from the Google Sheets dropdown, such as `Anillos / 4 / 14.8mm` and
+  `Anillos / 10 / 19.8mm`, resolve to `rings_4` and `rings_10`.
   A label shared by two options is an error that asks for the key. Current cases: `Rat & Boa` is
   both the code option `rat-boa` and the Console option `rat_boa`, and the bare labels `MX 24`–`MX
   29` are both clothing (`mx_24`) and shoe (`mx_shoes_24x`) sizes.

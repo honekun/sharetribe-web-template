@@ -50,4 +50,31 @@ describe('resolveOptionGroups', () => {
       });
     });
   });
+
+  it('keeps every MX clothing size in the MX group', () => {
+    const { groups } = listingFieldDisplayOverrides.all_sizes.saveConfig;
+    const mxGroup = groups.find(group => group.key === 'mx');
+
+    expect(mxGroup.options).toEqual(Array.from({ length: 21 }, (_, index) => `mx_${index + 24}`));
+  });
+
+  it('keeps every US clothing size in the US group', () => {
+    const { groups } = listingFieldDisplayOverrides.all_sizes.saveConfig;
+    const usGroup = groups.find(group => group.key === 'us');
+
+    expect(usGroup.options).toEqual([
+      'us_00',
+      'us_0',
+      'us_2',
+      'us_4',
+      'us_6',
+      'us_8',
+      'us_10',
+      'us_12',
+      'us_14',
+      'us_16',
+      'us_18',
+      'us_20',
+    ]);
+  });
 });

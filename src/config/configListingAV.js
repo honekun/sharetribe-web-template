@@ -66,15 +66,16 @@ const avListingFields = [
     scope: 'public',
     schemaType: 'multi-enum',
     enumOptions: [
-      // Standard
+      // Home
       { option: 'unitalla', label: 'Unitalla' },
+      // Ropa
       { option: 'xxs', label: 'XXS' },
       { option: 'xs', label: 'XS' },
       { option: 's', label: 'S' },
       { option: 'm', label: 'M' },
       { option: 'l', label: 'L' },
       { option: 'xl', label: 'XL' },
-      // MX numeric
+      // Ropa MX
       { option: 'mx_24', label: 'MX 24' },
       { option: 'mx_25', label: 'MX 25' },
       { option: 'mx_26', label: 'MX 26' },
@@ -86,7 +87,17 @@ const avListingFields = [
       { option: 'mx_32', label: 'MX 32' },
       { option: 'mx_33', label: 'MX 33' },
       { option: 'mx_34', label: 'MX 34' },
-      // US numeric
+      { option: 'mx_35', label: 'MX 35' },
+      { option: 'mx_36', label: 'MX 36' },
+      { option: 'mx_37', label: 'MX 37' },
+      { option: 'mx_38', label: 'MX 38' },
+      { option: 'mx_39', label: 'MX 39' },
+      { option: 'mx_40', label: 'MX 40' },
+      { option: 'mx_41', label: 'MX 41' },
+      { option: 'mx_42', label: 'MX 42' },
+      { option: 'mx_43', label: 'MX 43' },
+      { option: 'mx_44', label: 'MX 44' },
+      // Ropa US
       { option: 'us_00', label: 'US 00' },
       { option: 'us_0', label: 'US 0' },
       { option: 'us_2', label: 'US 2' },
@@ -95,14 +106,18 @@ const avListingFields = [
       { option: 'us_8', label: 'US 8' },
       { option: 'us_10', label: 'US 10' },
       { option: 'us_12', label: 'US 12' },
-      // Curvy
+      { option: 'us_14', label: 'US 14' },
+      { option: 'us_16', label: 'US 16' },
+      { option: 'us_18', label: 'US 18' },
+      { option: 'us_20', label: 'US 20' },
+      // Ropa Curvy Plus
       { option: 'curvy_0x', label: '0XL' },
       { option: 'curvy_1x', label: '1XL' },
       { option: 'curvy_2x', label: '2XL' },
       { option: 'curvy_3x', label: '3XL' },
       { option: 'curvy_4x', label: '4XL' },
       { option: 'curvy_5x', label: '5XL' },
-      // MX Shoes
+      // Zapatos
       { option: 'mx_shoes_22x', label: 'MX 22' },
       { option: 'mx_shoes_22.5x', label: 'MX 22.5' },
       { option: 'mx_shoes_23x', label: 'MX 23' },
