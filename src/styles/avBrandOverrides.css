@@ -216,6 +216,14 @@ h1[class*='Heading_h1__'] {
   overflow-wrap: normal;
   hyphens: none;
 }
+
+/* The signed-out mobile-menu greeting composes the global `.h1` class. Its
+   AV font size is 42px, so retain a 48px line-height rather than the
+   upstream mobile `.h1` line-height of 24px, which overlaps wrapped copy. */
+:root [class*='TopbarMobileMenu_authenticationGreeting__'] {
+  line-height: 48px;
+}
+
 h2,
 .h2,
 h2[class*='Heading_h2__'] {
