@@ -189,6 +189,18 @@ describe('resolveOption', () => {
     });
   });
 
+  it('resolves grouped Jeans labels to their jeans keys', () => {
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'Jeans / 22')).toEqual({
+      value: 'jeans_22',
+    });
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'Jeans / 32')).toEqual({
+      value: 'jeans_32',
+    });
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'Jeans / 40')).toEqual({
+      value: 'jeans_40',
+    });
+  });
+
   it('reports an unknown value', () => {
     expect(resolveOption(fieldOptions.get('brand'), 'Marca Inventada')).toEqual({ unknown: true });
     // A brand added in Console resolves by its label.

@@ -1274,7 +1274,7 @@ describe('validateRows — option values and categories', () => {
     const result = validate([
       row({
         pub_color: 'Negro|negro|Café',
-        pub_all_sizes: 'Ropa / M|Ropa US / 4|Anillos / 4 / 14.8mm|Zapatos / 5 US / 2 MX',
+        pub_all_sizes: 'Ropa / M|Ropa US / 4|Jeans / 32|Anillos / 4 / 14.8mm|Zapatos / 5 US / 2 MX',
         pub_genero: 'UNISEX',
         pub_estilo: 'Vintage | casual',
         pub_temporada: 'Todo el año',
@@ -1285,7 +1285,7 @@ describe('validateRows — option values and categories', () => {
     expect(result.rows[0].publicData).toEqual({
       categoryLevel1: 'bolsas',
       color: ['negro', 'cafe'],
-      all_sizes: ['m', 'us_4', 'rings_4', 'mx_shoes_22x'],
+      all_sizes: ['m', 'us_4', 'jeans_32', 'rings_4', 'mx_shoes_22x'],
       genero: 'unisex',
       estilo: ['vintage', 'casual'],
       temporada: 'todo-el-ano',

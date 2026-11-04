@@ -311,7 +311,7 @@ the fields there so they appear in the listing form.
 | Schema type | `multi-enum` (sellers can pick multiple sizes) |
 | Scope       | `public`                                       |
 
-The grouping (Estándar, MX, US, Curvy, Calzado/Shoes, Anillos/Rings) is handled by the app
+The grouping (Estándar, MX, US, Jeans, Curvy, Calzado/Shoes, Anillos/Rings) is handled by the app
 automatically. The list below documents the canonical options defined in code.
 
 **Estándar group**
@@ -368,6 +368,31 @@ automatically. The list below documents the canonical options defined in code.
 | US 16        | `us_16`    |
 | US 18        | `us_18`    |
 | US 20        | `us_20`    |
+
+**Jeans group**
+
+| Display Name | Option Key |
+| ------------ | ---------- |
+| Jeans / 22   | `jeans_22` |
+| Jeans / 23   | `jeans_23` |
+| Jeans / 24   | `jeans_24` |
+| Jeans / 25   | `jeans_25` |
+| Jeans / 26   | `jeans_26` |
+| Jeans / 27   | `jeans_27` |
+| Jeans / 28   | `jeans_28` |
+| Jeans / 29   | `jeans_29` |
+| Jeans / 30   | `jeans_30` |
+| Jeans / 31   | `jeans_31` |
+| Jeans / 32   | `jeans_32` |
+| Jeans / 33   | `jeans_33` |
+| Jeans / 34   | `jeans_34` |
+| Jeans / 35   | `jeans_35` |
+| Jeans / 36   | `jeans_36` |
+| Jeans / 38   | `jeans_38` |
+| Jeans / 40   | `jeans_40` |
+
+The bulk importer also accepts the grouped Google Sheets values, such as `Jeans / 32`, and stores
+the corresponding option key (`jeans_32`).
 
 **Curvy group**
 
@@ -1633,6 +1658,23 @@ value such as `Otoño` is stored as typed and matches no option:
 | US 16        | `us_16`          | US       |
 | US 18        | `us_18`          | US       |
 | US 20        | `us_20`          | US       |
+| Jeans / 22   | `jeans_22`       | Jeans    |
+| Jeans / 23   | `jeans_23`       | Jeans    |
+| Jeans / 24   | `jeans_24`       | Jeans    |
+| Jeans / 25   | `jeans_25`       | Jeans    |
+| Jeans / 26   | `jeans_26`       | Jeans    |
+| Jeans / 27   | `jeans_27`       | Jeans    |
+| Jeans / 28   | `jeans_28`       | Jeans    |
+| Jeans / 29   | `jeans_29`       | Jeans    |
+| Jeans / 30   | `jeans_30`       | Jeans    |
+| Jeans / 31   | `jeans_31`       | Jeans    |
+| Jeans / 32   | `jeans_32`       | Jeans    |
+| Jeans / 33   | `jeans_33`       | Jeans    |
+| Jeans / 34   | `jeans_34`       | Jeans    |
+| Jeans / 35   | `jeans_35`       | Jeans    |
+| Jeans / 36   | `jeans_36`       | Jeans    |
+| Jeans / 38   | `jeans_38`       | Jeans    |
+| Jeans / 40   | `jeans_40`       | Jeans    |
 | XL           | `curvy_0x`       | Curvy    |
 | 1XL          | `curvy_1x`       | Curvy    |
 | 2XL          | `curvy_2x`       | Curvy    |

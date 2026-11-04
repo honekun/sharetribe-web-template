@@ -273,7 +273,7 @@ see [Allowed publicData keys](#allowed-publicdata-keys) below:
 | `pub_categoryLevel2` | `categoryLevel2` | Yes\*    | `ropa-vestidos`         | Subcategory of level 1. \*Required while the chosen category has subcategories (enforced)                                                      |
 | `pub_categoryLevel3` | `categoryLevel3` | Yes\*    | `ropa-vestidos-midi`    | Subcategory of level 2. \*Required while the chosen category has subcategories (enforced)                                                      |
 | `pub_color`          | `color`          | Yes      | `azul` or `azul\|negro` | **Multi-enum.** One or more option keys, pipe-separated. Always stored as an array.                                                            |
-| `pub_all_sizes`      | `all_sizes`      | Yes      | `s\|m\|l`               | **Multi-enum.** Valid keys: `xs`, `s`, `m`, `l`, `xl`, `mx_32`, `mx_shoes_24x`, `curvy_2x`, etc.                                               |
+| `pub_all_sizes`      | `all_sizes`      | Yes      | `s\|m\|l`               | **Multi-enum.** Valid keys: `xs`, `s`, `m`, `l`, `xl`, `mx_32`, `jeans_32`, `mx_shoes_24x`, `curvy_2x`, etc.                                    |
 | `pub_brand`          | `brand`          | Yes      | `levi-s`                | Option **slug** — not the display name (use `levi-s`, not `Levi's`)                                                                            |
 | `pub_genero`         | `genero`         | Yes      | `mujer`                 | Options: `hombre`, `mujer`, `unisex`                                                                                                           |
 | `pub_estado`         | `estado`         | Yes      | `como-nuevo`            | Options: `nuevo-sin-etiqueta`, `nuevo-con-etiqueta`, `como-nuevo`, `buen-estado`, `usado`                                                      |
@@ -312,6 +312,7 @@ matched them.
   `Anillos / 10 / 19.8mm`, resolve to `rings_4` and `rings_10`.
   Shoe labels such as `Zapatos / 5 US / 2 MX` and `Zapatos / 9.5 US / 6.5 MX` resolve to
   `mx_shoes_22x` and `mx_shoes_26.5x`.
+  Jeans labels such as `Jeans / 22` and `Jeans / 32` resolve to `jeans_22` and `jeans_32`.
   A label shared by two options is an error that asks for the key. Current case: `Rat & Boa` is
   both the code option `rat-boa` and the Console option `rat_boa`.
 - **Where the options come from.** This mirrors the client's merge in `configHelpers.js`.

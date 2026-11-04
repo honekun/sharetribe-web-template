@@ -66,6 +66,7 @@
   "ListingField.allSizes.group.mx": "Clothing (MX)",
   "ListingField.allSizes.group.us": "Clothing (US)",
   "ListingField.allSizes.group.curvy": "Curvy Sizes",
+  "ListingField.allSizes.group.jeans": "Jeans",
   "ListingField.allSizes.group.shoes": "Shoes (US / MX)",
   "ListingField.allSizes.group.rings": "Rings",
   "FieldGroupedMultiSelect.clearAll": "Clear all",

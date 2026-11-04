@@ -905,6 +905,7 @@
   "ListingCard.unsupportedPrice": "({currency})",
   "ListingCard.unsupportedPriceTitle": "Moneda no admitida ({currency})",
   "ListingField.allSizes.group.curvy": "Tallas Curvy",
+  "ListingField.allSizes.group.jeans": "Jeans",
   "ListingField.allSizes.group.mx": "Ropa (MX)",
   "ListingField.allSizes.group.rings": "Anillos",
   "ListingField.allSizes.group.shoes": "Calzado (US / MX)",

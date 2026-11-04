@@ -78,6 +78,31 @@ describe('resolveOptionGroups', () => {
     ]);
   });
 
+  it('keeps every configured jeans size in the Jeans group', () => {
+    const { groups } = listingFieldDisplayOverrides.all_sizes.saveConfig;
+    const jeansGroup = groups.find(group => group.key === 'jeans');
+
+    expect(jeansGroup.options).toEqual([
+      'jeans_22',
+      'jeans_23',
+      'jeans_24',
+      'jeans_25',
+      'jeans_26',
+      'jeans_27',
+      'jeans_28',
+      'jeans_29',
+      'jeans_30',
+      'jeans_31',
+      'jeans_32',
+      'jeans_33',
+      'jeans_34',
+      'jeans_35',
+      'jeans_36',
+      'jeans_38',
+      'jeans_40',
+    ]);
+  });
+
   it('uses the revised curvy and shoe labels from the field options', () => {
     const { groups } = listingFieldDisplayOverrides.all_sizes.saveConfig;
     const allSizes = avListingFields.find(field => field.key === 'all_sizes');
