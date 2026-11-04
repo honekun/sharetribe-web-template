@@ -125,6 +125,18 @@ describe('resolveOption', () => {
     });
   });
 
+  it('resolves the revised shoe label and preserves the Curvy XL key', () => {
+    // "XL" is also the standard clothing size, so a bare CSV label resolves
+    // to the standard `xl` key. Curvy XL imports must use their canonical key.
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'XL')).toEqual({ value: 'xl' });
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'curvy_0x')).toEqual({
+      value: 'curvy_0x',
+    });
+    expect(resolveOption(fieldOptions.get('all_sizes'), '7 US / 4 MX')).toEqual({
+      value: 'mx_shoes_24x',
+    });
+  });
+
   it('retries a "Grupo / Opción" value with its last segment', () => {
     expect(resolveOption(fieldOptions.get('all_sizes'), 'Ropa / M')).toEqual({ value: 'm' });
   });
@@ -165,6 +177,15 @@ describe('resolveOption', () => {
     });
     expect(resolveOption(fieldOptions.get('all_sizes'), 'Anillos / 10 / 19.8mm')).toEqual({
       value: 'rings_10',
+    });
+  });
+
+  it('resolves grouped shoe labels to their shoe keys', () => {
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'Zapatos / 5 US / 2 MX')).toEqual({
+      value: 'mx_shoes_22x',
+    });
+    expect(resolveOption(fieldOptions.get('all_sizes'), 'Zapatos / 9.5 US / 6.5 MX')).toEqual({
+      value: 'mx_shoes_26.5x',
     });
   });
 

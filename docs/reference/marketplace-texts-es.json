@@ -907,7 +907,7 @@
   "ListingField.allSizes.group.curvy": "Tallas Curvy",
   "ListingField.allSizes.group.mx": "Ropa (MX)",
   "ListingField.allSizes.group.rings": "Anillos",
-  "ListingField.allSizes.group.shoes": "Calzado (MX)",
+  "ListingField.allSizes.group.shoes": "Calzado (US / MX)",
   "ListingField.allSizes.group.standard": "Ropa (Estándar)",
   "ListingField.allSizes.group.us": "Ropa (US)",
   "ListingImage.screenreader.currentPosition": "{index} de {count}",

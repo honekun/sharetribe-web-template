@@ -310,9 +310,10 @@ matched them.
   pipe-separated and de-duplicated. A single-value (`enum`) field with several values is an error.
   Ring labels from the Google Sheets dropdown, such as `Anillos / 4 / 14.8mm` and
   `Anillos / 10 / 19.8mm`, resolve to `rings_4` and `rings_10`.
-  A label shared by two options is an error that asks for the key. Current cases: `Rat & Boa` is
-  both the code option `rat-boa` and the Console option `rat_boa`, and the bare labels `MX 24`–`MX
-  29` are both clothing (`mx_24`) and shoe (`mx_shoes_24x`) sizes.
+  Shoe labels such as `Zapatos / 5 US / 2 MX` and `Zapatos / 9.5 US / 6.5 MX` resolve to
+  `mx_shoes_22x` and `mx_shoes_26.5x`.
+  A label shared by two options is an error that asks for the key. Current case: `Rat & Boa` is
+  both the code option `rat-boa` and the Console option `rat_boa`.
 - **Where the options come from.** This mirrors the client's merge in `configHelpers.js`.
   - The code-defined fields in `src/config/configListingAV.js` (`color`, `all_sizes`, `brand`)
     replace a Console field with the same key. That file is CommonJS so the server can `require`

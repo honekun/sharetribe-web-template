@@ -101,6 +101,15 @@ const resolveOption = (index, raw) => {
     if (keyedRingSize) return keyedRingSize;
   }
 
+  // The Google Sheets dropdown exports shoe sizes as e.g.
+  // "Zapatos / 5 US / 2 MX". Resolve the remaining canonical label so both
+  // US and MX parts must match a configured shoe option.
+  const shoeGroup = normalize(raw).match(/^zapatos\s*\/\s*(.+)$/);
+  if (shoeGroup) {
+    const keyedShoeSize = lookup(index, shoeGroup[1]);
+    if (keyedShoeSize) return keyedShoeSize;
+  }
+
   const segments = String(raw).split('/');
   if (segments.length > 1) {
     const last = lookup(index, segments[segments.length - 1]);

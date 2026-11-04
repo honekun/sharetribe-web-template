@@ -66,7 +66,7 @@
   "ListingField.allSizes.group.mx": "Ropa (MX)",
   "ListingField.allSizes.group.us": "Ropa (US)",
   "ListingField.allSizes.group.curvy": "Tallas Curvy",
-  "ListingField.allSizes.group.shoes": "Calzado (MX)",
+  "ListingField.allSizes.group.shoes": "Calzado (US / MX)",
   "ListingField.allSizes.group.rings": "Anillos",
   "FieldGroupedMultiSelect.clearAll": "Borrar todo",
   "FieldGroupedMultiSelect.placeholder": "Selecciona tallas…",

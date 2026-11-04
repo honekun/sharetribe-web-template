@@ -77,4 +77,16 @@ describe('resolveOptionGroups', () => {
       'us_20',
     ]);
   });
+
+  it('uses the revised curvy and shoe labels from the field options', () => {
+    const { groups } = listingFieldDisplayOverrides.all_sizes.saveConfig;
+    const allSizes = avListingFields.find(field => field.key === 'all_sizes');
+    const resolved = resolveOptionGroups(groups, allSizes.enumOptions, intl);
+
+    const curvy = resolved.find(group => group.key === 'curvy');
+    const shoes = resolved.find(group => group.key === 'shoes');
+    expect(curvy.options[0]).toEqual({ option: 'curvy_0x', label: 'XL' });
+    expect(shoes.options[0]).toEqual({ option: 'mx_shoes_22x', label: '5 US / 2 MX' });
+    expect(shoes.options[4]).toEqual({ option: 'mx_shoes_24x', label: '7 US / 4 MX' });
+  });
 });

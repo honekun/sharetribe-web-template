@@ -373,32 +373,38 @@ automatically. The list below documents the canonical options defined in code.
 
 | Display Name | Option Key |
 | ------------ | ---------- |
-| 0XL          | `curvy_0x` |
+| XL           | `curvy_0x` |
 | 1XL          | `curvy_1x` |
 | 2XL          | `curvy_2x` |
 | 3XL          | `curvy_3x` |
 | 4XL          | `curvy_4x` |
 | 5XL          | `curvy_5x` |
 
-**Calzado / Shoes group (MX, half sizes)**
+For bulk imports, use `curvy_0x` for the Curvy **XL** option. A bare `XL` is the standard clothing
+size and therefore imports as `xl`.
+
+**Calzado / Shoes group (US / MX, half sizes)**
+
+The bulk importer also accepts grouped Google Sheets values such as `Zapatos / 5 US / 2 MX` and
+stores the corresponding option key (`mx_shoes_22x`).
 
 | Display Name | Option Key       |
 | ------------ | ---------------- |
-| MX 22        | `mx_shoes_22x`   |
-| MX 22.5      | `mx_shoes_22.5x` |
-| MX 23        | `mx_shoes_23x`   |
-| MX 23.5      | `mx_shoes_23.5x` |
-| MX 24        | `mx_shoes_24x`   |
-| MX 24.5      | `mx_shoes_24.5x` |
-| MX 25        | `mx_shoes_25x`   |
-| MX 25.5      | `mx_shoes_25.5x` |
-| MX 26        | `mx_shoes_26x`   |
-| MX 26.5      | `mx_shoes_26.5x` |
-| MX 27        | `mx_shoes_27x`   |
-| MX 27.5      | `mx_shoes_27.5x` |
-| MX 28        | `mx_shoes_28x`   |
-| MX 28.5      | `mx_shoes_28.5x` |
-| MX 29        | `mx_shoes_29x`   |
+| 5 US / 2 MX     | `mx_shoes_22x`   |
+| 5.5 US / 2.5 MX | `mx_shoes_22.5x` |
+| 6 US / 3 MX     | `mx_shoes_23x`   |
+| 6.5 US / 3.5 MX | `mx_shoes_23.5x` |
+| 7 US / 4 MX     | `mx_shoes_24x`   |
+| 7.5 US / 4.5 MX | `mx_shoes_24.5x` |
+| 8 US / 5 MX     | `mx_shoes_25x`   |
+| 8.5 US / 5.5 MX | `mx_shoes_25.5x` |
+| 9 US / 6 MX     | `mx_shoes_26x`   |
+| 9.5 US / 6.5 MX | `mx_shoes_26.5x` |
+| 10 US / 7 MX    | `mx_shoes_27x`   |
+| 10.5 US / 7.5 MX | `mx_shoes_27.5x` |
+| 11 US / 8 MX    | `mx_shoes_28x`   |
+| 11.5 US / 8.5 MX | `mx_shoes_28.5x` |
+| 12 US / 9 MX    | `mx_shoes_29x`   |
 
 **Anillos / Rings group**
 
@@ -1627,27 +1633,27 @@ value such as `Otoño` is stored as typed and matches no option:
 | US 16        | `us_16`          | US       |
 | US 18        | `us_18`          | US       |
 | US 20        | `us_20`          | US       |
-| 0XL          | `curvy_0x`       | Curvy    |
+| XL           | `curvy_0x`       | Curvy    |
 | 1XL          | `curvy_1x`       | Curvy    |
 | 2XL          | `curvy_2x`       | Curvy    |
 | 3XL          | `curvy_3x`       | Curvy    |
 | 4XL          | `curvy_4x`       | Curvy    |
 | 5XL          | `curvy_5x`       | Curvy    |
-| MX 22        | `mx_shoes_22x`   | Calzado  |
-| MX 22.5      | `mx_shoes_22.5x` | Calzado  |
-| MX 23        | `mx_shoes_23x`   | Calzado  |
-| MX 23.5      | `mx_shoes_23.5x` | Calzado  |
-| MX 24        | `mx_shoes_24x`   | Calzado  |
-| MX 24.5      | `mx_shoes_24.5x` | Calzado  |
-| MX 25        | `mx_shoes_25x`   | Calzado  |
-| MX 25.5      | `mx_shoes_25.5x` | Calzado  |
-| MX 26        | `mx_shoes_26x`   | Calzado  |
-| MX 26.5      | `mx_shoes_26.5x` | Calzado  |
-| MX 27        | `mx_shoes_27x`   | Calzado  |
-| MX 27.5      | `mx_shoes_27.5x` | Calzado  |
-| MX 28        | `mx_shoes_28x`   | Calzado  |
-| MX 28.5      | `mx_shoes_28.5x` | Calzado  |
-| MX 29        | `mx_shoes_29x`   | Calzado  |
+| 5 US / 2 MX     | `mx_shoes_22x`   | Calzado  |
+| 5.5 US / 2.5 MX | `mx_shoes_22.5x` | Calzado  |
+| 6 US / 3 MX     | `mx_shoes_23x`   | Calzado  |
+| 6.5 US / 3.5 MX | `mx_shoes_23.5x` | Calzado  |
+| 7 US / 4 MX     | `mx_shoes_24x`   | Calzado  |
+| 7.5 US / 4.5 MX | `mx_shoes_24.5x` | Calzado  |
+| 8 US / 5 MX     | `mx_shoes_25x`   | Calzado  |
+| 8.5 US / 5.5 MX | `mx_shoes_25.5x` | Calzado  |
+| 9 US / 6 MX     | `mx_shoes_26x`   | Calzado  |
+| 9.5 US / 6.5 MX | `mx_shoes_26.5x` | Calzado  |
+| 10 US / 7 MX    | `mx_shoes_27x`   | Calzado  |
+| 10.5 US / 7.5 MX | `mx_shoes_27.5x` | Calzado  |
+| 11 US / 8 MX    | `mx_shoes_28x`   | Calzado  |
+| 11.5 US / 8.5 MX | `mx_shoes_28.5x` | Calzado  |
+| 12 US / 9 MX    | `mx_shoes_29x`   | Calzado  |
 | 4 / 14.8mm   | `rings_4`        | Anillos  |
 | 5 / 15.7mm   | `rings_5`        | Anillos  |
 | 6 / 16.5mm   | `rings_6`        | Anillos  |
@@ -1752,9 +1758,8 @@ Fila 4: Falta la categoría ("pub_categoryLevel1"). Valores válidos: ropa, bols
 Fila 5: Falta "pub_categoryLevel2": "ropa" tiene subcategorías. Valores válidos: ropa-tops, ropa-camisetas, …
 ```
 
-A few form names belong to two options: `Rat & Boa` (two brand keys) and the sizes `MX 24`–`MX 29`
-(clothing and shoes). For those the error asks for the key, e.g. `mx_24` or `mx_shoes_24x`. See
-[8.5 Field Values Quick Reference](#85-field-values-quick-reference) for the keys.
+`Rat & Boa` belongs to two brand options. If the importer reports that ambiguity, use the option key
+(`rat-boa` or `rat_boa`) from [8.5 Field Values Quick Reference](#85-field-values-quick-reference).
 
 If the marketplace configuration can't be read at upload time, the upload is refused (_No se pudo
 leer la configuración de anuncios del marketplace…_). Try again in a few minutes.
@@ -2022,7 +2027,7 @@ missing or blank value to hide that optional element. Do not blank a standard ke
 | Size selector  | `ListingField.allSizes.group.mx`       | `Clothing (MX)`       | `Ropa (MX)`              | Group heading for Mexican numeric sizes.                     |
 | Size selector  | `ListingField.allSizes.group.us`       | `Clothing (US)`       | `Ropa (US)`              | Group heading for US numeric sizes.                          |
 | Size selector  | `ListingField.allSizes.group.curvy`    | `Curvy Sizes`         | `Tallas Curvy`           | Group heading for curvy sizes.                               |
-| Size selector  | `ListingField.allSizes.group.shoes`    | `Shoes (MX)`          | `Calzado (MX)`           | Group heading for Mexican shoe sizes (half sizes).           |
+| Size selector  | `ListingField.allSizes.group.shoes`    | `Shoes (US / MX)`     | `Calzado (US / MX)`      | Group heading for US / Mexican shoe sizes (half sizes).      |
 | Size selector  | `ListingField.allSizes.group.rings`    | `Rings`               | `Anillos`                | Group heading for ring sizes.                                |
 | Size selector  | `FieldGroupedMultiSelect.placeholder`  | `Select sizes…`       | `Selecciona tallas…`     | Empty field placeholder.                                     |
 | Size selector  | `FieldGroupedMultiSelect.clearAll`     | `Clear all`           | `Borrar todo`            | Clear all selected sizes button.                             |
