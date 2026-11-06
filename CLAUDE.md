@@ -159,7 +159,9 @@ it. Instead:
 
 - `AVListingCard/` — listing card; overlays `StoreTypeTags` for `vendedor-tienda` authors
 - `AVUserCard/` — profile card for `SectionSelectedUser`
-- `AVCategoryCard/` — category card for `SectionSelectedCat`; links to `/s?pub_categoryLevel1=<id>`
+- `AVCategoryCard/` — category card for `SectionSelectedCat`; resolves one category ID or
+  comma-separated IDs at the same depth into complete `/s?pub_categoryLevel*=` paths via
+  `extensions/searchFilters/avCategorySearch.js` (also shared by SearchPage URL/API validation).
 - `FieldSwatch/` — color swatch display (14 color mappings)
 - `FieldColorDropdown/` — dropdown color picker (reuses FieldSwatch colors); Final Form
 - `FieldGroupedMultiSelect/` — grouped multi-select, removable yellow chips (`all_sizes`)

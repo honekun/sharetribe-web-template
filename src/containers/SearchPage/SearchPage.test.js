@@ -3,6 +3,11 @@ import '@testing-library/jest-dom';
 
 import { createImageVariantConfig } from '../../util/sdkLoader';
 import { createCurrentUser, createListing } from '../../util/testData';
+import { stringify } from '../../util/urlHelpers';
+import {
+  categories as leatherCategories,
+  searchParams as leatherSearchParams,
+} from '../../extensions/searchFilters/avCategorySearch.testData.json';
 import {
   renderWithProviders as render,
   testingLibrary,
@@ -653,6 +658,33 @@ describe('Duck', () => {
   const fakeResponse = resource => ({ data: { data: resource, include: [] } });
   const sdkFn = response => jest.fn(() => Promise.resolve(response));
   const currentUser = createCurrentUser('userId');
+
+  it('loadData() keeps the leather category group when paginating and sorting', async () => {
+    const getState = () => ({ user: { currentUser } });
+    const sdk = { listings: { query: sdkFn(fakeResponse([l1, l2])) } };
+    const dispatch = createFakeDispatch(getState, sdk);
+    const groupedConfig = {
+      ...config,
+      currency: 'USD',
+      categoryConfiguration: { ...config.categoryConfiguration, categories: leatherCategories },
+    };
+
+    const result = await loadData(
+      {},
+      `?${stringify({ ...leatherSearchParams, page: 2, sort: '-price', price: '10,200' })}`,
+      groupedConfig
+    )(dispatch, getState, sdk);
+
+    expect(result.type).toBe('SearchPage/searchListings/fulfilled');
+    expect(sdk.listings.query).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ...leatherSearchParams,
+        page: 2,
+        sort: '-price',
+        price: '1000,20001',
+      })
+    );
+  });
 
   it('loadData() for full viewing rights user loads listings', () => {
     const getState = () => ({

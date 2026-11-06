@@ -14,6 +14,7 @@ import { constructQueryParamName, isOriginInUse } from '../../util/search';
 import { hasPermissionToViewData, isUserAuthorized } from '../../util/userHelpers';
 import { parse } from '../../util/urlHelpers';
 import { getReferralParams } from '../../util/webStorageHelpers';
+import { getValidCategorySearchParams } from '../../extensions/searchFilters/avCategorySearch';
 
 import { addMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 
@@ -61,23 +62,6 @@ const searchListingsPayloadCreator = ({ searchParams, config }, thunkAPI) => {
       : {};
   };
 
-  const constructCategoryPropertiesForAPI = (queryParamPrefix, categories, level, params) => {
-    const levelKey = `${queryParamPrefix}${level}`;
-    const levelValue =
-      typeof params?.[levelKey] !== 'undefined' ? `${params?.[levelKey]}` : undefined;
-    const foundCategory = categories.find(cat => cat.id === levelValue);
-    const subcategories = foundCategory?.subcategories || [];
-    // Note: we might need to prepare nested categories too: categoryLevel1, categoryLevel2, categoryLevel3
-    return foundCategory && subcategories.length > 0
-      ? {
-          [levelKey]: levelValue,
-          ...constructCategoryPropertiesForAPI(queryParamPrefix, subcategories, level + 1, params),
-        }
-      : foundCategory
-      ? { [levelKey]: levelValue }
-      : {};
-  };
-
   /**
    * Category filter params are prepared here. We omit invalid category names.
    * I.e. params that are not part of the currently configured category tree.
@@ -92,7 +76,7 @@ const searchListingsPayloadCreator = ({ searchParams, config }, thunkAPI) => {
     const { key, scope } = categoryConfig || {};
     const categoryParamPrefix = constructQueryParamName(key, scope);
     return paramName.startsWith(categoryParamPrefix)
-      ? constructCategoryPropertiesForAPI(categoryParamPrefix, categories, 1, params)
+      ? getValidCategorySearchParams(categoryParamPrefix, categories, 1, params)
       : {};
   };
 

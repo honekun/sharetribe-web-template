@@ -45,8 +45,8 @@ const getGapValue = slider => {
  * SectionSelectedCat
  *
  * Carousel section that displays listing categories as visual cards.
- * Each CMS block represents one category:
- *   - blockName: category ID (e.g. "blazers") — used for the search link
+ * Each CMS block represents one category or a group at the same depth:
+ *   - blockName: category ID or comma-separated IDs — used for the search link
  *   - title:     optional display name override (falls back to formatted blockName)
  *   - media:     image shown in the card
  *

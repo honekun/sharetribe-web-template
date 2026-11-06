@@ -2,6 +2,12 @@ import React from 'react';
 import '@testing-library/jest-dom';
 
 import { renderWithProviders as render, testingLibrary } from '../../../../util/testHelpers';
+import { parse } from '../../../../util/urlHelpers';
+import {
+  categories,
+  ids,
+  searchParams,
+} from '../../../../extensions/searchFilters/avCategorySearch.testData.json';
 import SectionSelectedCat from './SectionSelectedCat';
 
 const { screen } = testingLibrary;
@@ -51,6 +57,22 @@ const defaultClasses = {
 };
 
 describe('SectionSelectedCat', () => {
+  it('renders one card for a block containing multiple category IDs', () => {
+    render(
+      <SectionSelectedCat
+        sectionId="av-selected-cats-materials"
+        defaultClasses={defaultClasses}
+        numColumns={4}
+        blocks={[{ blockId: 'leather', blockName: ids.join(','), title: { content: 'Leather' } }]}
+      />,
+      { config: { categories: { categories } } }
+    );
+
+    const link = screen.getByRole('link', { name: 'Leather' });
+    expect(parse(link.getAttribute('href').split('?')[1])).toEqual(searchParams);
+    expect(screen.getAllByRole('link')).toHaveLength(1);
+  });
+
   it('renders a category card for each block', () => {
     render(
       <SectionSelectedCat

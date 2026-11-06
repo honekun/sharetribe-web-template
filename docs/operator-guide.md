@@ -575,23 +575,41 @@ Displays a horizontal scrollable carousel of specific listings you choose manual
 ### 4.2 Category Card Carousel (`avSelectedCats`)
 
 Displays a horizontal carousel of category cards. Each card shows a photo and category name, and
-clicking it opens the search page filtered to that category. No automatic data loading — all content
-comes from what you enter in the Console.
+clicking it opens the search page filtered to one category or a group of categories. No automatic
+data loading — all content comes from what you enter in the Console.
 
 **Setup:**
 
 1. Set **Section Type** to `avSelectedCats`.
 2. Set **Section ID** to `av-selected-cats` or `av-selected-cats-[name]`.
-3. Add one block per category:
-   - **Block Name** — the category ID (e.g. `ropa`, `ropa-vestidos`, `bolsas`, `zapatos`)
-   - **Title** — optional display name. If omitted, the app uses the category's name from your
-     category configuration.
+3. Add one block per card:
+   - **Block Name** — one category ID (e.g. `ropa`, `ropa-vestidos`, `bolsas`, `zapatos`), or
+     comma-separated category IDs to combine them in a single search.
+   - **Title** — the display name. Set a short title for a category group; if omitted, the app
+     formats the Block Name as its label.
    - **Media** — upload the photo shown on the card.
 
 **Notes:**
 
-- The category ID in Block Name must exactly match the ID in your category configuration.
-- Cards link to the search page filtered by that category.
+- Each category ID must exactly match an ID in your Console category tree. Nested categories are
+  resolved to their complete paths automatically.
+- A group includes listings from **any** of its categories. All IDs in one group must be at the
+  same category level (for example, all level 3). Unknown IDs or mixed levels in a group leave the
+  card without a link; they never fall back to an all-category search.
+- Sorting, price filters, and pagination preserve the category combination. The category sidebar
+  still selects one category path; choosing a category there replaces the combination.
+
+**Example: one Leather card for skirts, pants, and jackets**
+
+Keep your section ID as `av-selected-cats-[name]` and add **one block** with this **Block Name**
+(paste it as one line):
+
+```text
+ropa-faldas-leather,ropa-pantalones-leather,ropa-sacos-chamarras-chamarras-de-piel
+```
+
+Set **Title** to `Piel` (or your preferred label) and upload the card's **Media** image. Clicking
+this single card opens a search containing leather skirts, leather pants, and leather jackets.
 
 ---
 

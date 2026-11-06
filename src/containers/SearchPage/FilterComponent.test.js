@@ -2,11 +2,16 @@ import React from 'react';
 import '@testing-library/jest-dom';
 
 import { fakeIntl } from '../../util/testData';
-import { renderWithProviders as render } from '../../util/testHelpers';
+import { renderWithProviders as render, testingLibrary } from '../../util/testHelpers';
+import {
+  categories,
+  searchParams,
+} from '../../extensions/searchFilters/avCategorySearch.testData.json';
 
 import FilterComponent from './FilterComponent';
 
 const noop = () => null;
+const { userEvent } = testingLibrary;
 
 const enumConfig = {
   key: 'brand',
@@ -33,6 +38,80 @@ const renderFilter = (props = {}) =>
   );
 
 const idsIn = container => Array.from(container.querySelectorAll('[id]')).map(el => el.id);
+
+describe('FilterComponent category groups', () => {
+  const categoryProps = {
+    config: {
+      key: 'categoryLevel',
+      scope: 'public',
+      schemaType: 'category',
+      isNestedEnum: true,
+      nestedParams: ['categoryLevel1', 'categoryLevel2', 'categoryLevel3'],
+    },
+    listingCategories: categories,
+    initialValues: () => searchParams,
+  };
+  const groupLabel =
+    'Ropa / Faldas / Leather, Ropa / Pantalones / Leather, Ropa / Sacos y chamarras / Chamarras de piel';
+
+  it('shows the group and lets shoppers replace it with Ropa or Faldas', async () => {
+    const user = userEvent.setup();
+    const onSubmit = jest.fn();
+    const { getByText, getByRole } = renderFilter({
+      ...categoryProps,
+      liveEdit: true,
+      getHandleChangedValueFn: () => onSubmit,
+    });
+
+    await user.click(getByRole('button', { name: 'SearchPage.screenreader.openFilterButton' }));
+    const selectedGroup = getByRole('button', {
+      name: 'FieldSelectTree.screenreader.optionSelected',
+    });
+    expect(selectedGroup.textContent.replace(/\u200b/g, '')).toBe(groupLabel);
+    await user.click(getByText('Ropa'));
+    expect(onSubmit).toHaveBeenLastCalledWith({
+      pub_categoryLevel1: 'ropa',
+      pub_categoryLevel2: null,
+      pub_categoryLevel3: null,
+    });
+    await user.click(getByText('Faldas'));
+    expect(onSubmit).toHaveBeenLastCalledWith({
+      pub_categoryLevel1: 'ropa',
+      pub_categoryLevel2: 'ropa-faldas',
+      pub_categoryLevel3: null,
+    });
+  });
+
+  it('lets shoppers clear the category group', async () => {
+    const user = userEvent.setup();
+    const onSubmit = jest.fn();
+    const { getByRole } = renderFilter({
+      ...categoryProps,
+      liveEdit: true,
+      getHandleChangedValueFn: () => onSubmit,
+    });
+    await user.click(getByRole('button', { name: 'SearchPage.screenreader.openFilterButton' }));
+    await user.click(getByRole('button', { name: 'FilterPlain.clear' }));
+    expect(onSubmit).toHaveBeenLastCalledWith({
+      pub_categoryLevel1: null,
+      pub_categoryLevel2: null,
+      pub_categoryLevel3: null,
+    });
+  });
+
+  it('preserves the group when applying the popup without changing it', async () => {
+    const user = userEvent.setup();
+    const onSubmit = jest.fn();
+    const { getByRole } = renderFilter({
+      ...categoryProps,
+      showAsPopup: true,
+      getHandleChangedValueFn: () => onSubmit,
+    });
+    await user.click(getByRole('button', { name: 'SearchPage.screenreader.openFilterButton' }));
+    await user.click(getByRole('button', { name: 'FilterForm.submit' }));
+    expect(onSubmit).toHaveBeenLastCalledWith(searchParams);
+  });
+});
 
 describe('FilterComponent id seam', () => {
   it('uses the caller id, which namespaces desktop and mobile apart', () => {

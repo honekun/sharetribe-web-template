@@ -2,6 +2,12 @@ import React from 'react';
 import '@testing-library/jest-dom';
 
 import { renderWithProviders as render, testingLibrary } from '../../util/testHelpers';
+import { parse } from '../../util/urlHelpers';
+import {
+  categories,
+  ids,
+  searchParams,
+} from '../../extensions/searchFilters/avCategorySearch.testData.json';
 import AVCategoryCard from './AVCategoryCard';
 
 const { screen } = testingLibrary;
@@ -22,6 +28,24 @@ const mockMedia = {
 };
 
 describe('AVCategoryCard', () => {
+  it('links one card to all three leather categories', () => {
+    render(<AVCategoryCard categoryId={ids.join(',')} name="Leather" media={mockMedia} />, {
+      config: { categories: { categories } },
+    });
+
+    const link = screen.getByRole('link', { name: 'Blazers category Leather' });
+    expect(parse(link.getAttribute('href').split('?')[1])).toEqual(searchParams);
+    expect(screen.getAllByRole('link')).toHaveLength(1);
+  });
+
+  it('does not link an invalid category group to an unfiltered search', () => {
+    render(<AVCategoryCard categoryId="ropa,missing-category" name="Leather" />, {
+      config: { categories: { categories } },
+    });
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.getByText('Leather')).toBeInTheDocument();
+  });
+
   it('renders with category name from media alt and links to search page', () => {
     render(<AVCategoryCard categoryId="blazers" media={mockMedia} />);
 

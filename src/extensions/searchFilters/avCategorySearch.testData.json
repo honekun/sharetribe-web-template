@@ -1,0 +1,44 @@
+{
+  "ids": [
+    "ropa-faldas-leather",
+    "ropa-pantalones-leather",
+    "ropa-sacos-chamarras-chamarras-de-piel"
+  ],
+  "categories": [
+    {
+      "id": "ropa",
+      "name": "Ropa",
+      "subcategories": [
+        {
+          "id": "ropa-faldas",
+          "name": "Faldas",
+          "subcategories": [
+            { "id": "ropa-faldas-leather", "name": "Leather" },
+            { "id": "ropa-faldas-mini", "name": "Mini" }
+          ]
+        },
+        {
+          "id": "ropa-pantalones",
+          "name": "Pantalones",
+          "subcategories": [
+            { "id": "ropa-pantalones-leather", "name": "Leather" },
+            { "id": "ropa-pantalones-casuales", "name": "Casuales" }
+          ]
+        },
+        {
+          "id": "ropa-sacos-chamarras",
+          "name": "Sacos y chamarras",
+          "subcategories": [
+            { "id": "ropa-sacos-chamarras-chamarras-de-piel", "name": "Chamarras de piel" }
+          ]
+        }
+      ]
+    },
+    { "id": "bolsas", "name": "Bolsas" }
+  ],
+  "searchParams": {
+    "pub_categoryLevel1": "ropa",
+    "pub_categoryLevel2": "ropa-faldas,ropa-pantalones,ropa-sacos-chamarras",
+    "pub_categoryLevel3": "ropa-faldas-leather,ropa-pantalones-leather,ropa-sacos-chamarras-chamarras-de-piel"
+  }
+}

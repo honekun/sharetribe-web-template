@@ -1,5 +1,10 @@
 import React from 'react';
 import classNames from 'classnames';
+
+import { useConfiguration } from '../../context/configurationContext';
+import { stringify } from '../../util/urlHelpers';
+import { getCategoryCardSearchParams } from '../../extensions/searchFilters/avCategorySearch';
+
 import { NamedLink, ResponsiveImage } from '../../components';
 import css from './AVCategoryCard.module.css';
 
@@ -22,17 +27,24 @@ const formatCategoryName = id => {
  * AVCategoryCard
  *
  * Simple card showing a category image with the category name overlaid at the bottom.
- * Links to the search page filtered by categoryLevel1.
+ * Links to the search page filtered by one category or a group at the same depth.
  *
  * @component
  * @param {Object} props
- * @param {string} props.categoryId  - e.g. "blazers" — used for the search link and fallback name
+ * @param {string} props.categoryId  - category ID or comma-separated IDs from the CMS block name
  * @param {string?} props.name       - display name override (from block title)
  * @param {Object?} props.media      - CMS image asset: { fieldType:'image', alt, image: { attributes: { variants } } }
  * @param {string?} props.className
  */
 const AVCategoryCard = props => {
   const { categoryId, name, media, className } = props;
+  const config = useConfiguration();
+  const { categories = [], key = 'categoryLevel' } = config.categoryConfiguration || {};
+  const searchParams = getCategoryCardSearchParams(categoryId, categories, key);
+  const CardLink = searchParams ? NamedLink : 'div';
+  const linkProps = searchParams
+    ? { name: 'SearchPage', to: { search: `?${stringify(searchParams)}` } }
+    : {};
 
   const image = media?.image;
   const hasImage = !!image?.attributes?.variants;
@@ -40,11 +52,7 @@ const AVCategoryCard = props => {
   const displayName = name || formatCategoryName(categoryId);
 
   return (
-    <NamedLink
-      name="SearchPage"
-      to={{ search: `?pub_categoryLevel1=${categoryId}` }}
-      className={classNames(css.root, className)}
-    >
+    <CardLink {...linkProps} className={classNames(css.root, className)}>
       <div className={css.imageWrapper}>
         {hasImage ? (
           <ResponsiveImage
@@ -61,7 +69,7 @@ const AVCategoryCard = props => {
           <span className={css.name}>{displayName}</span>
         </div>
       </div>
-    </NamedLink>
+    </CardLink>
   );
 };
 

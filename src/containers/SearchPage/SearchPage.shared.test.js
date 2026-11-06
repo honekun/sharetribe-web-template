@@ -8,7 +8,14 @@ import {
   pickSearchParamsOnly,
   searchParamsPicker,
   groupListingFieldConfigs,
+  pickListingFieldFilters,
 } from './SearchPage.shared.js';
+import { stringify } from '../../util/urlHelpers';
+import {
+  categories as leatherCategories,
+  ids as leatherCategoryIds,
+  searchParams as leatherSearchParams,
+} from '../../extensions/searchFilters/avCategorySearch.testData.json';
 
 const urlParams = {
   pub_generalParam: 'one',
@@ -190,6 +197,69 @@ const sortConfig = {
 };
 
 describe('SearchPage.helpers', () => {
+  describe('category card groups', () => {
+    const nestedFilterConfigs = {
+      ...filterConfigs,
+      listingCategories: leatherCategories,
+      defaultFiltersConfig: [
+        ...defaultFiltersConfig.filter(f => f.schemaType !== 'category'),
+        {
+          key: 'categoryLevel',
+          scope: 'public',
+          schemaType: 'category',
+          isNestedEnum: true,
+          nestedParams: ['categoryLevel1', 'categoryLevel2', 'categoryLevel3'],
+        },
+      ],
+    };
+
+    it('keeps every category when validating filters alongside price and sort', () => {
+      expect(
+        pickSearchParamsOnly(
+          { ...leatherSearchParams, price: '10,200', sort: '-price', page: 2 },
+          nestedFilterConfigs,
+          sortConfig,
+          { searchType: 'keywords' },
+          false
+        )
+      ).toEqual({ ...leatherSearchParams, price: '10,200', sort: '-price' });
+    });
+
+    it('does not consider different category groups to be the same loaded search', () => {
+      const result = searchParamsPicker(
+        `?${stringify(leatherSearchParams)}`,
+        { ...leatherSearchParams, pub_categoryLevel3: leatherCategoryIds[0] },
+        nestedFilterConfigs,
+        sortConfig,
+        { searchType: 'keywords' },
+        false
+      );
+      expect(result.searchParamsAreInSync).toBe(false);
+      expect(result.urlQueryParams).toEqual(leatherSearchParams);
+    });
+
+    it('includes listing fields restricted to a category in the group', () => {
+      const field = {
+        key: 'leather-detail',
+        categoryConfig: { limitToCategoryIds: true, categoryIds: [leatherCategoryIds[1]] },
+      };
+      expect(
+        pickListingFieldFilters({
+          listingFields: [field],
+          locationSearch: `?${stringify(leatherSearchParams)}`,
+          categoryConfiguration: { key: 'categoryLevel', categories: leatherCategories },
+          activeListingTypes,
+        })
+      ).toEqual([field]);
+      expect(
+        omitLimitedListingFieldParams(
+          { ...leatherSearchParams, 'pub_leather-detail': 'smooth' },
+          { ...nestedFilterConfigs, listingFieldsConfig: [field] }
+        )
+      ).toEqual({ ...leatherSearchParams, 'pub_leather-detail': 'smooth' });
+    });
+  });
+
   describe('omitLimitedListingFieldParams', () => {
     it('returns everything if no category limit is set', () => {
       const params = { pub_generalParam: 'one', other_param: 'somevalue' };
