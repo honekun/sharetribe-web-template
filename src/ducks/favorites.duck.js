@@ -13,7 +13,19 @@ const MAX_FAVORITES = 100;
 // queue per Redux store so concurrent toggles cannot persist out of order. A
 // WeakMap avoids putting promises in Redux state and lets discarded stores be
 // garbage-collected (notably SSR requests and tests).
+//
+// The store (and its getState) outlives logout, so every queue is also bound to
+// the favorites `session` token below: work queued by one session never writes
+// to, or reports back into, the next one (audit A02).
 const favoriteUpdateQueues = new WeakMap();
+
+// A fresh object per session. Only its identity matters. The slice uses a lazy
+// initial state, so the root reset on logout (src/reducers.js) creates a new
+// token, and `clearCurrentUser` (logout or an expired session) replaces it too.
+// SSR state arrives as a parsed copy, which is again a distinct object.
+const newSession = () => ({});
+const selectFavoritesSession = state => state.favorites?.session;
+const selectCurrentUserId = state => state.user?.currentUser?.id?.uuid || null;
 
 const applyFavoriteIntent = (ids, listingId, shouldBeFavorite) => {
   const without = ids.filter(id => id !== listingId);
@@ -21,16 +33,25 @@ const applyFavoriteIntent = (ids, listingId, shouldBeFavorite) => {
 };
 
 const getFavoriteUpdateQueue = (getState, confirmedIds) => {
+  const session = selectFavoritesSession(getState());
   const existing = favoriteUpdateQueues.get(getState);
-  if (existing) return existing;
-  const queue = { tail: Promise.resolve(), pending: [], confirmedIds };
+  if (existing && existing.session === session) return existing;
+  // A new session starts empty instead of inheriting the old one's intents, but
+  // it still waits behind any request already in flight so writes for the same
+  // profile cannot land out of order.
+  const queue = {
+    tail: existing ? existing.tail.catch(() => undefined) : Promise.resolve(),
+    pending: [],
+    confirmedIds,
+    session,
+  };
   favoriteUpdateQueues.set(getState, queue);
   return queue;
 };
 
 const favoritesSlice = createSlice({
   name: 'favorites',
-  initialState: { favoriteListingIds: [] },
+  initialState: () => ({ favoriteListingIds: [], session: newSession() }),
   reducers: {
     setFavorites(state, action) {
       state.favoriteListingIds = action.payload || [];
@@ -50,6 +71,7 @@ const favoritesSlice = createSlice({
     // if nothing that syncs favorites is mounted at the time.
     builder.addCase(clearCurrentUser, state => {
       state.favoriteListingIds = [];
+      state.session = newSession();
     });
   },
 });
@@ -76,8 +98,13 @@ export const syncFavoritesFromUser = currentUser => dispatch => {
 // Pending intents are replayed over the last confirmed array after every
 // response, so a failure rolls back only its own effect and preserves newer
 // clicks.
+//
+// Each operation remembers the session and user it was made in. It is dropped —
+// no profile write, no state update — if either has changed by the time it
+// would write, or by the time its response arrives.
 export const toggleFavorite = listingId => (dispatch, getState, sdk) => {
-  const previous = selectFavoriteIds(getState());
+  const state = getState();
+  const previous = selectFavoriteIds(state);
   const shouldBeFavorite = !previous.includes(listingId);
   const queue = getFavoriteUpdateQueue(getState, previous);
   if (queue.pending.length === 0) {
@@ -85,10 +112,25 @@ export const toggleFavorite = listingId => (dispatch, getState, sdk) => {
   }
 
   dispatch(favoriteToggled(listingId));
-  const operation = { listingId, shouldBeFavorite };
+  const operation = {
+    listingId,
+    shouldBeFavorite,
+    session: queue.session,
+    ownerId: selectCurrentUserId(state),
+  };
   queue.pending.push(operation);
 
+  const isCurrent = responseUserId => {
+    const current = getState();
+    if (selectFavoritesSession(current) !== operation.session) return false;
+    if (!operation.ownerId) return true;
+    if (selectCurrentUserId(current) !== operation.ownerId) return false;
+    return !responseUserId || responseUserId === operation.ownerId;
+  };
+
   const persistOperation = async () => {
+    if (!isCurrent()) return undefined;
+
     const nextConfirmedIds = applyFavoriteIntent(queue.confirmedIds, listingId, shouldBeFavorite);
     let response;
     let succeeded = false;
@@ -104,6 +146,9 @@ export const toggleFavorite = listingId => (dispatch, getState, sdk) => {
       log.error(error, 'toggle-favorite-failed', { listingId });
     }
 
+    const entities = succeeded ? denormalisedResponseEntities(response) : [];
+    if (!isCurrent(entities[0]?.id?.uuid)) return undefined;
+
     queue.pending = queue.pending.filter(item => item !== operation);
     const optimisticIds = queue.pending.reduce(
       (ids, item) => applyFavoriteIntent(ids, item.listingId, item.shouldBeFavorite),
@@ -117,7 +162,6 @@ export const toggleFavorite = listingId => (dispatch, getState, sdk) => {
     // pending: AVTopbarExtras hydrates favorites from currentUser and would
     // otherwise overwrite the optimistic list with the older array.
     if (queue.pending.length === 0) {
-      const entities = denormalisedResponseEntities(response);
       if (entities.length === 1) {
         dispatch(setCurrentUser(entities[0]));
       }
