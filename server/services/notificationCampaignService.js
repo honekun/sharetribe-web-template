@@ -24,6 +24,8 @@ const VIEW_DELAY_MS = 24 * 60 * 60 * 1000;
 const ABANDONED_DELAY_MS = 30 * 60 * 1000;
 const SIGNUP_DELAY_MS = 24 * 60 * 60 * 1000;
 const INACTIVITY_DELAY_MS = 72 * 60 * 60 * 1000;
+// Attempts at a listing's publish-triggered scheduling before it is abandoned.
+const MAX_PUBLICATION_ATTEMPTS = 5;
 const ACTION_TRANSITIONS = new Set([
   'transition/inquire',
   'transition/request-payment',
@@ -234,22 +236,79 @@ async function handleListingCampaignEvent(
   }
   if (state !== 'published') return;
 
-  const publishedAt =
+  const observedPublishedAt =
     resource?.attributes?.updatedAt || resource?.attributes?.createdAt || new Date().toISOString();
-  const isFirstPublication = await jobStore.claimListingPublication({
+  const claim = await jobStore.claimListingPublication({
     listingId,
     authorId,
-    publishedAt,
+    publishedAt: observedPublishedAt,
     eventId,
   });
-  if (!isFirstPublication) return;
+  if (!claim) return;
+
+  if (claim.attempt_count > MAX_PUBLICATION_ATTEMPTS) {
+    // A failure that never clears must not stall the poller forever: every
+    // throw replays the whole event page.
+    console.error(
+      `[notificationCampaigns] listing=${listingId} publication scheduling abandoned after ${claim.attempt_count -
+        1} attempts`
+    );
+    await jobStore.completeListingPublication(listingId, { error: 'abandoned_after_retries' });
+    return;
+  }
+
+  try {
+    await schedulePublicationCampaigns({
+      claim,
+      listingId,
+      authorId,
+      eventId,
+      observedPublishedAt,
+      sdk,
+      jobStore,
+      engagementStore,
+    });
+    await jobStore.completeListingPublication(listingId);
+  } catch (err) {
+    await jobStore.recordListingPublicationError(listingId, err?.message).catch(() => {});
+    throw err;
+  }
+}
+
+// Not found is a definitive answer (deleted author or listing); anything else
+// is transient and must be retried.
+const isNotFound = err => err?.status === 404 || err?.response?.status === 404;
+const nullIfNotFound = promise =>
+  promise.catch(err => {
+    if (isNotFound(err)) return null;
+    throw err;
+  });
+
+// Everything a first publication schedules. Every write is idempotent — a
+// stable job key per listing, the matching digest keyed by the claim's first
+// observation, appends deduplicated by listing id — so a retry after a partial
+// failure completes the work without duplicating what already exists.
+async function schedulePublicationCampaigns({
+  claim,
+  listingId,
+  authorId,
+  eventId,
+  observedPublishedAt,
+  sdk,
+  jobStore,
+  engagementStore,
+}) {
+  const publishedAt = new Date(claim.published_at || observedPublishedAt).toISOString();
+  const triggerEventId = claim.event_id || eventId;
+  const firstSeenAt = claim.created_at ? new Date(claim.created_at) : new Date();
 
   const [author, loadedListing] = await Promise.all([
-    loadUser(sdk, authorId),
-    loadListing(sdk, listingId),
+    nullIfNotFound(loadUser(sdk, authorId)),
+    nullIfNotFound(loadListing(sdk, listingId)),
   ]);
-  const listing = loadedListing?.snapshot || listingSnapshot(resource);
-  if (!author || !listing.id) return;
+  const listing = loadedListing?.snapshot;
+  // Nothing to schedule for a deleted author or listing; completing is final.
+  if (!author || !author.email || !listing?.id) return;
 
   await jobStore.cancel({ campaign: 'signup_no_listing', sharetribeUserId: author.id });
   if (isSellerUserType(author.userType)) {
@@ -259,14 +318,16 @@ async function handleListingCampaignEvent(
       sharetribeUserId: author.id,
       recipientEmail: author.email,
       resourceId: listing.id,
-      triggerEventId: eventId,
+      triggerEventId,
       payload: { firstName: author.firstName, listing, publishedAt },
       dueAt: new Date(new Date(publishedAt).getTime() + INACTIVITY_DELAY_MS),
     });
   }
 
   const matchingUsers = await engagementStore.matchingUsers(listing);
-  const dueAt = nextDigestAt();
+  // Pinned to the first observation so a replay after 09:00 reuses the same
+  // digest job. A digest already sent stays sent (appends only reach pending jobs).
+  const dueAt = nextDigestAt(firstSeenAt);
   await Promise.all(
     matchingUsers
       .filter(user => user.sharetribeUserId !== author.id)
@@ -275,7 +336,7 @@ async function handleListingCampaignEvent(
           jobKey: `matching-listings:${user.sharetribeUserId}:${digestDateKey(dueAt)}`,
           sharetribeUserId: user.sharetribeUserId,
           recipientEmail: user.email,
-          triggerEventId: eventId,
+          triggerEventId,
           dueAt,
           firstName: user.firstName,
           listing: { ...listing, score: matchScore(listing, user.listingData) },
@@ -659,6 +720,7 @@ module.exports = {
   ABANDONED_DELAY_MS,
   INACTIVITY_DELAY_MS,
   MARKETPLACE_TIME_ZONE,
+  MAX_PUBLICATION_ATTEMPTS,
   SIGNUP_DELAY_MS,
   VIEW_DELAY_MS,
   deliveryEventIdForJob,

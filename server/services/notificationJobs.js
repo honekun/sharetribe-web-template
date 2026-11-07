@@ -250,15 +250,46 @@ class NotificationJobStore {
     );
   }
 
+  /**
+   * Claim the publish-triggered work for a listing (audit A09).
+   *
+   * Returns the publication row while its work is unfinished — the first time,
+   * and again on every replay or later event until `completeListingPublication`
+   * runs — and null once it is complete. The row keeps the first observation
+   * (`published_at`, `event_id`, `created_at`) so a retry schedules the same jobs
+   * under the same keys; `attempt_count` bounds the retries.
+   */
   async claimListingPublication({ listingId, authorId, publishedAt, eventId }) {
     const result = await this.pool.query(
-      `INSERT INTO av_listing_publications (listing_id, author_id, published_at, event_id)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (listing_id) DO NOTHING
-       RETURNING listing_id`,
+      `INSERT INTO av_listing_publications
+         (listing_id, author_id, published_at, event_id, last_attempt_at)
+       VALUES ($1, $2, $3, $4, NOW())
+       ON CONFLICT (listing_id) DO UPDATE
+         SET attempt_count = av_listing_publications.attempt_count + 1,
+             last_attempt_at = NOW()
+         WHERE av_listing_publications.completed_at IS NULL
+       RETURNING listing_id, published_at, event_id, created_at, attempt_count`,
       [listingId, authorId, publishedAt, eventId]
     );
-    return result.rowCount === 1;
+    return result.rows[0] || null;
+  }
+
+  async completeListingPublication(listingId, { error = null } = {}) {
+    await this.pool.query(
+      `UPDATE av_listing_publications
+       SET completed_at = NOW(), last_error = $2
+       WHERE listing_id = $1 AND completed_at IS NULL`,
+      [listingId, error ? String(error).slice(0, 2000) : null]
+    );
+  }
+
+  async recordListingPublicationError(listingId, error) {
+    await this.pool.query(
+      `UPDATE av_listing_publications
+       SET last_error = $2
+       WHERE listing_id = $1 AND completed_at IS NULL`,
+      [listingId, String(error || 'unknown error').slice(0, 2000)]
+    );
   }
 }
 

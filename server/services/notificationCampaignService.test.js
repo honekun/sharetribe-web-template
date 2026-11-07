@@ -7,7 +7,9 @@ jest.mock('./notificationDelivery', () => ({
 const { deliverNotification } = require('./notificationDelivery');
 const {
   INACTIVITY_DELAY_MS,
+  MAX_PUBLICATION_ATTEMPTS,
   VIEW_DELAY_MS,
+  digestDateKey,
   handleListingCampaignEvent,
   handleUserCreatedCampaigns,
   matchScore,
@@ -180,7 +182,15 @@ describe('notification campaign scheduling', () => {
       },
     };
     const jobStore = {
-      claimListingPublication: jest.fn().mockResolvedValue(true),
+      claimListingPublication: jest.fn().mockResolvedValue({
+        listing_id: 'listing-1',
+        published_at: new Date(publishedAt),
+        event_id: 'event-1',
+        created_at: new Date(publishedAt),
+        attempt_count: 1,
+      }),
+      completeListingPublication: jest.fn(),
+      recordListingPublicationError: jest.fn(),
       cancel: jest.fn(),
       schedule: jest.fn(),
       appendMatchingListing: jest.fn(),
@@ -203,6 +213,143 @@ describe('notification campaign scheduling', () => {
         dueAt: new Date(new Date(publishedAt).getTime() + INACTIVITY_DELAY_MS),
       })
     );
+  });
+});
+
+describe('recoverable publication scheduling (audit A09)', () => {
+  const firstSeenAt = new Date('2026-07-19T14:59:00.000Z'); // 08:59 in Mexico City
+  const sellerResource = {
+    id: { uuid: 'seller-1' },
+    attributes: {
+      email: 'seller@example.com',
+      profile: { firstName: 'Sofía', publicData: { userType: 'vendedor' } },
+    },
+  };
+  const claimRow = attempt => ({
+    listing_id: 'listing-1',
+    published_at: firstSeenAt,
+    event_id: 'event-1',
+    created_at: firstSeenAt,
+    attempt_count: attempt,
+  });
+  const matching = [
+    { sharetribeUserId: 'buyer-1', email: 'b1@example.com', firstName: 'B1', listingData: {} },
+    { sharetribeUserId: 'buyer-2', email: 'b2@example.com', firstName: 'B2', listingData: {} },
+  ];
+
+  const setup = () => {
+    let attempt = 0;
+    const jobStore = {
+      claimListingPublication: jest.fn(async () => claimRow((attempt += 1))),
+      completeListingPublication: jest.fn(),
+      recordListingPublicationError: jest.fn().mockResolvedValue(),
+      cancel: jest.fn(),
+      schedule: jest.fn(),
+      appendMatchingListing: jest.fn(),
+    };
+    const engagementStore = { matchingUsers: jest.fn().mockResolvedValue(matching) };
+    const sdk = {
+      users: { show: jest.fn().mockResolvedValue({ data: { data: sellerResource } }) },
+      listings: {
+        show: jest.fn().mockResolvedValue({ data: { data: listingResource, included: [] } }),
+      },
+    };
+    const run = eventId => handleListingCampaignEvent(eventId, listingResource, deps);
+    const deps = { sdk, jobStore, engagementStore };
+    return { ...deps, run };
+  };
+  const expectedDigestKey = user =>
+    `matching-listings:${user}:${digestDateKey(nextDigestAt(firstSeenAt))}`;
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('a lookup failure after the claim is retried on replay', async () => {
+    const { sdk, jobStore, run } = setup();
+    sdk.users.show.mockRejectedValueOnce(Object.assign(new Error('timeout'), { status: 503 }));
+
+    await expect(run('event-1')).rejects.toThrow('timeout');
+    expect(jobStore.completeListingPublication).not.toHaveBeenCalled();
+    expect(jobStore.recordListingPublicationError).toHaveBeenCalledWith('listing-1', 'timeout');
+
+    await run('event-1');
+    expect(jobStore.schedule).toHaveBeenCalledWith(
+      expect.objectContaining({
+        jobKey: 'listing-no-activity:listing-1',
+        triggerEventId: 'event-1',
+      })
+    );
+    expect(jobStore.appendMatchingListing).toHaveBeenCalledTimes(2);
+    expect(jobStore.completeListingPublication).toHaveBeenCalledWith('listing-1');
+  });
+
+  test('a failure after seller scheduling finishes the fanout on replay', async () => {
+    const { engagementStore, jobStore, run } = setup();
+    engagementStore.matchingUsers.mockRejectedValueOnce(new Error('db down'));
+
+    await expect(run('event-1')).rejects.toThrow('db down');
+    expect(jobStore.schedule).toHaveBeenCalledTimes(1);
+
+    await run('event-1');
+    // The same job key both times: schedule() is idempotent per key.
+    expect(jobStore.schedule.mock.calls.map(([job]) => job.jobKey)).toEqual([
+      'listing-no-activity:listing-1',
+      'listing-no-activity:listing-1',
+    ]);
+    expect(jobStore.appendMatchingListing).toHaveBeenCalledTimes(2);
+    expect(jobStore.completeListingPublication).toHaveBeenCalledTimes(1);
+  });
+
+  test('a partial fanout replays into the same digest jobs', async () => {
+    const { jobStore, run } = setup();
+    jobStore.appendMatchingListing
+      .mockResolvedValueOnce({})
+      .mockRejectedValueOnce(new Error('connection reset'));
+
+    await expect(run('event-1')).rejects.toThrow('connection reset');
+    // Replayed later, by a different event, after the 09:00 digest boundary.
+    await run('event-2');
+
+    const keys = jobStore.appendMatchingListing.mock.calls.map(([append]) => append.jobKey);
+    expect(keys).toEqual([
+      expectedDigestKey('buyer-1'),
+      expectedDigestKey('buyer-2'),
+      expectedDigestKey('buyer-1'),
+      expectedDigestKey('buyer-2'),
+    ]);
+    // The first observation's event id is kept on the jobs.
+    expect(
+      jobStore.appendMatchingListing.mock.calls.every(([a]) => a.triggerEventId === 'event-1')
+    ).toBe(true);
+    expect(jobStore.completeListingPublication).toHaveBeenCalledTimes(1);
+  });
+
+  test('a completed publication stays deduplicated', async () => {
+    const { sdk, jobStore, run } = setup();
+    jobStore.claimListingPublication.mockResolvedValue(null);
+    await run('event-3');
+    expect(sdk.users.show).not.toHaveBeenCalled();
+    expect(jobStore.schedule).not.toHaveBeenCalled();
+    expect(jobStore.completeListingPublication).not.toHaveBeenCalled();
+  });
+
+  test('a deleted author completes without scheduling', async () => {
+    const { sdk, jobStore, run } = setup();
+    sdk.users.show.mockRejectedValue(Object.assign(new Error('not found'), { status: 404 }));
+    await run('event-1');
+    expect(jobStore.schedule).not.toHaveBeenCalled();
+    expect(jobStore.completeListingPublication).toHaveBeenCalledWith('listing-1');
+  });
+
+  test('gives up after a bounded number of attempts instead of stalling the poller', async () => {
+    const { sdk, jobStore, run } = setup();
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jobStore.claimListingPublication.mockResolvedValue(claimRow(MAX_PUBLICATION_ATTEMPTS + 1));
+    await run('event-1');
+    expect(sdk.users.show).not.toHaveBeenCalled();
+    expect(jobStore.completeListingPublication).toHaveBeenCalledWith('listing-1', {
+      error: 'abandoned_after_retries',
+    });
+    console.error.mockRestore();
   });
 });
 

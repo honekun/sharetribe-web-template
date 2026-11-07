@@ -234,6 +234,15 @@ and the [Docker Official PostgreSQL image documentation](https://hub.docker.com/
 - Marketing withdrawal/provider suppression cancels pending promotional jobs. Claimed marketing jobs
   recheck consent, email identity, the weekly cap, and live campaign/resource state before send;
   operator retries of promotional deliveries run the same checks (`evaluateJob`).
+- Publish-triggered campaign work is recoverable (audit A09, migration
+  `010_listing_publication_completion.sql`). `av_listing_publications` records the first observation
+  and, separately, `completed_at`. A row without `completed_at` is claimed again on the poller's
+  replay or the listing's next event and its scheduling re-run — seller inactivity job, signup
+  cancellation, matching-listing fanout — all idempotent and keyed by the first observation, so
+  nothing is duplicated. A deleted author or listing (404) completes with nothing scheduled; after
+  five attempts the row is completed as `abandoned_after_retries` so a permanent failure cannot stall
+  the poller. A digest that was already sent is not reopened for a late append. Rows that existed
+  before the migration are marked complete once, when the column is added.
 - Campaign jobs left in `processing` by a worker restart are reclaimed after
   `AV_NOTIFICATION_STALE_CLAIM_MINUTES`; the delivery ledger then deduplicates any provider send
   that completed before the interruption.
