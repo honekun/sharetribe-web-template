@@ -158,9 +158,11 @@
     "workbox-webpack-plugin": "^7.4.1"
   },
   "resolutions": {
-    "follow-redirects": "1.16.1",
+    "follow-redirects": "1.16.2",
     "moment": "^2.31.0",
-    "@babel/helper-compilation-targets/lru-cache": "5.1.1"
+    "@babel/helper-compilation-targets/lru-cache": "5.1.1",
+    "axios": "^1.21.0",
+    "react-router/path-to-regexp": "^1.9.0"
   },
   "jest": {
     "roots": [

@@ -91,7 +91,7 @@ shareable operator guide; per-seller commission field `avCommissionPercentage` i
 | `env-template-check`   | Passes (2026-10-16).                                                                                                                                                                                                                                                                              |
 | `av-translation-check` | Passes (342 symmetric keys, 2026-10-16).                                                                                                                                                                                                                                                          |
 | `format-ci`            | Passes (2026-10-16). `yarn run build` also passes.                                                                                                                                                                                                                                                |
-| `yarn audit`           | Was 1 critical, 35 high, 48 moderate, 6 low; after the 2026-10-09 upgrade 0 critical, 1 high (install-time only), 10 moderate (§2.2).                                                                                                                                                             |
+| `yarn audit`           | Production group: 2 moderate (Sentry bundler plugin, §2.2) after the 2026-11-06 D01 fixes; full tree 63, 0 critical, all development/build tooling.                                                                                                                                              |
 | Upstream               | Fork is based on v12.1.0; `upstream/main` is v12.4.0 + 126 commits. Merge decided for **after launch** (see [pending README](README.md)).                                                                                                                                                         |
 | CI                     | `.circleci/config.yml` runs `format-ci`, `test-ci`, `build`, `av-translation-check`, and `env-template-check` on Node 24, but no check reported on PR #116 (2026-10-16), so CircleCI is not yet connected to the repository. Until it reports on PRs, every gate is run by hand.                  |
 
@@ -149,20 +149,34 @@ Recheck only if Live adds a location-based listing type or location search.
 
 ### 2.2 Remaining dependency advisories
 
-Every critical/high advisory on the request path was cleared on 2026-10-09 (`multer` 2.4.0,
-`adm-zip` 0.6.1, `compression` 1.8.2, `proxy-addr` 2.0.8, `path-to-regexp` 8.4.2/1.9.0, `axios`
-1.20.0, `sharetribe-flex-sdk` 1.24.2 with `js-cookie` 3, `qs` 6.16.0, `csv-parse` 7). Express stays
-on 5.2.1, and `@babel/runtime` on 7.29.7, because their newest releases were under two weeks old.
-`yarn audit --groups dependencies` now reports 1 high and 10 moderate:
+Re-checked 2026-11-06 for audit D01. The upstream v12.6.0 merge (`0c70b152d`) had brought back
+older lockfile resolutions (`axios` 1.18.1, `path-to-regexp` 1.7.0), and the `follow-redirects`
+resolution pinned an affected 1.16.1. Fixed on the `fix/audit-2026-11-06` branch:
 
-- `braces` (high, no patched release) reaches production only through `patch-package`, which runs at
-  install time. Nothing to do until upstream publishes a fix.
-- Seven `@opentelemetry/*` packages (moderate) come from `@sentry/node` 10. The fix is Sentry 11, a
-  major upgrade that upstream v12.4.0 already made; take it with the post-launch upstream merge (see
-  [pending README](README.md)) rather than separately.
+- `package.json` `resolutions`: `follow-redirects` 1.16.2, `axios` `^1.21.0`, and
+  `react-router/path-to-regexp` `^1.9.0` — the runtime paths, pinned so the next upstream lock merge
+  cannot regress them again.
+- Lockfile re-resolution within the existing ranges: `braces` 3.0.3, `micromatch` 4.0.8,
+  `picomatch` 2.3.2 (`patch-package` path), `semver` 5.7.2 (`@mapbox/polyline` path; 5.7.3 was
+  five days old, so the older patched release was pinned), `yaml` 2.9.1 (`patch-package`), and the
+  development-only `shell-quote` 1.12.0 (`webpack-dev-server > launch-editor`, the former critical).
+- Every chosen version except `follow-redirects` 1.16.2 (12 days) and `axios` 1.21.0 (11 days,
+  already locked for the Integration SDK) was over two weeks old; both are the maintainer-named
+  fixes for the advisories they close.
 
-The upgraded upload path (`multer`, `adm-zip`, `csv-parse`) was confirmed on 2026-10-09 with a real
-ZIP and a bare-CSV import on the Heroku Test-mode app.
+`yarn audit --groups dependencies` went from 22 advisories (12 high, 10 moderate) to **2 moderate**:
+`glob` 13 (GHSA-3g3m-2fjr-6pw4) and `minimatch` 10 (GHSA-g3hv-75wg-m249), both through
+`@sentry/node > @sentry/bundler-plugins`. They need attacker-controlled glob patterns, which the
+application never passes; the fixes are new majors (`glob` 14, `minimatch` 11) under a
+Sentry-owned dependency, so they are left for a Sentry release rather than overridden.
+
+The full tree (`yarn audit`) went from 117 advisories (1 critical) to **63 (0 critical, 36 high,
+21 moderate, 6 low)**. Every remaining path starts at a development or build tool — `jest`,
+`babel-jest`, `eslint`, `webpack`/`webpack-dev-server`, `css-loader`, `css-minimizer-webpack-plugin`,
+`@svgr/webpack`, `workbox-webpack-plugin`, `nodemon`, `@loadable/webpack-plugin` — or the Sentry
+bundler plugin above. None ships in the server runtime or the browser bundle. They track upstream's
+toolchain (upstream `main` locks the same versions), so take them with the next upstream sync instead
+of forking the build stack. Re-run both scopes after each sync.
 
 ### 2.3 Repository gates
 
