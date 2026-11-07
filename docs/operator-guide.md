@@ -3179,6 +3179,9 @@ For Brevo/newsletter cases:
 
 - marketing membership requires affirmative consent; account creation alone is not newsletter
   consent;
+- consent belongs to one email address: subscribing a second address in the footer does not opt in
+  the account email, and a user whose email changes (by any route) starts opted out on the new
+  address until they opt in again;
 - withdrawals, hard bounces, complaints, blocks, and unsubscribes can suppress later marketing
   sends;
 - never manually re-add or unsuppress a contact without a new authorized opt-in; and

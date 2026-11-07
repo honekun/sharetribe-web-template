@@ -287,8 +287,11 @@ class MarketingEngagementStore {
       `SELECT DISTINCT ON (eng.sharetribe_user_id)
          eng.sharetribe_user_id, eng.email, eng.first_name, eng.listing_data
        FROM av_marketing_engagement eng
+       -- Consent is per address: the engaged email must itself be opted in, and
+       -- a row linked to another account never counts (audit A07).
        JOIN av_marketing_preferences pref
-         ON (pref.sharetribe_user_id = eng.sharetribe_user_id OR pref.email = eng.email)
+         ON pref.email = eng.email
+        AND (pref.sharetribe_user_id IS NULL OR pref.sharetribe_user_id = eng.sharetribe_user_id)
        WHERE eng.occurred_at >= NOW() - INTERVAL '90 days'
          AND eng.action IN ('view', 'favorite')
          AND eng.listing_data->>'category' = $1

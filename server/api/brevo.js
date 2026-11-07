@@ -78,11 +78,15 @@ router.post('/subscribe', subscribeRateLimit, async (req, res) => {
     if (hp) return res.status(200).json({ ok: true });
     if (!isEmail(email)) return res.status(400).json({ ok: false, error: 'invalid_email' });
 
+    // The signed-in account is linked only when it subscribes its own address.
+    // Linking another address to the account would let that address's consent
+    // stand in for the account email (audit A07).
     let sharetribeUserId = null;
     try {
-      ({
-        user: { id: sharetribeUserId },
-      } = await currentUser(req, res));
+      const { user } = await currentUser(req, res);
+      if (user?.id && user.email && user.email === normalizeEmail(email)) {
+        sharetribeUserId = user.id;
+      }
     } catch (err) {
       // Footer subscriptions may be anonymous.
     }

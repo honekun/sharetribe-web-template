@@ -722,14 +722,26 @@ Rules:
   state, and the rolling frequency cap.
 - Consent belongs to an email address. Requesting an account email change revokes the old address;
   the verified new address starts opted out.
+- **Lookups are keyed by the destination address** (audit A07, `marketingConsent.getPreference`).
+  Eligibility reads the row for the exact address being mailed; a user id only narrows that match
+  (a row linked to a different account never applies, an unlinked anonymous row for the same
+  address does). A grant recorded for another address can never authorize the account email, and
+  an email change made outside the Contact Details flow (SDK, Console, operator) leaves the new
+  address without consent until its owner opts in. The matching-listing audience joins consent the
+  same way.
+- The footer form links the signed-in account only when it subscribes the account's own email. A
+  different address is recorded as anonymous consent for that address alone.
+- No data migration was needed: older rows that linked an account id to a secondary footer address
+  are simply never consulted for the account email, so nothing is broadened and no suppression is
+  lifted.
 - Seller welcome is essential onboarding and is not affected by marketing preference.
 
 ## Application endpoints
 
 | Endpoint                           | Access                                           | Purpose                                                                 |
 | ---------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------- |
-| `POST /api/brevo/subscribe`        | Public, rate-limited, honeypot                   | Footer consent plus Brevo contact/list upsert                           |
-| `GET /api/brevo/preference`        | Signed-in user                                   | Read authoritative preference for current account/email                 |
+| `POST /api/brevo/subscribe`        | Public, rate-limited, honeypot                   | Footer consent for the submitted address plus Brevo contact/list upsert |
+| `GET /api/brevo/preference`        | Signed-in user                                   | Read the preference of the account's current email address              |
 | `PUT /api/brevo/preference`        | Signed-in user, rate-limited                     | Grant/withdraw, sync Brevo membership, mirror Sharetribe protected data |
 | `POST /api/brevo/engagement`       | Public view/authenticated favorite, rate-limited | Record server-validated qualified view or favorite                      |
 | `POST /api/brevo/webhook`          | Shared-secret authenticated                      | Record delivery events and apply provider suppression                   |

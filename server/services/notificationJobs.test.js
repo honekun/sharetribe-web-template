@@ -47,3 +47,17 @@ describe('notification job persistence', () => {
     );
   });
 });
+
+describe('matching-listing audience (audit A07)', () => {
+  test('joins consent by the engaged address, constrained by the account', async () => {
+    const pool = { query: jest.fn().mockResolvedValue({ rows: [] }) };
+    await new MarketingEngagementStore(pool).matchingUsers({ category: 'dresses' });
+    const [sql] = pool.query.mock.calls[0];
+    expect(sql).toMatch(/ON pref\.email = eng\.email/);
+    expect(sql).toMatch(
+      /pref\.sharetribe_user_id IS NULL OR pref\.sharetribe_user_id = eng\.sharetribe_user_id/
+    );
+    expect(sql).not.toMatch(/OR pref\.email = eng\.email/);
+  });
+});
+

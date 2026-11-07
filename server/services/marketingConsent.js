@@ -139,18 +139,28 @@ class MarketingConsentStore {
     }
   }
 
+  /**
+   * The preference for one destination address (audit A07).
+   *
+   * Consent belongs to an email address, so the address is the key. A user id
+   * only narrows the match: a row linked to a different account never applies,
+   * while an unlinked row (anonymous footer consent for this same address)
+   * does. A user id never finds a row for another address.
+   */
   async getPreference({ email = null, sharetribeUserId = null }) {
+    const normalizedEmail = email ? normalizeEmail(email) : '';
+    if (!normalizedEmail) return null;
     const result = await this.pool.query(
       `SELECT email, sharetribe_user_id, enabled, suppressed, source, locale,
               policy_version, consent_at, withdrawn_at
        FROM av_marketing_preferences
-       WHERE ($1::text IS NOT NULL AND email = $1)
-          OR ($2::text IS NOT NULL AND sharetribe_user_id = $2)
-       ORDER BY (sharetribe_user_id = $2) DESC, updated_at DESC
+       WHERE email = $1
+         AND ($2::text IS NULL OR sharetribe_user_id IS NULL OR sharetribe_user_id = $2)
        LIMIT 1`,
-      [email ? normalizeEmail(email) : null, sharetribeUserId]
+      [normalizedEmail, sharetribeUserId]
     );
-    return result.rows[0] || null;
+    const preference = result.rows[0] || null;
+    return preference && preference.email === normalizedEmail ? preference : null;
   }
 
   async isEligible({ email, sharetribeUserId = null }) {
