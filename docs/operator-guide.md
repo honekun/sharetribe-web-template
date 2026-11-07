@@ -3164,7 +3164,8 @@ For money-flow and IVA details, use the [eShip integration guide](integrations/e
 
 The production notification pipeline is healthy only when:
 
-- `GET /api/notifications/readiness` returns HTTP `200`;
+- `GET /api/notifications/readiness` returns HTTP `200` (the answer is cached for 10 seconds, so a
+  fix can take that long to show);
 - `GET /api/brevo/health` returns HTTP `200` for the enabled Brevo features;
 - the PostgreSQL migrations are current;
 - exactly one active process reports poller leadership; and

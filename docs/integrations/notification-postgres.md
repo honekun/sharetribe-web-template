@@ -156,6 +156,14 @@ stored payload with the one actually sent.
 `{"ready":true}` with HTTP `200`, or `{"ready":false}` with HTTP `503`, so configuration names,
 database state, backlog counts, and metrics are not exposed.
 
+The public probe does bounded work (audit A10, `getPublicNotificationReadiness`): the flag
+configuration plus **one catalog query** — the poller-state row, `to_regclass` for every required
+table, and the newest migration's column (`av_listing_publications.completed_at`, migration 010). It
+never counts or groups the delivery, job, consent, label, or tracking tables. Concurrent probes share
+one query and the answer is cached for 10 seconds, so a probe flood cannot drain the small
+PostgreSQL pool the poller and shipping code use. A database or migration failure still answers
+`503`.
+
 Detailed diagnostics require the server-only `AV_NOTIFICATION_READINESS_TOKEN`:
 
 ```sh
@@ -163,7 +171,8 @@ curl -H "Authorization: Bearer $AV_NOTIFICATION_READINESS_TOKEN" \
   https://MARKETPLACE_HOST/api/notifications/readiness/details
 ```
 
-The protected response distinguishes:
+The protected response (computed with the same migration check plus the per-status counts,
+coalesced and cached for 5 seconds) distinguishes:
 
 - shared event poller, shipping-label capability, seller welcome, Brevo campaign, and WhatsApp flags
   plus the eShip tracking-email flag and missing variable names;

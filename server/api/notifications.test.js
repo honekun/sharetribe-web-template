@@ -1,10 +1,14 @@
 'use strict';
 
 jest.mock('../services/notificationReadiness', () => ({
-  getNotificationReadiness: jest.fn(),
+  getNotificationReadinessDetails: jest.fn(),
+  getPublicNotificationReadiness: jest.fn(),
 }));
 
-const { getNotificationReadiness } = require('../services/notificationReadiness');
+const {
+  getNotificationReadinessDetails,
+  getPublicNotificationReadiness,
+} = require('../services/notificationReadiness');
 const router = require('./notifications');
 
 const createRes = () => {
@@ -33,7 +37,8 @@ describe('notification readiness routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     delete process.env.AV_NOTIFICATION_READINESS_TOKEN;
-    getNotificationReadiness.mockResolvedValue(detailedReadiness);
+    getNotificationReadinessDetails.mockResolvedValue(detailedReadiness);
+    getPublicNotificationReadiness.mockResolvedValue({ ready: true });
   });
 
   test('returns only the readiness boolean from the public endpoint', async () => {
@@ -44,10 +49,12 @@ describe('notification readiness routes', () => {
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ ready: true });
+    // The public probe never runs the diagnostic aggregations.
+    expect(getNotificationReadinessDetails).not.toHaveBeenCalled();
   });
 
   test('preserves the public 503 status without exposing failed checks', async () => {
-    getNotificationReadiness.mockResolvedValue({ ...detailedReadiness, ready: false });
+    getPublicNotificationReadiness.mockResolvedValue({ ready: false });
     const [handler] = handlersFor('/readiness');
     const res = createRes();
 
@@ -82,7 +89,7 @@ describe('notification readiness routes', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  test('returns uncached detailed diagnostics for a valid bearer token', async () => {
+  test('returns detailed diagnostics (no-store) for a valid bearer token', async () => {
     process.env.AV_NOTIFICATION_READINESS_TOKEN = 'configured-secret';
     const [authorize, handler] = handlersFor('/readiness/details');
     const req = { get: jest.fn(() => 'Bearer configured-secret') };

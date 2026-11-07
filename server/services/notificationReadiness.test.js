@@ -4,7 +4,12 @@ jest.mock('./notificationMetrics', () => ({
   getNotificationMetrics: jest.fn(() => ({ poller: { lastSequenceId: 321 } })),
 }));
 
-const { getNotificationReadiness } = require('./notificationReadiness');
+const {
+  REQUIRED_TABLES,
+  getNotificationReadiness,
+  getPublicNotificationReadiness,
+  _test: readinessTest,
+} = require('./notificationReadiness');
 
 const ORIGINAL_ENV = process.env;
 
@@ -56,6 +61,9 @@ describe('notification readiness', () => {
         })
         .mockResolvedValueOnce({
           rows: [{ status: 'sent', count: 5 }, { status: 'failed', count: 2 }],
+        })
+        .mockResolvedValueOnce({
+          rows: [{ poller_rows: 1, missing_tables: 0, publications_migrated: true }],
         }),
     };
 
@@ -92,5 +100,69 @@ describe('notification readiness', () => {
         error: 'notification_database_unavailable_or_unmigrated',
       })
     );
+  });
+
+  describe('public probe (audit A10)', () => {
+    const migratedPool = () => ({
+      query: jest.fn().mockResolvedValue({
+        rows: [{ poller_rows: 1, missing_tables: 0, publications_migrated: true }],
+      }),
+    });
+
+    beforeEach(() => readinessTest.reset());
+
+    test('answers from one catalog query, without aggregating any table', async () => {
+      const pool = migratedPool();
+      await expect(getPublicNotificationReadiness({ pool })).resolves.toEqual({ ready: true });
+
+      expect(pool.query).toHaveBeenCalledTimes(1);
+      const [sql, params] = pool.query.mock.calls[0];
+      expect(sql).not.toMatch(/GROUP BY/i);
+      expect(sql).not.toMatch(/FROM av_notification_deliveries|FROM av_notification_jobs/);
+      expect(sql).not.toMatch(/FROM av_marketing_preferences|FROM av_shipping_label_attempts/);
+      expect(params).toEqual([REQUIRED_TABLES]);
+    });
+
+    test('shares one query between concurrent probes and caches the answer briefly', async () => {
+      const pool = migratedPool();
+      const answers = await Promise.all(
+        Array.from({ length: 20 }, () => getPublicNotificationReadiness({ pool }))
+      );
+      expect(answers.every(answer => answer.ready)).toBe(true);
+      await getPublicNotificationReadiness({ pool });
+      expect(pool.query).toHaveBeenCalledTimes(1);
+    });
+
+    test.each([
+      ['a missing table', { poller_rows: 1, missing_tables: 1, publications_migrated: true }],
+      [
+        'migration 010 not applied',
+        { poller_rows: 1, missing_tables: 0, publications_migrated: false },
+      ],
+      ['no poller state', { poller_rows: 0, missing_tables: 0, publications_migrated: true }],
+    ])('is unready with %s', async (_label, row) => {
+      const pool = { query: jest.fn().mockResolvedValue({ rows: [row] }) };
+      await expect(getPublicNotificationReadiness({ pool })).resolves.toEqual({ ready: false });
+    });
+
+    test('is unready when the database is unreachable', async () => {
+      const pool = { query: jest.fn().mockRejectedValue(new Error('connection refused')) };
+      await expect(getPublicNotificationReadiness({ pool })).resolves.toEqual({ ready: false });
+    });
+
+    test('is unready when the enabled poller has no database configured', async () => {
+      delete process.env.DATABASE_URL;
+      const pool = migratedPool();
+      await expect(getPublicNotificationReadiness({ pool })).resolves.toEqual({ ready: false });
+      expect(pool.query).not.toHaveBeenCalled();
+    });
+
+    test('is ready without touching the database when notifications are off', async () => {
+      process.env.AV_NOTIFICATIONS_ENABLED = 'false';
+      const pool = migratedPool();
+      const readiness = await getPublicNotificationReadiness({ pool });
+      expect(pool.query).not.toHaveBeenCalled();
+      expect(readiness).toEqual({ ready: expect.any(Boolean) });
+    });
   });
 });
