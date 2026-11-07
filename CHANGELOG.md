@@ -14,6 +14,20 @@ way to update this template, but currently, we follow a pattern:
 
 ## Upcoming version 2026-XX-XX
 
+- [change] Update README
+  [#977](https://github.com/sharetribe/web-template/pull/977)
+- [add] Add currently available translations.
+  [#975](https://github.com/sharetribe/web-template/pull/975)
+- [add] Add a CircleCI job to check that translations are sorted alphabetically.
+  [#974](https://github.com/sharetribe/web-template/pull/974)
+- [change] en.json: sort translation keys alphabetically.
+  [#973](https://github.com/sharetribe/web-template/pull/973)
+- [add] ListingPage: Add accessible name for the static-to-interactive button.
+  [#958](https://github.com/sharetribe/web-template/pull/958)
+- [add] ListingPage: Add accessible names for next and previous buttons in the carousel.
+  [#957](https://github.com/sharetribe/web-template/pull/957)
+- [fix] OrderPanel: silence the error added on 971 on tests.
+  [#972](https://github.com/sharetribe/web-template/pull/972)
 - [fix] OrderPanel: display a more helpful error message when the provider commission is bigger than
   the listing price. [#971](https://github.com/sharetribe/web-template/pull/971)
 - [change] Update concurrently to v10.0.6.

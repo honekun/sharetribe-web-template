@@ -6,7 +6,7 @@ object for **Sharetribe Test**. It was reconciled on 2026-08-14 from the latest 
 18:38:35 UTC), the app's required `es_av.json` fallbacks, and used upstream Spanish defaults from
 `es.json`.
 
-The file contains 1,990 used keys:
+The initial reconciliation contained 1,990 used keys:
 
 - 1,532 retained from the current Test Console asset.
 - 86 required local keys that were missing from that asset.
@@ -37,3 +37,6 @@ hard-coded in Spanish) was added from `es_av.json`, bringing the file to 2,009 k
 Test and Live are separate Sharetribe environments. Review and publish this object in Test first,
 then copy the approved content to Live through the normal content-release process. Preserve ICU
 placeholders such as `{count}`, plural/select expressions, and link variables exactly.
+
+The current reference contains 2,013 keys, including the gallery-navigation and interactive-map
+accessibility labels also provided by the local AV translation overlays.

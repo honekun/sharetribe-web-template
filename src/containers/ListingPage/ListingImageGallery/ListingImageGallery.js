@@ -274,7 +274,12 @@ const ListingImageGallery = props => {
 
   const renderLeftNav = (onClick, disabled) => {
     return (
-      <button className={css.navLeft} disabled={disabled} onClick={onClick}>
+      <button
+        className={css.navLeft}
+        disabled={disabled}
+        onClick={onClick}
+        aria-label={intl.formatMessage({ id: 'ListingImageGallery.screenreader.previousImage' })}
+      >
         <div className={css.navArrowWrapper}>
           <IconArrowHead direction="left" size="big" />
         </div>
@@ -283,7 +288,12 @@ const ListingImageGallery = props => {
   };
   const renderRightNav = (onClick, disabled) => {
     return (
-      <button className={css.navRight} disabled={disabled} onClick={onClick}>
+      <button
+        className={css.navRight}
+        disabled={disabled}
+        onClick={onClick}
+        aria-label={intl.formatMessage({ id: 'ListingImageGallery.screenreader.nextImage' })}
+      >
         <div className={css.navArrowWrapper}>
           <IconArrowHead direction="right" size="big" />
         </div>
