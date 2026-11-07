@@ -316,6 +316,12 @@ AV keeps upstream files unmodified via extension architecture in `src/extensions
   (`parseSectionCustomOptions`, `parseSectionCtaClass`); `constants.js`; `transform.js`.
 - `accountNav/` (`getAccountSettingsTabs()`), `topbar/` (custom link config +
   `topbarDataProvider.js`), `searchFilters/`.
+- `searchFilters/avCategorySearch.js` owns grouped-category URL validation and category-restricted
+  field matching. `SearchPage.shared.js` and `SearchPage.duck.js` retain their upstream
+  single-category validators, with small additive hooks that delegate only comma-separated
+  category queries. `AVSelectSingleFilter` adapts the group at the filter import seam and renders
+  upstream's unchanged `SelectSingleFilter`; `FilterComponent` keeps its original category JSX.
+  Keep these small hooks on upstream syncs; do not copy the search page or its filter renderer.
 - `topbar/topbarDataProvider.js` — single source for the topbar's category-dropdown config and
   local-design users. The desktop menu and the (closed but mounted) mobile menu both live on every
   page, so each fetching for itself doubled every request; both now share one in-flight promise,
@@ -624,7 +630,9 @@ contain.
 | `components/CustomExtendedDataField/CustomExtendedDataField.js`                         | `groupedMultiSelect` + `colorGridPicker` branches                                                               |
 | `components/FieldCurrencyInput/FieldCurrencyInput.js`                                   | Price inputs forced to `en-US` (`$1,325.00`) to match `formatMoney` display — was locale-dependent `1.325,00 $` |
 | `util/configHelpers.js`                                                                 | Listing field merge (code wins over Console, except `brand` options — `configAV.mergeHostedBrandOptions`)       |
-| `containers/SearchPage/FilterComponent.js`                                              | Custom filter type branches (delegates to `searchFilters/avFilters`)                                            |
+| `containers/SearchPage/FilterComponent.js`                                              | Custom filter type branches (`searchFilters/avFilters`) + `AVSelectSingleFilter` import swap                    |
+| `containers/SearchPage/SearchPage.shared.js`                                            | Additive grouped-category hook + AV category-field matcher import; upstream helper body retained              |
+| `containers/SearchPage/SearchPage.duck.js`                                              | Additive grouped-category query hook + AV listing-card fields; upstream helper body retained                   |
 | `containers/SearchPage/SearchPageWithGrid.js`                                           | Grouped-sizes filter injection (`injectAvFilters`)                                                              |
 | `PageBuilder/SectionBuilder/SectionBuilder.js`                                          | Custom section registration + AV `blockComponents` injection                                                    |
 | `CheckoutPage/CheckoutPageWithPayment.js`                                               | Default Stripe country (`configAV.defaultCountry`); seller message hidden (`configAV.showCheckoutInitialMessage`) |

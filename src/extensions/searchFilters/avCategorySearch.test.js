@@ -2,7 +2,10 @@ import {
   getCategoryCardSearchParams,
   getValidCategorySearchParams,
   getCategoryFilterProps,
+  getGroupedCategoryParams,
+  isFieldForCategory,
 } from './avCategorySearch';
+import { isFieldForCategory as upstreamIsFieldForCategory } from '../../util/fieldHelpers';
 import { convertCategoriesToSelectTreeOptions } from '../../util/search';
 import { categories, ids, searchParams } from './avCategorySearch.testData.json';
 
@@ -144,5 +147,75 @@ describe('getCategoryFilterProps', () => {
     });
     props.onSubmit(null);
     expect(onSubmit).toHaveBeenLastCalledWith(null);
+  });
+});
+
+describe('getGroupedCategoryParams', () => {
+  it.each(['categoryLevel', 'pub_categoryLevel'])(
+    'adapts grouped selections for the %s prefix',
+    prefix => {
+      expect(getGroupedCategoryParams(prefix, categories, 1, searchParams)).toEqual(searchParams);
+    }
+  );
+
+  it('defers ordinary category paths to the upstream validator', () => {
+    expect(
+      getGroupedCategoryParams('categoryLevel', categories, 1, {
+        pub_categoryLevel1: 'ropa',
+        pub_categoryLevel2: 'ropa-faldas',
+        pub_categoryLevel3: ids[0],
+      })
+    ).toBeNull();
+    expect(getGroupedCategoryParams('categoryLevel', categories, 1, {})).toBeNull();
+  });
+
+  it('does not intercept unrelated comma-separated filters', () => {
+    expect(
+      getGroupedCategoryParams('categoryLevel', categories, 1, {
+        pub_categoryLevel1: 'ropa',
+        pub_brand: 'prada,gucci',
+        pub_categoryLevelOther: 'a,b',
+      })
+    ).toBeNull();
+  });
+
+  it('normalizes duplicate group selections before validation', () => {
+    expect(
+      getGroupedCategoryParams('categoryLevel', categories, 1, {
+        pub_categoryLevel1: 'ropa,ropa',
+      })
+    ).toEqual({ pub_categoryLevel1: 'ropa' });
+  });
+
+  it('uses the configured prefix and scope', () => {
+    expect(
+      getGroupedCategoryParams('meta_department', categories, 1, {
+        meta_department1: 'ropa,bolsas',
+      })
+    ).toEqual({ meta_department1: 'ropa,bolsas' });
+  });
+});
+
+describe('isFieldForCategory', () => {
+  const field = {
+    categoryConfig: { limitToCategoryIds: true, categoryIds: [ids[1]] },
+  };
+
+  it('matches a restricted field against any category in a group', () => {
+    expect(isFieldForCategory(Object.values(searchParams), field)).toBe(true);
+    expect(isFieldForCategory(['ropa', 'ropa-faldas', ids[0]], field)).toBe(false);
+  });
+
+  it.each(
+    [[], ['ropa'], ['ropa', 'ropa-pantalones', ids[1]], ids[1], undefined].map(value => [value])
+  )('preserves upstream checks for ordinary selections: %s', selection => {
+    expect(isFieldForCategory(selection, field)).toBe(upstreamIsFieldForCategory(selection, field));
+    expect(isFieldForCategory(selection, {})).toBe(upstreamIsFieldForCategory(selection, {}));
+  });
+
+  it('does not mutate the selected categories', () => {
+    const selection = Object.freeze(Object.values(searchParams));
+    expect(isFieldForCategory(selection, field)).toBe(true);
+    expect(selection).toEqual(Object.values(searchParams));
   });
 });

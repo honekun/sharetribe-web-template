@@ -3,10 +3,8 @@ import React from 'react';
 // utils
 import { SCHEMA_TYPE_ENUM, SCHEMA_TYPE_MULTI_ENUM, SCHEMA_TYPE_LONG } from '../../util/types';
 import { convertCategoriesToSelectTreeOptions, constructQueryParamName } from '../../util/search';
-import { getCategoryFilterProps } from '../../extensions/searchFilters/avCategorySearch';
 
 // component imports
-import SelectSingleFilter from './SelectSingleFilter/SelectSingleFilter';
 import SelectMultipleFilter from './SelectMultipleFilter/SelectMultipleFilter';
 import BookingDateRangeFilter from './BookingDateRangeFilter/BookingDateRangeFilter';
 import KeywordFilter from './KeywordFilter/KeywordFilter';
@@ -14,6 +12,7 @@ import PriceFilter from './PriceFilter/PriceFilter';
 import IntegerRangeFilter from './IntegerRangeFilter/IntegerRangeFilter';
 import SeatsFilter from './SeatsFilter/SeatsFilter';
 import { getAvFilter } from '../../extensions/searchFilters/avFilters';
+import SelectSingleFilter from '../../extensions/searchFilters/AVSelectSingleFilter';
 
 /**
  * FilterComponent is used to map configured filter types
@@ -64,12 +63,6 @@ const FilterComponent = props => {
       const { scope, isNestedEnum, nestedParams } = config;
       const queryParamNames = nestedParams?.map(p => constructQueryParamName(p, scope));
       const label = intl.formatMessage({ id: 'FilterComponent.categoryLabel' });
-      const categoryFilterProps = getCategoryFilterProps({
-        queryParamNames,
-        initialValues: initialValues(queryParamNames, liveEdit),
-        onSubmit: getHandleChangedValueFn(useHistoryPush),
-        options: convertCategoriesToSelectTreeOptions(listingCategories),
-      });
 
       return (
         <SelectSingleFilter
@@ -77,7 +70,9 @@ const FilterComponent = props => {
           name={key}
           label={label}
           queryParamNames={queryParamNames}
-          {...categoryFilterProps}
+          initialValues={initialValues(queryParamNames, liveEdit)}
+          onSubmit={getHandleChangedValueFn(useHistoryPush)}
+          options={convertCategoriesToSelectTreeOptions(listingCategories)}
           isNestedEnum={isNestedEnum}
           getAriaLabel={getAriaLabel}
           {...rest}

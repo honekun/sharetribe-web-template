@@ -1,3 +1,6 @@
+import { isFieldForCategory as upstreamIsFieldForCategory } from '../../util/fieldHelpers';
+import { constructQueryParamName } from '../../util/search';
+
 // Category cards can combine categories at the same depth using Sharetribe's
 // comma-separated enum filters. Resolve paths from Console, never from slug text.
 const parseCategoryIds = value =>
@@ -74,6 +77,37 @@ export const getValidCategorySearchParams = (prefix, categories, level, params) 
       : {}),
   };
 };
+
+/**
+ * Optional SearchPage hook: handle comma-separated category values, or return
+ * null so the original upstream single-path validator runs unchanged.
+ * URL validation uses an unscoped prefix; SDK preparation already includes it.
+ */
+export const getGroupedCategoryParams = (prefix, categories, level, params) => {
+  const scopedPrefix = /^(pub|meta)_/.test(prefix)
+    ? prefix
+    : constructQueryParamName(prefix, 'public');
+  const hasGroup = Object.entries(params || {}).some(
+    ([key, value]) =>
+      key.startsWith(scopedPrefix) &&
+      /^\d+$/.test(key.slice(scopedPrefix.length)) &&
+      typeof value === 'string' &&
+      value.includes(',')
+  );
+  return hasGroup ? getValidCategorySearchParams(scopedPrefix, categories, level, params) : null;
+};
+
+// Adapt only SearchPage's category-restricted field checks. Keep the upstream
+// utility itself untouched, including its behavior for ordinary selections.
+export const isFieldForCategory = (categories, fieldConfig) =>
+  upstreamIsFieldForCategory(
+    Array.isArray(categories)
+      ? categories.flatMap(category =>
+          typeof category === 'string' ? category.split(',') : category
+        )
+      : categories,
+    fieldConfig
+  );
 
 /**
  * Present a curated group as one selected option in the existing single-path

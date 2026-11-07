@@ -19,16 +19,30 @@ import {
   addTime,
   stringifyDateToISO8601,
 } from '../../util/dates';
-import { isFieldForCategory, isFieldForListingType } from '../../util/fieldHelpers';
-import { getValidCategorySearchParams } from '../../extensions/searchFilters/avCategorySearch';
+import { isFieldForListingType } from '../../util/fieldHelpers';
+import {
+  getGroupedCategoryParams,
+  isFieldForCategory,
+} from '../../extensions/searchFilters/avCategorySearch';
 
-const validURLParamForCategoryData = (prefix, categories, level, params) =>
-  getValidCategorySearchParams(
-    constructQueryParamName(prefix, 'public'),
-    categories,
-    level,
-    params
-  );
+const validURLParamForCategoryData = (prefix, categories, level, params) => {
+  const groupedParams = getGroupedCategoryParams(prefix, categories, level, params);
+  if (groupedParams) return groupedParams;
+  const levelKey = constructQueryParamName(`${prefix}${level}`, 'public');
+  const levelValue =
+    typeof params?.[levelKey] !== 'undefined' ? `${params?.[levelKey]}` : undefined;
+
+  const foundCategory = categories.find(cat => cat.id === levelValue);
+  const subcategories = foundCategory?.subcategories || [];
+  return foundCategory && subcategories.length > 0
+    ? {
+        [levelKey]: levelValue,
+        ...validURLParamForCategoryData(prefix, subcategories, level + 1, params),
+      }
+    : foundCategory
+    ? { [levelKey]: levelValue }
+    : {};
+};
 
 const validURLParamForListingTypeData = (listingTypes, param) => {
   const listingTypeValue = param?.pub_listingType;
@@ -69,9 +83,7 @@ export const omitLimitedListingFieldParams = (searchParams, filterConfigs) => {
     const foundConfig = listingFieldsConfig.find(
       f => constructQueryParamName(f.key, f.scope) === searchParamKey
     );
-    const currentCategories = Object.values(validNestedCategoryParamNames).flatMap(v =>
-      v.split(',')
-    );
+    const currentCategories = Object.values(validNestedCategoryParamNames);
     const isForCategory = isFieldForCategory(currentCategories, foundConfig);
     const currentListingType = listingTypePathParam
       ? [listingTypePathParam]
@@ -440,7 +452,7 @@ export const pickListingFieldFilters = params => {
       })
     : {};
 
-  const currentCategories = Object.values(validNestedCategoryParamNames).flatMap(v => v.split(','));
+  const currentCategories = Object.values(validNestedCategoryParamNames);
   const currentListingType = Object.values(validListingTypeParamNames);
   const pickedFields = listingFields.reduce((picked, fieldConfig) => {
     const isTargetCategory = isFieldForCategory(currentCategories, fieldConfig);
