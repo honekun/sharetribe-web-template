@@ -138,12 +138,13 @@ HTTP 400 if they fail.
 | Entry count            | Maximum 401 entries total (1 CSV + 400 images)                                                                      |
 | Non-empty CSV          | The CSV file inside the ZIP cannot be zero bytes                                                                    |
 | Image magic bytes      | Each image's bytes must match its extension (JPEG/PNG/WebP) — renamed non-images are rejected (`imageValidator.js`) |
-| Max ZIP size           | 50 MB compressed upload (hard ceiling; smaller per-tier caps apply — see [Limits](#limits))                         |
+| Max ZIP size           | Tier upload cap: 20 MB standard, 50 MB admin, enforced by Multer while reading — see [Limits](#limits)              |
 
 macOS `__MACOSX/` metadata directories and `._` resource fork files are silently ignored.
 
 In addition to these archive-level checks, **per-user tiered limits** (ZIP size, image count, row
-count, imports-per-hour) are enforced after authentication — see [Limits](#limits).
+count, imports-per-hour, upload attempts) are enforced after authentication, and the concurrency and
+hourly checks run before the upload is read — see [Limits](#limits).
 
 ---
 
@@ -506,10 +507,20 @@ the filenames resolved.
 - `400` — A non-admin upload set a `user_id` column (author override is admin-only)
 - `400` — Over a per-tier limit (ZIP bytes, image count, or row count exceeds your tier — see
   [Limits](#limits))
+- `400` — The upload is over the tier's size (Multer reads it with that cap), or carries extra
+  multipart fields/parts
 - `401` — Missing signed-in session or invalid/expired action token
-- `409` — You already have an import in progress (one active job per user)
-- `429` — Over the hourly import cap for your tier (3/hour standard, 20/hour admin)
-- `503` — Global import capacity is full (max 3 concurrent jobs across all users); retry shortly
+- `409` — You already have an import in progress, or another upload of yours is still being read
+  (one active job or in-flight upload per user)
+- `429` — Over the hourly upload-attempt cap (20/hour standard, 60/hour admin; every attempt that
+  reaches admission counts), or over the hourly import cap for your tier (3/hour standard, 20/hour
+  admin)
+- `503` — Global import capacity is full (max 3 running jobs plus in-flight uploads across all
+  users); retry shortly
+
+The `409`, `503`, and both `429` checks run in `uploadAdmission.js` **before Multer reads the
+body**, so a refused request is never buffered, extracted, or parsed. The job checks are repeated
+after validation as a final guard.
 
 ### `GET /api/bulk-import/status/:jobId`
 
@@ -558,8 +569,17 @@ Download a sample CSV file. No authentication required.
 ## Limits
 
 Limits are **tiered**. Standard = any signed-in user (imports for themselves); admin = emails in
-`BULK_IMPORT_OPERATOR_EMAILS`. The per-tier caps are enforced after authentication in `/start`
-(`limits.js`); the ZIP extractor enforces the absolute archive ceilings regardless of tier.
+`BULK_IMPORT_OPERATOR_EMAILS`. The per-tier caps (`limits.js`) are enforced after authentication in
+`/start`; the ZIP extractor enforces the absolute archive ceilings regardless of tier.
+
+`/start` runs `requireUserSession → requireActionToken → admitUpload → uploadForTier → handler`.
+`admitUpload` (`uploadAdmission.js`, audit A05) decides before any of the body is read: it records
+the attempt, refuses a user over either hourly cap, allows one in-flight upload **or** active job per
+user, and keeps running jobs plus in-flight uploads at or below 3. An admitted request holds a
+reservation that is released exactly once — when its job is created, or when the response finishes
+or the connection closes (rejection, parser/config error, client disconnect). `uploadForTier` then
+reads the body with the tier's ZIP size as Multer's `fileSize`, one file, and tight
+`fields`/`parts`/`fieldSize`/`headerPairs` caps.
 
 | Limit                | Standard | Admin |
 | -------------------- | -------- | ----- |
@@ -568,22 +588,24 @@ Limits are **tiered**. Standard = any signed-in user (imports for themselves); a
 | Max images in ZIP    | 100      | 400   |
 | Max ZIP upload size  | 20 MB    | 50 MB |
 | Max imports per hour | 3        | 20    |
+| Upload attempts/hour | 20       | 60    |
 
 | Absolute ceiling (all tiers) | Value            |
 | ---------------------------- | ---------------- |
 | Max ZIP entries              | 401              |
-| Multer hard upload cap       | 50 MB compressed |
+| Multer upload cap            | Tier ZIP size (20 / 50 MB) |
 | Total uncompressed size      | 100 MB           |
-| Active jobs per user         | 1 (else 409)     |
-| Global concurrent jobs       | 3 (else 503)     |
+| Active jobs or uploads/user  | 1 (else 409)     |
+| Global jobs + uploads        | 3 (else 503)     |
 | Action-token issuance        | 10/user/minute   |
 | Action-token TTL             | 30 minutes       |
 | Active action-token cache    | 1/user; 1,000 users/process |
 | Rate between rows            | 500 ms           |
 | Job data TTL                 | 1 hour           |
 
-The hourly rate limit (`rateLimiter.js`) is per-user and in-memory (resets on server restart). It is
-only consumed when an import actually starts — failed validations do not count against the cap.
+The hourly counters (`rateLimiter.js`) are per-user and in-memory (reset on server restart). The
+import cap is only consumed when an import actually starts — failed validations do not count against
+it — while the separate attempt cap counts every upload that reaches admission, valid or not.
 
 Jobs are **owner-scoped**: each job records the `ownerId` of the user who created it. A user may
 have only one active import at a time (409), the server caps total concurrent imports at 3 (503),
@@ -596,7 +618,15 @@ and polling `/status/:jobId` for a job owned by another user returns 404.
 
 The extractor rejects more than 100 MB total uncompressed data, but process peak memory also depends
 on the compressed upload buffer, extraction copies, image upload concurrency, and other server
-traffic. Monitor real dyno memory and size vertically from measured peaks; the implementation does
+traffic. Admission bounds that pre-job work to 3 concurrent uploads of at most 50 MB each.
+Extraction stays synchronous (`adm-zip`): moving it to a worker thread was evaluated for audit A05
+and not adopted, because admission already caps the concurrent work and it would add complexity (or
+a dependency) without changing the memory bound. Revisit it if measured event-loop stalls appear.
+
+Each image upload writes its buffer to an exclusively created file inside its own `mkdtemp`
+directory (`av-bulk-*` in the OS temp dir) and removes the directory when the upload settles, so
+concurrent imports can never read or delete each other's image (audit A04). The file exists only for
+the duration of `sdk.images.upload` and is never durable state. Monitor real dyno memory and size vertically from measured peaks; the implementation does
 not guarantee that a particular Heroku dyno class is sufficient.
 
 ---
@@ -637,7 +667,8 @@ server/
       index.js                     # Express router (endpoints + auth/limit/rate-limit middleware)
       auth.js                      # Session check (any user) + admin flag (BULK_IMPORT_OPERATOR_EMAILS)
       limits.js                    # Tiered limits (standard vs admin)
-      rateLimiter.js               # Per-user rolling-hour import counter
+      rateLimiter.js               # Per-user rolling-hour import + upload-attempt counters
+      uploadAdmission.js           # Pre-Multer admission: attempt cap, reservations, concurrency
       imageValidator.js            # Magic-byte image sniffing (shared with zipExtractor)
       placeholderImage.js          # Loads the bundled fallback image for rows with no photos
       assets/                      # bulk-import-placeholder.jpg (replaceable artwork)

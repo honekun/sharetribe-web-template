@@ -1196,15 +1196,20 @@ rejected.
 - Listings are created under the uploader's account by default (admins can override per row).
 - The tool is **tiered** — admins can import bigger batches than regular sellers:
 
-  | Limit               | Regular seller | Admin |
-  | ------------------- | -------------- | ----- |
-  | Listings per import | 25             | 100   |
-  | Images per ZIP      | 100            | 400   |
-  | ZIP file size       | 20 MB          | 50 MB |
-  | Imports per hour    | 3              | 20    |
+  | Limit                       | Regular seller | Admin |
+  | --------------------------- | -------------- | ----- |
+  | Listings per import         | 100            | 100   |
+  | Images per ZIP              | 100            | 400   |
+  | ZIP file size               | 20 MB          | 50 MB |
+  | Imports per hour            | 3              | 20    |
+  | Upload attempts per hour    | 20             | 60    |
 
-- You can only run **one import at a time** per account, and the server runs at most **3 imports at
-  once** across all users — if it's busy you'll be asked to try again shortly.
+- You can only run **one import at a time** per account — counting an upload that is still being
+  sent — and the server runs at most **3 imports at once** across all users. If it's busy you'll be
+  asked to try again shortly. These checks happen before the file is uploaded, so a refused attempt
+  costs no upload time.
+- Every upload attempt counts toward the hourly **upload attempts** limit, including ones that fail
+  validation; only imports that actually start count toward **imports per hour**.
 - **Uploading the same file again is safe.** Within 24 hours, rows that were already imported are
   skipped (the page shows "already imported (skipped)") and listings left unfinished are completed
   — nothing is duplicated. So when rows fail with a timeout or "created but not finished", just
@@ -1264,7 +1269,7 @@ my-listings.zip
 - Two images cannot share the same filename, even in different folders
 - Images must be genuine `.jpg`, `.png`, or `.webp` files
 - Size and count limits depend on your tier (see the table in [8.1](#81-overview)): regular sellers
-  up to 25 listings / 100 images / 20 MB; admins up to 100 listings / 400 images / 50 MB
+  up to 100 listings / 100 images / 20 MB; admins up to 100 listings / 400 images / 50 MB
 
 ---
 
@@ -1885,8 +1890,9 @@ columns.
 | "…requiere una sesión iniciada" error                                                      | You are signed out                                                               | Sign in to the marketplace and try again                                                                       |
 | "Token de acción… inválido o expirado"                                                     | The short-lived upload token expired                                             | Reload the page and start the upload again                                                                     |
 | `La sustitución de "user_id" no está permitida`                                            | A non-admin filled in the `user_id` column                                       | Remove the `user_id` column (your listings are created under you)                                              |
-| "El ZIP supera tu límite…" / "Demasiadas imágenes" / "El CSV tiene … filas. Tu límite es…" | The import is over your tier's limit                                             | Split it into smaller batches, or ask an admin to run the larger import                                        |
+| "El archivo es demasiado grande…" / "El ZIP supera tu límite…" / "Demasiadas imágenes" / "El CSV tiene … filas. Tu límite es…" | The import is over your tier's limit                                             | Split it into smaller batches, or ask an admin to run the larger import                                        |
 | "Demasiadas importaciones" (try again later)                                               | You hit your hourly import limit                                                 | Wait up to an hour and try again (3/hr seller, 20/hr admin)                                                    |
+| "Demasiados intentos de importación"                                                       | Too many upload attempts in the last hour, including failed ones                 | Fix the file offline, then wait up to an hour (20 attempts/hr seller, 60/hr admin)                             |
 | "Ya tienes una importación en curso"                                                       | A previous import of yours is still running                                      | Wait for it to finish before starting another                                                                  |
 | "La capacidad de importación está llena"                                                   | Three imports are already running across all users                               | Wait a few minutes and retry                                                                                   |
 | "El ZIP no contiene ningún archivo .csv"                                                   | CSV is missing from the archive                                                  | Make sure you included exactly one CSV file inside the ZIP                                                     |
