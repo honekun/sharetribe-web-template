@@ -813,7 +813,11 @@ yarn notifications:list failed
 yarn notifications:list unknown
 ```
 
-Provider timeouts remain `unknown` and are never resent automatically. The 10-second Brevo deadline
+Retrying a promotional (campaign) delivery re-runs the campaign checks against current data and is
+refused, unchanged, when the recipient opted out, was suppressed, changed email, hit the weekly cap,
+or the listing/transaction no longer qualifies; seller welcome retries resend the stored payload
+(details: [notification PostgreSQL](notification-postgres.md#2-local-database-commands)). Provider timeouts
+remain `unknown` and are never resent automatically. The 10-second Brevo deadline
 covers the response body as well as the headers (`requestWithTimeout`, audit A06): no response at
 all is `unknown`, a 2xx whose body stalls counts as sent (without a message id), and a rejection
 whose body stalls keeps its status-based `failed` classification. Reconcile the matching

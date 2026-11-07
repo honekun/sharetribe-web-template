@@ -46,6 +46,28 @@ function templateNameForCampaign(campaign, recipientKey) {
   return campaign;
 }
 
+// Which promotional campaign a stored template name belongs to, or null.
+function campaignForTemplateName(templateName) {
+  const name = String(templateName || '');
+  if (PROMOTIONAL_CAMPAIGNS.has(name)) return name;
+  const base = name.replace(/_(a|b)$/, '');
+  return base !== name && PROMOTIONAL_CAMPAIGNS.has(base) ? base : null;
+}
+
+/**
+ * The promotional campaign of a stored delivery row, or null for essential
+ * mail (seller welcome, transactional, WhatsApp). Fails closed: a promotional
+ * campaign tag counts even when the template name is not recognised.
+ */
+function promotionalCampaignForDelivery(delivery) {
+  const fromTemplate = campaignForTemplateName(delivery?.template_name);
+  if (fromTemplate) return fromTemplate;
+  const tags = Array.isArray(delivery?.delivery_payload?.tags)
+    ? delivery.delivery_payload.tags
+    : [];
+  return tags.find(tag => PROMOTIONAL_CAMPAIGNS.has(tag)) || null;
+}
+
 function templateIdForName(templateName) {
   const envName = TEMPLATE_ENV[templateName];
   return envName ? process.env[envName] : null;
@@ -119,9 +141,11 @@ module.exports = {
   TEMPLATE_ENV,
   buildCampaignEmail,
   buildSellerWelcomeEmail,
+  campaignForTemplateName,
   isPromotionalCampaign,
   isSellerUserType,
   missingCampaignTemplateVariables,
+  promotionalCampaignForDelivery,
   stableVariant,
   templateIdForName,
   templateNameForCampaign,

@@ -3187,6 +3187,13 @@ For Brevo/newsletter cases:
 - never manually re-add or unsuppress a contact without a new authorized opt-in; and
 - use provider event details and the first-party consent record when investigating a missing send.
 
+Resending a failed email is an engineering command (`yarn notifications:retry`), run only after
+checking Brevo. Campaign (marketing) emails are never resent as they were stored: the retry checks
+again that the person still consents, still has that email address, has not had two campaign
+emails this week, and that the listing or order still qualifies. If any check fails the retry is
+refused with the reason and nothing is sent — that is expected, not an error. Seller welcome emails
+are resent as stored.
+
 When the public readiness endpoint returns `503`, record the environment and timestamp and escalate
 it. Engineering can capture named missing/failed checks from the bearer-protected detailed endpoint.
 Do not enable more channels until readiness is restored, and never put its token in a URL or log.

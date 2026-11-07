@@ -218,6 +218,38 @@ class NotificationJobStore {
     return new Date(new Date(result.rows[1].sent_at).getTime() + 7 * 24 * 60 * 60 * 1000);
   }
 
+  // The campaign job behind a promotional delivery row (audit A08). Deliveries
+  // use `trigger_event_id || job_key` as their event id; one publication event
+  // can fan out to many jobs, so the campaign and recipient narrow it.
+  async findForDelivery({ campaign, recipientEmail, eventId }) {
+    const result = await this.pool.query(
+      `SELECT *
+       FROM av_notification_jobs
+       WHERE campaign = $1
+         AND recipient_email = $2
+         AND COALESCE(trigger_event_id, job_key) = $3
+         AND status IN ('failed', 'unknown')`,
+      [campaign, recipientEmail, eventId]
+    );
+    return result.rows;
+  }
+
+  // Record an operator retry's outcome on its job so a sent retry counts toward
+  // the rolling frequency cap like any other send.
+  async recordRetryOutcome(id, status, error = null, claimedBy = null) {
+    await this.pool.query(
+      `UPDATE av_notification_jobs
+       SET status = $2::text,
+           last_error = $3,
+           sent_at = CASE WHEN $2::text = 'sent' THEN NOW() ELSE sent_at END,
+           attempt_count = attempt_count + 1,
+           claimed_by = $4,
+           updated_at = NOW()
+       WHERE id = $1 AND status IN ('failed', 'unknown')`,
+      [id, status, error ? String(error).slice(0, 2000) : null, claimedBy]
+    );
+  }
+
   async claimListingPublication({ listingId, authorId, publishedAt, eventId }) {
     const result = await this.pool.query(
       `INSERT INTO av_listing_publications (listing_id, author_id, published_at, event_id)

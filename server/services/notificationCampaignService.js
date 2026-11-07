@@ -8,12 +8,15 @@ const {
   buildCampaignEmail,
   isPromotionalCampaign,
   isSellerUserType,
+  promotionalCampaignForDelivery,
+  templateNameForCampaign,
 } = require('./marketingCampaigns');
+const { isMarketingCampaignsEnabled } = require('./notificationConfig');
 const {
   createMarketingEngagementStore,
   createNotificationJobStore,
 } = require('./notificationJobs');
-const { deliverNotification } = require('./notificationDelivery');
+const { deliverNotification, notificationKey } = require('./notificationDelivery');
 const { normalizeEmail } = require('./emailAddress');
 
 const MARKETPLACE_TIME_ZONE = 'America/Mexico_City';
@@ -472,57 +475,152 @@ async function campaignStillEligible(job, { sdk, engagementStore }) {
   return true;
 }
 
+// The event id a job's delivery is keyed by (notificationDelivery.notificationKey).
+const deliveryEventIdForJob = job => job.trigger_event_id || job.job_key;
+
+/**
+ * Decide what a campaign job may do right now, without changing anything.
+ * Shared by normal processing and operator retries (audit A08) so both apply
+ * the same identity, consent/suppression, frequency-cap, and resource checks.
+ *
+ * Works on a copy of the payload (the matching-listings check filters it), and
+ * returns the email built from that filtered copy. Transient lookup errors
+ * throw; the caller decides how to record them.
+ *
+ * @returns {Promise<{action: 'skip', reason: string}
+ *   | {action: 'defer', nextAvailableAt: Date}
+ *   | {action: 'send', user: Object, emailPayload: Object, delivery: Object}>}
+ */
+async function evaluateJob(job, { sdk, jobStore, consentStore, engagementStore }) {
+  const user = await loadUser(sdk, job.sharetribe_user_id);
+  if (!user || user.email !== normalizeEmail(job.recipient_email)) {
+    return { action: 'skip', reason: 'recipient_email_changed' };
+  }
+
+  if (isPromotionalCampaign(job.campaign)) {
+    const consented = await consentStore.isEligible({
+      email: user.email,
+      sharetribeUserId: user.id,
+    });
+    if (!consented) return { action: 'skip', reason: 'marketing_consent_missing' };
+    const nextAvailableAt = await jobStore.promotionalNextAvailableAt(user.id);
+    if (nextAvailableAt && nextAvailableAt > new Date()) {
+      return { action: 'defer', nextAvailableAt };
+    }
+  }
+
+  const evaluated = { ...job, payload: { ...(job.payload || {}) } };
+  if (!(await campaignStillEligible(evaluated, { sdk, engagementStore }))) {
+    return { action: 'skip', reason: 'campaign_no_longer_eligible' };
+  }
+
+  const emailPayload = buildCampaignEmail({
+    campaign: job.campaign,
+    recipientKey: user.id,
+    email: user.email,
+    firstName: user.firstName || evaluated.payload.firstName,
+    payload: evaluated.payload,
+  });
+  return {
+    action: 'send',
+    user,
+    emailPayload,
+    delivery: {
+      eventId: deliveryEventIdForJob(job),
+      channel: 'brevo',
+      templateName: emailPayload.templateName,
+      recipient: user.email,
+      payload: emailPayload,
+    },
+  };
+}
+
 async function processJob(job, { ownerId, sdk, jobStore, consentStore, engagementStore }) {
   try {
-    const user = await loadUser(sdk, job.sharetribe_user_id);
-    if (!user || user.email !== normalizeEmail(job.recipient_email)) {
-      await jobStore.finish(job.id, 'skipped', 'recipient_email_changed');
+    const decision = await evaluateJob(job, { sdk, jobStore, consentStore, engagementStore });
+    if (decision.action === 'skip') {
+      await jobStore.finish(job.id, 'skipped', decision.reason);
+      return;
+    }
+    if (decision.action === 'defer') {
+      await jobStore.defer(job.id, decision.nextAvailableAt, 'promotional_frequency_cap');
       return;
     }
 
-    if (isPromotionalCampaign(job.campaign)) {
-      const consented = await consentStore.isEligible({
-        email: user.email,
-        sharetribeUserId: user.id,
-      });
-      if (!consented) {
-        await jobStore.finish(job.id, 'skipped', 'marketing_consent_missing');
-        return;
-      }
-      const nextAvailableAt = await jobStore.promotionalNextAvailableAt(user.id);
-      if (nextAvailableAt && nextAvailableAt > new Date()) {
-        await jobStore.defer(job.id, nextAvailableAt, 'promotional_frequency_cap');
-        return;
-      }
-    }
-
-    if (!(await campaignStillEligible(job, { sdk, engagementStore }))) {
-      await jobStore.finish(job.id, 'skipped', 'campaign_no_longer_eligible');
-      return;
-    }
-
-    const emailPayload = buildCampaignEmail({
-      campaign: job.campaign,
-      recipientKey: user.id,
-      email: user.email,
-      firstName: user.firstName || job.payload?.firstName,
-      payload: job.payload,
-    });
-    const result = await deliverNotification(
-      {
-        eventId: job.trigger_event_id || job.job_key,
-        channel: 'brevo',
-        templateName: emailPayload.templateName,
-        recipient: user.email,
-        payload: emailPayload,
-      },
-      ownerId
-    );
+    const result = await deliverNotification(decision.delivery, ownerId);
     await jobStore.finish(job.id, 'sent', result.status === 'deduplicated' ? 'deduplicated' : null);
   } catch (err) {
     const status = err?.notificationOutcome === 'unknown' ? 'unknown' : 'failed';
     await jobStore.finish(job.id, status, err.message);
     console.error(`[notificationCampaigns] job=${job.job_key} failed:`, err);
+  }
+}
+
+const refusedRetry = (reason, extra = {}) => ({ status: 'refused', reason, ...extra });
+
+/**
+ * Retry a failed or unknown promotional delivery through the campaign policy
+ * (audit A08): the job is re-evaluated exactly as normal processing would, the
+ * email is rebuilt from current data, and a send is recorded on the job so it
+ * counts toward the frequency cap. A refusal changes nothing.
+ *
+ * @param {Object} delivery - the stored delivery row (deliveryStore.get)
+ * @returns {Promise<{status: 'sent'|'deduplicated'} | {status: 'refused', reason: string}>}
+ *   failed/unknown provider outcomes are recorded on the job and rethrown
+ */
+async function retryPromotionalDelivery(
+  delivery,
+  { confirmUnknown = false, claimedBy = 'operator' } = {},
+  { sdk, jobStore, consentStore, engagementStore, deliveryStore }
+) {
+  const campaign = promotionalCampaignForDelivery(delivery);
+  if (!campaign) return refusedRetry('not_promotional');
+  if (!isMarketingCampaignsEnabled()) return refusedRetry('campaigns_disabled');
+  if (['unknown', 'processing'].includes(delivery.status) && !confirmUnknown) {
+    return refusedRetry('confirmation_required');
+  }
+
+  const jobs = await jobStore.findForDelivery({
+    campaign,
+    recipientEmail: delivery.delivery_payload?.email,
+    eventId: delivery.event_id,
+  });
+  if (jobs.length !== 1) {
+    return refusedRetry(jobs.length ? 'ambiguous_campaign_job' : 'campaign_job_not_found');
+  }
+  const [job] = jobs;
+  if (templateNameForCampaign(job.campaign, job.sharetribe_user_id) !== delivery.template_name) {
+    return refusedRetry('template_mismatch');
+  }
+
+  const decision = await evaluateJob(job, { sdk, jobStore, consentStore, engagementStore });
+  if (decision.action === 'skip') return refusedRetry(decision.reason);
+  if (decision.action === 'defer') {
+    return refusedRetry('promotional_frequency_cap', { retryAfter: decision.nextAvailableAt });
+  }
+  // sendPayload falls back to the legacy welcome sender without a template id.
+  if (!(Number(decision.emailPayload.templateId) > 0)) {
+    return refusedRetry('template_not_configured');
+  }
+  if (notificationKey(decision.delivery) !== delivery.notification_key) {
+    return refusedRetry('delivery_changed');
+  }
+
+  const prepared = await deliveryStore.prepareRetry(delivery.notification_key, { confirmUnknown });
+  if (!prepared) return refusedRetry('not_retryable');
+
+  try {
+    const result = await deliverNotification(decision.delivery, claimedBy, deliveryStore);
+    if (result.status === 'sent') {
+      await jobStore.recordRetryOutcome(job.id, 'sent', null, claimedBy);
+    }
+    return result;
+  } catch (err) {
+    if (err?.notificationOutcomeRecorded) {
+      const status = err.notificationOutcome === 'failed' ? 'failed' : 'unknown';
+      await jobStore.recordRetryOutcome(job.id, status, err.message, claimedBy);
+    }
+    throw err;
   }
 }
 
@@ -563,7 +661,9 @@ module.exports = {
   MARKETPLACE_TIME_ZONE,
   SIGNUP_DELAY_MS,
   VIEW_DELAY_MS,
+  deliveryEventIdForJob,
   digestDateKey,
+  evaluateJob,
   handleListingCampaignEvent,
   handleTransactionCampaignEvent,
   handleUserCreatedCampaigns,
@@ -572,6 +672,7 @@ module.exports = {
   nextDigestAt,
   processDueNotificationJobs,
   recordListingEngagement,
+  retryPromotionalDelivery,
   slugify,
   transactionRelationships,
   userSnapshot,

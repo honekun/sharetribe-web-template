@@ -128,6 +128,28 @@ yarn notifications:retry NOTIFICATION_KEY --confirm-unknown
 The same acknowledgement can recover a `processing` claim only after it is older than
 `AV_NOTIFICATION_STALE_CLAIM_MINUTES` (default 15), preventing a retry from racing a live sender.
 
+**Promotional retries are re-evaluated, not replayed** (audit A08, `server/services/notificationRetry.js`).
+Essential mail (seller welcome, transactional) is resent from its stored payload. A promotional
+campaign email — recognised by its template name or campaign tag — is routed through
+`notificationCampaignService.retryPromotionalDelivery`, which:
+
+1. refuses while `AV_BREVO_CAMPAIGNS_ENABLED` is off, and keeps the `--confirm-unknown` gate;
+2. finds the single `failed`/`unknown` campaign job behind the delivery (campaign, recipient, and
+   `COALESCE(trigger_event_id, job_key)`), refusing when none or several match;
+3. runs `evaluateJob` — the same function normal processing uses — against current data: the user's
+   current email, consent and suppression for that address, the 2-per-7-days frequency cap, and the
+   campaign's listing/transaction state;
+4. rebuilds the email from current data and refuses if its notification key no longer matches the
+   stored one, or if the template id is not configured;
+5. sends through the delivery ledger and records the outcome on the job (`recordRetryOutcome`), so a
+   sent retry counts toward the frequency cap.
+
+Any refusal prints its reason (for example `marketing_consent_missing`,
+`recipient_email_changed`, `campaign_no_longer_eligible`, `promotional_frequency_cap` with the
+earliest retry time) and changes nothing. `retryNotification` itself refuses promotional payloads,
+so the stored-payload path cannot be used for them by mistake. A retry claim also refreshes the
+stored payload with the one actually sent.
+
 ## 3. Readiness and backlog metrics
 
 `GET /api/notifications/readiness` is the public deployment probe. It returns only
@@ -210,7 +232,8 @@ and the [Docker Official PostgreSQL image documentation](https://hub.docker.com/
 - A definite provider rejection is stored as `failed`; selected retryable responses receive one
   bounded automatic retry.
 - Marketing withdrawal/provider suppression cancels pending promotional jobs. Claimed marketing jobs
-  recheck consent, email identity, the weekly cap, and live campaign/resource state before send.
+  recheck consent, email identity, the weekly cap, and live campaign/resource state before send;
+  operator retries of promotional deliveries run the same checks (`evaluateJob`).
 - Campaign jobs left in `processing` by a worker restart are reclaimed after
   `AV_NOTIFICATION_STALE_CLAIM_MINUTES`; the delivery ledger then deduplicates any provider send
   that completed before the interruption.
