@@ -182,6 +182,17 @@ export const updateMarketingPreference = ({ enabled, source = 'account_details' 
   });
 };
 
+// AV: seller balance totals (server/api/my-balance/). Rejects with the server's
+// `{ ok: false, error }` body on a non-2xx response.
+export const getMyBalanceSummary = () => {
+  return request('/api/my-balance/summary', {
+    method: methods.GET,
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+};
+
 export const trackMarketingEngagement = ({ listingId, action }) => {
   return request('/api/brevo/engagement', {
     method: methods.POST,

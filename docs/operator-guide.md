@@ -2330,6 +2330,10 @@ expected behaviour, not a fault.
 
 ### My Purchases, My Sales, My Balance pages
 
+The balance totals refresh at most once a minute: after a sale is completed or cancelled, the
+totals on **My Balance** catch up within about a minute, even without reloading the page (the
+transaction list underneath updates straight away).
+
 | Area            | Key                              | English default                                  | Spanish default                                          | Operator note           |
 | --------------- | -------------------------------- | ------------------------------------------------ | -------------------------------------------------------- | ----------------------- |
 | Purchases page  | `MyPurchasesPage.heading`        | `My Purchases`                                   | `Mis Compras`                                            | Page heading.           |

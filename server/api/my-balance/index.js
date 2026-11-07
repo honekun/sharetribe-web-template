@@ -24,7 +24,8 @@ const summaryCache = createTTLCache(CACHE_TTL_SECONDS, { maxEntries: CACHE_MAX_E
 // starting their own pagination chain before the cache is filled.
 const inFlight = new Map(); // userId -> Promise<summary>
 
-// The page fetches the summary once per session; this only stops a client
+// The page refetches the summary when its copy is older than 60 s (the same
+// window as summaryCache) and never twice at once; this only stops a client
 // hammering the endpoint (each miss still costs a currentUser.show).
 const rateLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 20 });
 

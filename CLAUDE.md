@@ -308,7 +308,9 @@ balance API** — the list is a paginated client `sdk.transactions.query()`; the
 reads the process/transition lists from `balanceTransitions.js` (kept in step with the client
 helpers by `MyBalancePage/balanceTransitions.test.js`), walks the caller's sales in one capped
 pagination chain (5000 tx, `truncated` flag), and coalesces in-flight requests per user behind an
-IP rate limit and a bounded per-user 60 s cache. Shared util
+IP rate limit and a bounded per-user 60 s cache. The client (`MyBalancePage.duck.js`,
+`getMyBalanceSummary` in `util/api.js`) refetches the summary only when its copy is older than
+the same 60 s (`isSummaryStale`) and never twice at once. Shared util
 `src/transactions/transactionHelpers.js`: `getStatusFromLastTransition`, `getCompletedTransitions`,
 `getRefundedTransitions`, `buildFilteredQueryParams`. All three registered in
 `routeConfiguration.js`/`pageDataLoadingAPI.js`/`reducers.js`; linked from TopbarDesktop,

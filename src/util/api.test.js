@@ -1,4 +1,4 @@
-import { updateMarketingPreference, trackMarketingEngagement } from './api';
+import { getMyBalanceSummary, updateMarketingPreference, trackMarketingEngagement } from './api';
 
 const jsonResponse = data => ({
   status: 200,
@@ -35,5 +35,23 @@ describe('AV JSON api helpers', () => {
     expect(url).toMatch(/\/api\/brevo\/engagement$/);
     expect(options.method).toBe('POST');
     expect(JSON.parse(options.body)).toEqual({ listingId: 'listing-1', action: 'view' });
+  });
+
+  it('getMyBalanceSummary reads the balance summary with the session cookie', async () => {
+    window.fetch.mockResolvedValueOnce(jsonResponse({ ok: true, completedTotalAmount: 5 }));
+    await expect(getMyBalanceSummary()).resolves.toEqual({ ok: true, completedTotalAmount: 5 });
+
+    const [url, options] = window.fetch.mock.calls[0];
+    expect(url).toMatch(/\/api\/my-balance\/summary$/);
+    expect(options.method).toBe('GET');
+    expect(options.credentials).toBe('include');
+  });
+
+  it('getMyBalanceSummary rejects with the server error body', async () => {
+    window.fetch.mockResolvedValueOnce({
+      ...jsonResponse({ ok: false, error: 'summary_failed' }),
+      status: 502,
+    });
+    await expect(getMyBalanceSummary()).rejects.toMatchObject({ error: 'summary_failed' });
   });
 });
