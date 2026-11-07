@@ -48,8 +48,9 @@ archive.
 
 ## Pending work
 
-The [2026-11-06 custom-code audit](audits/2026-11-06-custom-code-audit.md) tracks open security,
-performance, architecture, dependency, and upstream-cleanup findings with acceptance criteria.
+The [2026-11-06 custom-code audit](audits/2026-11-06-custom-code-audit.md) records security,
+performance, architecture, dependency, and upstream-cleanup findings. All are resolved in code on
+`fix/audit-2026-11-06`; its Render/Test checks are still open.
 
 Start with the [pending-work index](pending/README.md). It contains actionable open topics and the
 explicitly retained future-use record:

@@ -1,6 +1,8 @@
 # Custom-code audit — 2026-11-06
 
-Status: **open; remediation has not started in this audit**.
+Status: **resolved in code on branch `fix/audit-2026-11-06` (2026-11-06); Test (Render) verification
+and the Live release are pending**. Each finding records its commits, regression evidence, and what
+remains; see [Remediation status](#remediation-status).
 
 This report records the findings from the final custom-code review requested on 2026-11-06. Review
 custom-code security, performance, and architecture first; reduce avoidable upstream divergence
@@ -36,7 +38,8 @@ Priority labels express remediation urgency: **High / P1** requires attention be
 **Medium / P2** is a concrete correctness, performance, or policy-enforcement defect. Upstream
 cleanup and documentation observations are tracked separately from the eleven code defects.
 
-All items are open. Suggested areas identify a code ownership boundary, not an assigned person.
+Suggested areas identify a code ownership boundary, not an assigned person. Every item is resolved
+in code or closed with a recorded decision; see [Remediation status](#remediation-status).
 
 | ID                                                                         | Priority        | Finding                                                                    | Suggested area               |
 | -------------------------------------------------------------------------- | --------------- | -------------------------------------------------------------------------- | ---------------------------- |
@@ -56,11 +59,48 @@ All items are open. Suggested areas identify a code ownership boundary, not an a
 | [U02](#u02--remaining-upstream-restyles-can-use-existing-av-boundaries)    | Cleanup         | Avoidable AV styling remains in upstream CSS modules                       | Styling/upstream maintenance |
 | [O01](#o01--documentation-drift)                                           | Low / P3        | Pending sync and importer documentation disagree with current source       | Documentation                |
 
+## Remediation status
+
+Branch `fix/audit-2026-11-06`, cut from `76e55bc8d`; not pushed or released. Commits are listed per
+finding. The report stays until the Render/Test checks below are done (README rule); then remove it
+and its index links.
+
+| ID  | Outcome                                    | Commits                  | Still to do outside the code                                                                                   |
+| --- | ------------------------------------------ | ------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| A01 | Resolved, no transaction-process change    | `4d9f0579c`, `6da9c89f3` | On Test: a shipping order gets `metadata.avShipping` and buys one label; a pickup order shows no label control |
+| A02 | Resolved                                   | `d7c547c40`, `6da9c89f3` | —                                                                                                              |
+| A03 | Resolved                                   | `61d39f1d1`              | —                                                                                                              |
+| A04 | Resolved                                   | `ba3969ccf`              | —                                                                                                              |
+| A05 | Resolved                                   | `fbc89f793`              | —                                                                                                              |
+| A06 | Resolved, Instagram follow-up included     | `b576a806d`              | —                                                                                                              |
+| A07 | Resolved, no data migration needed         | `1010f19a1`              | —                                                                                                              |
+| A08 | Resolved                                   | `fcf7aefda`              | —                                                                                                              |
+| A09 | Resolved                                   | `315b1a494`              | Apply migration 010 on the Test and Live databases before deploying                                            |
+| A10 | Resolved                                   | `f529c9919`              | Readiness `200` on Test after migration 010                                                                    |
+| A11 | Resolved                                   | `2da576b14`              | —                                                                                                              |
+| D01 | Resolved; 2 production moderates accepted  | `c93da3d9d`              | Re-run both audit scopes after each upstream sync                                                              |
+| U01 | Resolved; one intended visual change       | `d3b500572`              | —                                                                                                              |
+| U02 | Resolved; Checkout CSS closed as kept fork | `042f3d25e`              | —                                                                                                              |
+| O01 | Resolved                                   | `88e4b7983`              | —                                                                                                              |
+
 ## Custom-code findings
 
 ### A01 — Client-writable shipping data can authorize an unpaid label
 
-**Priority:** High / P1. **Status:** open. **Resolution PR/commit:** pending.
+**Priority:** High / P1. **Status:** resolved in code. **Resolution PR/commit:** `4d9f0579c`,
+`6da9c89f3`. Test (Render) verification pending.
+
+**Resolution:** the privileged endpoints always drop a caller-supplied `protectedData.avShipping`
+and, after a real initiate/transition, write the authoritative rate to `metadata.avShipping` through
+the Integration SDK (`persistAvShippingRecord`, retried only on network/5xx/429). Label purchase
+reads only that record — or, for transactions without one, the protectedData copy while no
+`transition/dispute` has happened — and requires a non-reversal customer `line-item/shipping-fee` of
+the same amount and currency (`shippingChargeMatches`); otherwise it refuses with
+`LABEL_NOT_ALLOWED` and a `reason` before any claim. The label control is hidden when no shipping
+was charged. No transaction-process change. Regressions:
+`server/api/privilegedShippingRecord.test.js`, `shipmentService.test.js` ("shipping record
+authority"), `avShipping.test.js`, `AVShippingLabelSection.test.js`. A forged value written by the
+non-privileged `transition/inquire` can still sit in protectedData, but it is never trusted.
 
 **Evidence:** [avShipping.js](../../server/api-util/avShipping.js#L128), lines 128–130 and 156–160;
 [initiate-privileged.js](../../server/api/initiate-privileged.js#L110), lines 110–119;
@@ -98,17 +138,27 @@ behavior in Test before release.
 
 **Acceptance criteria / regression coverage:**
 
-- [ ] Pickup initiation and transition cannot preserve a caller-authored reserved shipping record.
-- [ ] A paid transaction without a valid shipping charge never calls the carrier purchase API.
-- [ ] Changing protected data after payment cannot replace the authoritative purchase rate.
-- [ ] A valid paid shipping order still buys exactly one label across manual/automatic concurrency.
-- [ ] Existing purchased, failed, unknown, cancellation, and reconciliation protections remain.
-- [ ] Update the [eShip guide](../integrations/eship.md) to describe the final authority boundary
+- [x] Pickup initiation and transition cannot preserve a caller-authored reserved shipping record.
+- [x] A paid transaction without a valid shipping charge never calls the carrier purchase API.
+- [x] Changing protected data after payment cannot replace the authoritative purchase rate.
+- [x] A valid paid shipping order still buys exactly one label across manual/automatic concurrency.
+- [x] Existing purchased, failed, unknown, cancellation, and reconciliation protections remain.
+- [x] Update the [eShip guide](../integrations/eship.md) to describe the final authority boundary
       and any compatibility handling for transactions already in flight.
 
 ### A02 — Favorites writes can cross account boundaries
 
-**Priority:** High / P1. **Status:** open. **Resolution PR/commit:** pending.
+**Priority:** High / P1. **Status:** resolved in code. **Resolution PR/commit:** `d7c547c40`,
+`6da9c89f3`.
+
+**Resolution:** the favorites slice carries a session token (lazy initial state, so the logout reset
+recreates it; `clearCurrentUser` replaces it too). Every queued operation records that token and its
+user and is dropped — no `updateProfile`, no dispatch, no tracking call — when either has changed,
+before the write and again when the response arrives. A new session only waits behind the previous
+queue for the same user. Regressions: `favorites.duck.test.js` "session boundaries" (fail on the old
+duck). Residual: a sign-in in _another browser tab_ swaps the shared session cookie without changing
+this tab's state, so a write already queued here would still reach the other account; its response
+is discarded. Outside the audit's same-SPA scope.
 
 **Evidence:** [favorites.duck.js](../../src/ducks/favorites.duck.js#L16), lines 16, 23–27, 91–100,
 and 107–122.
@@ -135,16 +185,22 @@ insufficient: it does not stop a queued write from reaching the next account.
 
 **Acceptance criteria / regression coverage:**
 
-- [ ] Delayed success and failure after logout cannot change favorites or current user state.
-- [ ] Alice's queued work never calls `updateProfile` after Bob signs in.
-- [ ] A new session for the same user cannot inherit stale operations from an earlier generation.
-- [ ] Concurrent toggles within one session retain optimistic ordering and failure rollback.
-- [ ] Keep queue/session coordination in the duck or a shared state utility, not a mounted
+- [x] Delayed success and failure after logout cannot change favorites or current user state.
+- [x] Alice's queued work never calls `updateProfile` after Bob signs in.
+- [x] A new session for the same user cannot inherit stale operations from an earlier generation.
+- [x] Concurrent toggles within one session retain optimistic ordering and failure rollback.
+- [x] Keep queue/session coordination in the duck or a shared state utility, not a mounted
       component.
 
 ### A03 — Malformed original price can break public rendering
 
-**Priority:** High / P1. **Status:** open. **Resolution PR/commit:** pending.
+**Priority:** High / P1. **Status:** resolved in code. **Resolution PR/commit:** `61d39f1d1`.
+
+**Resolution:** `src/util/avOriginalPrice.js` accepts only a safe positive integer amount in the
+listing's currency that exceeds the price; listing cards, bag cards, OrderPanel and both pricing
+editors use it. `sanitize.js` stays upstream. Regressions: `avOriginalPrice.test.js`,
+card/bag/OrderPanel malformed cases, and an SSR `renderToString` of a result set with a
+`NO-SUCH-CURRENCY` listing.
 
 **Evidence:** [AVListingCard.js](../../src/components/AVListingCard/AVListingCard.js#L78), lines
 78–88; [sanitize.js](../../src/util/sanitize.js#L178), lines 178–200. The same trust pattern exists
@@ -171,15 +227,19 @@ this validation out of upstream's general-purpose sanitizer when an AV boundary 
 
 **Acceptance criteria / regression coverage:**
 
-- [ ] Unknown, missing, and mismatched currencies do not throw or display a misleading comparison.
-- [ ] Nonnumeric, fractional, unsafe, and otherwise malformed amounts are ignored safely.
-- [ ] A malformed listing cannot break a public SSR result set containing valid listings.
-- [ ] Valid strike-through prices render consistently in every consumer.
-- [ ] Every exported helper has unit coverage, with a component/SSR regression for malformed input.
+- [x] Unknown, missing, and mismatched currencies do not throw or display a misleading comparison.
+- [x] Nonnumeric, fractional, unsafe, and otherwise malformed amounts are ignored safely.
+- [x] A malformed listing cannot break a public SSR result set containing valid listings.
+- [x] Valid strike-through prices render consistently in every consumer.
+- [x] Every exported helper has unit coverage, with a component/SSR regression for malformed input.
 
 ### A04 — Concurrent imports can exchange image contents
 
-**Priority:** Medium / P2. **Status:** open. **Resolution PR/commit:** pending.
+**Priority:** Medium / P2. **Status:** resolved in code. **Resolution PR/commit:** `ba3969ccf`.
+
+**Resolution:** each upload writes an exclusively created file in its own `mkdtemp` directory and
+removes the directory when it settles (async I/O, whitelisted extension). Regressions:
+`importWorker.test.js` "uploadImage temporary files" (fail on the old helper).
 
 **Evidence:** [importWorker.js](../../server/api/bulk-import/importWorker.js#L107), lines 107–117.
 
@@ -201,14 +261,22 @@ I/O. Keep temporary files transient; do not turn them into durable runtime state
 
 **Acceptance criteria / regression coverage:**
 
-- [ ] Concurrent uploads with identical extension and timestamp each read their own bytes.
-- [ ] Success/failure cleanup removes only the owning upload's files.
-- [ ] SDK rejection still cleans up; another active upload remains unaffected.
-- [ ] Update the importer guide if temporary-file handling or operational constraints change.
+- [x] Concurrent uploads with identical extension and timestamp each read their own bytes.
+- [x] Success/failure cleanup removes only the owning upload's files.
+- [x] SDK rejection still cleans up; another active upload remains unaffected.
+- [x] Update the importer guide if temporary-file handling or operational constraints change.
 
 ### A05 — Upload limits run after expensive buffering and extraction
 
-**Priority:** Medium / P2. **Status:** open. **Resolution PR/commit:** pending.
+**Priority:** Medium / P2. **Status:** resolved in code. **Resolution PR/commit:** `fbc89f793`.
+
+**Resolution:** `uploadAdmission.js` runs before Multer: a per-user attempt cap (20/h standard, 60/h
+admin, every attempt counts), the completed-import cap as a non-recording check, one in-flight
+upload or active job per user, and jobs plus in-flight uploads at most 3. The reservation is
+released once — on job creation, response finish, or connection close. Multer reads each tier with
+its own ZIP cap and bounded fields/parts. Off-thread extraction was evaluated and not adopted
+(admission already bounds it; no new dependency). Regressions: `index.test.js` "admission before the
+upload is read".
 
 **Evidence:** [bulk-import/index.js](../../server/api/bulk-import/index.js#L73), Multer at lines
 73–85, route order at 107, extraction at 145, and admission checks at 221–239;
@@ -236,16 +304,25 @@ Evaluate asynchronous/off-thread extraction without adding a dependency before a
 
 **Acceptance criteria / regression coverage:**
 
-- [ ] Requests exceeding admission capacity are rejected before buffering/extracting their body.
-- [ ] Invalid uploads count toward an attempt limit independent of completed-import limits.
-- [ ] Disconnects, parser failures, and configuration errors cannot leak reservations.
-- [ ] Standard/admin size limits remain correct, and multipart fields/parts are bounded.
-- [ ] Tests use controlled streams/stubs to prove admission order without large-memory flooding.
-- [ ] Update [bulk-import documentation](../implementation/bulk-import.md) with the final limits.
+- [x] Requests exceeding admission capacity are rejected before buffering/extracting their body.
+- [x] Invalid uploads count toward an attempt limit independent of completed-import limits.
+- [x] Disconnects, parser failures, and configuration errors cannot leak reservations.
+- [x] Standard/admin size limits remain correct, and multipart fields/parts are bounded.
+- [x] Tests use controlled streams/stubs to prove admission order without large-memory flooding.
+- [x] Update [bulk-import documentation](../implementation/bulk-import.md) with the final limits.
 
 ### A06 — Outbound timeouts do not cover response bodies
 
-**Priority:** Medium / P2. **Status:** open. **Resolution PR/commit:** pending.
+**Priority:** Medium / P2. **Status:** resolved in code. **Resolution PR/commit:** `b576a806d`.
+
+**Resolution:** `requestWithTimeout` keeps one deadline over the request and the body read, and
+reports the status already received when only the body is late; eShip, Brevo email/contacts,
+WhatsApp and Instagram (route and token refresh) use it, and `fetchWithTimeout` was removed.
+Classification is unchanged: no response is `unknown`, a late 2xx body counts as sent, a late error
+body keeps its status, and the label path stays fail-closed. The Instagram follow-up (cache before
+token read, coalesced cold loads, env fallback when the token service cannot be built) is included.
+Regressions: `fetchWithTimeout.test.js`, `eshipClient.test.js`, `brevoEmailService.test.js`,
+`brevoContactService.test.js`, `instagram.test.js`, `instagramTokenService.test.js`.
 
 **Evidence:** [fetchWithTimeout.js](../../server/api-util/fetchWithTimeout.js#L13), lines 13–20;
 [eshipClient.js](../../server/api-util/eshipClient.js#L79), lines 79–84; body consumers in
@@ -272,15 +349,21 @@ must not introduce unsafe retries or duplicate paid side effects.
 
 **Acceptance criteria / regression coverage:**
 
-- [ ] Deadlines cover stalled headers and stalled success/error bodies.
-- [ ] Abort and malformed-body errors are classified consistently by callers.
-- [ ] Timers are cleaned up after completion/failure without ending the deadline prematurely.
-- [ ] Notification and label unknown-outcome/reconciliation behavior remains fail-closed.
-- [ ] Avoid independent timeout implementations drifting across providers.
+- [x] Deadlines cover stalled headers and stalled success/error bodies.
+- [x] Abort and malformed-body errors are classified consistently by callers.
+- [x] Timers are cleaned up after completion/failure without ending the deadline prematurely.
+- [x] Notification and label unknown-outcome/reconciliation behavior remains fail-closed.
+- [x] Avoid independent timeout implementations drifting across providers.
 
 ### A07 — Marketing consent can transfer between email addresses
 
-**Priority:** Medium / P2. **Status:** open. **Resolution PR/commit:** pending.
+**Priority:** Medium / P2. **Status:** resolved in code. **Resolution PR/commit:** `1010f19a1`.
+
+**Resolution:** consent lookups are keyed by the destination address, the user id only narrows the
+match, and the matching-listing audience joins the same way; the footer links the account only when
+it subscribes its own email. Existing rows need no migration: stale links are never consulted for
+the account address and no suppression is lifted. Regressions: `marketingConsent.test.js`,
+`brevo.test.js`, `notificationJobs.test.js`.
 
 **Evidence:** [brevo.js](../../server/api/brevo.js#L81), lines 81–100;
 [marketingConsent.js](../../server/services/marketingConsent.js#L142), lines 142–158.
@@ -305,15 +388,23 @@ compatibility without silently broadening consent or lifting suppression.
 
 **Acceptance criteria / regression coverage:**
 
-- [ ] Consent for B never authorizes promotional mail to A, even with a matching user ID.
-- [ ] Footer signup for an unrelated address does not attach the current user's identity.
-- [ ] Email changes through UI, SDK, and operator paths cannot carry permission to a new address.
-- [ ] Anonymous consent, normalized matching addresses, withdrawal, and sticky suppression work.
-- [ ] Keep the [Brevo guide](../integrations/brevo.md) consistent with the final lookup rules.
+- [x] Consent for B never authorizes promotional mail to A, even with a matching user ID.
+- [x] Footer signup for an unrelated address does not attach the current user's identity.
+- [x] Email changes through UI, SDK, and operator paths cannot carry permission to a new address.
+- [x] Anonymous consent, normalized matching addresses, withdrawal, and sticky suppression work.
+- [x] Keep the [Brevo guide](../integrations/brevo.md) consistent with the final lookup rules.
 
 ### A08 — Promotional retries bypass current eligibility
 
-**Priority:** Medium / P2. **Status:** open. **Resolution PR/commit:** pending.
+**Priority:** Medium / P2. **Status:** resolved in code. **Resolution PR/commit:** `fcf7aefda`.
+
+**Resolution:** `evaluateJob` holds normal processing's checks and is shared with
+`retryPromotionalDelivery`; `yarn notifications:retry` goes through
+`notificationRetry.retryDelivery`, which re-evaluates a campaign delivery against current data,
+refuses with a reason and no side effects, keeps the `--confirm-unknown` gate, and records a sent
+retry on its job for the frequency cap. Essential mail keeps its stored-payload retry;
+`retryNotification` refuses promotional payloads. Regressions: `notificationRetry.test.js`,
+`notificationDelivery.test.js`.
 
 **Evidence:** [notificationDelivery.js](../../server/services/notificationDelivery.js#L233), lines
 233–254, compared with
@@ -339,15 +430,22 @@ essential transactional/welcome mail. Preserve confirmation requirements for unk
 
 **Acceptance criteria / regression coverage:**
 
-- [ ] Withdrawal, suppression, changed email, and stale resource state prevent promotional retry.
-- [ ] Retry respects the rolling frequency cap and records a successful send for future caps.
-- [ ] Eligible retries preserve deduplication and unknown-outcome controls.
-- [ ] Essential welcome/transactional retries remain supported under their own policy.
-- [ ] Document promotional retry behavior in the Brevo/operator retry guidance.
+- [x] Withdrawal, suppression, changed email, and stale resource state prevent promotional retry.
+- [x] Retry respects the rolling frequency cap and records a successful send for future caps.
+- [x] Eligible retries preserve deduplication and unknown-outcome controls.
+- [x] Essential welcome/transactional retries remain supported under their own policy.
+- [x] Document promotional retry behavior in the Brevo/operator retry guidance.
 
 ### A09 — Publication deduplication discards unfinished campaign work
 
-**Priority:** Medium / P2. **Status:** open. **Resolution PR/commit:** pending.
+**Priority:** Medium / P2. **Status:** resolved in code. **Resolution PR/commit:** `315b1a494`.
+
+**Resolution:** migration `010_listing_publication_completion.sql` separates completion from first
+observation; an unfinished claim is re-run on replay or the next listing event with idempotent
+writes keyed by the first observation (including the matching digest date), a 404 author/listing
+completes with nothing scheduled, and five attempts bound a permanent failure. Regressions:
+`notificationCampaignService.test.js` "recoverable publication scheduling". Migration 010 still has
+to be applied on the Test and Live databases.
 
 **Evidence:**
 [notificationCampaignService.js](../../server/services/notificationCampaignService.js#L236), lines
@@ -372,15 +470,20 @@ transactions open across external API calls.
 
 **Acceptance criteria / regression coverage:**
 
-- [ ] Failures after the claim, after seller scheduling, and during matching fanout recover on
+- [x] Failures after the claim, after seller scheduling, and during matching fanout recover on
       replay.
-- [ ] Replay schedules missing work without duplicating previously scheduled recipients/listings.
-- [ ] Process restart cannot permanently strand a claimed but unfinished publication.
-- [ ] Normal duplicate publication events remain deduplicated after successful completion.
+- [x] Replay schedules missing work without duplicating previously scheduled recipients/listings.
+- [x] Process restart cannot permanently strand a claimed but unfinished publication.
+- [x] Normal duplicate publication events remain deduplicated after successful completion.
 
 ### A10 — Public readiness requests perform unbounded diagnostic work
 
-**Priority:** Medium / P2. **Status:** open. **Resolution PR/commit:** pending.
+**Priority:** Medium / P2. **Status:** resolved in code. **Resolution PR/commit:** `f529c9919`.
+
+**Resolution:** the public probe is configuration plus one catalog query (poller state, required
+tables, migration 010's column), coalesced and cached for 10 s; the bearer-protected details keep
+the full diagnostics with their own 5 s coalesced cache. Regressions:
+`notificationReadiness.test.js` "public probe", `notifications.test.js`.
 
 **Evidence:** [notifications.js](../../server/api/notifications.js#L10), lines 10–12;
 [notificationReadiness.js](../../server/services/notificationReadiness.js#L23), lines 23–63.
@@ -403,14 +506,18 @@ behind the existing bearer-protected endpoint and consider caching them independ
 
 **Acceptance criteria / regression coverage:**
 
-- [ ] Public probes do not aggregate historical delivery/job/consent/label/tracking tables.
-- [ ] Concurrent public probes share bounded work rather than creating unbounded queries.
-- [ ] Database/configuration failures still produce the expected readiness status.
-- [ ] The protected details endpoint retains authorization and useful diagnostic information.
+- [x] Public probes do not aggregate historical delivery/job/consent/label/tracking tables.
+- [x] Concurrent public probes share bounded work rather than creating unbounded queries.
+- [x] Database/configuration failures still produce the expected readiness status.
+- [x] The protected details endpoint retains authorization and useful diagnostic information.
 
 ### A11 — Balance totals remain stale during SPA sessions
 
-**Priority:** Medium / P2. **Status:** open. **Resolution PR/commit:** pending.
+**Priority:** Medium / P2. **Status:** resolved in code. **Resolution PR/commit:** `2da576b14`.
+
+**Resolution:** the summary is refetched once older than the server's 60 s cache, concurrent loads
+share one request, a failure stays retryable, and the request moved to `util/api.js`
+(`getMyBalanceSummary`). Regressions: `MyBalancePage.test.js` "summary freshness", `api.test.js`.
 
 **Evidence:**
 [MyBalancePage.duck.js](../../src/containers/MyBalancePage/MyBalancePage.duck.js#L180), lines
@@ -434,17 +541,28 @@ boundary convention, if this loading path is refactored.
 
 **Acceptance criteria / regression coverage:**
 
-- [ ] Revisiting after a relevant transition/cache expiry refreshes totals and rows consistently.
-- [ ] Concurrent loads do not issue duplicate summary requests.
-- [ ] Pagination/filter-only navigation respects the chosen freshness policy.
-- [ ] Failed refresh can be retried and does not mark the stale summary permanently fresh.
+- [x] Revisiting after a relevant transition/cache expiry refreshes totals and rows consistently.
+- [x] Concurrent loads do not issue duplicate summary requests.
+- [x] Pagination/filter-only navigation respects the chosen freshness policy.
+- [x] Failed refresh can be retried and does not mark the stale summary permanently fresh.
 
 ## Dependency review
 
 ### D01 — Dependency advisories require reachability and upgrade review
 
-**Status:** open; version alerts confirmed, application exploitability not established. **Resolution
-PR/commit:** pending.
+**Status:** resolved; two production-group moderates accepted with rationale. **Resolution
+PR/commit:** `c93da3d9d`.
+
+**Resolution:** resolutions pin `follow-redirects` 1.16.2, `axios` `^1.21.0` and react-router's
+`path-to-regexp` `^1.9.0` (the v12.6.0 lock merge had restored 1.18.1/1.7.0); in-range re-resolution
+patches `braces`, `micromatch`, `picomatch`, `semver@5` (pinned to 5.7.2 because 5.7.3 was five days
+old), `yaml` and the dev-only `shell-quote`. `yarn audit --groups dependencies`: 22 → **2 moderate**
+— `glob` 13 and `minimatch` 10 under `@sentry/node > @sentry/bundler-plugins`, which need
+attacker-controlled glob patterns the app never passes and whose fixes are new majors under a
+Sentry-owned dependency. Full tree: 117 (1 critical) → **63 (0 critical)**, every path starting at a
+development/build tool that upstream locks identically. Server and client suites and
+`yarn run build` pass. Details in
+[live-launch §2.2](../pending/live-launch.md#22-remaining-dependency-advisories).
 
 The external registry audit was run with explicit user approval. These are audit-time results, not a
 claim that every advisory is exploitable in an application request path. The production manifest
@@ -478,12 +596,12 @@ Two findings deserve explicit review:
 
 **Acceptance criteria:**
 
-- [ ] Classify production advisory paths as runtime, browser, build/postinstall, or unreachable.
-- [ ] Update compatible direct/transitive versions and the explicit redirect resolution.
-- [ ] Verify Sharetribe SDK behavior, server/client tests, and the production build after upgrades.
-- [ ] Re-run both audit scopes; record remaining IDs with concrete reachability/risk rationale.
-- [ ] Review relevant upstream dependency updates instead of creating unnecessary permanent forks.
-- [ ] Do not equate a green test suite with advisory remediation or blindly apply major overrides.
+- [x] Classify production advisory paths as runtime, browser, build/postinstall, or unreachable.
+- [x] Update compatible direct/transitive versions and the explicit redirect resolution.
+- [x] Verify Sharetribe SDK behavior, server/client tests, and the production build after upgrades.
+- [x] Re-run both audit scopes; record remaining IDs with concrete reachability/risk rationale.
+- [x] Review relevant upstream dependency updates instead of creating unnecessary permanent forks.
+- [x] Do not equate a green test suite with advisory remediation or blindly apply major overrides.
 
 ### Production-group advisory inventory
 
@@ -540,7 +658,17 @@ restyles. Avoid copying an entire upstream page merely to eliminate a small nece
 
 ### U01 — Shared AV button styles live in an upstream page stylesheet
 
-**Status:** open cleanup. **Resolution PR/commit:** pending.
+**Status:** resolved. **Resolution PR/commit:** `d3b500572`.
+
+**Resolution:** the button system moved to the AV-owned `src/styles/avCtaButtons.module.css` with a
+self-contained base; every consumer composes from it, the PageBuilder token helpers read it,
+`.sectionDetailsH` moved to `extensions/pageBuilder/av/sectionLayout.module.css`, and the plain
+`.ctaButton`/`.description` restyles are global overrides. `SectionBuilder.module.css` matches
+upstream except the var-driven `.blockContainer` padding, kept there because its cascade position
+against each section's column classes decides the padding. Verified by comparing computed styles
+from the before/after production CSS in headless Chromium (every consumer and token CTA, light and
+dark, rest and hover, 375/768/1024/1440 px): the only change is the welcome popup buttons getting
+their own `margin-top: 0`, which had been losing to the base in production (24 px).
 
 **Evidence:**
 [SectionBuilder.module.css](../../src/containers/PageBuilder/SectionBuilder/SectionBuilder.module.css#L179)
@@ -562,14 +690,24 @@ duplicate full PageBuilder implementation.
 
 **Acceptance criteria:**
 
-- [ ] Reusable components no longer compose AV button classes from an upstream container stylesheet.
-- [ ] Section/block CTA tokens and modifiers retain their behavior.
-- [ ] Dark theme, hover/focus, form-button, anchor, and responsive appearances are verified.
-- [ ] Restore the upstream stylesheet where possible; document any minimal remaining necessity.
+- [x] Reusable components no longer compose AV button classes from an upstream container stylesheet.
+- [x] Section/block CTA tokens and modifiers retain their behavior.
+- [x] Dark theme, hover/focus, form-button, anchor, and responsive appearances are verified.
+- [x] Restore the upstream stylesheet where possible; document any minimal remaining necessity.
 
 ### U02 — Remaining upstream restyles can use existing AV boundaries
 
-**Status:** open cleanup. **Resolution PR/commit:** pending.
+**Status:** resolved; Checkout row closed as a kept fork. **Resolution PR/commit:** `042f3d25e`.
+
+**Resolution:** SectionFeatures, SectionFooter and SectionColumns CSS modules are byte-identical to
+`upstream/main`: new classes moved to `SectionFeatures.av.module.css` /
+`SectionFooter.av.module.css`, restyles of existing classes to `avBrandOverrides.css`, and the
+2/3-cols gap is self-chained so it keeps its 64 px default. The same computed-style comparison (616
+element states, incl. feature, footer and column cases) shows no change. `CheckoutPage.module.css`
+stays a documented fork: it moves the whole two-column layout to `--viewportMedium` with a fluid
+ramp, and re-declaring ~25 upstream rules for 768–1023 px as global overrides on the payment page
+would add risk without reducing merge exposure (decision with the owner, 2026-11-06; recorded in
+CLAUDE.md).
 
 | Area                                                                                                                         | Existing customization                                          | Preferred boundary                                                                                  |
 | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
@@ -585,11 +723,11 @@ to another module changes its generated class and may stop it matching the upstr
 
 **Acceptance criteria:**
 
-- [ ] Keep new component-specific classes in AV-owned modules and existing-class restyles global.
-- [ ] Compare against current `upstream/main`, not a historical merge-base or this audit's SHA.
-- [ ] Verify mobile/tablet/desktop layout, section tokens, dark themes, and CTA states visually.
-- [ ] Keep necessary JS import/prop/registration seams small; do not wrap large upstream JSX trees.
-- [ ] Update the authoritative upstream watchlist after files are genuinely restored.
+- [x] Keep new component-specific classes in AV-owned modules and existing-class restyles global.
+- [x] Compare against current `upstream/main`, not a historical merge-base or this audit's SHA.
+- [x] Verify mobile/tablet/desktop layout, section tokens, dark themes, and CTA states visually.
+- [x] Keep necessary JS import/prop/registration seams small; do not wrap large upstream JSX trees.
+- [x] Update the authoritative upstream watchlist after files are genuinely restored.
 
 ### Pristine boundaries verified at audit time
 
@@ -611,7 +749,9 @@ their existence is not evidence that the original upstream files are dirty.
 
 ### O01 — Documentation drift
 
-**Status:** open. **Resolution PR/commit:** pending.
+**Status:** resolved. **Resolution PR/commit:** `88e4b7983`. The pending README now lists releasing
+the merged v12.6.0 with these fixes (migration 010 first) instead of a future v12.4 merge, and the
+importer guide states that the active UI accepts CSV and ZIP.
 
 - The [pending release guidance](../pending/README.md#release-and-operations) still says to merge
   upstream v12.4 after launch and describes the fork as v12.1. The audited package version is 12.6.0
@@ -628,7 +768,8 @@ The Instagram route and token-refresh paths also merit review while addressing A
 lack a deadline, feed handling reads PostgreSQL before consulting the feed cache, and cold cache
 misses are not coalesced. Service construction can throw before a fallback's promise catch. These
 observations were not developed into separately reproduced high-priority findings; confirm their
-reachability and operational impact before expanding remediation scope.
+reachability and operational impact before expanding remediation scope. **Resolved with A06**
+(`b576a806d`).
 
 ### Known constraints and excluded false positives
 
@@ -663,6 +804,26 @@ reachability and operational impact before expanding remediation scope.
 
 Passing existing tests does not cover the reproduced trust-boundary, account-switch, body-timeout,
 or partial-failure cases. Those need targeted regression tests as fixes are implemented.
+
+### Remediation verification (2026-11-06, branch `fix/audit-2026-11-06`)
+
+| Check                                                        | Result                                                                                               |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `CI=true yarn test-server --runInBand`                       | 68 suites, 942 tests passed                                                                          |
+| `CI=true yarn test -- --watchAll=false --runInBand`          | 202 suites, 2,239 tests, 170 snapshots passed                                                        |
+| New regressions against the pre-fix code                     | A02, A03, A04 cases fail on the old code and pass on the new                                         |
+| `yarn format-ci`, `git diff --check`                         | Passed                                                                                               |
+| `yarn av-translation-check` / `env-template-check`           | Passed (346 symmetric keys) / passed                                                                 |
+| `yarn check-translations-sorted`                             | Passed                                                                                               |
+| `yarn run build` (web + server)                              | Passed                                                                                               |
+| `yarn audit --groups dependencies` / `yarn audit`            | 2 moderate / 63 (0 critical), see D01                                                                |
+| Before/after computed styles of the production CSS (U01/U02) | 616 element states, 4 widths, light/dark, rest/hover: only the intended welcome-popup margin changed |
+| `git diff upstream/main` of the restored CSS modules         | Empty for SectionFeatures, SectionFooter, SectionColumns                                             |
+
+**Not performed:** Render/Test deployment, migration 010 on the Test/Live databases, live provider
+calls, and a repository auditor-agent pass over the branch diff (attempted; it stopped on an account
+spend limit before reporting). The A01 Test checks and migration 010 are tracked in the
+[pending README](../pending/README.md#release-and-operations).
 
 **Not performed:** live Sharetribe/Stripe/eShip money operations, deployed configuration inspection,
 real provider failure injection, multi-process/load testing, and a production build during this

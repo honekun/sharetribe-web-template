@@ -8,8 +8,8 @@ inside `docs/`.
 Last reviewed: 2026-11-06 (custom-code audit remediation).
 
 The [2026-11-06 custom-code audit](../audits/2026-11-06-custom-code-audit.md) is the remediation
-register for open security, performance, architecture, dependency, and upstream-cleanup findings.
-Track those findings in the audit report rather than duplicating their checklists here.
+register for its findings. All are resolved in code on `fix/audit-2026-11-06`; the remaining
+release steps are below. Remove the report and its links once they are done.
 
 ## Release and operations
 
