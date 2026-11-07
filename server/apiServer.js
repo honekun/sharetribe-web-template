@@ -11,9 +11,9 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const apiRouter = require('./apiRouter');
 const wellKnownRouter = require('./wellKnownRouter');
-const webmanifestResourceRoute = require('./resources/webmanifest');
 const robotsTxtRoute = require('./resources/robotsTxt');
 const sitemapResourceRoute = require('./resources/sitemap');
+const webmanifestResourceRoute = require('./resources/avWebmanifest');
 
 const radix = 10;
 const PORT = parseInt(process.env.REACT_APP_DEV_API_SERVER_PORT, radix);

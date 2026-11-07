@@ -37,7 +37,6 @@ const passport = require('passport');
 const auth = require('./auth');
 const apiRouter = require('./apiRouter');
 const wellKnownRouter = require('./wellKnownRouter');
-const webmanifestResourceRoute = require('./resources/webmanifest');
 const robotsTxtRoute = require('./resources/robotsTxt');
 const sitemapResourceRoute = require('./resources/sitemap');
 const { getExtractors } = require('./importer');
@@ -53,6 +52,7 @@ const {
 } = require('./services/notificationConfig');
 const { toTrustProxySetting } = require('./api-util/trustProxy');
 const { createIndexingGuard } = require('./api-util/searchIndexing');
+const webmanifestResourceRoute = require('./resources/avWebmanifest');
 
 const buildPath = path.resolve(__dirname, '..', 'build');
 const dev = process.env.REACT_APP_ENV === 'development';

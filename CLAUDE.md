@@ -157,6 +157,14 @@ it. Instead:
 
 `src/components/`:
 
+- `AVPage/` — wraps upstream `Page` at the shared component export, overriding only favicon/app-icon
+  config with `configAVBranding.js` and adding ICO/SVG/theme links. The approved files live in
+  `public/static/icons/`; Console favicon/app-icon uploads do not override them. Upstream `Page.js`
+  stays pristine. ICO is explicitly linked at `/static/icons/favicon.ico`, so the upstream
+  `/favicon.ico` 404 route remains untouched. Both servers use `resources/avWebmanifest.js`, which
+  reads the shipped manifest once and resolves app/icon URLs against the frontend root (including
+  split-port development). The only upstream code edits for this feature are the `Page` export
+  swap and the two manifest-handler import swaps.
 - `AVListingCard/` — listing card; overlays `StoreTypeTags` for `vendedor-tienda` authors
 - `AVUserCard/` — profile card for `SectionSelectedUser`
 - `AVCategoryCard/` — category card for `SectionSelectedCat`; resolves one category ID or
@@ -628,6 +636,7 @@ contain.
 | File                                                                                    | Why touched                                                                                                     |
 | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `components/CustomExtendedDataField/CustomExtendedDataField.js`                         | `groupedMultiSelect` + `colorGridPicker` branches                                                               |
+| `components/index.js`                                                                   | `Page` export points to `AVPage`, preserving upstream page implementation                                       |
 | `components/FieldCurrencyInput/FieldCurrencyInput.js`                                   | Price inputs forced to `en-US` (`$1,325.00`) to match `formatMoney` display — was locale-dependent `1.325,00 $` |
 | `util/configHelpers.js`                                                                 | Listing field merge (code wins over Console, except `brand` options — `configAV.mergeHostedBrandOptions`)       |
 | `containers/SearchPage/FilterComponent.js`                                              | Custom filter type branches (`searchFilters/avFilters`) + `AVSelectSingleFilter` import swap                    |

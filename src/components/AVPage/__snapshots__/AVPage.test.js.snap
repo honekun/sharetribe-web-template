@@ -1,0 +1,17 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`AVPage preserves the upstream page body 1`] = `
+<DocumentFragment>
+  <div
+    class="root"
+    id="page"
+    style="--marketplaceColor: #7c3aee; --marketplaceColorDark: hsl(262, 84%, 48%); --marketplaceColorLight: hsl(262, 84%, 68%);"
+  >
+    <div
+      class="content"
+    >
+      Page content
+    </div>
+  </div>
+</DocumentFragment>
+`;

@@ -155,7 +155,7 @@ export { default as BalanceSummary } from './BalanceSummary/BalanceSummary';
 export { default as PayoutItem } from './PayoutItem/PayoutItem';
 export { default as TransactionFilters } from './TransactionFilters/TransactionFilters';
 export { default as Map } from './Map/Map';
-export { default as Page } from './Page/Page';
+export { default as Page } from './AVPage/AVPage';
 export { default as Reviews } from './Reviews/Reviews';
 export { default as SavedCardDetails } from './SavedCardDetails/SavedCardDetails';
 export const SectionText = loadable(() => import(/* webpackChunkName: "SectionText" */ './CustomExtendedDataSection/SectionText'));

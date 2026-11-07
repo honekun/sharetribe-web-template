@@ -1916,6 +1916,18 @@ plain language.
 | **Marketplace name** | The name shown in the browser tab and emails                |
 | **Marketplace URL**  | The full web address of the marketplace (no trailing slash) |
 
+### Browser and home-screen icons
+
+The approved Archivo Vintach icon set is shipped with the application. It supplies browser-tab and
+bookmark icons, the iPhone/iPad home-screen icon, and Android/web-app icons. The web-app manifest
+uses Archivo blue (`#0f26e4`) for its theme and background, and opens the marketplace home page.
+
+These icons are maintained in code under `public/static/icons/`; uploading another favicon or app
+icon in Console does not replace this approved set. Other Console branding, including logos and
+sharing images, remains editable as usual. Ask the development team to replace the shipped assets
+when the approved artwork changes. Browsers and search engines may continue showing cached icons
+until they refresh them.
+
 ### Sharetribe connection
 
 | Setting                                                            | What it controls                                                                                        |
