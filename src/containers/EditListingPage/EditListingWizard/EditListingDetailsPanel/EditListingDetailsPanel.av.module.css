@@ -8,10 +8,14 @@
 }
 
 /* AV: blue CTA linking to the bulk importer on the new-listing flow. Styled as
-   the canonical blue avCtaButton (composed from SectionBuilder), right-aligned
+   the canonical blue avCtaButton (src/styles/avCtaButtons.module.css), right-aligned
    in normal flow just above the PhotoGallerySection. */
 .bulkImportLink {
-  composes: ctaButtonBlue from '../../../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonBlue from '../../../../styles/avCtaButtons.module.css';
+}
+
+/* Self-chained so it beats the composed (0,1,0) base in any stylesheet order. */
+.bulkImportLink.bulkImportLink {
   display: block;
   width: fit-content;
   margin-left: auto;
@@ -19,8 +23,9 @@
 }
 
 @media (max-width: 767px) {
-  /* Bulk import is a desktop workflow; hide the CTA on small screens. */
-  .bulkImportLink {
+  /* Bulk import is a desktop workflow; hide the CTA on small screens.
+     Self-chained like the layout pin above, which it must override. */
+  .bulkImportLink.bulkImportLink {
     display: none;
   }
 }

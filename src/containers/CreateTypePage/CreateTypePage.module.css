@@ -64,7 +64,7 @@
 }
 
 .cta {
-  composes: ctaButtonBlue from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonBlue from '../../styles/avCtaButtons.module.css';
 }
 /* Layout pins over the composed avCtaButton base (self-chained per the AV CTA
    button system so the (0,2,0) specificity wins regardless of module order). */

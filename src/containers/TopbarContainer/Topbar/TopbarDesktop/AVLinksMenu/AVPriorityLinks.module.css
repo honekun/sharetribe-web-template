@@ -62,7 +62,7 @@
     border-bottom: 0;
   }
 
-  /* Mirrors ctaButtonBlue (SectionBuilder.module.css) — composes can't reach
+  /* Mirrors ctaButtonBlue (src/styles/avCtaButtons.module.css) — composes can't reach
      this nested rule, so keep the colors in sync with the canonical variant. */
   .priorityLinkLabel {
     margin: auto;

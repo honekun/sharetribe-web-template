@@ -168,14 +168,14 @@
 }
 
 /* Chat CTA — canonical secondary CTA (white/black) composed from
-   SectionBuilder, sharing the half-width row with the add-to-bag button.
+   avCtaButtons.module.css, sharing the half-width row with the add-to-bag button.
    Hosted on a <SecondaryButton>: the global .buttonSecondary rest/hover/focus
    styles tie with the composed classes (emit order is unreliable), so the
    self-chained (0,2,0) rules pin the pill geometry AND re-assert the AV
    colors + outline via the --_av-* vars in every state. Disabled keeps the
    upstream grey. */
 .chatButton {
-  composes: ctaButtonSecondary from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonSecondary from '../../styles/avCtaButtons.module.css';
 }
 .chatButton.chatButton {
   display: flex;

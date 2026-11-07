@@ -195,11 +195,11 @@
   color: var(--colorGrey500);
 }
 
-/* Canonical blue CTA composed from SectionBuilder (the standard pattern for
+/* Canonical blue CTA from avCtaButtons.module.css (the standard pattern for
    all AV buttons). The self-chained override only sets card spacing (beats
    the composed margin-top regardless of CSS-module emit order). */
 .checkoutButton {
-  composes: ctaButtonBlue from '../../containers/PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonBlue from '../../styles/avCtaButtons.module.css';
   cursor: pointer;
 }
 

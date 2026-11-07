@@ -450,7 +450,7 @@
 
 .viewListingsLink,
 .resetButton {
-  composes: ctaButtonBlue from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonBlue from '../../styles/avCtaButtons.module.css';
 }
 
 .viewListingsLink.viewListingsLink,

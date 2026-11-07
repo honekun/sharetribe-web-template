@@ -692,7 +692,18 @@ from `config/configMxStates.js`), `CheckoutPage/StripePaymentForm/StripePaymentF
 `TransactionPanel/TransactionPanel.js` (provider-only `shippingLabelSlot` for the Spec B eShip label
 control). Small CSS-module forks (restyles kept inline due to scoped-class/var coupling — see the
 `AV:` comments in each): `SectionContainer.module.css`, `SectionListings.module.css`,
-`FilterPlain.module.css`.
+`FilterPlain.module.css`, and `SectionBuilder.module.css` (only the var-driven `.blockContainer`
+padding — its cascade position against each section's column classes decides the padding, so it
+cannot move to a global override).
+
+**AV button system** (audit U01): `src/styles/avCtaButtons.module.css` owns `.avCtaButton`, the
+`ctaButton{Blue,LightBlue,Purple,Pink,Yellow,Secondary}` variants, the var-only modifiers and
+`ctaBtnCenter(Wrap)`. Consumers `composes: ctaButton<Color> from '<rel>/styles/avCtaButtons.module.css'`
+and pin layout with self-chained `(0,2,0)` rules (including any `@media` override of those pins).
+PageBuilder gets the classes through `extensions/pageBuilder/av/sectionStyles.js` / `blocks.js`;
+`.sectionDetailsH` lives in `extensions/pageBuilder/av/sectionLayout.module.css`; the restyle of
+upstream's plain `.ctaButton` and `.description` is a `:root [class*='SectionBuilder_…__']` override
+in `avBrandOverrides.css`.
 
 **Already restored to pristine — do not re-dirty, and do not re-add to the watchlist.** Verify with
 `git diff upstream/main -- <file>` before assuming any of these still carries AV code.

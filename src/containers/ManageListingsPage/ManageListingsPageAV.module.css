@@ -43,11 +43,11 @@
   margin-top: 8px;
 }
 
-/* "Create listing" pill — canonical blue CTA composed from SectionBuilder.
+/* "Create listing" pill — canonical blue CTA from avCtaButtons.module.css.
    Self-chained (0,2,0) overrides pin the header layout bits so they beat the
    composed base regardless of CSS-module emit order. */
 .newListingButton {
-  composes: ctaButtonBlue from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonBlue from '../../styles/avCtaButtons.module.css';
 }
 .newListingButton.newListingButton {
   margin-top: 0;

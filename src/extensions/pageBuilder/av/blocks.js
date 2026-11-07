@@ -2,10 +2,14 @@
 // large `createBlockCustomProps` switch that walks block.blockName tokens and
 // pulls intl-keyed copy into block props.
 //
-// `css` is the SectionBuilder.module.css object passed in by the caller (CSS
-// Modules resolve at import time in the consumer file).
+// `css` is the SectionBuilder.module.css object (or a section's
+// defaultClasses) passed in by the caller; only its upstream `ctaButton` (and
+// the `ctaButtonPrimary` alias when present) is read from it. The AV button
+// classes come from the AV-owned src/styles/avCtaButtons.module.css (audit U01).
 
 import classNames from 'classnames';
+
+import avButtons from '../../../styles/avCtaButtons.module.css';
 
 // Avoids MISSING_TRANSLATION console errors for empty/absent keys.
 const fmt = (intl, id, def = '') => {
@@ -164,37 +168,37 @@ export const hasSocialLinksToken = blockName => hasBlockNameToken(blockName, 'so
 // ---- CTA token parsers ----
 
 const buildBlockCtaBaseMap = css => ({
-  blockCtaBtnBlue: css.ctaButtonBlue,
-  blockCtaBtnLightBlue: css.ctaButtonLightBlue,
-  blockCtaBtnPurple: css.ctaButtonPurple,
-  blockCtaBtnPink: css.ctaButtonPink,
-  blockCtaBtnYellow: css.ctaButtonYellow,
-  blockCtaBtnSecondary: css.ctaButtonSecondary,
+  blockCtaBtnBlue: avButtons.ctaButtonBlue,
+  blockCtaBtnLightBlue: avButtons.ctaButtonLightBlue,
+  blockCtaBtnPurple: avButtons.ctaButtonPurple,
+  blockCtaBtnPink: avButtons.ctaButtonPink,
+  blockCtaBtnYellow: avButtons.ctaButtonYellow,
+  blockCtaBtnSecondary: avButtons.ctaButtonSecondary,
 });
 
 const buildBlockCtaModifierMap = css => ({
-  roundedFull: css.roundedFull,
-  rounded: css.rounded,
-  square: css.square,
-  dashed: css.dashed,
-  solid: css.solid,
-  noOutline: css.noOutline,
-  headingFont: css.headingFont,
-  bodyFont: css.bodyFont,
-  accentFont: css.accentFont,
-  ctaBtnCenter: css.ctaBtnCenter,
+  roundedFull: avButtons.roundedFull,
+  rounded: avButtons.rounded,
+  square: avButtons.square,
+  dashed: avButtons.dashed,
+  solid: avButtons.solid,
+  noOutline: avButtons.noOutline,
+  headingFont: avButtons.headingFont,
+  bodyFont: avButtons.bodyFont,
+  accentFont: avButtons.accentFont,
+  ctaBtnCenter: avButtons.ctaBtnCenter,
 });
 
 // Short-name tokens used inside cta1Style / cta2Style intl strings,
 // e.g. "blue roundedFull solid".
 const buildCtaStyleBaseMap = css => ({
-  blue: css.ctaButtonBlue,
-  lightBlue: css.ctaButtonLightBlue,
-  purple: css.ctaButtonPurple,
-  pink: css.ctaButtonPink,
-  yellow: css.ctaButtonYellow,
-  primary: css.ctaButtonPrimary,
-  secondary: css.ctaButtonSecondary,
+  blue: avButtons.ctaButtonBlue,
+  lightBlue: avButtons.ctaButtonLightBlue,
+  purple: avButtons.ctaButtonPurple,
+  pink: avButtons.ctaButtonPink,
+  yellow: avButtons.ctaButtonYellow,
+  primary: css.ctaButtonPrimary || css.ctaButton,
+  secondary: avButtons.ctaButtonSecondary,
 });
 
 export const parseCtaStyleString = (styleStr, css) => {
@@ -258,8 +262,8 @@ export const mergeBlockCtaClass = (override, inheritedClass, css) => {
 // ---- Per-block customProps ----
 
 const getDefaultClassesForBlock = css => ({
-  ctaButtonPrimary: css.ctaButtonPrimary,
-  ctaButtonSecondary: css.ctaButtonSecondary,
+  ctaButtonPrimary: css.ctaButtonPrimary || css.ctaButton,
+  ctaButtonSecondary: avButtons.ctaButtonSecondary,
 });
 
 // Walks block.blockName for "token ::" flags and returns the prop map that
@@ -346,7 +350,7 @@ export const createBlockCustomProps = (block, intl, css) => {
  *
  * @param {Object} block - the block config (blockId, blockName, …)
  * @param {Object} intl - react-intl object, for the token-keyed microcopy
- * @param {Object} css - SectionBuilder.module.css, where the CTA classes live
+ * @param {Object} css - SectionBuilder.module.css, for upstream's `.ctaButton` fallback
  * @param {string?} inheritedCtaButtonClass - the section's own CTA class
  * @returns {Object} props to spread over the rendered block component
  */
@@ -378,7 +382,7 @@ export const buildAvBlockProps = (block, intl, css, inheritedCtaButtonClass) => 
 
   const tokens = block.blockName ? [...block.blockName.matchAll(/(\S+)\s*::/g)].map(m => m[1]) : [];
   if (tokens.includes('ctaBtnCenter')) {
-    customProps.ctaButtonWrapClass = css.ctaBtnCenterWrap;
+    customProps.ctaButtonWrapClass = avButtons.ctaBtnCenterWrap;
   }
 
   return customProps;
