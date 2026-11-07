@@ -801,7 +801,10 @@ yarn notifications:list failed
 yarn notifications:list unknown
 ```
 
-Provider timeouts remain `unknown` and are never resent automatically. Reconcile the matching
+Provider timeouts remain `unknown` and are never resent automatically. The 10-second Brevo deadline
+covers the response body as well as the headers (`requestWithTimeout`, audit A06): no response at
+all is `unknown`, a 2xx whose body stalls counts as sent (without a message id), and a rejection
+whose body stalls keeps its status-based `failed` classification. Reconcile the matching
 message/tag in Brevo before:
 
 ```sh

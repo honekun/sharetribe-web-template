@@ -1,6 +1,6 @@
 const express = require('express');
-const fetch = require('node-fetch');
 const { createTTLCache } = require('../api-util/cache');
+const { requestWithTimeout } = require('../api-util/fetchWithTimeout');
 const { createRateLimiter } = require('../api-util/rateLimit');
 const { getInstagramTokenService } = require('../services/instagramTokenService');
 
@@ -36,32 +36,44 @@ class InstagramApiError extends Error {
   }
 }
 
-const fetchJSON = async url => {
-  const r = await fetch(url);
-  if (!r.ok) {
-    const body = await r.text().catch(() => '');
-    throw new InstagramApiError(r.status, body);
+// One deadline for the request and its body (audit A06).
+const fetchJSON = url =>
+  requestWithTimeout(
+    url,
+    {},
+    {
+      read: async r => {
+        if (!r.ok) {
+          const body = await r.text().catch(() => '');
+          throw new InstagramApiError(r.status, body);
+        }
+        return r.json();
+      },
+    }
+  );
+
+// The token service needs PostgreSQL; constructing it throws synchronously when
+// DATABASE_URL is unset. Either failure falls back to the env token.
+const resolveAccessToken = async () => {
+  try {
+    return await getInstagramTokenService().getAccessToken();
+  } catch (e) {
+    return process.env.INSTAGRAM_ACCESS_TOKEN || null;
   }
-  return r.json();
 };
 
-router.get('/feed', feedRateLimit, async (_req, res) => {
-  const ACCESS_TOKEN = await getInstagramTokenService()
-    .getAccessToken()
-    .catch(() => process.env.INSTAGRAM_ACCESS_TOKEN || null);
+const notConfiguredError = () =>
+  Object.assign(new Error('not_configured'), { notConfigured: true });
 
-  if (!ACCESS_TOKEN) {
-    return res.status(503).json({ ok: false, error: 'not_configured' });
-  }
+// Concurrent cold-cache requests share one load instead of each calling Instagram.
+let pendingFeed = null;
 
-  // createTTLCache returns a Proxy: every get yields an envelope
-  // { data, timestamp, expiresAt } with `data: null` on miss/expired.
-  const { data: cachedFeed } = igCache.feed || {};
-  if (cachedFeed) {
-    return res.json(cachedFeed);
-  }
+const loadFeed = () => {
+  if (pendingFeed) return pendingFeed;
+  pendingFeed = (async () => {
+    const ACCESS_TOKEN = await resolveAccessToken();
+    if (!ACCESS_TOKEN) throw notConfiguredError();
 
-  try {
     const [mediaData, profileData] = await Promise.all([
       fetchJSON(
         `${GRAPH_BASE}/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count&limit=12&access_token=${ACCESS_TOKEN}`
@@ -92,8 +104,28 @@ router.get('/feed', feedRateLimit, async (_req, res) => {
     };
 
     igCache.feed = result;
-    return res.json(result);
+    return result;
+  })().finally(() => {
+    pendingFeed = null;
+  });
+  return pendingFeed;
+};
+
+router.get('/feed', feedRateLimit, async (_req, res) => {
+  // createTTLCache returns a Proxy: every get yields an envelope
+  // { data, timestamp, expiresAt } with `data: null` on miss/expired.
+  // A warm cache is served without touching PostgreSQL or Instagram.
+  const { data: cachedFeed } = igCache.feed || {};
+  if (cachedFeed) {
+    return res.json(cachedFeed);
+  }
+
+  try {
+    return res.json(await loadFeed());
   } catch (e) {
+    if (e.notConfigured) {
+      return res.status(503).json({ ok: false, error: 'not_configured' });
+    }
     if (e.isTokenExpired) {
       // Silence here is what let the token stay dead for seven weeks in 2026.
       // Say plainly what has to happen, and use a status that reads as

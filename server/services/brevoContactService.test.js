@@ -90,4 +90,14 @@ describe('brevoContactService', () => {
       status: 500,
     });
   });
+
+  test('a refusal whose body stalls still reports its status (audit A06)', async () => {
+    jest.useFakeTimers();
+    fetch.mockResolvedValue({ status: 500, json: () => new Promise(() => {}) });
+    const pending = unblockTransactionalContact('person@example.com').catch(e => e);
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+    jest.advanceTimersByTime(10000);
+    expect(await pending).toMatchObject({ status: 500 });
+    jest.useRealTimers();
+  });
 });

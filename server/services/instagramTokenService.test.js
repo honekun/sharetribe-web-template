@@ -202,3 +202,21 @@ describe('InstagramTokenService.refreshIfNeeded', () => {
     expect(result.persisted).toBe(false);
   });
 });
+
+describe('InstagramTokenService refresh deadline (audit A06)', () => {
+  it('gives up on a refresh whose body never arrives', async () => {
+    jest.useFakeTimers();
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    const fetchImpl = jest.fn().mockResolvedValue({ ok: true, json: () => new Promise(() => {}) });
+    const service = build({ rows: [], fetchImpl });
+
+    const pending = service.refreshIfNeeded();
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+    jest.advanceTimersByTime(10000);
+
+    await expect(pending).resolves.toEqual({ refreshed: false, reason: 'refresh_failed' });
+    expect(fetchImpl.mock.calls[0][1].signal).toBeDefined();
+    console.error.mockRestore();
+    jest.useRealTimers();
+  });
+});

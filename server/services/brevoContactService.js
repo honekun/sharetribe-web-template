@@ -1,6 +1,6 @@
 'use strict';
 
-const { fetchWithTimeout } = require('../api-util/fetchWithTimeout');
+const { isFetchTimeout, requestWithTimeout } = require('../api-util/fetchWithTimeout');
 const { normalizeEmail } = require('./emailAddress');
 
 const BREVO_CONTACTS_URL = 'https://api.brevo.com/v3/contacts';
@@ -24,39 +24,66 @@ function configuredListId() {
   return listId;
 }
 
-async function responseError(response, operation) {
-  const body = await response.json().catch(() => ({}));
-  const error = new Error(`Brevo ${operation} failed: ${response.status}`);
-  error.status = response.status;
-  error.providerBody = body;
+const statusError = (status, operation, providerBody = {}) => {
+  const error = new Error(`Brevo ${operation} failed: ${status}`);
+  error.status = status;
+  error.providerBody = providerBody;
   return error;
+};
+
+// One deadline for the request and any error body read (audit A06). Statuses in
+// `acceptedStatuses` (e.g. 404 = already in the desired state) are success.
+async function brevoContactRequest(url, options, operation, acceptedStatuses = []) {
+  const isFailure = status => status >= 400 && !acceptedStatuses.includes(status);
+  try {
+    await requestWithTimeout(url, options, {
+      read: async response => {
+        if (isFailure(response.status)) {
+          const body = await response.json().catch(() => ({}));
+          throw statusError(response.status, operation, body);
+        }
+      },
+    });
+  } catch (err) {
+    // The status arrived before the body stalled: keep reporting it.
+    if (isFetchTimeout(err) && err.response) {
+      if (!isFailure(err.response.status)) return;
+      throw statusError(err.response.status, operation);
+    }
+    throw err;
+  }
 }
 
 async function upsertMarketingContact({ email, attributes = {} }) {
-  const response = await fetchWithTimeout(BREVO_CONTACTS_URL, {
-    method: 'POST',
-    headers: brevoHeaders(),
-    body: JSON.stringify({
-      email: normalizeEmail(email),
-      updateEnabled: true,
-      listIds: [configuredListId()],
-      ...(Object.keys(attributes).length > 0 ? { attributes } : {}),
-    }),
-  });
-  if (response.status >= 400) throw await responseError(response, 'contact upsert');
+  await brevoContactRequest(
+    BREVO_CONTACTS_URL,
+    {
+      method: 'POST',
+      headers: brevoHeaders(),
+      body: JSON.stringify({
+        email: normalizeEmail(email),
+        updateEnabled: true,
+        listIds: [configuredListId()],
+        ...(Object.keys(attributes).length > 0 ? { attributes } : {}),
+      }),
+    },
+    'contact upsert'
+  );
 }
 
 async function removeMarketingContact(email) {
   const encodedEmail = encodeURIComponent(normalizeEmail(email));
-  const response = await fetchWithTimeout(`${BREVO_CONTACTS_URL}/${encodedEmail}`, {
-    method: 'PUT',
-    headers: brevoHeaders(),
-    body: JSON.stringify({ unlinkListIds: [configuredListId()] }),
-  });
   // A missing contact/list membership is already the desired state.
-  if (response.status >= 400 && response.status !== 404) {
-    throw await responseError(response, 'list removal');
-  }
+  await brevoContactRequest(
+    `${BREVO_CONTACTS_URL}/${encodedEmail}`,
+    {
+      method: 'PUT',
+      headers: brevoHeaders(),
+      body: JSON.stringify({ unlinkListIds: [configuredListId()] }),
+    },
+    'list removal',
+    [404]
+  );
 }
 
 // Clicking unsubscribe in a template email puts the address on Brevo's
@@ -66,14 +93,13 @@ async function removeMarketingContact(email) {
 // own re-consent calls this.
 async function unblockTransactionalContact(email) {
   const encodedEmail = encodeURIComponent(normalizeEmail(email));
-  const response = await fetchWithTimeout(`${BREVO_BLOCKED_CONTACTS_URL}/${encodedEmail}`, {
-    method: 'DELETE',
-    headers: brevoHeaders(),
-  });
   // Not on the blocklist is already the desired state.
-  if (response.status >= 400 && response.status !== 404) {
-    throw await responseError(response, 'transactional unblock');
-  }
+  await brevoContactRequest(
+    `${BREVO_BLOCKED_CONTACTS_URL}/${encodedEmail}`,
+    { method: 'DELETE', headers: brevoHeaders() },
+    'transactional unblock',
+    [404]
+  );
 }
 
 module.exports = {

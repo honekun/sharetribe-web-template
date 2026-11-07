@@ -188,7 +188,10 @@ record's `rate_id`, so a later record change cannot reclaim a finished attempt. 
 transaction-process change was needed.
 
 Only paid, non-cancelled transactions are eligible. A carrier 4xx response is `failed`; a timeout,
-network/5xx response, malformed 2xx success, or interrupted process is `unknown`. `processing` and
+network/5xx response, malformed 2xx success, or interrupted process is `unknown`. The 8-second eShip
+deadline covers reading the response body too (`requestWithTimeout`, audit A06): a carrier that sends
+headers and then stalls is a timeout (`unknown`), while a rejection whose body stalls keeps its HTTP
+status. `processing` and
 `unknown` attempts fail closed and are never retried automatically because eShip may already have
 charged the account.
 

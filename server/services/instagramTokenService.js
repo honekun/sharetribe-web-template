@@ -2,6 +2,7 @@
 
 const fetch = require('node-fetch');
 
+const { requestWithTimeout } = require('../api-util/fetchWithTimeout');
 const { getPostgresPool } = require('./postgres');
 
 const GRAPH_BASE = 'https://graph.instagram.com';
@@ -123,12 +124,18 @@ class InstagramTokenService {
 
     let body;
     try {
-      const response = await this.fetchImpl(
+      // One deadline for the request and its body (audit A06).
+      const response = await requestWithTimeout(
         `${GRAPH_BASE}/refresh_access_token?grant_type=ig_refresh_token&access_token=${encodeURIComponent(
           token
-        )}`
+        )}`,
+        {},
+        {
+          fetchImpl: this.fetchImpl,
+          read: async r => ({ ok: r.ok, body: await r.json() }),
+        }
       );
-      body = await response.json();
+      body = response.body;
 
       if (!response.ok || !body?.access_token) {
         if (isExpiredTokenError(body)) {

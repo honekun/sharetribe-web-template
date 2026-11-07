@@ -4,6 +4,12 @@ The `av-insta-feed` block renders the marketplace's Instagram posts. The client 
 `GET /api/instagram/feed`; the server calls the Instagram Graph API with a long-lived access token
 and caches the result for an hour.
 
+A warm cache is answered without reading the token store. Concurrent requests on a cold cache share
+one load, and every Graph API call (feed and token refresh) has one 10-second deadline covering the
+response body, through `server/api-util/fetchWithTimeout.js` `requestWithTimeout` (audit A06). When
+the token service cannot be built (no `DATABASE_URL`) or the stored token cannot be read, the route
+uses `INSTAGRAM_ACCESS_TOKEN` instead of failing.
+
 - Route: `server/api/instagram.js` (mounted from `server/customApiRoutes.js`)
 - Token lifecycle: `server/services/instagramTokenService.js`
 - Boot + daily refresh: `server/services/instagramTokenRefresh.js`, started in `server/index.js`
@@ -51,7 +57,7 @@ DELETE FROM av_instagram_token WHERE token_name = 'default';
 | --------------------------- | ------ | ---------------------------------------------------------------------- |
 | `{"ok":false,"error":"not_configured"}` | 503 | No token in Postgres and no `INSTAGRAM_ACCESS_TOKEN`.        |
 | `{"ok":false,"error":"token_expired"}`  | 503 | Instagram rejected the token — re-mint it (above). Operator action. |
-| `{"ok":false,"error":"fetch_failed"}`   | 502 | Transient upstream error; retries on the next request.       |
+| `{"ok":false,"error":"fetch_failed"}`   | 502 | Transient upstream error or a call that exceeded the deadline; retries on the next request. |
 | `{"ok":false,"error":"rate_limited"}`   | 429 | More than 60 requests a minute from one client.              |
 
 The block renders nothing on any failure, by design — visitors see a clean page rather than a broken
