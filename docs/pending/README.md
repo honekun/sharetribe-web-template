@@ -7,6 +7,10 @@ inside `docs/`.
 
 Last reviewed: 2026-10-15 (after the Live cutover).
 
+The [2026-11-06 custom-code audit](../audits/2026-11-06-custom-code-audit.md) is the remediation
+register for open security, performance, architecture, dependency, and upstream-cleanup findings.
+Track those findings in the audit report rather than duplicating their checklists here.
+
 ## Release and operations
 
 - Production (Heroku, Sharetribe Live) is deployed since 2026-10-12 but **not signed off**. Close
@@ -34,9 +38,9 @@ Last reviewed: 2026-10-15 (after the Live cutover).
 - [Listings sheet](listings-sheet-proposal.md) — proposal for an in-site spreadsheet that creates
   many listings with validated dropdowns, instead of the CSV/ZIP bulk import. Awaiting client
   approval; no development has started.
-- Per-seller provider commission override — **implemented 2026-10-23** as a Console `metadata`
-  user field `avCommissionPercentage` (0–25 %, percentage only, \$15 fixed fee always charged, no
-  end date; [design](../superpowers/specs/2026-08-14-per-seller-commission-override-design.md)).
+- Per-seller provider commission override — **implemented 2026-10-23** as a Console `metadata` user
+  field `avCommissionPercentage` (0–25 %, percentage only, \$15 fixed fee always charged, no end
+  date; [design](../superpowers/specs/2026-08-14-per-seller-commission-override-design.md)).
   Remaining: create the field in Console **Test** and **Live** (operator guide §14.6, "One-time
   setup"), with Show on profile off, then verify one seller in Test end to end.
 - [WhatsApp hardening](notifications.md) — recipient direction, consent, Graph API version, delivery
@@ -49,8 +53,8 @@ Last reviewed: 2026-10-15 (after the Live cutover).
 - [eShip policy and reconciliation](eship.md) — decide purchased-label cancellation/refund cost
   ownership and reconcile IVA before considering automatic label purchase.
 - [Bulk-import horizontal scaling](scaling.md) — shared coordination or a durable worker, plus a
-  durable atomic per-row claim for idempotency, only when more than one web process or
-  restart-safe imports are required.
+  durable atomic per-row claim for idempotency, only when more than one web process or restart-safe
+  imports are required.
 
 ## Completion rule
 

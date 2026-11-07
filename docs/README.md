@@ -1,7 +1,8 @@
 # Archivo Vintach documentation
 
-This directory documents the current implementation and work that is still pending. Superseded
-plans, completed checklists, and audit history are intentionally excluded; Git history is the
+This directory documents the current implementation and work that is still pending. Open audit
+findings live in [audits/](audits/README.md) for team review and remediation. Superseded plans,
+completed checklists, and resolved audit histories are intentionally excluded; Git history is the
 archive.
 
 ## Canonical operator documentation
@@ -31,8 +32,8 @@ archive.
 ### Integrations
 
 - [eShip shipping](integrations/eship.md)
-- [Stripe Connect setup for Live](integrations/stripe-connect-setup.md) — platform profile,
-  payout settings, Accounts V1 ([Spanish](integrations/stripe-connect-setup-es.md))
+- [Stripe Connect setup for Live](integrations/stripe-connect-setup.md) — platform profile, payout
+  settings, Accounts V1 ([Spanish](integrations/stripe-connect-setup-es.md))
 - [Notification PostgreSQL](integrations/notification-postgres.md)
 - [Brevo email and consent](integrations/brevo.md)
 - [Brevo Spanish templates](integrations/brevo-templates-es.md)
@@ -46,6 +47,9 @@ archive.
 - [Spanish Email-text reference](reference/email-texts-es.md)
 
 ## Pending work
+
+The [2026-11-06 custom-code audit](audits/2026-11-06-custom-code-audit.md) tracks open security,
+performance, architecture, dependency, and upstream-cleanup findings with acceptance criteria.
 
 Start with the [pending-work index](pending/README.md). It contains actionable open topics and the
 explicitly retained future-use record:

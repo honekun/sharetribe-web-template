@@ -33,6 +33,11 @@ docs/*
 !docs/reference/*.md
 !docs/shareable/
 
+# Open audit findings retained for team review and remediation.
+!docs/audits/
+docs/audits/*
+!docs/audits/*.md
+
 # Pending work is documentation, not disposable local output.
 !docs/pending/
 docs/pending/*
