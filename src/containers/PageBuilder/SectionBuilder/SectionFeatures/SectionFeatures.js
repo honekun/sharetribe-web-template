@@ -9,6 +9,7 @@ import BlockBuilder from '../../BlockBuilder';
 import AVSectionContainer from '../SectionContainer/AVSectionContainer';
 
 import css from './SectionFeatures.module.css';
+import avCss from './SectionFeatures.av.module.css';
 
 /**
  * @typedef {Object} BlockConfig
@@ -94,13 +95,13 @@ const SectionFeatures = props => {
         <div
           className={classNames(defaultClasses.blockContainer, css.featuresMain, {
             [css.noSidePaddings]: isInsideContainer,
-            [css.featuresMainAvFeature]: customOption?.isAvFeature,
-            [css.featuresMainReverseFeature]: customOption?.isReverseFeature,
+            [avCss.featuresMainAvFeature]: customOption?.isAvFeature,
+            [avCss.featuresMainReverseFeature]: customOption?.isReverseFeature,
           })}
         >
           <BlockBuilder
             rootClassName={classNames(css.block, {
-              [css.blockAvFeature]: customOption?.isAvFeature,
+              [avCss.blockAvFeature]: customOption?.isAvFeature,
             })}
             ctaButtonClass={defaultClasses.ctaButton}
             blocks={blocks}

@@ -152,8 +152,13 @@ it. Instead:
   `CustomLinksMenu/`, which were already clean. Any SHA written down here goes stale the next time
   upstream is merged; resolve the baseline at the time you use it.
 
-  The big forked files (TopbarDesktop/MobileMenu/SearchForm, SectionBuilder, SectionFeatures/Footer,
-  vendored `image-gallery.css`) are intentionally kept as-is.
+  The big forked files (TopbarDesktop/MobileMenu/SearchForm, the SectionBuilder/SectionFeatures/
+  SectionFooter **JS**, vendored `image-gallery.css`) are intentionally kept as-is. Their CSS modules
+  were restored to upstream for audit U02 (see "Already restored to pristine" below).
+  `CheckoutPage.module.css` stays a deliberate fork: it moves the whole two-column layout to
+  `--viewportMedium` with a fluid ramp, and re-declaring ~25 upstream rules for 768–1023px as
+  global overrides on the payment page would add risk without reducing merge exposure (decision
+  recorded 2026-11-06).
 
 ## Custom AV Components
 
@@ -720,6 +725,10 @@ in `avBrandOverrides.css`.
 | Signup/confirm/contact-details form CSS modules | Colocated `*.av.module.css` files own AV-only field spacing |
 | `InboxPage/InboxPage.module.css` | `styles/avBrandOverrides.css` owns AV inbox typography |
 | `ListingImageGallery/image-gallery.css` | `ListingImageGalleryAV.module.css` owns AV gallery sizing |
+| `PageBuilder/SectionBuilder/SectionFeatures/SectionFeatures.module.css` | `SectionFeatures.av.module.css` (`- ReverseFeature`/`- AvFeature` layouts) |
+| `PageBuilder/SectionBuilder/SectionFooter/SectionFooter.module.css` | `avBrandOverrides.css` (footer restyle) + `SectionFooter.av.module.css` (`belowSlogan`) |
+| `PageBuilder/SectionBuilder/SectionColumns/SectionColumns.module.css` | `avBrandOverrides.css` (var-driven `.baseColumn` gap); `SectionColumnsAV.module.css` |
+| `PageBuilder/SectionBuilder/SectionBuilder.module.css` (all but `.blockContainer` padding) | `styles/avCtaButtons.module.css`, `av/sectionLayout.module.css`, `avBrandOverrides.css` |
 
 ### Unavoidable upstream files — append AV additions at the bottom
 

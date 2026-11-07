@@ -13,6 +13,7 @@ import AVSectionContainer from '../SectionContainer/AVSectionContainer';
 import { hasSocialLinksToken } from '../../../../extensions/pageBuilder/av/blocks';
 import AVFooterLogo from './AVFooterLogo';
 import css from './SectionFooter.module.css';
+import avCss from './SectionFooter.av.module.css';
 
 // The number of columns (numberOfColumns) affects styling
 
@@ -133,12 +134,12 @@ const SectionFooter = props => {
           </div>
           <div className={css.sloganMobile}>
             <Field data={slogan} className={css.slogan} />
-            {belowSlogan ? <div className={css.belowSlogan}>{belowSlogan}</div> : null}
+            {belowSlogan ? <div className={avCss.belowSlogan}>{belowSlogan}</div> : null}
           </div>
           <div className={css.detailsInfo}>
             <div className={css.sloganDesktop}>
               <Field data={slogan} className={css.slogan} />
-              {belowSlogan ? <div className={css.belowSlogan}>{belowSlogan}</div> : null}
+              {belowSlogan ? <div className={avCss.belowSlogan}>{belowSlogan}</div> : null}
             </div>
             {!blocksHasSocial && showSocialMediaLinks ? (
               <div className={css.icons}>
