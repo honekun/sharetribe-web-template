@@ -60,4 +60,3 @@ describe('matching-listing audience (audit A07)', () => {
     expect(sql).not.toMatch(/OR pref\.email = eng\.email/);
   });
 });
-
