@@ -4,15 +4,13 @@ import classNames from 'classnames';
 import { useConfiguration } from '../../context/configurationContext';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { formatMoney } from '../../util/currency';
+import { getValidOriginalPrice } from '../../util/avOriginalPrice';
 import { createSlug } from '../../util/urlHelpers';
 import { ensureListing, ensureUser } from '../../util/data';
-import { types as sdkTypes } from '../../util/sdkLoader';
 
 import { AspectRatioWrapper, AvatarSmall, NamedLink, ResponsiveImage } from '../../components';
 
 import css from './AVBagItemCard.module.css';
-
-const { Money } = sdkTypes;
 
 // Build a `{ [fieldKey]: { [option]: label } }` lookup so we can turn stored
 // enum option values (e.g. all_sizes) into their human labels — same approach
@@ -68,11 +66,7 @@ const AVBagItemCard = props => {
   const formattedPrice = price ? formatMoney(intl, price) : null;
   // Original ("was") price shown struck through only when higher than the
   // current price — mirrors AVListingCard / OrderPanel.
-  const originalPriceRaw = publicData?.originalPrice;
-  const originalPriceMoney =
-    originalPriceRaw && price && originalPriceRaw.amount > price.amount
-      ? new Money(originalPriceRaw.amount, originalPriceRaw.currency)
-      : null;
+  const originalPriceMoney = getValidOriginalPrice(publicData?.originalPrice, price);
 
   const authorLabel = <FormattedMessage id="ListingCard.author" values={{ authorName }} />;
 

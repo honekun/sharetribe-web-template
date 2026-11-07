@@ -82,6 +82,15 @@ describe('AVBagItemCard', () => {
     expect(screen.getByText('$110.00')).toBeInTheDocument();
   });
 
+  it('ignores a malformed original price instead of throwing', () => {
+    const { container } = renderCard(
+      {},
+      { originalPrice: { amount: 11000, currency: 'NO-SUCH-CURRENCY' } }
+    );
+    expect(container.querySelector('s')).toBeNull();
+    expect(container.querySelector('.priceValue').textContent).toBe('$77.00');
+  });
+
   it('fires onRemove and onCheckout callbacks', () => {
     const onRemove = jest.fn();
     const onCheckout = jest.fn();

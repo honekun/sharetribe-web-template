@@ -18,6 +18,8 @@ import css from './EditListingPricingAndStockPanel.module.css';
 import { canShowOriginalPrice } from '../../../../config/configAV';
 // AV: package size — default from category, persisted to publicData.avPackageSize
 import { getPackageSizeForCategory, isEspecialSize } from '../../../../config/configAVShipping';
+// AV: malformed stored original prices are dropped instead of crashing the form
+import { getOriginalPriceInitialValue } from '../../../../util/avOriginalPrice';
 
 const { Money } = sdkTypes;
 const BILLIARD = 1000000000000000;
@@ -51,10 +53,10 @@ const getInitialValues = props => {
       : 1;
   const stockTypeInfinity = [];
 
-  const originalPriceRaw = publicData?.originalPrice;
-  const originalPrice = originalPriceRaw
-    ? new Money(originalPriceRaw.amount, originalPriceRaw.currency)
-    : null;
+  const originalPrice = getOriginalPriceInitialValue(
+    publicData?.originalPrice,
+    props.marketplaceCurrency || price?.currency
+  );
 
   const avPackageSize =
     publicData?.avPackageSize ||

@@ -541,6 +541,49 @@ describe('OrderPanel', () => {
     });
   });
 
+  describe('original price (audit A03)', () => {
+    const purchaseListing = originalPrice =>
+      createListing(
+        'listing-original-price',
+        {
+          title: 'the listing',
+          price: new Money(1000, 'USD'),
+          publicData: {
+            listingType: 'sell-bicycles',
+            transactionProcessAlias: 'default-purchase/release-1',
+            unitType: 'item',
+            originalPrice,
+          },
+        },
+        { currentStock: createStock('stock-id', { quantity: 5 }) }
+      );
+
+    const renderPanel = originalPrice => {
+      const props = {
+        ...commonProps,
+        listing: purchaseListing(originalPrice),
+        isOwnListing: false,
+        validListingTypes,
+      };
+      return render(<OrderPanel {...props} />, { config, routeConfiguration });
+    };
+
+    it('ignores a malformed stored original price', async () => {
+      const { container, queryAllByText } = renderPanel({
+        amount: 90000,
+        currency: 'NO-SUCH-CURRENCY',
+      });
+      await waitFor(() => expect(queryAllByText('OrderPanel.price')).toHaveLength(1));
+      expect(container.querySelector('s')).toBeNull();
+    });
+
+    it('strikes through a valid higher original price', async () => {
+      const { container, queryAllByText } = renderPanel({ amount: 2500, currency: 'USD' });
+      await waitFor(() => expect(queryAllByText('OrderPanel.price')).toHaveLength(1));
+      expect(container.querySelector('s').textContent).toBe('$25.00');
+    });
+  });
+
   it('Inquiry: inquiry ', async () => {
     const listing = createListing('listing-inquiry', {
       title: 'the listing',

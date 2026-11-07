@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import classNames from 'classnames';
-import { types as sdkTypes } from '../../util/sdkLoader';
 
 import { useConfiguration } from '../../context/configurationContext';
 
@@ -8,6 +7,7 @@ import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { displayPrice } from '../../util/configHelpers';
 import { lazyLoadWithDimensions } from '../../util/uiHelpers';
 import { formatMoney } from '../../util/currency';
+import { getValidOriginalPrice } from '../../util/avOriginalPrice';
 import { ensureListing, ensureUser } from '../../util/data';
 import { richText } from '../../util/richText';
 import { createSlug } from '../../util/urlHelpers';
@@ -23,8 +23,6 @@ import {
 } from '../../components';
 
 import css from './AVListingCard.module.css';
-
-const { Money } = sdkTypes;
 
 const MIN_LENGTH_FOR_LONG_WORDS = 10;
 const ASPECT_WIDTH_TALL = 3;
@@ -75,11 +73,7 @@ const PriceMaybe = props => {
 
   // Show the original ("was") price as a strike-through only when it is higher
   // than the current price, mirroring OrderPanel's display rule.
-  const originalPriceRaw = publicData?.originalPrice;
-  const originalPriceMoney =
-    originalPriceRaw && originalPriceRaw.amount > price.amount
-      ? new Money(originalPriceRaw.amount, originalPriceRaw.currency)
-      : null;
+  const originalPriceMoney = getValidOriginalPrice(publicData?.originalPrice, price);
 
   return (
     <div className={css.price} title={priceTitle}>
