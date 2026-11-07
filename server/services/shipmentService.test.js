@@ -13,6 +13,7 @@ const {
   buyLabelForTransaction,
   isLabelPurchaseAllowed,
   maybeBuyLabelForEvent,
+  resolveLabelShippingRecord,
   validateShipment,
 } = require('./shipmentService');
 
@@ -20,20 +21,50 @@ const makeSdk = () => ({
   transactions: { updateMetadata: jest.fn().mockResolvedValue({}) },
 });
 
+const money = (amount, currency = 'MXN') => ({ amount, currency });
+const itemLine = {
+  code: 'line-item/item',
+  unitPrice: money(50000),
+  lineTotal: money(50000),
+  quantity: 1,
+  includeFor: ['customer', 'provider'],
+  reversal: false,
+};
+const shippingFeeLine = record => ({
+  code: 'line-item/shipping-fee',
+  unitPrice: money(record.amountSubunits, record.currency),
+  lineTotal: money(record.amountSubunits, record.currency),
+  quantity: 1,
+  includeFor: ['customer'],
+  reversal: false,
+});
+
+// `avShipping` is the server-written metadata record; `legacyAvShipping` is the
+// protectedData copy older transactions carry. Line items charge the recorded
+// shipping price unless a test overrides them.
 const makeTx = ({
   avShipping,
+  legacyAvShipping,
   avLabel,
+  lineItems,
   lastTransition = 'transition/confirm-payment',
   transitions = [{ transition: 'transition/confirm-payment' }],
-} = {}) => ({
-  id: { uuid: 'tx-1' },
-  attributes: {
-    protectedData: avShipping ? { avShipping } : {},
-    metadata: avLabel ? { avLabel } : {},
-    lastTransition,
-    transitions,
-  },
-});
+} = {}) => {
+  const charged = avShipping || legacyAvShipping;
+  return {
+    id: { uuid: 'tx-1' },
+    attributes: {
+      protectedData: legacyAvShipping ? { avShipping: legacyAvShipping } : {},
+      metadata: {
+        ...(avLabel ? { avLabel } : {}),
+        ...(avShipping ? { avShipping } : {}),
+      },
+      lineItems: lineItems || (charged ? [itemLine, shippingFeeLine(charged)] : [itemLine]),
+      lastTransition,
+      transitions,
+    },
+  };
+};
 
 const RATE = {
   bucket: 'nacionalExpress',
@@ -286,6 +317,96 @@ describe('buyLabelForTransaction', () => {
   it('returns null when no eShip rate exists', async () => {
     await expect(buyLabelForTransaction(makeSdk(), makeTx())).resolves.toBeNull();
     expect(createShippingLabelStore).not.toHaveBeenCalled();
+  });
+});
+
+describe('shipping record authority (audit A01)', () => {
+  beforeEach(() => {
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it('never buys for a paid pickup transaction carrying a forged rate', async () => {
+    const store = makeStore();
+    // Forged into protectedData by the buyer; the order only charges the item.
+    const tx = makeTx({ legacyAvShipping: RATE, lineItems: [itemLine] });
+
+    await expect(buyLabelForTransaction(makeSdk(), tx, { store })).rejects.toMatchObject({
+      code: 'LABEL_NOT_ALLOWED',
+      reason: 'SHIPPING_CHARGE_MISMATCH',
+    });
+    expect(store.claim).not.toHaveBeenCalled();
+    expect(eship.createShipment).not.toHaveBeenCalled();
+  });
+
+  it('refuses a record whose price differs from the shipping charge', async () => {
+    const store = makeStore();
+    const tx = makeTx({
+      avShipping: RATE,
+      lineItems: [itemLine, shippingFeeLine({ ...RATE, amountSubunits: 100 })],
+    });
+
+    await expect(buyLabelForTransaction(makeSdk(), tx, { store })).rejects.toMatchObject({
+      reason: 'SHIPPING_CHARGE_MISMATCH',
+    });
+    expect(eship.createShipment).not.toHaveBeenCalled();
+  });
+
+  it('buys with the metadata rate even when protectedData was rewritten after payment', async () => {
+    const store = makeStore();
+    eship.createShipment.mockResolvedValue(SHIPMENT);
+    const tx = makeTx({
+      avShipping: RATE,
+      legacyAvShipping: { ...RATE, rate_id: 'swapped-rate' },
+      transitions: [
+        { transition: 'transition/confirm-payment' },
+        { transition: 'transition/mark-delivered' },
+        { transition: 'transition/dispute' },
+      ],
+    });
+
+    await buyLabelForTransaction(makeSdk(), tx, { store });
+    expect(store.claim).toHaveBeenCalledWith(expect.objectContaining({ rateId: 'rate-123' }));
+    expect(eship.createShipment).toHaveBeenCalledWith({ rateId: 'rate-123' });
+  });
+
+  it('accepts a legacy protectedData record only with a matching charge', async () => {
+    const store = makeStore();
+    eship.createShipment.mockResolvedValue(SHIPMENT);
+    const tx = makeTx({ legacyAvShipping: RATE });
+
+    const label = await buyLabelForTransaction(makeSdk(), tx, { store });
+    expect(label.status).toBe('purchased');
+    expect(eship.createShipment).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses a legacy record once the customer could have rewritten it', async () => {
+    const store = makeStore();
+    const tx = makeTx({
+      legacyAvShipping: RATE,
+      transitions: [
+        { transition: 'transition/confirm-payment' },
+        { transition: 'transition/mark-delivered' },
+        { transition: 'transition/dispute' },
+      ],
+    });
+
+    await expect(buyLabelForTransaction(makeSdk(), tx, { store })).rejects.toMatchObject({
+      reason: 'SHIPPING_RECORD_UNTRUSTED',
+    });
+    expect(store.claim).not.toHaveBeenCalled();
+  });
+
+  it('still returns an already purchased label without re-checking the record', async () => {
+    const purchased = { status: 'purchased', labelUrl: 'https://l.pdf' };
+    const tx = makeTx({ legacyAvShipping: RATE, avLabel: purchased, lineItems: [itemLine] });
+    await expect(buyLabelForTransaction(makeSdk(), tx)).resolves.toBe(purchased);
+  });
+
+  it('reports where the trusted record came from', () => {
+    expect(resolveLabelShippingRecord(makeTx({ avShipping: RATE })).source).toBe('metadata');
+    expect(resolveLabelShippingRecord(makeTx({ legacyAvShipping: RATE })).source).toBe('legacy');
+    expect(resolveLabelShippingRecord(makeTx()).record).toBeNull();
   });
 });
 

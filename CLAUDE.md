@@ -382,8 +382,12 @@ the browser receives raw rates only when `ESHIP_WEB_DEBUG=true`. Buyer picks a b
 Authoritative price is server-derived in **`transactionLineItems` (now `async`)** via
 `shippingQuoteService.resolveBucketPrice` (cache hit → pinned; **miss → re-quote**); the client
 price is never trusted. The 3 callers (`transaction-line-items.js`, `initiate-privileged.js`,
-`transition-privileged.js`) now `await` it. Chosen rate persisted to transaction
-`protectedData.avShipping` (for labels + payout). No static-grid fallback: no origin / `especial` /
+`transition-privileged.js`) now `await` it. Chosen rate persisted by the server to transaction
+**`metadata.avShipping`** (authoritative, Integration SDK, after a real initiate/transition) and to
+`protectedData.avShipping` (informational; a caller-supplied copy is always dropped). Label purchase
+trusts only the metadata record — or a legacy protectedData copy with no `transition/dispute` — and
+requires a matching customer `line-item/shipping-fee` (`shipmentService.resolveLabelShippingRecord`,
+`avShipping.shippingChargeMatches`). No static-grid fallback: no origin / `especial` /
 carrier error → buyer sees **Contactar AV** (retry on transient). **Payout:** the
 `line-item/shipping-fee` is `includeFor: ['customer']` only (`server/api-util/lineItems.js`) — AV
 buys the label centrally so the platform (not the seller) retains the shipping fee; provider

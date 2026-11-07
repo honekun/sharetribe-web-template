@@ -12,10 +12,14 @@ const {
   EshipApiError,
   EshipTimeoutError,
 } = require('../api-util/eshipClient');
+const { shippingChargeMatches } = require('../api-util/avShipping');
 const { createShippingLabelStore } = require('./shippingLabelStore');
 const { isShippingLabelsEnabled } = require('./notificationConfig');
 
 const LABEL_BUY_TRANSITIONS = new Set(['transition/confirm-payment']);
+// The only post-payment transition in default-purchase that lets the customer
+// rewrite protectedData (`action/update-protected-data`).
+const CUSTOMER_PROTECTED_DATA_REWRITES = new Set(['transition/dispute']);
 
 // Auto-buy the label on the event-poller path ONLY when explicitly opted in with
 // ESHIP_LABEL_AUTOBUY=true. Default (unset or anything other than 'true') means
@@ -26,10 +30,14 @@ function isLabelAutobuyEnabled() {
 }
 
 class LabelNotAllowedError extends Error {
-  constructor() {
-    super('Shipping labels can only be purchased after payment and before cancellation');
+  constructor(
+    message = 'Shipping labels can only be purchased after payment and before cancellation',
+    reason = 'TRANSACTION_STATE'
+  ) {
+    super(message);
     this.name = 'LabelNotAllowedError';
     this.code = 'LABEL_NOT_ALLOWED';
+    this.reason = reason;
   }
 }
 
@@ -52,6 +60,31 @@ function isLabelPurchaseAllowed(tx) {
   const hasPaid = transitions.some(name => LABEL_BUY_TRANSITIONS.has(name));
   const hasCancellation = transitions.some(name => /(^|\/)(?:auto-|operator-)?cancel/.test(name));
   return hasPaid && !hasCancellation;
+}
+
+/**
+ * The shipping record a label purchase may trust.
+ *
+ * `metadata.avShipping` is written by the privileged server after initiation
+ * and cannot be changed by either party. Transactions created before that
+ * record existed (or whose metadata write failed) fall back to the
+ * protectedData copy, which the privileged request-payment call overwrites for
+ * shipping orders — but only while no customer transition could have rewritten
+ * it since. Either way the caller still requires a matching shipping charge.
+ *
+ * @returns {{ record: Object|null, source: 'metadata'|'legacy'|'legacy_rewritable'|null }}
+ */
+function resolveLabelShippingRecord(tx) {
+  const attrs = tx?.attributes || {};
+  if (attrs.metadata?.avShipping) {
+    return { record: attrs.metadata.avShipping, source: 'metadata' };
+  }
+  const legacy = attrs.protectedData?.avShipping;
+  if (!legacy) return { record: null, source: null };
+  const rewritable = transitionNames(tx).some(name => CUSTOMER_PROTECTED_DATA_REWRITES.has(name));
+  return rewritable
+    ? { record: null, source: 'legacy_rewritable' }
+    : { record: legacy, source: 'legacy' };
 }
 
 function validateShipment(shipment) {
@@ -107,9 +140,28 @@ async function buyLabelForTransaction(
   if (existing?.status === 'failed' && !force) return existing;
   if (existing?.status === 'unknown' && !confirmUnknown) return existing;
 
-  const av = attrs.protectedData?.avShipping;
+  const { record: av, source } = resolveLabelShippingRecord(tx);
+  if (source === 'legacy_rewritable') {
+    throw new LabelNotAllowedError(
+      'The shipping record could have been rewritten after payment',
+      'SHIPPING_RECORD_UNTRUSTED'
+    );
+  }
   if (!av?.rate_id) return null;
   if (!isLabelPurchaseAllowed(tx)) throw new LabelNotAllowedError();
+  if (!shippingChargeMatches(attrs.lineItems, av)) {
+    throw new LabelNotAllowedError(
+      'The transaction does not charge the recorded shipping price',
+      'SHIPPING_CHARGE_MISMATCH'
+    );
+  }
+  if (source === 'legacy') {
+    console.warn(
+      `[shipmentService] transaction ${transactionIdOf(
+        tx
+      )} uses its legacy protectedData shipping record`
+    );
+  }
 
   const transactionId = transactionIdOf(tx);
   const labelStore = store || createShippingLabelStore();
@@ -215,5 +267,6 @@ module.exports = {
   isLabelAutobuyEnabled,
   isLabelPurchaseAllowed,
   maybeBuyLabelForEvent,
+  resolveLabelShippingRecord,
   validateShipment,
 };

@@ -2874,7 +2874,8 @@ Transactions** in the correct environment, find the transaction by UUID, and rec
 - buyer, seller, and listing UUIDs;
 - transaction process alias and last transition;
 - Stripe payment/refund state; and
-- `protectedData.avShipping` plus label state when shipping is involved.
+- `metadata.avShipping` (the authoritative shipping record; older transactions only have
+  `protectedData.avShipping`) plus label state when shipping is involved.
 
 Use only an operator transition that is valid in the active hosted process. A button being absent
 usually means the current state does not permit that transition; do not simulate it by editing
@@ -3141,6 +3142,7 @@ After payment, the normal launch posture is seller-triggered label purchase with
 | Processing                            | Wait for completion; do not send another purchase request.                                                                                                                                                                           |
 | Unknown outcome                       | Check the eShip dashboard first. The carrier may have charged AV even though the app lost the response. After proving no label exists, an allowlisted operator uses the approved API/engineering procedure; there is no operator UI. |
 | `especial` / Contactar AV             | No automatic quote or label; follow the approved manual arrangement.                                                                                                                                                                 |
+| Refused (**Generar guía** shows an error, no label state) | The app only buys a label when the transaction charged the buyer the recorded shipping price. A pickup order, a price mismatch, or an older transaction whose buyer opened a dispute is refused on purpose. Do not buy a label manually in eShip; check the order's delivery method and price breakdown and escalate to engineering. |
 
 For the pickup email, confirm the eShip dashboard webhook uses the correct environment URL and the
 same secret as the deployment. The public `GET /api/notifications/readiness` probe reports only

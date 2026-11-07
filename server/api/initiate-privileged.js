@@ -3,6 +3,7 @@ const { assertExpectedPayinTotal } = require('../api-util/assertExpectedPayinTot
 const { transactionLineItems } = require('../api-util/lineItems');
 const { resolveBucketPrice } = require('../services/shippingQuoteService');
 const {
+  persistAvShippingRecord,
   resolveAvShippingForOrder,
   withAvShippingProtectedData,
 } = require('../api-util/avShipping');
@@ -68,6 +69,7 @@ module.exports = (req, res) => {
   let metadataMaybe = {};
   // AV: persist the chosen eShip rate so the label step + payout logic can read it.
   let avShippingProtectedData = {};
+  let avShippingRecord = null;
 
   Promise.all([listingPromise(sdk, bodyParams?.params?.listingId), fetchCommission(sdk)])
     .then(async ([showListingResponse, fetchAssetsResponse]) => {
@@ -87,6 +89,7 @@ module.exports = (req, res) => {
       });
       const resolvedRate = avShipping.resolvedRate;
       avShippingProtectedData = avShipping.avShippingProtectedData;
+      avShippingRecord = avShipping.avShippingRecord;
 
       const author = findListingAuthor(listing, showListingResponse.data.included);
       lineItems = await transactionLineItems(
@@ -124,6 +127,8 @@ module.exports = (req, res) => {
       }
       return trustedSdk.transactions.initiate(body, queryParams);
     })
+    // AV: the label step trusts only this server-written metadata record.
+    .then(apiResponse => persistAvShippingRecord(apiResponse, avShippingRecord))
     .then(apiResponse => {
       const { status, statusText, data } = apiResponse;
       res

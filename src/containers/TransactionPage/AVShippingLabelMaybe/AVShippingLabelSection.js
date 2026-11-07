@@ -18,7 +18,8 @@ export const canGenerateShippingLabel = transaction => {
 /**
  * Self-contained provider-side wrapper around AVShippingLabelMaybe.
  *
- * Reads the chosen rate + label marker off the transaction and, on a manual
+ * Reads the chosen rate (`metadata.avShipping`, falling back to the legacy
+ * protectedData copy) + label marker off the transaction and, on a manual
  * retry, POSTs to /api/shipping/label. Progress/error live in local state and
  * the endpoint's returned `avLabel` is preferred over the (now stale) persisted
  * one on success — so the button flips to "Descargar guía" without a page reload
@@ -33,7 +34,12 @@ const AVShippingLabelSection = props => {
   const [error, setError] = useState(null);
   const [freshLabel, setFreshLabel] = useState(null);
 
-  const avShipping = transaction?.attributes?.protectedData?.avShipping || null;
+  // The server-written metadata record is authoritative; the protectedData copy
+  // only covers transactions created before that record existed.
+  const avShipping =
+    transaction?.attributes?.metadata?.avShipping ||
+    transaction?.attributes?.protectedData?.avShipping ||
+    null;
   const avLabel = freshLabel || transaction?.attributes?.metadata?.avLabel || null;
   const transactionId = transaction?.id?.uuid;
   const hasUncertainAttempt = ['processing', 'unknown'].includes(avLabel?.status);

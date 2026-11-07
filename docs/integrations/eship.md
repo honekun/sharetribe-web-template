@@ -133,11 +133,23 @@ The **authoritative** price is resolved exactly once server-side, then passed to
 context-mismatched token is re-quoted. For a real payment, the destination is rebuilt from
 `protectedData.shippingDetails`, not trusted from the duplicate client `avDestination`. A shipping
 transaction without a valid rate and destination is rejected. Out-of-order browser quote responses
-are ignored. The chosen rate is persisted to transaction `protectedData.avShipping`:
+are ignored.
+
+The chosen rate is persisted twice, with different authority:
 
 ```
 { bucket, quot_id, rate_id, carrier, servicelevel, amountSubunits, currency }
 ```
+
+- **`metadata.avShipping`** (plus `recordedAt`) is the **authoritative** record. After a successful
+  non-speculative `initiate-privileged` / `transition-privileged` call for a shipping order, the
+  server writes it with the Integration SDK (`persistAvShippingRecord` in
+  `server/api-util/avShipping.js`, two attempts). Metadata is operator-only, so neither party can
+  change it afterwards. A failed write is logged and does not fail the buyer's request.
+- **`protectedData.avShipping`** is informational. Both privileged endpoints always drop a
+  caller-supplied `avShipping` key (including on pickup orders) and write the server copy for
+  shipping orders. It is not trusted on its own: customer transitions such as `transition/inquire`
+  (before payment) and `transition/dispute` (after delivery) can write protectedData directly.
 
 No origin / `especial` size / carrier error → buyer sees **Contactar AV**.
 
@@ -161,6 +173,19 @@ Before any carrier call, PostgreSQL atomically inserts a `processing` claim in
 `av_shipping_label_attempts`. Concurrent processes cannot acquire the same transaction. The durable
 row is finalized before Sharetribe metadata is synced, so a metadata-write failure cannot cause a
 second carrier purchase.
+
+**Label authority (audit A01, 2026-11-06).** `resolveLabelShippingRecord` picks the record a
+purchase may use: `metadata.avShipping` when present; otherwise the legacy protectedData copy, but
+only while the transaction has no `transition/dispute` (the only post-payment customer transition in
+`default-purchase` that rewrites protectedData). The legacy path covers transactions created before
+the metadata record existed and any whose metadata write failed. Either way the purchase also
+requires a non-reversal `line-item/shipping-fee` paid by the customer whose amount and currency
+equal the record — line items are set only by the privileged server, so a pickup order (item charge
+only) can never buy a label. A refusal throws `LabelNotAllowedError` before any claim, and the
+manual route answers `409 { code: 'LABEL_NOT_ALLOWED', reason }` with `reason`
+`SHIPPING_CHARGE_MISMATCH` or `SHIPPING_RECORD_UNTRUSTED`. The durable claim still binds the
+record's `rate_id`, so a later record change cannot reclaim a finished attempt. No
+transaction-process change was needed.
 
 Only paid, non-cancelled transactions are eligible. A carrier 4xx response is `failed`; a timeout,
 network/5xx response, malformed 2xx success, or interrupted process is `unknown`. `processing` and
@@ -267,7 +292,7 @@ remain pinned to their original process version.
 | `server/migrations/007_shipping_label_attempts.sql`                         | Label purchase ledger schema                                 |
 | `server/services/eshipTrackingService.js` + `eshipTrackingStore.js`         | Verified pickup email worker + durable claims                |
 | `server/migrations/009_eship_tracking_notifications.sql`                    | Idempotent tracking-notification ledger                      |
-| `server/api-util/avShipping.js`                                             | Persist chosen rate → `protectedData.avShipping`             |
+| `server/api-util/avShipping.js`                                             | Rate record → `metadata.avShipping`; charge binding helpers  |
 | `server/api/shipping-quote/`                                                | `POST /api/shipping/quote`                                   |
 | `server/api/shipping-label/`                                                | `POST /api/shipping/label` (+ `rateLimiter.js`)              |
 | `server/api/eship-webhook.js`                                               | `POST /api/shipping/eship-webhook`                           |

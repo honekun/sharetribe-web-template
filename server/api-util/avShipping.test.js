@@ -5,10 +5,18 @@ const {
   resolveAvShippingFee,
   authoritativeShippingDestination,
   buildAvShippingProtectedData,
+  buildAvShippingRecord,
   destinationFromShippingDetails,
+  findShippingFeeLineItem,
+  persistAvShippingRecord,
+  recordAvShippingMetadata,
   resolveAvShippingForOrder,
+  shippingChargeMatches,
   withAvShippingProtectedData,
 } = require('./avShipping');
+
+const mockIntegrationSdk = { transactions: { updateMetadata: jest.fn() } };
+jest.mock('../services/integrationSdk', () => ({ getIntegrationSdk: () => mockIntegrationSdk }));
 
 it('builds avShipping protectedData from a resolved rate', () => {
   const out = buildAvShippingProtectedData(
@@ -115,7 +123,11 @@ describe('resolveAvShippingForOrder', () => {
       fullOrderData: { deliveryMethod: 'pickup', avShippingType: 'nacionalExpress' },
       isSpeculative: false,
     });
-    expect(out).toEqual({ resolvedRate: null, avShippingProtectedData: {} });
+    expect(out).toEqual({
+      resolvedRate: null,
+      avShippingProtectedData: {},
+      avShippingRecord: null,
+    });
     expect(resolveBucketPrice).not.toHaveBeenCalled();
   });
 
@@ -142,6 +154,28 @@ describe('resolveAvShippingForOrder', () => {
     });
     expect(out.resolvedRate).toBe(rate);
     expect(out.avShippingProtectedData.avShipping).toMatchObject({ rate_id: 'r1' });
+    // A speculation never creates the authoritative record.
+    expect(out.avShippingRecord).toBeNull();
+  });
+
+  it('builds the authoritative record for a real shipping order', async () => {
+    const out = await resolveAvShippingForOrder({
+      resolveBucketPrice: jest.fn().mockResolvedValue(rate),
+      listing,
+      fullOrderData: {
+        deliveryMethod: 'shipping',
+        avShippingType: 'nacionalExpress',
+        protectedData: { shippingDetails },
+      },
+      isSpeculative: false,
+    });
+    expect(out.avShippingRecord).toMatchObject({
+      bucket: 'nacionalExpress',
+      rate_id: 'r1',
+      amountSubunits: rate.amountSubunits,
+      currency: rate.currency,
+    });
+    expect(typeof out.avShippingRecord.recordedAt).toBe('string');
   });
 
   it('quotes the persisted shippingDetails — not avDestination — for a real order', async () => {
@@ -201,11 +235,33 @@ describe('resolveAvShippingForOrder', () => {
       fullOrderData: { deliveryMethod: 'shipping' },
       isSpeculative: true,
     });
-    expect(out).toEqual({ resolvedRate: null, avShippingProtectedData: {} });
+    expect(out).toEqual({
+      resolvedRate: null,
+      avShippingProtectedData: {},
+      avShippingRecord: null,
+    });
   });
 });
 
 describe('withAvShippingProtectedData', () => {
+  it('drops a caller-authored avShipping even when nothing resolved (pickup)', () => {
+    expect(
+      withAvShippingProtectedData(
+        { protectedData: { a: 1, avShipping: { rate_id: 'forged', amountSubunits: 1 } } },
+        {}
+      )
+    ).toEqual({ protectedData: { a: 1 } });
+  });
+
+  it('replaces a caller-authored avShipping with the server one', () => {
+    expect(
+      withAvShippingProtectedData(
+        { protectedData: { a: 1, avShipping: { rate_id: 'forged' } } },
+        { avShipping: { rate_id: 'r1' } }
+      )
+    ).toEqual({ protectedData: { a: 1, avShipping: { rate_id: 'r1' } } });
+  });
+
   it('returns nothing when no shipping data resolved', () => {
     expect(withAvShippingProtectedData({ protectedData: { a: 1 } }, {})).toEqual({});
   });
@@ -298,5 +354,125 @@ describe('resolveAvShippingFee', () => {
       })
     ).toBeNull();
     expect(resolveBucketPrice).not.toHaveBeenCalled();
+  });
+});
+
+describe('buildAvShippingRecord', () => {
+  it('returns null without a resolved rate', () => {
+    expect(buildAvShippingRecord({}, null)).toBeNull();
+  });
+
+  it('stamps the record with the recording time', () => {
+    const now = new Date('2026-11-06T12:00:00.000Z');
+    expect(
+      buildAvShippingRecord(
+        { avShippingType: 'nacionalEstandar' },
+        { amountSubunits: 9900, currency: 'MXN', rate: { rate_id: 'r9', quot_id: 'q9' } },
+        now
+      )
+    ).toEqual({
+      bucket: 'nacionalEstandar',
+      quot_id: 'q9',
+      rate_id: 'r9',
+      carrier: null,
+      servicelevel: null,
+      amountSubunits: 9900,
+      currency: 'MXN',
+      recordedAt: '2026-11-06T12:00:00.000Z',
+    });
+  });
+});
+
+describe('recordAvShippingMetadata / persistAvShippingRecord', () => {
+  const record = { rate_id: 'r1', amountSubunits: 11800, currency: 'MXN' };
+
+  beforeEach(() => {
+    mockIntegrationSdk.transactions.updateMetadata.mockReset();
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it('writes only the avShipping metadata key', async () => {
+    mockIntegrationSdk.transactions.updateMetadata.mockResolvedValue({});
+    await expect(
+      recordAvShippingMetadata(mockIntegrationSdk, { uuid: 'tx-1' }, record)
+    ).resolves.toBe(true);
+    const [params] = mockIntegrationSdk.transactions.updateMetadata.mock.calls[0];
+    expect(params.id.uuid).toBe('tx-1');
+    expect(params.metadata).toEqual({ avShipping: record });
+  });
+
+  it('never throws when the write keeps failing', async () => {
+    mockIntegrationSdk.transactions.updateMetadata.mockRejectedValue(new Error('down'));
+    await expect(recordAvShippingMetadata(mockIntegrationSdk, 'tx-1', record)).resolves.toBe(false);
+    expect(mockIntegrationSdk.transactions.updateMetadata).toHaveBeenCalledTimes(2);
+  });
+
+  it('skips the write without a record or id', async () => {
+    await expect(recordAvShippingMetadata(mockIntegrationSdk, null, record)).resolves.toBe(false);
+    await expect(recordAvShippingMetadata(mockIntegrationSdk, 'tx-1', null)).resolves.toBe(false);
+    expect(mockIntegrationSdk.transactions.updateMetadata).not.toHaveBeenCalled();
+  });
+
+  it('returns the API response unchanged and takes the id from it', async () => {
+    mockIntegrationSdk.transactions.updateMetadata.mockResolvedValue({});
+    const apiResponse = { status: 200, data: { data: { id: { uuid: 'tx-2' } } } };
+    await expect(persistAvShippingRecord(apiResponse, record)).resolves.toBe(apiResponse);
+    expect(mockIntegrationSdk.transactions.updateMetadata.mock.calls[0][0].id.uuid).toBe('tx-2');
+  });
+
+  it('prefers an explicit transaction id (transition endpoint)', async () => {
+    mockIntegrationSdk.transactions.updateMetadata.mockResolvedValue({});
+    await persistAvShippingRecord({ data: { data: {} } }, record, 'tx-3');
+    expect(mockIntegrationSdk.transactions.updateMetadata.mock.calls[0][0].id.uuid).toBe('tx-3');
+  });
+
+  it('does nothing without a record (pickup or speculation)', async () => {
+    const apiResponse = { data: { data: { id: { uuid: 'tx-4' } } } };
+    await expect(persistAvShippingRecord(apiResponse, null)).resolves.toBe(apiResponse);
+    expect(mockIntegrationSdk.transactions.updateMetadata).not.toHaveBeenCalled();
+  });
+});
+
+describe('shipping charge binding', () => {
+  const money = (amount, currency = 'MXN') => ({ amount, currency });
+  const fee = (amount, overrides = {}) => ({
+    code: 'line-item/shipping-fee',
+    unitPrice: money(amount),
+    lineTotal: money(amount),
+    quantity: 1,
+    includeFor: ['customer'],
+    reversal: false,
+    ...overrides,
+  });
+  const item = { code: 'line-item/item', lineTotal: money(50000), includeFor: ['customer'] };
+  const record = { rate_id: 'r1', amountSubunits: 11800, currency: 'MXN' };
+
+  it('finds the customer shipping fee and ignores reversals', () => {
+    expect(findShippingFeeLineItem([item, fee(11800, { reversal: true })])).toBeNull();
+    expect(findShippingFeeLineItem([item, fee(11800)])).toMatchObject({ lineTotal: money(11800) });
+    expect(findShippingFeeLineItem(undefined)).toBeNull();
+  });
+
+  it('matches only the recorded amount and currency', () => {
+    expect(shippingChargeMatches([item, fee(11800)], record)).toBe(true);
+    expect(shippingChargeMatches([item, fee(11700)], record)).toBe(false);
+    expect(
+      shippingChargeMatches([item, { ...fee(11800), lineTotal: money(11800, 'USD') }], record)
+    ).toBe(false);
+  });
+
+  it('never matches a pickup transaction or a missing record', () => {
+    expect(shippingChargeMatches([item], record)).toBe(false);
+    expect(shippingChargeMatches([item, fee(11800)], null)).toBe(false);
+    expect(shippingChargeMatches([item, fee(11800)], { ...record, amountSubunits: '11800' })).toBe(
+      false
+    );
+  });
+
+  it('ignores a fee the customer does not pay', () => {
+    expect(shippingChargeMatches([fee(11800, { includeFor: ['provider'] })], record)).toBe(false);
   });
 });

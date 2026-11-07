@@ -13,8 +13,9 @@ jest.mock('../api-util/lineItems', () => ({
   transactionLineItems: jest.fn(() => Promise.resolve([])),
 }));
 jest.mock('../api-util/avShipping', () => ({
+  persistAvShippingRecord: jest.fn(apiResponse => Promise.resolve(apiResponse)),
   resolveAvShippingForOrder: jest.fn(() =>
-    Promise.resolve({ resolvedRate: null, avShippingProtectedData: {} })
+    Promise.resolve({ resolvedRate: null, avShippingProtectedData: {}, avShippingRecord: null })
   ),
   withAvShippingProtectedData: jest.fn(() => ({})),
 }));

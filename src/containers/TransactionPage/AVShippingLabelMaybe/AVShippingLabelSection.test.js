@@ -5,11 +5,14 @@ import AVShippingLabelSection from './AVShippingLabelSection';
 
 const { screen, userEvent, waitFor } = testingLibrary;
 
-const makeTx = ({ avShipping, avLabel } = {}) => ({
+const makeTx = ({ avShipping, avLabel, metadataShipping } = {}) => ({
   id: { uuid: 'tx-1' },
   attributes: {
     protectedData: avShipping ? { avShipping } : {},
-    metadata: avLabel ? { avLabel } : {},
+    metadata: {
+      ...(avLabel ? { avLabel } : {}),
+      ...(metadataShipping ? { avShipping: metadataShipping } : {}),
+    },
     lastTransition: 'transition/confirm-payment',
     transitions: [{ transition: 'transition/confirm-payment' }],
   },
@@ -35,6 +38,11 @@ describe('AVShippingLabelSection', () => {
       'href',
       'https://l/persisted.pdf'
     );
+  });
+
+  it('offers the label control from the server-written metadata record', () => {
+    render(<AVShippingLabelSection transaction={makeTx({ metadataShipping: RATE })} />);
+    expect(screen.getByRole('button', { name: 'AVShippingLabel.generate' })).toBeInTheDocument();
   });
 
   it('posts to /api/shipping/label on click and swaps in the returned label on success', async () => {
