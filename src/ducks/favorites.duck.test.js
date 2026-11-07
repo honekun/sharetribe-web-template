@@ -285,6 +285,50 @@ describe('favorites.duck', () => {
         logSpy.mockRestore();
       });
 
+      it("does not make Bob's first write wait for Alice's request", async () => {
+        const aliceUpdate = deferred();
+        const sdk = {
+          currentUser: {
+            updateProfile: jest
+              .fn()
+              .mockReturnValueOnce(aliceUpdate.promise)
+              .mockResolvedValueOnce(responseFor('bob', ['bob-2', 'bob-1'])),
+          },
+        };
+        const store = configureStore({ sdk });
+        signIn(store, 'alice');
+        store.dispatch(toggleFavorite('alice-1'));
+        await Promise.resolve();
+
+        logOut(store);
+        signIn(store, 'bob', ['bob-1']);
+        const bobToggle = store.dispatch(toggleFavorite('bob-2'));
+        await bobToggle;
+
+        // Alice's request is still pending; Bob's write went out regardless.
+        expect(sdk.currentUser.updateProfile).toHaveBeenCalledTimes(2);
+        expect(sdk.currentUser.updateProfile.mock.calls[1][0]).toEqual({
+          privateData: { favoriteListingIds: ['bob-2', 'bob-1'] },
+        });
+      });
+
+      it('binds a toggle made before the user loaded to the user it is written for', async () => {
+        const sdk = {
+          currentUser: {
+            updateProfile: jest.fn().mockResolvedValueOnce(responseFor('mallory', ['x'])),
+          },
+        };
+        // Signed in, but currentUser has not been fetched yet.
+        const store = configureStore({ sdk });
+        const toggle = store.dispatch(toggleFavorite('x'));
+        signIn(store, 'alice');
+        await toggle;
+        // The write is bound to Alice; a response for anyone else is ignored.
+        expect(sdk.currentUser.updateProfile).toHaveBeenCalledTimes(1);
+        expect(store.getState().user.currentUser.id.uuid).toBe('alice');
+        expect(store.getState().favorites.favoriteListingIds).toEqual([]);
+      });
+
       it('does not let a new session of the same user inherit stale intents', async () => {
         const firstUpdate = deferred();
         const thirdUpdate = deferred();

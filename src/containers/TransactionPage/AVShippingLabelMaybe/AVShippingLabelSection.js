@@ -1,8 +1,20 @@
 import React, { useState } from 'react';
 import { apiBaseUrl } from '../../../util/api';
+import { LINE_ITEM_SHIPPING_FEE } from '../../../util/types';
 import AVShippingLabelMaybe from './AVShippingLabelMaybe';
 
 const LABEL_BUY_TRANSITION = 'transition/confirm-payment';
+
+// The buyer actually paid for shipping. The server refuses a label for anything
+// else (audit A01), so a pickup order never shows the control even when its
+// protectedData carries a stale or forged rate.
+export const hasShippingCharge = transaction =>
+  (transaction?.attributes?.lineItems || []).some(
+    item =>
+      item?.code === LINE_ITEM_SHIPPING_FEE &&
+      !item.reversal &&
+      (item.includeFor || []).includes('customer')
+  );
 
 export const canGenerateShippingLabel = transaction => {
   const attributes = transaction?.attributes || {};
@@ -36,10 +48,11 @@ const AVShippingLabelSection = props => {
 
   // The server-written metadata record is authoritative; the protectedData copy
   // only covers transactions created before that record existed.
-  const avShipping =
+  const shippingRecord =
     transaction?.attributes?.metadata?.avShipping ||
     transaction?.attributes?.protectedData?.avShipping ||
     null;
+  const avShipping = hasShippingCharge(transaction) ? shippingRecord : null;
   const avLabel = freshLabel || transaction?.attributes?.metadata?.avLabel || null;
   const transactionId = transaction?.id?.uuid;
   const hasUncertainAttempt = ['processing', 'unknown'].includes(avLabel?.status);

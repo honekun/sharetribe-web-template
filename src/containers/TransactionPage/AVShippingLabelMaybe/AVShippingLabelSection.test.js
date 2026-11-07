@@ -5,9 +5,17 @@ import AVShippingLabelSection from './AVShippingLabelSection';
 
 const { screen, userEvent, waitFor } = testingLibrary;
 
-const makeTx = ({ avShipping, avLabel, metadataShipping } = {}) => ({
+const shippingFee = {
+  code: 'line-item/shipping-fee',
+  includeFor: ['customer'],
+  reversal: false,
+};
+const itemLine = { code: 'line-item/item', includeFor: ['customer', 'provider'], reversal: false };
+
+const makeTx = ({ avShipping, avLabel, metadataShipping, lineItems } = {}) => ({
   id: { uuid: 'tx-1' },
   attributes: {
+    lineItems: lineItems || [itemLine, shippingFee],
     protectedData: avShipping ? { avShipping } : {},
     metadata: {
       ...(avLabel ? { avLabel } : {}),
@@ -38,6 +46,14 @@ describe('AVShippingLabelSection', () => {
       'href',
       'https://l/persisted.pdf'
     );
+  });
+
+  it('hides the control when the buyer was not charged for shipping', () => {
+    const { container } = render(
+      <AVShippingLabelSection transaction={makeTx({ avShipping: RATE, lineItems: [itemLine] })} />
+    );
+    expect(screen.queryByRole('button', { name: 'AVShippingLabel.generate' })).toBeNull();
+    expect(container).toBeEmptyDOMElement();
   });
 
   it('offers the label control from the server-written metadata record', () => {

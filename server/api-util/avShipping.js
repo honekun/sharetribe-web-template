@@ -209,7 +209,11 @@ async function recordAvShippingMetadata(integrationSdk, transactionId, record) {
   try {
     await withRetry(
       () => integrationSdk.transactions.updateMetadata({ id, metadata: { avShipping: record } }),
-      { label: 'avShipping metadata' }
+      {
+        label: 'avShipping metadata',
+        // A 4xx will not succeed on a second try; network errors, 5xx and 429 may.
+        shouldRetry: error => !error?.status || error.status >= 500 || error.status === 429,
+      }
     );
     return true;
   } catch (error) {

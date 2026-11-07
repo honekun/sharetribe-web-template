@@ -33,17 +33,22 @@ const applyFavoriteIntent = (ids, listingId, shouldBeFavorite) => {
 };
 
 const getFavoriteUpdateQueue = (getState, confirmedIds) => {
-  const session = selectFavoritesSession(getState());
+  const state = getState();
+  const session = selectFavoritesSession(state);
+  const ownerId = selectCurrentUserId(state);
   const existing = favoriteUpdateQueues.get(getState);
   if (existing && existing.session === session) return existing;
-  // A new session starts empty instead of inheriting the old one's intents, but
-  // it still waits behind any request already in flight so writes for the same
-  // profile cannot land out of order.
+  // A new session starts empty instead of inheriting the old one's intents. For
+  // the same (or a not-yet-known) user it still waits behind any request already
+  // in flight, so writes to one profile cannot land out of order; another user's
+  // queue never waits on the previous account's request.
+  const sameOwner = existing && (!existing.ownerId || !ownerId || existing.ownerId === ownerId);
   const queue = {
-    tail: existing ? existing.tail.catch(() => undefined) : Promise.resolve(),
+    tail: sameOwner ? existing.tail.catch(() => undefined) : Promise.resolve(),
     pending: [],
     confirmedIds,
     session,
+    ownerId,
   };
   favoriteUpdateQueues.set(getState, queue);
   return queue;
@@ -120,12 +125,15 @@ export const toggleFavorite = listingId => (dispatch, getState, sdk) => {
   };
   queue.pending.push(operation);
 
+  // A toggle made before currentUser hydrated has no owner yet; it binds to the
+  // user present when it is written, and its response must match that user.
   const isCurrent = responseUserId => {
     const current = getState();
     if (selectFavoritesSession(current) !== operation.session) return false;
-    if (!operation.ownerId) return true;
-    if (selectCurrentUserId(current) !== operation.ownerId) return false;
-    return !responseUserId || responseUserId === operation.ownerId;
+    const currentUserId = selectCurrentUserId(current);
+    if (!operation.ownerId) operation.ownerId = currentUserId;
+    if (operation.ownerId && currentUserId !== operation.ownerId) return false;
+    return !responseUserId || !operation.ownerId || responseUserId === operation.ownerId;
   };
 
   const persistOperation = async () => {

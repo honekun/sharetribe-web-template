@@ -410,6 +410,14 @@ describe('recordAvShippingMetadata / persistAvShippingRecord', () => {
     expect(mockIntegrationSdk.transactions.updateMetadata).toHaveBeenCalledTimes(2);
   });
 
+  it('does not retry a definitive rejection', async () => {
+    mockIntegrationSdk.transactions.updateMetadata.mockRejectedValue(
+      Object.assign(new Error('forbidden'), { status: 403 })
+    );
+    await expect(recordAvShippingMetadata(mockIntegrationSdk, 'tx-1', record)).resolves.toBe(false);
+    expect(mockIntegrationSdk.transactions.updateMetadata).toHaveBeenCalledTimes(1);
+  });
+
   it('skips the write without a record or id', async () => {
     await expect(recordAvShippingMetadata(mockIntegrationSdk, null, record)).resolves.toBe(false);
     await expect(recordAvShippingMetadata(mockIntegrationSdk, 'tx-1', null)).resolves.toBe(false);
