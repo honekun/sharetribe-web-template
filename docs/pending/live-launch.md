@@ -70,7 +70,8 @@ users (§2.1, §3); Sentry error monitoring (`REACT_APP_SENTRY_DSN` and a rebuil
 launch roles from the runbook §1 (operator, independent approver, rollback owner, monitoring owner)
 and the observation window (§8, checklist §4); real `TRANSIT` webhook test and enabling tracking emails on Live (checklist §5, eShip §5.3); Brevo
 campaigns (Phase B; templates 7–13 active with the approved footer since 2026-10-19); eShip cancellation policy (owner: the client) and IVA ([pending eShip](eship.md)); WhatsApp
-WA-01–08 ([notifications](notifications.md)); upstream v12.4.0 merge and Sentry 11; Spanish
+WA-01–08 ([notifications](notifications.md)); releasing the merged upstream v12.6.0 (Sentry 11
+included) and the audit fixes (see [pending README](README.md)); Spanish
 shareable operator guide; per-seller commission field `avCommissionPercentage` in Test and Live
 (code shipped 2026-10-23; operator guide §14.6); bulk-import scaling
 ([scaling](scaling.md)); listings-sheet and bidding decisions.
@@ -92,7 +93,7 @@ shareable operator guide; per-seller commission field `avCommissionPercentage` i
 | `av-translation-check` | Passes (342 symmetric keys, 2026-10-16).                                                                                                                                                                                                                                                          |
 | `format-ci`            | Passes (2026-10-16). `yarn run build` also passes.                                                                                                                                                                                                                                                |
 | `yarn audit`           | Production group: 2 moderate (Sentry bundler plugin, §2.2) after the 2026-11-06 D01 fixes; full tree 63, 0 critical, all development/build tooling.                                                                                                                                              |
-| Upstream               | Fork is based on v12.1.0; `upstream/main` is v12.4.0 + 126 commits. Merge decided for **after launch** (see [pending README](README.md)).                                                                                                                                                         |
+| Upstream               | `main` merges upstream v12.6.0 (`76e55bc8d`, 2026-11-06); not yet validated on Render/Test or released to Live (see [pending README](README.md)).                                                                                                                                                  |
 | CI                     | `.circleci/config.yml` runs `format-ci`, `test-ci`, `build`, `av-translation-check`, and `env-template-check` on Node 24, but no check reported on PR #116 (2026-10-16), so CircleCI is not yet connected to the repository. Until it reports on PRs, every gate is run by hand.                  |
 
 ## 2. Blockers — configuration

@@ -89,8 +89,8 @@ the next row. Rows that timed out are reconciled after the last row.
 
 ## Upload formats
 
-The active browser UI accepts `.csv` only. The `/start` API and preserved `BulkImportPageV2`
-implementation retain both supported upload shapes:
+The active browser UI (`BulkImportPage`) accepts both upload shapes — its file picker takes `.csv`
+and `.zip` — as do the `/start` API and the preserved, unrouted `BulkImportPageV2`:
 
 | Upload | Contents                                | Images                                                              |
 | ------ | --------------------------------------- | ------------------------------------------------------------------- |
@@ -820,7 +820,7 @@ their stock before approval (the API reference documents both `create` states an
 yarn test-server --testPathPatterns=bulk-import
 
 # Client test (BulkImportPage rendering)
-yarn test -- --watchAll=false --testPathPattern=BulkImportPage
+yarn test -- --watchAll=false --testPathPatterns=BulkImportPage
 
 # All tests
 yarn test-ci

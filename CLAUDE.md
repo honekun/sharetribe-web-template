@@ -31,7 +31,7 @@ yarn run clean            # Remove build directory
 
 yarn test                                  # Frontend tests, interactive watch
 yarn test -- --watchAll=false              # Run all tests once
-yarn test -- --testPathPattern=auth        # Match "auth" in path
+yarn test -- --testPathPatterns=auth       # Match "auth" in path (Jest 30 flag name)
 yarn test -- --testNamePattern="login"     # Match "login" in name
 yarn test-server                           # Server tests only
 CI=true yarn test-ci                       # Server then client (--runInBand); without CI=true the client half watches

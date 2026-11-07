@@ -5,7 +5,7 @@ explicitly requested future-use component record. Completed work belongs in the 
 implementation guides linked from [`docs/README.md`](../README.md), not in a historical archive
 inside `docs/`.
 
-Last reviewed: 2026-10-15 (after the Live cutover).
+Last reviewed: 2026-11-06 (custom-code audit remediation).
 
 The [2026-11-06 custom-code audit](../audits/2026-11-06-custom-code-audit.md) is the remediation
 register for open security, performance, architecture, dependency, and upstream-cleanup findings.
@@ -16,11 +16,17 @@ Track those findings in the audit report rather than duplicating their checklist
 - Production (Heroku, Sharetribe Live) is deployed since 2026-10-12 but **not signed off**. Close
   the [Live launch readiness](live-launch.md) items in the order of its §0 tracker: the Render Test
   gate, Live Console content fixes, Live configuration to confirm, and the Live smoke gate.
-- Merge upstream v12.4.0 **after launch** (decided 2026-10-09; the fork is on v12.1.0). Do it on a
-  branch, validate on Render/Test, then release normally. It brings Sentry 11, which clears the
-  seven remaining `@opentelemetry/*` audit advisories, plus `user.duck` hardening, the inquiry
-  checkout speculation fix, sitemap empty-detection, and imgix in CSP. Re-apply `engines.node`
-  `24.x` if upstream's range comes back.
+- Release the `fix/audit-2026-11-06` branch through the normal flow (Render/Test gate first) and
+  finish the [audit](../audits/2026-11-06-custom-code-audit.md) verification it lists: run
+  migration `010_listing_publication_completion.sql` on the Test and Live notification databases
+  **before** deploying (`yarn db:migrate`; the `migrate-test-db` procedure for Render). It is
+  additive, so the running code is unaffected, but the new code's readiness check reports `503`
+  until it is applied wherever notifications are enabled. Then check a shipping order's
+  `metadata.avShipping` and its label purchase on Test.
+- `main` already merges upstream v12.6.0 (`76e55bc8d`, 2026-11-06, which brought Sentry 11 and the
+  earlier v12.4 fixes). That merge has not been validated on Render/Test or released to Heroku
+  Live; it ships with the next release above. Re-apply `engines.node` `24.x` if a later upstream
+  sync broadens it again.
 - Complete the [production release checklist](../operations/release-checklist.md). It is an
   operational checklist, so its unchecked environment steps remain in that runbook.
 - Synchronize the retained [Spanish shareable draft](../shareable/pending/operator-guide-es.html)

@@ -53,7 +53,9 @@ With custom code, the marketplace address is not a Console setting:
 2. Deploy it to Render with Test variables and pass the Render Test gate (§2).
 3. Rebuild the same commit on Heroku with its Live variables (§4). Never promote or copy a Render or
    Test build artifact: `REACT_APP_*` values are compiled into the browser bundle.
-4. Run `yarn db:migrate` on Heroku before enabling any feature that needs a new migration.
+4. Run `yarn db:migrate` on Heroku **before deploying** a release that adds a migration (migrations
+   are additive and idempotent; readiness checks for the newest one, so a deploy without it reports
+   `503`), and before enabling any feature that needs a new migration.
 5. Run the Live smoke checks for the changed areas and record the release.
 
 ## Current application constraints
