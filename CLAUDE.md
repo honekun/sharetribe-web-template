@@ -527,6 +527,12 @@ Minimum: `AV*` components → render + props + snapshot; `*Page/` containers →
 `util/*.js` → unit tests per export; `extensions/*` → registry/detection tests. Ducks/utils → pure
 unit tests. Always run `yarn test -- --watchAll=false` before declaring done.
 
+**Client tests never reach the network.** `config/jest/avNoNetwork.js` (a Jest `setupFiles` entry
+after `react-app-polyfill/jsdom`) makes an unmocked `fetch` reject like a refused connection. A test
+that needs fetch installs its own mock (`window.fetch = jest.fn()…`). Without it, components that
+fetch on mount (the AV topbar menus) opened real sockets to `http://localhost:80`; with anything
+listening there (a local Docker proxy), `--runInBand` Jest never exited.
+
 **Gotchas (upstream v11.x merges):**
 
 - `formatMoney(intl, money)` (`util/currency.js`) uses `new Intl.NumberFormat('en-US')` directly —

@@ -847,8 +847,11 @@ Every new regression (A01 checkout write, A01 label control, A02, A08, A09) fail
 code and passes on the new. Verification after the follow-up: client 203 suites, 2,254 tests, 170
 snapshots; server 68 suites, 951 tests; `yarn format-ci`, `av-translation-check` (347 keys),
 `env-template-check`, `check-translations-sorted`, `git diff --check` and `yarn run build` passed.
-With `--runInBand`, `TransactionPage.test.js` keeps the Jest process alive after all its tests pass;
-`main` does the same, so it does not come from this branch.
+With `--runInBand`, `TransactionPage.test.js` kept the Jest process alive after all its tests passed
+(also on `main`). The cause: the AV topbar menus fetched over real sockets to `http://localhost:80`
+in jsdom, which stay open where something listens there. `config/jest/avNoNetwork.js` now fails any
+unmocked `fetch` in client tests, and `CI=true yarn test-ci` exits on its own (204 client suites,
+2,256 tests).
 
 **Not performed:** live Sharetribe/Stripe/eShip money operations, deployed configuration inspection,
 real provider failure injection, multi-process/load testing, and a production build during this

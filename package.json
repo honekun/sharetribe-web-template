@@ -173,7 +173,8 @@
       "!src/**/*.d.ts"
     ],
     "setupFiles": [
-      "react-app-polyfill/jsdom"
+      "react-app-polyfill/jsdom",
+      "<rootDir>/config/jest/avNoNetwork.js"
     ],
     "setupFilesAfterEnv": [],
     "testMatch": [
