@@ -134,10 +134,14 @@ campaign email — recognised by its template name or campaign tag — is routed
 `notificationCampaignService.retryPromotionalDelivery`, which:
 
 1. refuses while `AV_BREVO_CAMPAIGNS_ENABLED` is off, and keeps the `--confirm-unknown` gate;
-2. finds the single `failed`/`unknown` campaign job behind the delivery (campaign, recipient, and
-   `COALESCE(trigger_event_id, job_key)`), refusing when none or several match;
+2. finds the single campaign job behind the delivery (campaign, recipient, and
+   `COALESCE(trigger_event_id, job_key)`), refusing when none or several match. Any job status but
+   `cancelled` qualifies, because the delivery row decides whether a retry is allowed: a send that
+   crashed leaves its job `processing`, and the stale-claim recovery later finishes that job as
+   `sent` (its own delivery claim is deduplicated) while the delivery stays `processing`;
 3. runs `evaluateJob` — the same function normal processing uses — against current data: the user's
-   current email, consent and suppression for that address, the 2-per-7-days frequency cap, and the
+   current email, consent and suppression for that address, the 2-per-7-days frequency cap (leaving
+   out the job's own row, so an unconfirmed recovered `sent` cannot cap its own retry), and the
    campaign's listing/transaction state;
 4. rebuilds the email from current data and refuses if its notification key no longer matches the
    stored one, or if the template id is not configured;
@@ -250,8 +254,11 @@ and the [Docker Official PostgreSQL image documentation](https://hub.docker.com/
   cancellation, matching-listing fanout — all idempotent and keyed by the first observation, so
   nothing is duplicated. A deleted author or listing (404) completes with nothing scheduled; after
   five attempts the row is completed as `abandoned_after_retries` so a permanent failure cannot stall
-  the poller. A digest that was already sent is not reopened for a late append. Rows that existed
-  before the migration are marked complete once, when the column is added.
+  the poller. A digest that was already sent is not reopened for a late append. The matching digest
+  stays the one after the first observation until that digest's day is over; a replay on a later
+  day (after an outage) joins the next 09:00 digest instead of creating an already-due job keyed to
+  a past day (`publicationDigestAt`). Rows that existed before the migration are marked complete
+  once, when the column is added.
 - Campaign jobs left in `processing` by a worker restart are reclaimed after
   `AV_NOTIFICATION_STALE_CLAIM_MINUTES`; the delivery ledger then deduplicates any provider send
   that completed before the interruption.

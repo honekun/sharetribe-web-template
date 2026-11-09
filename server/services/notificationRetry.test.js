@@ -191,6 +191,27 @@ describe('promotional retries go through the campaign policy', () => {
     });
   });
 
+  test('retries a crashed send whose job the stale-claim recovery marked sent', async () => {
+    // The worker died mid-send: the delivery row stayed `processing`, and the
+    // recovery's replay was deduplicated, finishing the job as `sent`.
+    const deps = setup({
+      delivery: { ...storedDelivery(), status: 'processing' },
+      jobs: [{ ...job, status: 'sent', last_error: 'deduplicated' }],
+    });
+    await expect(retry(deps)).resolves.toEqual({
+      status: 'refused',
+      reason: 'confirmation_required',
+    });
+    await expect(retry(deps, { confirmUnknown: true })).resolves.toEqual({ status: 'sent' });
+
+    // The job's own unconfirmed `sent` is kept out of its frequency cap.
+    expect(deps.jobStore.promotionalNextAvailableAt).toHaveBeenCalledWith('buyer-1', {
+      excludeJobId: 7,
+    });
+    expect(deliverNotification).toHaveBeenCalledTimes(1);
+    expect(deps.jobStore.recordRetryOutcome).toHaveBeenCalledWith(7, 'sent', null, 'operator:test');
+  });
+
   test('refuses while campaigns are switched off', async () => {
     isMarketingCampaignsEnabled.mockReturnValue(false);
     const deps = setup();

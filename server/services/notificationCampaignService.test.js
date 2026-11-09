@@ -15,6 +15,7 @@ const {
   matchScore,
   nextDigestAt,
   processDueNotificationJobs,
+  publicationDigestAt,
   recordListingEngagement,
 } = require('./notificationCampaignService');
 
@@ -64,6 +65,25 @@ describe('notification campaign scheduling', () => {
     expect(nextDigestAt(new Date('2026-07-19T16:00:00.000Z')).toISOString()).toBe(
       '2026-07-20T15:00:00.000Z'
     );
+  });
+
+  test('keeps a publication on its first digest until that digest day is over', () => {
+    const firstSeenAt = new Date('2026-07-19T14:59:00.000Z'); // 08:59 Mexico City
+    const pinned = '2026-07-19T15:00:00.000Z';
+    // Before 09:00 and just after it, the same day: the pinned digest.
+    expect(
+      publicationDigestAt(firstSeenAt, new Date('2026-07-19T14:59:30.000Z')).toISOString()
+    ).toBe(pinned);
+    expect(
+      publicationDigestAt(firstSeenAt, new Date('2026-07-19T15:03:00.000Z')).toISOString()
+    ).toBe(pinned);
+    // A later day never gets a digest keyed to a past day.
+    expect(
+      publicationDigestAt(firstSeenAt, new Date('2026-07-22T13:00:00.000Z')).toISOString()
+    ).toBe('2026-07-22T15:00:00.000Z');
+    expect(
+      publicationDigestAt(firstSeenAt, new Date('2026-07-22T18:00:00.000Z')).toISOString()
+    ).toBe('2026-07-23T15:00:00.000Z');
   });
 
   test('refreshes a viewed-listing job to 24 hours after the latest qualified view', async () => {
@@ -261,7 +281,15 @@ describe('recoverable publication scheduling (audit A09)', () => {
   const expectedDigestKey = user =>
     `matching-listings:${user}:${digestDateKey(nextDigestAt(firstSeenAt))}`;
 
-  beforeEach(() => jest.clearAllMocks());
+  // Only the clock is faked: the digest slot depends on when a replay runs.
+  const fakeNow = now =>
+    jest.useFakeTimers({ now, doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'] });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    fakeNow(new Date('2026-07-19T14:59:30.000Z'));
+  });
+  afterEach(() => jest.useRealTimers());
 
   test('a lookup failure after the claim is retried on replay', async () => {
     const { sdk, jobStore, run } = setup();
@@ -307,6 +335,7 @@ describe('recoverable publication scheduling (audit A09)', () => {
 
     await expect(run('event-1')).rejects.toThrow('connection reset');
     // Replayed later, by a different event, after the 09:00 digest boundary.
+    jest.setSystemTime(new Date('2026-07-19T15:03:00.000Z'));
     await run('event-2');
 
     const keys = jobStore.appendMatchingListing.mock.calls.map(([append]) => append.jobKey);
@@ -319,6 +348,28 @@ describe('recoverable publication scheduling (audit A09)', () => {
     // The first observation's event id is kept on the jobs.
     expect(
       jobStore.appendMatchingListing.mock.calls.every(([a]) => a.triggerEventId === 'event-1')
+    ).toBe(true);
+    expect(jobStore.completeListingPublication).toHaveBeenCalledTimes(1);
+  });
+
+  test('a replay on a later day joins the next digest, not a past one', async () => {
+    const { jobStore, run } = setup();
+    jobStore.appendMatchingListing
+      .mockResolvedValueOnce({})
+      .mockRejectedValueOnce(new Error('connection reset'));
+
+    await expect(run('event-1')).rejects.toThrow('connection reset');
+    // The poller was down until midday three days later.
+    jest.setSystemTime(new Date('2026-07-22T18:00:00.000Z'));
+    await run('event-1');
+
+    const replayed = jobStore.appendMatchingListing.mock.calls.slice(2).map(([append]) => append);
+    expect(replayed.map(append => append.jobKey)).toEqual([
+      'matching-listings:buyer-1:2026-07-23',
+      'matching-listings:buyer-2:2026-07-23',
+    ]);
+    expect(
+      replayed.every(append => append.dueAt.toISOString() === '2026-07-23T15:00:00.000Z')
     ).toBe(true);
     expect(jobStore.completeListingPublication).toHaveBeenCalledTimes(1);
   });

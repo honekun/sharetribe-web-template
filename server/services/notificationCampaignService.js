@@ -169,6 +169,16 @@ function digestDateKey(dueAt) {
   return moment.tz(dueAt, MARKETPLACE_TIME_ZONE).format('YYYY-MM-DD');
 }
 
+// The digest a publication joins. Pinned to the first observation, so a replay
+// shortly after 09:00 reuses the same digest job (a digest already sent stays
+// sent; appends only reach pending jobs). Once that digest's day is over — a
+// replay after an outage — it joins the next digest instead: a job keyed to a
+// past day would be due at once, outside the 09:00 slot.
+function publicationDigestAt(firstSeenAt, now = new Date()) {
+  const pinned = nextDigestAt(firstSeenAt);
+  return digestDateKey(pinned) >= digestDateKey(now) ? pinned : nextDigestAt(now);
+}
+
 function overlap(left = [], right = []) {
   return left.some(value => right.includes(value));
 }
@@ -286,8 +296,9 @@ const nullIfNotFound = promise =>
 
 // Everything a first publication schedules. Every write is idempotent — a
 // stable job key per listing, the matching digest keyed by the claim's first
-// observation, appends deduplicated by listing id — so a retry after a partial
-// failure completes the work without duplicating what already exists.
+// observation (publicationDigestAt), appends deduplicated by listing id — so a
+// retry after a partial failure completes the work without duplicating what
+// already exists.
 async function schedulePublicationCampaigns({
   claim,
   listingId,
@@ -325,9 +336,7 @@ async function schedulePublicationCampaigns({
   }
 
   const matchingUsers = await engagementStore.matchingUsers(listing);
-  // Pinned to the first observation so a replay after 09:00 reuses the same
-  // digest job. A digest already sent stays sent (appends only reach pending jobs).
-  const dueAt = nextDigestAt(firstSeenAt);
+  const dueAt = publicationDigestAt(firstSeenAt);
   await Promise.all(
     matchingUsers
       .filter(user => user.sharetribeUserId !== author.id)
@@ -564,7 +573,9 @@ async function evaluateJob(job, { sdk, jobStore, consentStore, engagementStore }
       sharetribeUserId: user.id,
     });
     if (!consented) return { action: 'skip', reason: 'marketing_consent_missing' };
-    const nextAvailableAt = await jobStore.promotionalNextAvailableAt(user.id);
+    const nextAvailableAt = await jobStore.promotionalNextAvailableAt(user.id, {
+      excludeJobId: job.id,
+    });
     if (nextAvailableAt && nextAvailableAt > new Date()) {
       return { action: 'defer', nextAvailableAt };
     }
@@ -733,6 +744,7 @@ module.exports = {
   matchScore,
   nextDigestAt,
   processDueNotificationJobs,
+  publicationDigestAt,
   recordListingEngagement,
   retryPromotionalDelivery,
   slugify,

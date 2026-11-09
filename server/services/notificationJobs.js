@@ -199,7 +199,10 @@ class NotificationJobStore {
     return result.rowCount;
   }
 
-  async promotionalNextAvailableAt(sharetribeUserId) {
+  // `excludeJobId` keeps the job being evaluated out of its own cap: an operator
+  // retry of a job that a stale-claim recovery already marked `sent` must not be
+  // capped by that unconfirmed send.
+  async promotionalNextAvailableAt(sharetribeUserId, { excludeJobId = null } = {}) {
     const result = await this.pool.query(
       `SELECT sent_at
        FROM av_notification_jobs
@@ -210,9 +213,10 @@ class NotificationJobStore {
            'signup_no_listing', 'listing_no_activity'
          )
          AND sent_at > NOW() - INTERVAL '7 days'
+         AND ($2::bigint IS NULL OR id <> $2::bigint)
        ORDER BY sent_at DESC
        LIMIT 2`,
-      [sharetribeUserId]
+      [sharetribeUserId, excludeJobId]
     );
     if (result.rows.length < 2) return null;
     return new Date(new Date(result.rows[1].sent_at).getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -221,6 +225,12 @@ class NotificationJobStore {
   // The campaign job behind a promotional delivery row (audit A08). Deliveries
   // use `trigger_event_id || job_key` as their event id; one publication event
   // can fan out to many jobs, so the campaign and recipient narrow it.
+  //
+  // Any status but `cancelled`: the delivery row, not the job, says whether the
+  // email went out. A send that crashed leaves its job `processing`, and the
+  // stale-claim recovery then finishes that job as `sent` (its delivery claim is
+  // deduplicated) while the delivery row stays `processing` — that delivery must
+  // still be retryable. `prepareRetry` decides from the delivery's own status.
   async findForDelivery({ campaign, recipientEmail, eventId }) {
     const result = await this.pool.query(
       `SELECT *
@@ -228,14 +238,16 @@ class NotificationJobStore {
        WHERE campaign = $1
          AND recipient_email = $2
          AND COALESCE(trigger_event_id, job_key) = $3
-         AND status IN ('failed', 'unknown')`,
+         AND status <> 'cancelled'`,
       [campaign, recipientEmail, eventId]
     );
     return result.rows;
   }
 
   // Record an operator retry's outcome on its job so a sent retry counts toward
-  // the rolling frequency cap like any other send.
+  // the rolling frequency cap like any other send. Same statuses as
+  // findForDelivery; a job taken by a worker meanwhile ends with this outcome
+  // and the worker's later finish() is a no-op.
   async recordRetryOutcome(id, status, error = null, claimedBy = null) {
     await this.pool.query(
       `UPDATE av_notification_jobs
@@ -245,7 +257,7 @@ class NotificationJobStore {
            attempt_count = attempt_count + 1,
            claimed_by = $4,
            updated_at = NOW()
-       WHERE id = $1 AND status IN ('failed', 'unknown')`,
+       WHERE id = $1 AND status <> 'cancelled'`,
       [id, status, error ? String(error).slice(0, 2000) : null, claimedBy]
     );
   }
