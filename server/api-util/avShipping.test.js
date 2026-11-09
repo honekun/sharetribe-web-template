@@ -424,22 +424,43 @@ describe('recordAvShippingMetadata / persistAvShippingRecord', () => {
     expect(mockIntegrationSdk.transactions.updateMetadata).not.toHaveBeenCalled();
   });
 
-  it('returns the API response unchanged and takes the id from it', async () => {
+  it('returns the API response unchanged and takes the id from it', () => {
     mockIntegrationSdk.transactions.updateMetadata.mockResolvedValue({});
     const apiResponse = { status: 200, data: { data: { id: { uuid: 'tx-2' } } } };
-    await expect(persistAvShippingRecord(apiResponse, record)).resolves.toBe(apiResponse);
+    expect(persistAvShippingRecord(apiResponse, record)).toBe(apiResponse);
     expect(mockIntegrationSdk.transactions.updateMetadata.mock.calls[0][0].id.uuid).toBe('tx-2');
   });
 
-  it('prefers an explicit transaction id (transition endpoint)', async () => {
+  it('does not make the caller wait for the write', () => {
+    // A write that never settles (a hung Integration API) must not hold the response.
+    mockIntegrationSdk.transactions.updateMetadata.mockReturnValue(new Promise(() => {}));
+    const apiResponse = { status: 200, data: { data: { id: { uuid: 'tx-5' } } } };
+    expect(persistAvShippingRecord(apiResponse, record)).toBe(apiResponse);
+    expect(mockIntegrationSdk.transactions.updateMetadata).toHaveBeenCalledTimes(1);
+  });
+
+  it('logs a failed background write instead of rejecting', async () => {
+    mockIntegrationSdk.transactions.updateMetadata.mockRejectedValue(
+      Object.assign(new Error('forbidden'), { status: 403 })
+    );
+    const apiResponse = { status: 200, data: { data: { id: { uuid: 'tx-6' } } } };
+    expect(persistAvShippingRecord(apiResponse, record)).toBe(apiResponse);
+    await new Promise(resolve => setImmediate(resolve));
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining('could not record the shipping rate'),
+      'forbidden'
+    );
+  });
+
+  it('prefers an explicit transaction id (transition endpoint)', () => {
     mockIntegrationSdk.transactions.updateMetadata.mockResolvedValue({});
-    await persistAvShippingRecord({ data: { data: {} } }, record, 'tx-3');
+    persistAvShippingRecord({ data: { data: {} } }, record, 'tx-3');
     expect(mockIntegrationSdk.transactions.updateMetadata.mock.calls[0][0].id.uuid).toBe('tx-3');
   });
 
-  it('does nothing without a record (pickup or speculation)', async () => {
+  it('does nothing without a record (pickup or speculation)', () => {
     const apiResponse = { data: { data: { id: { uuid: 'tx-4' } } } };
-    await expect(persistAvShippingRecord(apiResponse, null)).resolves.toBe(apiResponse);
+    expect(persistAvShippingRecord(apiResponse, null)).toBe(apiResponse);
     expect(mockIntegrationSdk.transactions.updateMetadata).not.toHaveBeenCalled();
   });
 });

@@ -225,20 +225,27 @@ async function recordAvShippingMetadata(integrationSdk, transactionId, record) {
   }
 }
 
+const logRecordNotWritten = error =>
+  console.error('[avShipping] shipping record not written:', error?.message || error);
+
 // One-call seam for the privileged endpoints: after a real initiate/transition,
-// record the rate and hand the API response back unchanged. Never rejects.
-async function persistAvShippingRecord(apiResponse, record, transactionId) {
-  if (record) {
-    try {
-      const { getIntegrationSdk } = require('../services/integrationSdk');
-      await recordAvShippingMetadata(
-        getIntegrationSdk(),
-        transactionId || apiResponse?.data?.data?.id,
-        record
-      );
-    } catch (error) {
-      console.error('[avShipping] shipping record not written:', error?.message || error);
-    }
+// start recording the rate and hand the API response straight back. The write
+// runs in the background, so checkout never waits on the Integration API (a
+// token exchange, the update, and a retry backoff when it is failing). Nothing
+// needs the record before the label step, and if the write fails that step
+// falls back to the protectedData copy this same call wrote (see
+// shipmentService.resolveLabelShippingRecord). Never throws or rejects.
+function persistAvShippingRecord(apiResponse, record, transactionId) {
+  if (!record) return apiResponse;
+  try {
+    const { getIntegrationSdk } = require('../services/integrationSdk');
+    recordAvShippingMetadata(
+      getIntegrationSdk(),
+      transactionId || apiResponse?.data?.data?.id,
+      record
+    ).catch(logRecordNotWritten);
+  } catch (error) {
+    logRecordNotWritten(error);
   }
   return apiResponse;
 }

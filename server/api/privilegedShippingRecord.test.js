@@ -169,6 +169,21 @@ describe('initiate-privileged shipping record', () => {
     expect(mockIntegrationSdk.transactions.updateMetadata).not.toHaveBeenCalled();
   });
 
+  it('answers the buyer without waiting for the metadata write', async () => {
+    mockIntegrationSdk.transactions.updateMetadata.mockReturnValue(new Promise(() => {}));
+    const res = await initiate({
+      orderData: { deliveryMethod: 'shipping', avShippingType: 'nacionalExpress' },
+      protectedData: { shippingDetails },
+    });
+    expect(res.error).toBeUndefined();
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(mockIntegrationSdk.transactions.updateMetadata).toHaveBeenCalledTimes(1);
+    // The fallback the label step uses if that write never lands.
+    expect(sentParams(trustedSdk.transactions.initiate).protectedData.avShipping).toMatchObject({
+      rate_id: 'rate-1',
+    });
+  });
+
   it('still answers the buyer when the metadata write fails', async () => {
     mockIntegrationSdk.transactions.updateMetadata.mockRejectedValue(new Error('down'));
     const res = await initiate({

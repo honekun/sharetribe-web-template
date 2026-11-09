@@ -145,7 +145,9 @@ The chosen rate is persisted twice, with different authority:
   non-speculative `initiate-privileged` / `transition-privileged` call for a shipping order, the
   server writes it with the Integration SDK (`persistAvShippingRecord` in
   `server/api-util/avShipping.js`, two attempts). Metadata is operator-only, so neither party can
-  change it afterwards. A failed write is logged and does not fail the buyer's request.
+  change it afterwards. The write runs in the background — the buyer's response never waits for it —
+  and a failed write is only logged; the label step then uses the protectedData copy the same call
+  wrote (see 5.2).
 - **`protectedData.avShipping`** is informational. Both privileged endpoints always drop a
   caller-supplied `avShipping` key (including on pickup orders) and write the server copy for
   shipping orders. It is not trusted on its own: customer transitions such as `transition/inquire`
