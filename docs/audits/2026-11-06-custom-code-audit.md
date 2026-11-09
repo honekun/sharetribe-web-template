@@ -1,8 +1,8 @@
 # Custom-code audit — 2026-11-06
 
-Status: **resolved in code on branch `fix/audit-2026-11-06` (2026-11-06); Test (Render) verification
-and the Live release are pending**. Each finding records its commits, regression evidence, and what
-remains; see [Remediation status](#remediation-status).
+Status: **resolved in code and merged to `main` (PR #142, 2026-11-08), deployed to Render/Test; the
+A01 Test checks, migration 010 on Live, and the Live release are pending**. Each finding records its
+commits, regression evidence, and what remains; see [Remediation status](#remediation-status).
 
 This report records the findings from the final custom-code review requested on 2026-11-06. Review
 custom-code security, performance, and architecture first; reduce avoidable upstream divergence
@@ -61,10 +61,10 @@ in code or closed with a recorded decision; see [Remediation status](#remediatio
 
 ## Remediation status
 
-Branch `fix/audit-2026-11-06`, cut from `76e55bc8d`; open as PR #142, not released. Commits are
-listed per finding, including the [code-review follow-up](#code-review-follow-up-2026-11-08). The
-report stays until the Render/Test checks below are done (README rule); then remove it and its index
-links.
+Branch `fix/audit-2026-11-06`, cut from `76e55bc8d`; merged to `main` in PR #142 (`7c0a106c2`,
+2026-11-08) and deployed to Render/Test, not released to Live. Commits are listed per finding,
+including the [code-review follow-up](#code-review-follow-up-2026-11-08). The report stays until the
+Render/Test checks below are done (README rule); then remove it and its index links.
 
 | ID  | Outcome                                    | Commits                                            | Still to do outside the code                                                                                   |
 | --- | ------------------------------------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -76,8 +76,8 @@ links.
 | A06 | Resolved, Instagram follow-up included     | `b576a806d`                                        | —                                                                                                              |
 | A07 | Resolved, no data migration needed         | `1010f19a1`                                        | —                                                                                                              |
 | A08 | Resolved                                   | `fcf7aefda`, `cfb636c65`                           | —                                                                                                              |
-| A09 | Resolved                                   | `315b1a494`, `cfb636c65`                           | Apply migration 010 on the Test and Live databases before deploying                                            |
-| A10 | Resolved                                   | `f529c9919`                                        | Readiness `200` on Test after migration 010                                                                    |
+| A09 | Resolved                                   | `315b1a494`, `cfb636c65`                           | Test: applied 2026-11-08. Live: apply before Heroku is rebuilt from `main`                                     |
+| A10 | Resolved                                   | `f529c9919`                                        | Test: `200` after migration 010 (2026-11-08). Live: check after its migration                                  |
 | A11 | Resolved                                   | `2da576b14`                                        | —                                                                                                              |
 | D01 | Resolved; 2 production moderates accepted  | `c93da3d9d`                                        | Re-run both audit scopes after each upstream sync                                                              |
 | U01 | Resolved; one intended visual change       | `d3b500572`, `ed06e6223`                           | —                                                                                                              |
@@ -821,10 +821,12 @@ or partial-failure cases. Those need targeted regression tests as fixes are impl
 | Before/after computed styles of the production CSS (U01/U02) | 616 element states, 4 widths, light/dark, rest/hover: only the intended welcome-popup margin changed |
 | `git diff upstream/main` of the restored CSS modules         | Empty for SectionFeatures, SectionFooter, SectionColumns                                             |
 
-**Not performed:** Render/Test deployment, migration 010 on the Test/Live databases, live provider
-calls, and the repository auditor-agent pass (`/review`; it stopped on an account spend limit before
-reporting). A `/code-review` pass ran instead, see below. The A01 Test checks and migration 010 are
-tracked in the [pending README](../pending/README.md#release-and-operations).
+**Not performed at the time:** Render/Test deployment, migration 010 on the Test/Live databases,
+live provider calls, and the repository auditor-agent pass (`/review`; it stopped on an account
+spend limit before reporting). A `/code-review` pass ran instead, see below. On 2026-11-08,
+migration 010 was applied to the Render Test database before the merge, and readiness returned `200`
+on the deployed build. The A01 Test checks and migration 010 on Live are tracked in the
+[pending README](../pending/README.md#release-and-operations).
 
 ### Code-review follow-up (2026-11-08)
 

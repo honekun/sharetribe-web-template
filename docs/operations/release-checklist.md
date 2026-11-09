@@ -44,8 +44,10 @@ Run 2026-10-19 on the Live candidate (v57/v58 code).
 - [x] `yarn run config-check` passes.
 - [x] `yarn run env-template-check` passes.
 - [x] `yarn run build` passes.
-- [x] Database migrations and rollback implications are reviewed. None since `009`; v49–v56 share
-      the schema, so any of them is a valid rollback.
+- [x] Database migrations and rollback implications are reviewed. PR #142 adds
+      `010_listing_publication_completion.sql`: additive columns on `av_listing_publications` plus a
+      one-time `completed_at` backfill. Earlier code ignores them, so v49–v56 stay valid rollbacks
+      after it is applied; the new code needs it first (readiness reports `503` without it).
 - [x] Operator-visible changes are documented in [`operator-guide.md`](../operator-guide.md), the
       English shareable guide is regenerated, and every translated edition intended for this release
       is synchronized. The per-page SEO section shipped in PR #130; PRs #133–#134 are server-only
@@ -68,7 +70,8 @@ checks were never completed in any hosted Test environment.
       `AV_NOINDEX=true`. eShip QA confirmed 2026-10-16: quotes return `TESTRATE` rates.
 - [x] Run `yarn db:migrate` against Render's database before relying on notifications or labels. New
       database `archivovintach_v102026`, migrations 001–009 via the `migrate-test-db` procedure
-      (2026-10-15).
+      (2026-10-15); 010 the same way before PR #142 was merged and deployed (2026-11-08, readiness
+      `200` on the new build).
 - [x] Configure the Test-phase Brevo values on Render. Welcome email enabled, nothing missing
       (2026-10-15).
 - [x] Confirm all guarded flags are explicit. Readiness shows all six set (2026-10-15).
@@ -245,6 +248,9 @@ needed, confirm readiness, and record the release.
       so "tested" means the Heroku infrastructure checks only.
 - [x] Run `yarn db:migrate` on the empty reused database before enabling the poller or labels.
       Readiness reports `migrated: true`.
+- [ ] Before rebuilding Heroku from a commit that includes PR #142, apply migration 010 to the Live
+      database (`yarn db:migrate`). The Live database has 001–009; readiness reports `503` on the
+      new code until 010 is applied.
 - [ ] Scale to `web=1` and perform baseline SSR/database checks with guarded capabilities still off.
 - [x] Enable only the approved welcome/manual-label capabilities; keep campaigns, WhatsApp, and
       label auto-buy false. v49; readiness shows campaigns, tracking, and WhatsApp disabled;
