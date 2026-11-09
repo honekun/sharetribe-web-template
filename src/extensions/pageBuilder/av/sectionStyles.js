@@ -4,7 +4,7 @@
 //
 // `css` here is the SectionBuilder.module.css object (passed in by the caller
 // since CSS Modules resolve at import-time in the consumer file); only its
-// upstream `ctaButton` is read from it. The AV button classes come from the
+// upstream `ctaButton` is read from it, so the token maps are static. The AV button classes come from the
 // AV-owned src/styles/avCtaButtons.module.css (audit U01).
 
 import classNames from 'classnames';
@@ -38,9 +38,10 @@ export const getAvDefaultClassEntries = css => ({
   ctaBtnCenter: avButtons.ctaBtnCenter,
 });
 
-// CTA tokens recognized in `section.sectionName`. Order in BASE_MAP matters:
-// the first matching base token wins.
-const buildSectionCtaBaseMap = css => ({
+// CTA tokens recognized in `section.sectionName`. Order in the base map
+// matters: the first matching base token wins. Both maps are static (they only
+// read the AV button module), so they are built once.
+const SECTION_CTA_BASE_MAP = Object.freeze({
   SectionCtaBtnBlue: avButtons.ctaButtonBlue,
   SectionCtaBtnLightBlue: avButtons.ctaButtonLightBlue,
   SectionCtaBtnPurple: avButtons.ctaButtonPurple,
@@ -49,7 +50,7 @@ const buildSectionCtaBaseMap = css => ({
   SectionCtaBtnSecondary: avButtons.ctaButtonSecondary,
 });
 
-const buildCtaModifierMap = css => ({
+const SECTION_CTA_MODIFIER_MAP = Object.freeze({
   RoundedFull: avButtons.roundedFull,
   Rounded: avButtons.rounded,
   Square: avButtons.square,
@@ -66,18 +67,16 @@ const hasToken = (str, token) => new RegExp(`- ${token}(?!\\w)`).test(str);
 
 export const parseSectionCtaClass = (sectionName, css) => {
   if (!sectionName) return null;
-  const baseMap = buildSectionCtaBaseMap(css);
-  const modifierMap = buildCtaModifierMap(css);
   const classes = [];
   let hasBase = false;
-  for (const [token, cls] of Object.entries(baseMap)) {
+  for (const [token, cls] of Object.entries(SECTION_CTA_BASE_MAP)) {
     if (hasToken(sectionName, token)) {
       classes.push(cls);
       hasBase = true;
       break;
     }
   }
-  for (const [token, cls] of Object.entries(modifierMap)) {
+  for (const [token, cls] of Object.entries(SECTION_CTA_MODIFIER_MAP)) {
     if (hasToken(sectionName, token)) classes.push(cls);
   }
   // When only layout modifiers are present, preserve the default button look.

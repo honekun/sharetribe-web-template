@@ -82,7 +82,7 @@ const SectionHeroCustom3 = props => {
   // section-name CTA tokens baked into defaultClasses by SectionBuilder.
   const resolveCtaClass = block =>
     mergeBlockCtaClass(
-      parseBlockCtaClass(block.blockName, defaultClasses),
+      parseBlockCtaClass(block.blockName),
       defaultClasses?.ctaButtonPrimary,
       defaultClasses
     );

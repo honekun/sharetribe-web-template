@@ -166,8 +166,12 @@ export const hasBlockNameToken = (blockName, token) => !!blockName?.includes(`${
 export const hasSocialLinksToken = blockName => hasBlockNameToken(blockName, 'social links');
 
 // ---- CTA token parsers ----
+//
+// The block maps are static (they only read the AV button module), so they are
+// built once. Only the short-name style map's `primary` entry depends on the
+// caller's SectionBuilder css.
 
-const buildBlockCtaBaseMap = css => ({
+const BLOCK_CTA_BASE_MAP = Object.freeze({
   blockCtaBtnBlue: avButtons.ctaButtonBlue,
   blockCtaBtnLightBlue: avButtons.ctaButtonLightBlue,
   blockCtaBtnPurple: avButtons.ctaButtonPurple,
@@ -176,7 +180,7 @@ const buildBlockCtaBaseMap = css => ({
   blockCtaBtnSecondary: avButtons.ctaButtonSecondary,
 });
 
-const buildBlockCtaModifierMap = css => ({
+const BLOCK_CTA_MODIFIER_MAP = Object.freeze({
   roundedFull: avButtons.roundedFull,
   rounded: avButtons.rounded,
   square: avButtons.square,
@@ -204,7 +208,6 @@ const buildCtaStyleBaseMap = css => ({
 export const parseCtaStyleString = (styleStr, css) => {
   if (!styleStr?.trim()) return null;
   const baseMap = buildCtaStyleBaseMap(css);
-  const modMap = buildBlockCtaModifierMap(css);
   const tokens = styleStr.trim().split(/\s+/);
   const classes = [];
   let hasBase = false;
@@ -212,8 +215,8 @@ export const parseCtaStyleString = (styleStr, css) => {
     if (baseMap[token]) {
       classes.push(baseMap[token]);
       hasBase = true;
-    } else if (modMap[token]) {
-      classes.push(modMap[token]);
+    } else if (BLOCK_CTA_MODIFIER_MAP[token]) {
+      classes.push(BLOCK_CTA_MODIFIER_MAP[token]);
     }
   }
   if (!hasBase && classes.length) classes.unshift(css.ctaButton);
@@ -229,19 +232,17 @@ export const parseCtaStyleString = (styleStr, css) => {
 // clobbering it. Position/border/font modifiers only set CSS vars and never
 // imply a base color, so a modifier-only block (e.g. "ctaBtnCenter ::") keeps
 // whatever base the section's `- SectionCtaBtn*` token provided.
-export const parseBlockCtaClass = (blockName, css) => {
+export const parseBlockCtaClass = blockName => {
   if (!blockName) return null;
-  const baseMap = buildBlockCtaBaseMap(css);
-  const modMap = buildBlockCtaModifierMap(css);
   const tokens = [...blockName.matchAll(/(\S+)\s*::/g)].map(m => m[1]);
   if (!tokens.length) return null;
   let baseClass = null;
   const modifierClasses = [];
   for (const token of tokens) {
-    if (baseMap[token]) {
-      baseClass = baseMap[token];
-    } else if (modMap[token]) {
-      modifierClasses.push(modMap[token]);
+    if (BLOCK_CTA_BASE_MAP[token]) {
+      baseClass = BLOCK_CTA_BASE_MAP[token];
+    } else if (BLOCK_CTA_MODIFIER_MAP[token]) {
+      modifierClasses.push(BLOCK_CTA_MODIFIER_MAP[token]);
     }
   }
   if (!baseClass && !modifierClasses.length) return null;
@@ -357,7 +358,7 @@ export const createBlockCustomProps = (block, intl, css) => {
 export const buildAvBlockProps = (block, intl, css, inheritedCtaButtonClass) => {
   const customProps = createBlockCustomProps(block, intl, css);
 
-  const blockCtaOverride = parseBlockCtaClass(block.blockName, css);
+  const blockCtaOverride = parseBlockCtaClass(block.blockName);
   if (blockCtaOverride) {
     // Layer the block's CTA tokens onto the section-inherited CTA class
     // (e.g. `- SectionCtaBtnBlue`): a block color token replaces the base,

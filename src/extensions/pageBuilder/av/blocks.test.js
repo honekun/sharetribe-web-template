@@ -266,34 +266,34 @@ describe('createBlockCustomProps', () => {
 
 describe('parseBlockCtaClass', () => {
   it('returns null for empty/absent blockName or no CTA tokens', () => {
-    expect(parseBlockCtaClass(null, cssMock)).toBeNull();
-    expect(parseBlockCtaClass('', cssMock)).toBeNull();
-    expect(parseBlockCtaClass('just a name', cssMock)).toBeNull();
+    expect(parseBlockCtaClass(null)).toBeNull();
+    expect(parseBlockCtaClass('')).toBeNull();
+    expect(parseBlockCtaClass('just a name')).toBeNull();
   });
 
   it('parses a base color token with no modifiers', () => {
-    expect(parseBlockCtaClass('blockCtaBtnBlue ::', cssMock)).toEqual({
+    expect(parseBlockCtaClass('blockCtaBtnBlue ::')).toEqual({
       baseClass: 'ctaButtonBlue',
       modifierClasses: [],
     });
   });
 
   it('parses the secondary base token', () => {
-    expect(parseBlockCtaClass('blockCtaBtnSecondary ::', cssMock)).toEqual({
+    expect(parseBlockCtaClass('blockCtaBtnSecondary ::')).toEqual({
       baseClass: 'ctaButtonSecondary',
       modifierClasses: [],
     });
   });
 
   it('parses a modifier-only token with no base color (does NOT inject a default base)', () => {
-    expect(parseBlockCtaClass('ctaBtnCenter ::', cssMock)).toEqual({
+    expect(parseBlockCtaClass('ctaBtnCenter ::')).toEqual({
       baseClass: null,
       modifierClasses: ['ctaBtnCenter'],
     });
   });
 
   it('parses base color + multiple modifiers', () => {
-    expect(parseBlockCtaClass('blockCtaBtnPink :: rounded :: dashed ::', cssMock)).toEqual({
+    expect(parseBlockCtaClass('blockCtaBtnPink :: rounded :: dashed ::')).toEqual({
       baseClass: 'ctaButtonPink',
       modifierClasses: ['rounded', 'dashed'],
     });
@@ -308,19 +308,19 @@ describe('mergeBlockCtaClass', () => {
 
   it('keeps the inherited base color and layers a modifier-only override on top', () => {
     // The reported bug: "- SectionCtaBtnBlue" + block "ctaBtnCenter ::" must stay blue.
-    const override = parseBlockCtaClass('ctaBtnCenter ::', cssMock);
+    const override = parseBlockCtaClass('ctaBtnCenter ::');
     expect(mergeBlockCtaClass(override, 'ctaButtonBlue', cssMock)).toBe(
       'ctaButtonBlue ctaBtnCenter'
     );
   });
 
   it('lets a block color token replace the inherited base, still layering modifiers', () => {
-    const override = parseBlockCtaClass('blockCtaBtnPink :: rounded ::', cssMock);
+    const override = parseBlockCtaClass('blockCtaBtnPink :: rounded ::');
     expect(mergeBlockCtaClass(override, 'ctaButtonBlue', cssMock)).toBe('ctaButtonPink rounded');
   });
 
   it('falls back to the neutral ctaButton when nothing is inherited', () => {
-    const override = parseBlockCtaClass('ctaBtnCenter ::', cssMock);
+    const override = parseBlockCtaClass('ctaBtnCenter ::');
     expect(mergeBlockCtaClass(override, undefined, cssMock)).toBe('ctaButton ctaBtnCenter');
   });
 });
