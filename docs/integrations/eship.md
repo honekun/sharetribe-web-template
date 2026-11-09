@@ -133,11 +133,25 @@ The **authoritative** price is resolved exactly once server-side, then passed to
 context-mismatched token is re-quoted. For a real payment, the destination is rebuilt from
 `protectedData.shippingDetails`, not trusted from the duplicate client `avDestination`. A shipping
 transaction without a valid rate and destination is rejected. Out-of-order browser quote responses
-are ignored. The chosen rate is persisted to transaction `protectedData.avShipping`:
+are ignored.
+
+The chosen rate is persisted twice, with different authority:
 
 ```
 { bucket, quot_id, rate_id, carrier, servicelevel, amountSubunits, currency }
 ```
+
+- **`metadata.avShipping`** (plus `recordedAt`) is the **authoritative** record. After a successful
+  non-speculative `initiate-privileged` / `transition-privileged` call for a shipping order, the
+  server writes it with the Integration SDK (`persistAvShippingRecord` in
+  `server/api-util/avShipping.js`, two attempts). Metadata is operator-only, so neither party can
+  change it afterwards. The write runs in the background — the buyer's response never waits for it —
+  and a failed write is only logged; the label step then uses the protectedData copy the same call
+  wrote (see 5.2).
+- **`protectedData.avShipping`** is informational. Both privileged endpoints always drop a
+  caller-supplied `avShipping` key (including on pickup orders) and write the server copy for
+  shipping orders. It is not trusted on its own: customer transitions such as `transition/inquire`
+  (before payment) and `transition/dispute` (after delivery) can write protectedData directly.
 
 No origin / `especial` size / carrier error → buyer sees **Contactar AV**.
 
@@ -162,8 +176,27 @@ Before any carrier call, PostgreSQL atomically inserts a `processing` claim in
 row is finalized before Sharetribe metadata is synced, so a metadata-write failure cannot cause a
 second carrier purchase.
 
+**Label authority (audit A01, 2026-11-06).** `resolveLabelShippingRecord` picks the record a
+purchase may use: `metadata.avShipping` when present; otherwise the legacy protectedData copy, but
+only while the transaction has no `transition/dispute` (the only post-payment customer transition in
+`default-purchase` that rewrites protectedData). The legacy path covers transactions created before
+the metadata record existed and any whose metadata write failed. Either way the purchase also
+requires a non-reversal `line-item/shipping-fee` paid by the customer whose amount and currency
+equal the record — line items are set only by the privileged server, so a pickup order (item charge
+only) can never buy a label. A refusal throws `LabelNotAllowedError` before any claim, and the
+manual route answers `409 { code: 'LABEL_NOT_ALLOWED', reason }` with `reason`
+`SHIPPING_CHARGE_MISMATCH` or `SHIPPING_RECORD_UNTRUSTED`. The durable claim still binds the
+record's `rate_id`, so a later record change cannot reclaim a finished attempt. No
+transaction-process change was needed. These rules (`resolveLabelShippingRecord`,
+`shippingChargeMatches`, `isLabelPurchaseAllowed`) live in the CommonJS
+`src/config/configAVShippingLabel.js`, shared by `shipmentService` and the sale page's label
+control, so the control never offers a label the server would refuse.
+
 Only paid, non-cancelled transactions are eligible. A carrier 4xx response is `failed`; a timeout,
-network/5xx response, malformed 2xx success, or interrupted process is `unknown`. `processing` and
+network/5xx response, malformed 2xx success, or interrupted process is `unknown`. The 8-second eShip
+deadline covers reading the response body too (`requestWithTimeout`, audit A06): a carrier that sends
+headers and then stalls is a timeout (`unknown`), while a rejection whose body stalls keeps its HTTP
+status. `processing` and
 `unknown` attempts fail closed and are never retried automatically because eShip may already have
 charged the account.
 
@@ -179,9 +212,11 @@ route only; cross-seller retries and `confirmUnknown:true` must follow an approv
 procedure after carrier-dashboard reconciliation.
 
 **UI.** `TransactionPage/AVShippingLabelMaybe/` — `AVShippingLabelSection` (local-state wrapper that
-POSTs and prefers the returned `avLabel`) + `AVShippingLabelMaybe` (3-state: **Descargar guía** /
-**Generar guía** / hidden for especial). Rendered provider-only via a `shippingLabelSlot` prop
-threaded through `TransactionPanel`.
+POSTs and prefers the returned `avLabel`; its record is `labelShippingRecord` from
+`configAVShippingLabel.js`) + `AVShippingLabelMaybe` (3-state: **Descargar guía** /
+**Generar guía** / hidden for especial or an untrusted/unmatched record). A `409 LABEL_NOT_ALLOWED`
+shows `AVShippingLabel.notAllowed` ("contact Archivo Vintach") instead of the retry message.
+Rendered provider-only via a `shippingLabelSlot` prop threaded through `TransactionPanel`.
 
 ### 5.3 Tracking webhook → native Sharetribe email
 
@@ -267,11 +302,12 @@ remain pinned to their original process version.
 | `server/migrations/007_shipping_label_attempts.sql`                         | Label purchase ledger schema                                 |
 | `server/services/eshipTrackingService.js` + `eshipTrackingStore.js`         | Verified pickup email worker + durable claims                |
 | `server/migrations/009_eship_tracking_notifications.sql`                    | Idempotent tracking-notification ledger                      |
-| `server/api-util/avShipping.js`                                             | Persist chosen rate → `protectedData.avShipping`             |
+| `server/api-util/avShipping.js`                                             | Rate record → `metadata.avShipping`; charge binding helpers  |
 | `server/api/shipping-quote/`                                                | `POST /api/shipping/quote`                                   |
 | `server/api/shipping-label/`                                                | `POST /api/shipping/label` (+ `rateLimiter.js`)              |
 | `server/api/eship-webhook.js`                                               | `POST /api/shipping/eship-webhook`                           |
 | `src/config/configAVShipping.js`                                            | Package sizes, markup math, bucket mapping                   |
+| `src/config/configAVShippingLabel.js`                                       | Label eligibility shared by server and label control         |
 | `src/containers/CheckoutPage/shippingQuote.duck.js` + `AVShippingSelector/` | Client quote UI (incl. `AVShippingNotice`)                   |
 | `src/containers/TransactionPage/AVShippingLabelMaybe/`                      | Provider label control                                       |
 

@@ -630,6 +630,100 @@ textarea {
   justify-self: center;
 }
 
+/* AV restyle of the upstream PageBuilder CTA button (`.ctaButton`, used by
+   sections and blocks without a `- SectionCtaBtn*` color token) and of the
+   section description width. Moved out of SectionBuilder.module.css so that
+   upstream file stays pristine (audit U01); the AV token buttons themselves
+   live in src/styles/avCtaButtons.module.css.
+
+   (0,2,0) beats the module's own (0,1,0) rules. The dark-theme rules in that
+   module (`.darkTheme .ctaButton` (0,2,0) and its `:hover` (0,3,0)) load after
+   this file and keep winning their ties, as they did when this restyle lived
+   inside the module; the dark hover border is restated explicitly below
+   because the (0,3,0) hover here would otherwise outrank it. */
+:root [class*='SectionBuilder_ctaButton__'] {
+  padding: 11px 22px;
+  font-size: 14px;
+  background-color: var(--ctaPrimaryBG);
+  border-radius: 10px;
+  color: var(--ctaPrimary);
+  border: 1px solid var(--ctaPrimary);
+  box-shadow: none;
+  font-weight: 400;
+  font-family: var(--fontFamilyHeadings);
+  line-height: 150%; /* 21px */
+  transition: var(--colorTransition);
+}
+
+:root [class*='SectionBuilder_ctaButton__']:hover {
+  background-color: var(--ctaSecondaryBG);
+  color: var(--ctaSecondary);
+  border-color: var(--ctaSecondaryBG);
+}
+
+:root [class*='SectionBuilder_darkTheme__'] [class*='SectionBuilder_ctaButton__']:hover {
+  color: var(--colorWhite);
+  border-color: var(--marketplaceColorDark);
+}
+
+:root [class*='SectionBuilder_description__'] {
+  max-width: 545px;
+  text-wrap: auto;
+}
+
+/* ================ PageBuilder footer (AV) ================
+   AV restyle of upstream SectionFooter.module.css classes, moved out of that
+   file so it stays pristine (audit U02). `:root` (0,2,0) beats the module's own
+   (0,1,0) rules; upstream sets no other footer padding or copyright rule that
+   these could out-rank. The AV-only `belowSlogan` class lives in
+   SectionFooter.av.module.css. */
+:root [class*='SectionFooter_root__'] {
+  --contentMaxWidthPages: 1370px;
+  --contentPaddingX: 35px;
+  /* Dark footer needs light text. */
+  --footerCopyrightFontSize: 16px;
+  --footerCopyrightLineHeight: 24px;
+  --footerCopyrightColor: var(--colorWhite);
+}
+
+:root [class*='SectionFooter_footer__'] {
+  padding: 10px 32px;
+}
+
+:root [class*='SectionFooter_footer__'] h2 {
+  color: var(--avYellow);
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 139%; /* 22.24px */
+}
+
+:root [class*='SectionFooter_copyright__'] {
+  font-size: var(--footerCopyrightFontSize, 12px);
+  line-height: var(--footerCopyrightLineHeight, 16px);
+  letter-spacing: 1px;
+  color: var(--footerCopyrightColor, var(--colorGrey600));
+}
+
+/* Four link columns: the logo row spans the link grid too. */
+@media (--viewportLarge) {
+  :root [class*='SectionFooter_contentCol4__'] {
+    grid-template-areas:
+      'logo grid grid'
+      'details grid grid'
+      'details grid grid'
+      'details grid grid';
+  }
+}
+
+/* ================ PageBuilder columns (AV) ================
+   Var-driven grid gap so the `- SmallGapCols`/`- SmallGapRows`/`- NoGap*`
+   section tokens (AVSectionContainer.module.css) can tighten it; the default
+   stays upstream's 32px (audit U02, moved out of SectionColumns.module.css). */
+:root [class*='SectionColumns_baseColumn__'] {
+  gap: var(--avSectionRowGap, 32px) var(--avSectionColGap, 32px);
+}
+
 /* Remove the 80ch reading-width cap on the PageBuilder `<p>` primitive so body
    copy fills its container. `.p` is a CSS Modules scoped class
    (`P_p__<hash>`, from Primitives/P/P.module.css); match the stable prefix and
@@ -760,7 +854,7 @@ textarea {
    Round the global button classes (marketplaceDefaults.css) to the avCtaButton
    pill radius. Colors, sizing, and the inProgress/ready spinner-checkmark
    animations stay upstream — this is deliberately NOT the composed avCtaButton
-   treatment (see src/containers/PageBuilder/SectionBuilder/SectionBuilder.module.css).
+   treatment (see src/styles/avCtaButtons.module.css).
    Same (0,1,0) specificity as the upstream rules; this file loads after
    marketplaceDefaults.css (src/index.js), so source order breaks the tie. */
 .buttonDefault,

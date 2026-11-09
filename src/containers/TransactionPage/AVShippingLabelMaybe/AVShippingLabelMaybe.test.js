@@ -57,6 +57,12 @@ describe('AVShippingLabelMaybe', () => {
     expect(screen.getByText('AVShippingLabel.error')).toBeInTheDocument();
   });
 
+  it('does not suggest retrying a label the server refused', () => {
+    render(<AVShippingLabelMaybe avShipping={RATE} avLabel={null} error="LABEL_NOT_ALLOWED" />);
+    expect(screen.getByText('AVShippingLabel.notAllowed')).toBeInTheDocument();
+    expect(screen.queryByText('AVShippingLabel.error')).toBeNull();
+  });
+
   it('disables the button while generating', () => {
     render(<AVShippingLabelMaybe avShipping={RATE} avLabel={null} inProgress={true} />);
     expect(screen.getByRole('button')).toBeDisabled();

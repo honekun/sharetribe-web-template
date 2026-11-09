@@ -91,15 +91,23 @@
   gap: 12px;
 }
 
-/* Canonical AV CTA buttons composed from SectionBuilder; the `.buttons` flex
-   column stretches them full width. Drop the ctaButton top margin — the
+/* Canonical AV CTA buttons (src/styles/avCtaButtons.module.css); the `.buttons`
+   flex column stretches them full width. Drop the base top margin — the
    column gap handles spacing. */
 .primaryButton {
-  composes: ctaButtonBlue from '../../containers/PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonBlue from '../../styles/avCtaButtons.module.css';
+}
+
+/* Self-chained so it beats the composed (0,1,0) base in any stylesheet order. */
+.primaryButton.primaryButton {
   margin-top: 0;
 }
 
 .secondaryButton {
-  composes: ctaButtonPink from '../../containers/PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonPink from '../../styles/avCtaButtons.module.css';
+}
+
+/* Self-chained so it beats the composed (0,1,0) base in any stylesheet order. */
+.secondaryButton.secondaryButton {
   margin-top: 0;
 }

@@ -4,6 +4,9 @@ import { PrimaryButton, ExternalLink } from '../../../components';
 
 import css from './AVShippingLabelMaybe.module.css';
 
+// The endpoint refused this order's label outright; retrying will not help.
+const LABEL_NOT_ALLOWED = 'LABEL_NOT_ALLOWED';
+
 /**
  * Provider-facing eShip shipping-label control on the sale detail page.
  *
@@ -15,7 +18,7 @@ import css from './AVShippingLabelMaybe.module.css';
  * Logic lives in TransactionPage; this component is presentational.
  *
  * @param {Object} props
- * @param {Object|null} props.avShipping - transaction.protectedData.avShipping (the chosen rate)
+ * @param {Object|null} props.avShipping - the trusted shipping record (configAVShippingLabel)
  * @param {Object|null} props.avLabel    - transaction.metadata.avLabel (the label marker)
  * @param {Function} props.onGenerate    - trigger a manual label purchase
  * @param {boolean} props.inProgress     - a generation request is in flight
@@ -61,7 +64,13 @@ const AVShippingLabelMaybe = props => {
           </PrimaryButton>
           {error ? (
             <p className={css.error}>
-              <FormattedMessage id="AVShippingLabel.error" />
+              <FormattedMessage
+                id={
+                  error === LABEL_NOT_ALLOWED
+                    ? 'AVShippingLabel.notAllowed'
+                    : 'AVShippingLabel.error'
+                }
+              />
             </p>
           ) : null}
         </>

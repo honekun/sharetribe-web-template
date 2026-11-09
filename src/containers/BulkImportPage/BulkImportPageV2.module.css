@@ -46,7 +46,11 @@
 }
 
 .templateButton {
-  composes: ctaButtonBlue from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonBlue from '../../styles/avCtaButtons.module.css';
+}
+
+/* Self-chained so it beats the composed (0,1,0) base in any stylesheet order. */
+.templateButton.templateButton {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -165,7 +169,11 @@
 }
 
 .selectButton {
-  composes: ctaButtonBlue from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonBlue from '../../styles/avCtaButtons.module.css';
+}
+
+/* Self-chained so it beats the composed (0,1,0) base in any stylesheet order. */
+.selectButton.selectButton {
   display: inline-flex;
   width: auto;
   margin-top: 0;
@@ -233,7 +241,11 @@
 }
 
 .submitButton {
-  composes: ctaButtonBlue from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonBlue from '../../styles/avCtaButtons.module.css';
+}
+
+/* Self-chained so it beats the composed (0,1,0) base in any stylesheet order. */
+.submitButton.submitButton {
   display: block;
   width: 100%;
   margin-top: 20px;
@@ -498,12 +510,20 @@
 }
 
 .viewListingsLink {
-  composes: ctaButtonBlue from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonBlue from '../../styles/avCtaButtons.module.css';
+}
+
+/* Self-chained so it beats the composed (0,1,0) base in any stylesheet order. */
+.viewListingsLink.viewListingsLink {
   margin-top: 0;
 }
 
 .resetButton {
-  composes: ctaButtonBlue from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonBlue from '../../styles/avCtaButtons.module.css';
+}
+
+/* Self-chained so it beats the composed (0,1,0) base in any stylesheet order. */
+.resetButton.resetButton {
   margin-top: 0;
 }
 

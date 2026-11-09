@@ -5,8 +5,18 @@ import { getSupportedProcessesInfo, INQUIRY_PROCESS_NAME } from '../../transacti
 import { buildFilteredQueryParams } from '../../transactions/transactionHelpers';
 import { addMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import * as log from '../../util/log';
+import { getMyBalanceSummary } from '../../util/api';
 
 const PAGE_SIZE = 10;
+
+// The summary is refetched once it is older than this, matching the server's
+// per-user summary cache (server/api/my-balance/), so a seller who returns to
+// the page through SPA navigation sees totals that agree with the rows (audit
+// A11) without every pagination/filter change rescanning their whole history.
+export const SUMMARY_TTL_MS = 60 * 1000;
+
+export const isSummaryStale = (pageState, now = Date.now()) =>
+  !pageState?.summaryFetchedAt || now - pageState.summaryFetchedAt >= SUMMARY_TTL_MS;
 
 const entityRefs = entities =>
   entities.map(entity => ({
@@ -28,6 +38,7 @@ const myBalancePageSlice = createSlice({
     transactionRefs: [],
     summaryFetchInProgress: false,
     summaryLoaded: false,
+    summaryFetchedAt: null,
     completedTotalAmount: 0,
     pendingTotalAmount: 0,
     cancelledCount: 0,
@@ -68,9 +79,11 @@ const myBalancePageSlice = createSlice({
           currentMonthPendingAmount,
           currentMonthCancelledCount,
           currency,
+          fetchedAt,
         } = action.payload;
         state.summaryFetchInProgress = false;
         state.summaryLoaded = true;
+        state.summaryFetchedAt = fetchedAt || null;
         state.completedTotalAmount = completedTotalAmount;
         state.pendingTotalAmount = pendingTotalAmount;
         state.cancelledCount = cancelledCount;
@@ -156,34 +169,30 @@ export const loadTransactionsThunk = createAsyncThunk(
 // derives the process/transition lists itself (server/api/my-balance/).
 const fetchSummaryPayloadCreator = async (_, { rejectWithValue }) => {
   try {
-    const res = await fetch('/api/my-balance/summary', {
-      credentials: 'include',
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      return rejectWithValue(
-        storableError(new Error(body.error || `summary_failed_${res.status}`))
-      );
-    }
-    const body = await res.json();
-    return body;
+    const body = await getMyBalanceSummary();
+    return { ...body, fetchedAt: Date.now() };
   } catch (e) {
-    return rejectWithValue(storableError(e));
+    // A failure leaves summaryFetchedAt alone, so the next load retries.
+    return rejectWithValue(storableError(e?.error ? new Error(e.error) : e));
   }
 };
 
 export const fetchSummaryThunk = createAsyncThunk(
   'MyBalancePage/fetchSummary',
-  fetchSummaryPayloadCreator
+  fetchSummaryPayloadCreator,
+  {
+    // Concurrent loads (mount + quick navigation) share the request in flight.
+    condition: (_, { getState }) => !getState().MyBalancePage?.summaryFetchInProgress,
+  }
 );
 
 export const loadData = (params, search) => (dispatch, getState) => {
   const promises = [dispatch(loadTransactionsThunk({ search }))];
-  // Summary is invariant of pagination/filter — only fetch once per session.
-  // Skip on SSR: fetch() to a same-origin path needs an absolute URL in Node, and
-  // the summary is per-user/personalized, so it doesn't help SSR cache or SEO.
+  // Summary is invariant of pagination/filter; refresh it only when stale.
+  // Skip on SSR: the request helper needs the browser origin, and the summary
+  // is per-user/personalized, so it doesn't help SSR cache or SEO.
   const isClient = typeof window !== 'undefined';
-  if (isClient && !getState().MyBalancePage.summaryLoaded) {
+  if (isClient && isSummaryStale(getState().MyBalancePage)) {
     promises.push(dispatch(fetchSummaryThunk()));
   }
   return Promise.all(promises);

@@ -61,6 +61,7 @@
   "AVShippingLabel.generate": "Generar guía",
   "AVShippingLabel.generating": "Generando…",
   "AVShippingLabel.error": "No se pudo generar la guía. Intenta de nuevo.",
+  "AVShippingLabel.notAllowed": "No es posible generar la guía de este pedido. Contacta a Archivo Vintach.",
   "StoreTypeTags.ariaLabel": "Etiquetas de tipo de tienda",
   "ListingField.allSizes.group.standard": "Ropa (Estándar)",
   "ListingField.allSizes.group.mx": "Ropa (MX)",

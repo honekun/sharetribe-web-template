@@ -722,19 +722,31 @@ Rules:
   state, and the rolling frequency cap.
 - Consent belongs to an email address. Requesting an account email change revokes the old address;
   the verified new address starts opted out.
+- **Lookups are keyed by the destination address** (audit A07, `marketingConsent.getPreference`).
+  Eligibility reads the row for the exact address being mailed; a user id only narrows that match
+  (a row linked to a different account never applies, an unlinked anonymous row for the same
+  address does). A grant recorded for another address can never authorize the account email, and
+  an email change made outside the Contact Details flow (SDK, Console, operator) leaves the new
+  address without consent until its owner opts in. The matching-listing audience joins consent the
+  same way.
+- The footer form links the signed-in account only when it subscribes the account's own email. A
+  different address is recorded as anonymous consent for that address alone.
+- No data migration was needed: older rows that linked an account id to a secondary footer address
+  are simply never consulted for the account email, so nothing is broadened and no suppression is
+  lifted.
 - Seller welcome is essential onboarding and is not affected by marketing preference.
 
 ## Application endpoints
 
 | Endpoint                           | Access                                           | Purpose                                                                 |
 | ---------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------- |
-| `POST /api/brevo/subscribe`        | Public, rate-limited, honeypot                   | Footer consent plus Brevo contact/list upsert                           |
-| `GET /api/brevo/preference`        | Signed-in user                                   | Read authoritative preference for current account/email                 |
+| `POST /api/brevo/subscribe`        | Public, rate-limited, honeypot                   | Footer consent for the submitted address plus Brevo contact/list upsert |
+| `GET /api/brevo/preference`        | Signed-in user                                   | Read the preference of the account's current email address              |
 | `PUT /api/brevo/preference`        | Signed-in user, rate-limited                     | Grant/withdraw, sync Brevo membership, mirror Sharetribe protected data |
 | `POST /api/brevo/engagement`       | Public view/authenticated favorite, rate-limited | Record server-validated qualified view or favorite                      |
 | `POST /api/brevo/webhook`          | Shared-secret authenticated                      | Record delivery events and apply provider suppression                   |
 | `GET /api/brevo/health`            | Deployment probe                                 | Validate configured welcome/campaign flags and required values          |
-| `GET /api/notifications/readiness`         | Public deployment probe                  | Validate only aggregate readiness without exposing operational details |
+| `GET /api/notifications/readiness`         | Public deployment probe                  | Cached catalog-only readiness check; exposes no operational details   |
 | `GET /api/notifications/readiness/details` | Bearer-protected engineering diagnostic | Validate flags, PostgreSQL schema, cursor, ledger, jobs, and metrics    |
 
 The engagement endpoint loads the listing through the Sharetribe SDK and resolves the current user
@@ -801,7 +813,14 @@ yarn notifications:list failed
 yarn notifications:list unknown
 ```
 
-Provider timeouts remain `unknown` and are never resent automatically. Reconcile the matching
+Retrying a promotional (campaign) delivery re-runs the campaign checks against current data and is
+refused, unchanged, when the recipient opted out, was suppressed, changed email, hit the weekly cap,
+or the listing/transaction no longer qualifies; seller welcome retries resend the stored payload
+(details: [notification PostgreSQL](notification-postgres.md#2-local-database-commands)). Provider timeouts
+remain `unknown` and are never resent automatically. The 10-second Brevo deadline
+covers the response body as well as the headers (`requestWithTimeout`, audit A06): no response at
+all is `unknown`, a 2xx whose body stalls counts as sent (without a message id), and a rejection
+whose body stalls keeps its status-based `failed` classification. Reconcile the matching
 message/tag in Brevo before:
 
 ```sh

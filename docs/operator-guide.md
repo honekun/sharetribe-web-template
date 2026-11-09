@@ -1196,15 +1196,20 @@ rejected.
 - Listings are created under the uploader's account by default (admins can override per row).
 - The tool is **tiered** — admins can import bigger batches than regular sellers:
 
-  | Limit               | Regular seller | Admin |
-  | ------------------- | -------------- | ----- |
-  | Listings per import | 25             | 100   |
-  | Images per ZIP      | 100            | 400   |
-  | ZIP file size       | 20 MB          | 50 MB |
-  | Imports per hour    | 3              | 20    |
+  | Limit                       | Regular seller | Admin |
+  | --------------------------- | -------------- | ----- |
+  | Listings per import         | 100            | 100   |
+  | Images per ZIP              | 100            | 400   |
+  | ZIP file size               | 20 MB          | 50 MB |
+  | Imports per hour            | 3              | 20    |
+  | Upload attempts per hour    | 20             | 60    |
 
-- You can only run **one import at a time** per account, and the server runs at most **3 imports at
-  once** across all users — if it's busy you'll be asked to try again shortly.
+- You can only run **one import at a time** per account — counting an upload that is still being
+  sent — and the server runs at most **3 imports at once** across all users. If it's busy you'll be
+  asked to try again shortly. These checks happen before the file is uploaded, so a refused attempt
+  costs no upload time.
+- Every upload attempt counts toward the hourly **upload attempts** limit, including ones that fail
+  validation; only imports that actually start count toward **imports per hour**.
 - **Uploading the same file again is safe.** Within 24 hours, rows that were already imported are
   skipped (the page shows "already imported (skipped)") and listings left unfinished are completed
   — nothing is duplicated. So when rows fail with a timeout or "created but not finished", just
@@ -1264,7 +1269,7 @@ my-listings.zip
 - Two images cannot share the same filename, even in different folders
 - Images must be genuine `.jpg`, `.png`, or `.webp` files
 - Size and count limits depend on your tier (see the table in [8.1](#81-overview)): regular sellers
-  up to 25 listings / 100 images / 20 MB; admins up to 100 listings / 400 images / 50 MB
+  up to 100 listings / 100 images / 20 MB; admins up to 100 listings / 400 images / 50 MB
 
 ---
 
@@ -1885,8 +1890,9 @@ columns.
 | "…requiere una sesión iniciada" error                                                      | You are signed out                                                               | Sign in to the marketplace and try again                                                                       |
 | "Token de acción… inválido o expirado"                                                     | The short-lived upload token expired                                             | Reload the page and start the upload again                                                                     |
 | `La sustitución de "user_id" no está permitida`                                            | A non-admin filled in the `user_id` column                                       | Remove the `user_id` column (your listings are created under you)                                              |
-| "El ZIP supera tu límite…" / "Demasiadas imágenes" / "El CSV tiene … filas. Tu límite es…" | The import is over your tier's limit                                             | Split it into smaller batches, or ask an admin to run the larger import                                        |
+| "El archivo es demasiado grande…" / "El ZIP supera tu límite…" / "Demasiadas imágenes" / "El CSV tiene … filas. Tu límite es…" | The import is over your tier's limit                                             | Split it into smaller batches, or ask an admin to run the larger import                                        |
 | "Demasiadas importaciones" (try again later)                                               | You hit your hourly import limit                                                 | Wait up to an hour and try again (3/hr seller, 20/hr admin)                                                    |
+| "Demasiados intentos de importación"                                                       | Too many upload attempts in the last hour, including failed ones                 | Fix the file offline, then wait up to an hour (20 attempts/hr seller, 60/hr admin)                             |
 | "Ya tienes una importación en curso"                                                       | A previous import of yours is still running                                      | Wait for it to finish before starting another                                                                  |
 | "La capacidad de importación está llena"                                                   | Three imports are already running across all users                               | Wait a few minutes and retry                                                                                   |
 | "El ZIP no contiene ningún archivo .csv"                                                   | CSV is missing from the archive                                                  | Make sure you included exactly one CSV file inside the ZIP                                                     |
@@ -2324,6 +2330,10 @@ expected behaviour, not a fault.
 
 ### My Purchases, My Sales, My Balance pages
 
+The balance totals refresh at most once a minute: after a sale is completed or cancelled, the
+totals on **My Balance** catch up within about a minute, even without reloading the page (the
+transaction list underneath updates straight away).
+
 | Area            | Key                              | English default                                  | Spanish default                                          | Operator note           |
 | --------------- | -------------------------------- | ------------------------------------------------ | -------------------------------------------------------- | ----------------------- |
 | Purchases page  | `MyPurchasesPage.heading`        | `My Purchases`                                   | `Mis Compras`                                            | Page heading.           |
@@ -2515,6 +2525,7 @@ The current delivery keys are `AVShippingSelector.*`:
 | Shipping label   | `AVShippingLabel.generate`                                   | `Generate label`                                     | `Generar guía`                                  | Retry button when no label is bought yet / it failed.                                |
 | Shipping label   | `AVShippingLabel.generating`                                 | `Generating…`                                        | `Generando…`                                    | Shown on the button while a retry runs.                                              |
 | Shipping label   | `AVShippingLabel.error`                                      | `The label couldn't be generated. Please try again.` | `No se pudo generar la guía. Intenta de nuevo.` | Error under the button after a failed retry.                                         |
+| Shipping label   | `AVShippingLabel.notAllowed`                                 | `A label can't be generated for this order…`         | `No es posible generar la guía de este pedido…` | Error after the server refused the label (not a retryable failure).                  |
 
 The address text below is operator-editable. These are AV-owned keys, so they will **not** appear in
 Console until you add them (use **Add translation** — see
@@ -2874,7 +2885,8 @@ Transactions** in the correct environment, find the transaction by UUID, and rec
 - buyer, seller, and listing UUIDs;
 - transaction process alias and last transition;
 - Stripe payment/refund state; and
-- `protectedData.avShipping` plus label state when shipping is involved.
+- `metadata.avShipping` (the authoritative shipping record; older transactions only have
+  `protectedData.avShipping`) plus label state when shipping is involved.
 
 Use only an operator transition that is valid in the active hosted process. A button being absent
 usually means the current state does not permit that transition; do not simulate it by editing
@@ -3141,6 +3153,7 @@ After payment, the normal launch posture is seller-triggered label purchase with
 | Processing                            | Wait for completion; do not send another purchase request.                                                                                                                                                                           |
 | Unknown outcome                       | Check the eShip dashboard first. The carrier may have charged AV even though the app lost the response. After proving no label exists, an allowlisted operator uses the approved API/engineering procedure; there is no operator UI. |
 | `especial` / Contactar AV             | No automatic quote or label; follow the approved manual arrangement.                                                                                                                                                                 |
+| Refused (no label control on a paid shipping order, or "No es posible generar la guía de este pedido") | The app only offers and buys a label when the transaction charged the buyer the recorded shipping price, so the sale page hides the control where the server would refuse it. A price mismatch, or an older transaction whose buyer opened a dispute, is refused on purpose; a pickup order never shows it. Do not buy a label manually in eShip; check the order's delivery method and price breakdown and escalate to engineering. |
 
 For the pickup email, confirm the eShip dashboard webhook uses the correct environment URL and the
 same secret as the deployment. The public `GET /api/notifications/readiness` probe reports only
@@ -3156,7 +3169,8 @@ For money-flow and IVA details, use the [eShip integration guide](integrations/e
 
 The production notification pipeline is healthy only when:
 
-- `GET /api/notifications/readiness` returns HTTP `200`;
+- `GET /api/notifications/readiness` returns HTTP `200` (the answer is cached for 10 seconds, so a
+  fix can take that long to show);
 - `GET /api/brevo/health` returns HTTP `200` for the enabled Brevo features;
 - the PostgreSQL migrations are current;
 - exactly one active process reports poller leadership; and
@@ -3171,10 +3185,20 @@ For Brevo/newsletter cases:
 
 - marketing membership requires affirmative consent; account creation alone is not newsletter
   consent;
+- consent belongs to one email address: subscribing a second address in the footer does not opt in
+  the account email, and a user whose email changes (by any route) starts opted out on the new
+  address until they opt in again;
 - withdrawals, hard bounces, complaints, blocks, and unsubscribes can suppress later marketing
   sends;
 - never manually re-add or unsuppress a contact without a new authorized opt-in; and
 - use provider event details and the first-party consent record when investigating a missing send.
+
+Resending a failed email is an engineering command (`yarn notifications:retry`), run only after
+checking Brevo. Campaign (marketing) emails are never resent as they were stored: the retry checks
+again that the person still consents, still has that email address, has not had two campaign
+emails this week, and that the listing or order still qualifies. If any check fails the retry is
+refused with the reason and nothing is sent — that is expected, not an error. Seller welcome emails
+are resent as stored.
 
 When the public readiness endpoint returns `503`, record the environment and timestamp and escalate
 it. Engineering can capture named missing/failed checks from the bearer-protected detailed endpoint.

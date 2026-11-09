@@ -2,10 +2,14 @@
 // large `createBlockCustomProps` switch that walks block.blockName tokens and
 // pulls intl-keyed copy into block props.
 //
-// `css` is the SectionBuilder.module.css object passed in by the caller (CSS
-// Modules resolve at import time in the consumer file).
+// `css` is the SectionBuilder.module.css object (or a section's
+// defaultClasses) passed in by the caller; only its upstream `ctaButton` (and
+// the `ctaButtonPrimary` alias when present) is read from it. The AV button
+// classes come from the AV-owned src/styles/avCtaButtons.module.css (audit U01).
 
 import classNames from 'classnames';
+
+import avButtons from '../../../styles/avCtaButtons.module.css';
 
 // Avoids MISSING_TRANSLATION console errors for empty/absent keys.
 const fmt = (intl, id, def = '') => {
@@ -162,45 +166,48 @@ export const hasBlockNameToken = (blockName, token) => !!blockName?.includes(`${
 export const hasSocialLinksToken = blockName => hasBlockNameToken(blockName, 'social links');
 
 // ---- CTA token parsers ----
+//
+// The block maps are static (they only read the AV button module), so they are
+// built once. Only the short-name style map's `primary` entry depends on the
+// caller's SectionBuilder css.
 
-const buildBlockCtaBaseMap = css => ({
-  blockCtaBtnBlue: css.ctaButtonBlue,
-  blockCtaBtnLightBlue: css.ctaButtonLightBlue,
-  blockCtaBtnPurple: css.ctaButtonPurple,
-  blockCtaBtnPink: css.ctaButtonPink,
-  blockCtaBtnYellow: css.ctaButtonYellow,
-  blockCtaBtnSecondary: css.ctaButtonSecondary,
+const BLOCK_CTA_BASE_MAP = Object.freeze({
+  blockCtaBtnBlue: avButtons.ctaButtonBlue,
+  blockCtaBtnLightBlue: avButtons.ctaButtonLightBlue,
+  blockCtaBtnPurple: avButtons.ctaButtonPurple,
+  blockCtaBtnPink: avButtons.ctaButtonPink,
+  blockCtaBtnYellow: avButtons.ctaButtonYellow,
+  blockCtaBtnSecondary: avButtons.ctaButtonSecondary,
 });
 
-const buildBlockCtaModifierMap = css => ({
-  roundedFull: css.roundedFull,
-  rounded: css.rounded,
-  square: css.square,
-  dashed: css.dashed,
-  solid: css.solid,
-  noOutline: css.noOutline,
-  headingFont: css.headingFont,
-  bodyFont: css.bodyFont,
-  accentFont: css.accentFont,
-  ctaBtnCenter: css.ctaBtnCenter,
+const BLOCK_CTA_MODIFIER_MAP = Object.freeze({
+  roundedFull: avButtons.roundedFull,
+  rounded: avButtons.rounded,
+  square: avButtons.square,
+  dashed: avButtons.dashed,
+  solid: avButtons.solid,
+  noOutline: avButtons.noOutline,
+  headingFont: avButtons.headingFont,
+  bodyFont: avButtons.bodyFont,
+  accentFont: avButtons.accentFont,
+  ctaBtnCenter: avButtons.ctaBtnCenter,
 });
 
 // Short-name tokens used inside cta1Style / cta2Style intl strings,
 // e.g. "blue roundedFull solid".
 const buildCtaStyleBaseMap = css => ({
-  blue: css.ctaButtonBlue,
-  lightBlue: css.ctaButtonLightBlue,
-  purple: css.ctaButtonPurple,
-  pink: css.ctaButtonPink,
-  yellow: css.ctaButtonYellow,
-  primary: css.ctaButtonPrimary,
-  secondary: css.ctaButtonSecondary,
+  blue: avButtons.ctaButtonBlue,
+  lightBlue: avButtons.ctaButtonLightBlue,
+  purple: avButtons.ctaButtonPurple,
+  pink: avButtons.ctaButtonPink,
+  yellow: avButtons.ctaButtonYellow,
+  primary: css.ctaButtonPrimary || css.ctaButton,
+  secondary: avButtons.ctaButtonSecondary,
 });
 
 export const parseCtaStyleString = (styleStr, css) => {
   if (!styleStr?.trim()) return null;
   const baseMap = buildCtaStyleBaseMap(css);
-  const modMap = buildBlockCtaModifierMap(css);
   const tokens = styleStr.trim().split(/\s+/);
   const classes = [];
   let hasBase = false;
@@ -208,8 +215,8 @@ export const parseCtaStyleString = (styleStr, css) => {
     if (baseMap[token]) {
       classes.push(baseMap[token]);
       hasBase = true;
-    } else if (modMap[token]) {
-      classes.push(modMap[token]);
+    } else if (BLOCK_CTA_MODIFIER_MAP[token]) {
+      classes.push(BLOCK_CTA_MODIFIER_MAP[token]);
     }
   }
   if (!hasBase && classes.length) classes.unshift(css.ctaButton);
@@ -225,19 +232,17 @@ export const parseCtaStyleString = (styleStr, css) => {
 // clobbering it. Position/border/font modifiers only set CSS vars and never
 // imply a base color, so a modifier-only block (e.g. "ctaBtnCenter ::") keeps
 // whatever base the section's `- SectionCtaBtn*` token provided.
-export const parseBlockCtaClass = (blockName, css) => {
+export const parseBlockCtaClass = blockName => {
   if (!blockName) return null;
-  const baseMap = buildBlockCtaBaseMap(css);
-  const modMap = buildBlockCtaModifierMap(css);
   const tokens = [...blockName.matchAll(/(\S+)\s*::/g)].map(m => m[1]);
   if (!tokens.length) return null;
   let baseClass = null;
   const modifierClasses = [];
   for (const token of tokens) {
-    if (baseMap[token]) {
-      baseClass = baseMap[token];
-    } else if (modMap[token]) {
-      modifierClasses.push(modMap[token]);
+    if (BLOCK_CTA_BASE_MAP[token]) {
+      baseClass = BLOCK_CTA_BASE_MAP[token];
+    } else if (BLOCK_CTA_MODIFIER_MAP[token]) {
+      modifierClasses.push(BLOCK_CTA_MODIFIER_MAP[token]);
     }
   }
   if (!baseClass && !modifierClasses.length) return null;
@@ -258,8 +263,8 @@ export const mergeBlockCtaClass = (override, inheritedClass, css) => {
 // ---- Per-block customProps ----
 
 const getDefaultClassesForBlock = css => ({
-  ctaButtonPrimary: css.ctaButtonPrimary,
-  ctaButtonSecondary: css.ctaButtonSecondary,
+  ctaButtonPrimary: css.ctaButtonPrimary || css.ctaButton,
+  ctaButtonSecondary: avButtons.ctaButtonSecondary,
 });
 
 // Walks block.blockName for "token ::" flags and returns the prop map that
@@ -346,14 +351,14 @@ export const createBlockCustomProps = (block, intl, css) => {
  *
  * @param {Object} block - the block config (blockId, blockName, …)
  * @param {Object} intl - react-intl object, for the token-keyed microcopy
- * @param {Object} css - SectionBuilder.module.css, where the CTA classes live
+ * @param {Object} css - SectionBuilder.module.css, for upstream's `.ctaButton` fallback
  * @param {string?} inheritedCtaButtonClass - the section's own CTA class
  * @returns {Object} props to spread over the rendered block component
  */
 export const buildAvBlockProps = (block, intl, css, inheritedCtaButtonClass) => {
   const customProps = createBlockCustomProps(block, intl, css);
 
-  const blockCtaOverride = parseBlockCtaClass(block.blockName, css);
+  const blockCtaOverride = parseBlockCtaClass(block.blockName);
   if (blockCtaOverride) {
     // Layer the block's CTA tokens onto the section-inherited CTA class
     // (e.g. `- SectionCtaBtnBlue`): a block color token replaces the base,
@@ -378,7 +383,7 @@ export const buildAvBlockProps = (block, intl, css, inheritedCtaButtonClass) => 
 
   const tokens = block.blockName ? [...block.blockName.matchAll(/(\S+)\s*::/g)].map(m => m[1]) : [];
   if (tokens.includes('ctaBtnCenter')) {
-    customProps.ctaButtonWrapClass = css.ctaBtnCenterWrap;
+    customProps.ctaButtonWrapClass = avButtons.ctaBtnCenterWrap;
   }
 
   return customProps;

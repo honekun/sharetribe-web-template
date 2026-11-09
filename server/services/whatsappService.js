@@ -1,6 +1,6 @@
 'use strict';
 
-const fetch = require('node-fetch');
+const { isFetchTimeout, requestWithTimeout } = require('../api-util/fetchWithTimeout');
 const { createTTLCache } = require('../api-util/cache');
 const {
   localDeliveryFailure,
@@ -68,33 +68,45 @@ async function sendWhatsApp({ phone, templateName, params = [], languageCode = '
     },
   };
 
-  let response;
+  const rejected = status => rejectedProviderRequest(`WhatsApp API failed: ${status}`, status);
+
   try {
-    response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${ACCESS_TOKEN}`,
+    // One deadline covers the headers and the body (audit A06).
+    return await requestWithTimeout(
+      API_URL,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${ACCESS_TOKEN}`,
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+      {
+        read: async response => {
+          if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            console.error(
+              `[whatsappService] Meta API error for template "${templateName}":`,
+              response.status,
+              body
+            );
+            throw rejected(response.status);
+          }
+          const body = await response.json().catch(() => ({}));
+          console.log(`[whatsappService] Sent template "${templateName}" to ${phone}`);
+          return { providerMessageId: body.messages?.[0]?.id || null };
+        },
+      }
+    );
   } catch (err) {
+    if (err?.notificationOutcome) throw err;
+    if (isFetchTimeout(err) && err.response) {
+      if (err.response.ok) return { providerMessageId: null };
+      throw rejected(err.response.status);
+    }
     throw unknownProviderOutcome('WhatsApp request ended without a provider response', err);
   }
-
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    console.error(
-      `[whatsappService] Meta API error for template "${templateName}":`,
-      response.status,
-      body
-    );
-    throw rejectedProviderRequest(`WhatsApp API failed: ${response.status}`, response.status);
-  }
-
-  const body = await response.json().catch(() => ({}));
-  console.log(`[whatsappService] Sent template "${templateName}" to ${phone}`);
-  return { providerMessageId: body.messages?.[0]?.id || null };
 }
 
 // ─── Convenience helpers ──────────────────────────────────────────────────────

@@ -66,7 +66,8 @@ Use Stripe's current test-card documentation if a scenario changes.
 
 - The buyer sees the order at `/order/{transactionId}`.
 - The seller sees the sale at `/sale/{transactionId}`.
-- The shipping choice is present in transaction `protectedData.avShipping`.
+- The shipping choice is present in transaction `metadata.avShipping` (the authoritative record the
+  label step uses) and `protectedData.avShipping`.
 - The seller sees **Generar guía** when `ESHIP_LABEL_AUTOBUY` is unset/`false`, or a purchased label
   after the poller runs when auto-buy is explicitly enabled.
 - Stripe Dashboard in test mode shows the payment and connected-account transfer behavior.

@@ -128,11 +128,45 @@ yarn notifications:retry NOTIFICATION_KEY --confirm-unknown
 The same acknowledgement can recover a `processing` claim only after it is older than
 `AV_NOTIFICATION_STALE_CLAIM_MINUTES` (default 15), preventing a retry from racing a live sender.
 
+**Promotional retries are re-evaluated, not replayed** (audit A08, `server/services/notificationRetry.js`).
+Essential mail (seller welcome, transactional) is resent from its stored payload. A promotional
+campaign email — recognised by its template name or campaign tag — is routed through
+`notificationCampaignService.retryPromotionalDelivery`, which:
+
+1. refuses while `AV_BREVO_CAMPAIGNS_ENABLED` is off, and keeps the `--confirm-unknown` gate;
+2. finds the single campaign job behind the delivery (campaign, recipient, and
+   `COALESCE(trigger_event_id, job_key)`), refusing when none or several match. Any job status but
+   `cancelled` qualifies, because the delivery row decides whether a retry is allowed: a send that
+   crashed leaves its job `processing`, and the stale-claim recovery later finishes that job as
+   `sent` (its own delivery claim is deduplicated) while the delivery stays `processing`;
+3. runs `evaluateJob` — the same function normal processing uses — against current data: the user's
+   current email, consent and suppression for that address, the 2-per-7-days frequency cap (leaving
+   out the job's own row, so an unconfirmed recovered `sent` cannot cap its own retry), and the
+   campaign's listing/transaction state;
+4. rebuilds the email from current data and refuses if its notification key no longer matches the
+   stored one, or if the template id is not configured;
+5. sends through the delivery ledger and records the outcome on the job (`recordRetryOutcome`), so a
+   sent retry counts toward the frequency cap.
+
+Any refusal prints its reason (for example `marketing_consent_missing`,
+`recipient_email_changed`, `campaign_no_longer_eligible`, `promotional_frequency_cap` with the
+earliest retry time) and changes nothing. `retryNotification` itself refuses promotional payloads,
+so the stored-payload path cannot be used for them by mistake. A retry claim also refreshes the
+stored payload with the one actually sent.
+
 ## 3. Readiness and backlog metrics
 
 `GET /api/notifications/readiness` is the public deployment probe. It returns only
 `{"ready":true}` with HTTP `200`, or `{"ready":false}` with HTTP `503`, so configuration names,
 database state, backlog counts, and metrics are not exposed.
+
+The public probe does bounded work (audit A10, `getPublicNotificationReadiness`): the flag
+configuration plus **one catalog query** — the poller-state row, `to_regclass` for every required
+table, and the newest migration's column (`av_listing_publications.completed_at`, migration 010). It
+never counts or groups the delivery, job, consent, label, or tracking tables. Concurrent probes share
+one query and the answer is cached for 10 seconds, so a probe flood cannot drain the small
+PostgreSQL pool the poller and shipping code use. A database or migration failure still answers
+`503`.
 
 Detailed diagnostics require the server-only `AV_NOTIFICATION_READINESS_TOKEN`:
 
@@ -141,7 +175,8 @@ curl -H "Authorization: Bearer $AV_NOTIFICATION_READINESS_TOKEN" \
   https://MARKETPLACE_HOST/api/notifications/readiness/details
 ```
 
-The protected response distinguishes:
+The protected response (computed with the same migration check plus the per-status counts,
+coalesced and cached for 5 seconds) distinguishes:
 
 - shared event poller, shipping-label capability, seller welcome, Brevo campaign, and WhatsApp flags
   plus the eShip tracking-email flag and missing variable names;
@@ -210,7 +245,20 @@ and the [Docker Official PostgreSQL image documentation](https://hub.docker.com/
 - A definite provider rejection is stored as `failed`; selected retryable responses receive one
   bounded automatic retry.
 - Marketing withdrawal/provider suppression cancels pending promotional jobs. Claimed marketing jobs
-  recheck consent, email identity, the weekly cap, and live campaign/resource state before send.
+  recheck consent, email identity, the weekly cap, and live campaign/resource state before send;
+  operator retries of promotional deliveries run the same checks (`evaluateJob`).
+- Publish-triggered campaign work is recoverable (audit A09, migration
+  `010_listing_publication_completion.sql`). `av_listing_publications` records the first observation
+  and, separately, `completed_at`. A row without `completed_at` is claimed again on the poller's
+  replay or the listing's next event and its scheduling re-run — seller inactivity job, signup
+  cancellation, matching-listing fanout — all idempotent and keyed by the first observation, so
+  nothing is duplicated. A deleted author or listing (404) completes with nothing scheduled; after
+  five attempts the row is completed as `abandoned_after_retries` so a permanent failure cannot stall
+  the poller. A digest that was already sent is not reopened for a late append. The matching digest
+  stays the one after the first observation until that digest's day is over; a replay on a later
+  day (after an outage) joins the next 09:00 digest instead of creating an already-due job keyed to
+  a past day (`publicationDigestAt`). Rows that existed before the migration are marked complete
+  once, when the column is added.
 - Campaign jobs left in `processing` by a worker restart are reclaimed after
   `AV_NOTIFICATION_STALE_CLAIM_MINUTES`; the delivery ledger then deduplicates any provider send
   that completed before the interruption.

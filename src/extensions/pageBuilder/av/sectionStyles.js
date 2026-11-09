@@ -3,75 +3,80 @@
 // only needs a couple of import + call lines from this module.
 //
 // `css` here is the SectionBuilder.module.css object (passed in by the caller
-// since CSS Modules resolve at import-time in the consumer file).
+// since CSS Modules resolve at import-time in the consumer file); only its
+// upstream `ctaButton` is read from it, so the token maps are static. The AV button classes come from the
+// AV-owned src/styles/avCtaButtons.module.css (audit U01).
 
 import classNames from 'classnames';
+
+import avButtons from '../../../styles/avCtaButtons.module.css';
+import sectionLayout from './sectionLayout.module.css';
 
 // Extra entries added to upstream DEFAULT_CLASSES to expose AV CSS hooks to
 // section components.
 export const getAvDefaultClassEntries = css => ({
-  sectionDetailsH: css.sectionDetailsH,
-  ctaButtonPrimary: css.ctaButtonPrimary,
-  ctaButtonSecondary: css.ctaButtonSecondary,
-  avCtaButton: css.avCtaButton,
-  ctaButtonBlue: css.ctaButtonBlue,
-  ctaButtonLightBlue: css.ctaButtonLightBlue,
-  ctaButtonPurple: css.ctaButtonPurple,
-  ctaButtonPink: css.ctaButtonPink,
-  ctaButtonYellow: css.ctaButtonYellow,
+  sectionDetailsH: sectionLayout.sectionDetailsH,
+  // Upstream's own button, under the AV key the hero sections read.
+  ctaButtonPrimary: css.ctaButton,
+  ctaButtonSecondary: avButtons.ctaButtonSecondary,
+  avCtaButton: avButtons.avCtaButton,
+  ctaButtonBlue: avButtons.ctaButtonBlue,
+  ctaButtonLightBlue: avButtons.ctaButtonLightBlue,
+  ctaButtonPurple: avButtons.ctaButtonPurple,
+  ctaButtonPink: avButtons.ctaButtonPink,
+  ctaButtonYellow: avButtons.ctaButtonYellow,
   // modifiers
-  roundedFull: css.roundedFull,
-  rounded: css.rounded,
-  square: css.square,
-  dashed: css.dashed,
-  solid: css.solid,
-  noOutline: css.noOutline,
-  headingFont: css.headingFont,
-  bodyFont: css.bodyFont,
-  accentFont: css.accentFont,
-  ctaBtnCenter: css.ctaBtnCenter,
+  roundedFull: avButtons.roundedFull,
+  rounded: avButtons.rounded,
+  square: avButtons.square,
+  dashed: avButtons.dashed,
+  solid: avButtons.solid,
+  noOutline: avButtons.noOutline,
+  headingFont: avButtons.headingFont,
+  bodyFont: avButtons.bodyFont,
+  accentFont: avButtons.accentFont,
+  ctaBtnCenter: avButtons.ctaBtnCenter,
 });
 
-// CTA tokens recognized in `section.sectionName`. Order in BASE_MAP matters:
-// the first matching base token wins.
-const buildSectionCtaBaseMap = css => ({
-  SectionCtaBtnBlue: css.ctaButtonBlue,
-  SectionCtaBtnLightBlue: css.ctaButtonLightBlue,
-  SectionCtaBtnPurple: css.ctaButtonPurple,
-  SectionCtaBtnPink: css.ctaButtonPink,
-  SectionCtaBtnYellow: css.ctaButtonYellow,
-  SectionCtaBtnSecondary: css.ctaButtonSecondary,
+// CTA tokens recognized in `section.sectionName`. Order in the base map
+// matters: the first matching base token wins. Both maps are static (they only
+// read the AV button module), so they are built once.
+const SECTION_CTA_BASE_MAP = Object.freeze({
+  SectionCtaBtnBlue: avButtons.ctaButtonBlue,
+  SectionCtaBtnLightBlue: avButtons.ctaButtonLightBlue,
+  SectionCtaBtnPurple: avButtons.ctaButtonPurple,
+  SectionCtaBtnPink: avButtons.ctaButtonPink,
+  SectionCtaBtnYellow: avButtons.ctaButtonYellow,
+  SectionCtaBtnSecondary: avButtons.ctaButtonSecondary,
 });
 
-const buildCtaModifierMap = css => ({
-  RoundedFull: css.roundedFull,
-  Rounded: css.rounded,
-  Square: css.square,
-  Dashed: css.dashed,
-  Solid: css.solid,
-  NoOutline: css.noOutline,
-  HeadingFont: css.headingFont,
-  BodyFont: css.bodyFont,
-  AccentFont: css.accentFont,
-  CtaBtnCenter: css.ctaBtnCenter,
+const SECTION_CTA_MODIFIER_MAP = Object.freeze({
+  RoundedFull: avButtons.roundedFull,
+  Rounded: avButtons.rounded,
+  Square: avButtons.square,
+  Dashed: avButtons.dashed,
+  Solid: avButtons.solid,
+  NoOutline: avButtons.noOutline,
+  HeadingFont: avButtons.headingFont,
+  BodyFont: avButtons.bodyFont,
+  AccentFont: avButtons.accentFont,
+  CtaBtnCenter: avButtons.ctaBtnCenter,
 });
 
 const hasToken = (str, token) => new RegExp(`- ${token}(?!\\w)`).test(str);
 
 export const parseSectionCtaClass = (sectionName, css) => {
   if (!sectionName) return null;
-  const baseMap = buildSectionCtaBaseMap(css);
-  const modifierMap = buildCtaModifierMap(css);
   const classes = [];
   let hasBase = false;
-  for (const [token, cls] of Object.entries(baseMap)) {
+  for (const [token, cls] of Object.entries(SECTION_CTA_BASE_MAP)) {
     if (hasToken(sectionName, token)) {
       classes.push(cls);
       hasBase = true;
       break;
     }
   }
-  for (const [token, cls] of Object.entries(modifierMap)) {
+  for (const [token, cls] of Object.entries(SECTION_CTA_MODIFIER_MAP)) {
     if (hasToken(sectionName, token)) classes.push(cls);
   }
   // When only layout modifiers are present, preserve the default button look.

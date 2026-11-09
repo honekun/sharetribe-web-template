@@ -1,9 +1,9 @@
-/* Canonical secondary CTA (white/black, composed from SectionBuilder),
+/* Canonical secondary CTA (white/black, from avCtaButtons.module.css),
    reshaped as a full-width pill. Self-chained (0,2,0) overrides pin the pill
    geometry so they beat the composed base regardless of CSS-module emit
    order. */
 .root {
-  composes: ctaButtonSecondary from '../../containers/PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonSecondary from '../../styles/avCtaButtons.module.css';
   cursor: pointer;
 }
 

@@ -13,7 +13,8 @@ const {
 } = require('./jobStore');
 const { extractZip, MAX_CSV_BYTES } = require('./zipExtractor');
 const { authorizeAction, requireActionToken, requireUserSession } = require('./auth');
-const { getLimits } = require('./limits');
+const { getLimits, LIMITS } = require('./limits');
+const { admitUpload, MAX_GLOBAL_CONCURRENT_JOBS } = require('./uploadAdmission');
 const { checkAndRecord } = require('./rateLimiter');
 const { getSdk } = require('../../api-util/sdk');
 const { createRateLimiter } = require('../../api-util/rateLimit');
@@ -22,12 +23,10 @@ const { resolveListingImportConfig } = require('./listingImportConfig');
 
 const router = express.Router();
 
-// Hard multer ceiling = the largest tier (admin). Per-tier ZIP byte caps are
-// enforced after auth in /start, since multer can't see the user's tier.
-const MAX_ZIP_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 MB compressed ZIP
-
-// Caps total imports running concurrently across all users (memory protection).
-const MAX_GLOBAL_CONCURRENT_JOBS = 3;
+// The largest upload any tier may send (admin). Multer runs after
+// authentication, so each request is read with its own tier's cap instead
+// (`uploadForTier` below); a standard user's body stops at 20 MB.
+const MAX_ZIP_UPLOAD_BYTES = LIMITS.admin.maxZipBytes; // 50 MB compressed ZIP
 
 const AUTHORIZE_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const AUTHORIZE_RATE_LIMIT_MAX = 10;
@@ -68,32 +67,45 @@ const classifyUpload = file => {
   return null;
 };
 
-// Multer config: memory storage, single ZIP file with a compressed-size cap.
-// zipExtractor enforces per-entry and total uncompressed-size caps before use.
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: MAX_ZIP_UPLOAD_BYTES,
-    files: 1,
-  },
-  fileFilter: (req, file, cb) => {
-    if (!classifyUpload(file)) {
-      return cb(new Error('El archivo subido debe ser un .zip o un .csv.'));
-    }
-    return cb(null, true);
-  },
-});
+// Multer config: memory storage, one file under the tier's compressed-size cap.
+// The clients send only the `zipFile` part, so fields, parts and header pairs
+// are capped tightly too. zipExtractor enforces per-entry and total
+// uncompressed-size caps before use.
+const createUpload = maxBytes =>
+  multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: maxBytes,
+      files: 1,
+      fields: 2,
+      fieldSize: 1024,
+      parts: 3,
+      headerPairs: 100,
+    },
+    fileFilter: (req, file, cb) => {
+      if (!classifyUpload(file)) {
+        return cb(new Error('El archivo subido debe ser un .zip o un .csv.'));
+      }
+      return cb(null, true);
+    },
+  }).single('zipFile');
 
-const uploadSingle = upload.single('zipFile');
+const tierUploads = {
+  standard: createUpload(LIMITS.standard.maxZipBytes),
+  admin: createUpload(LIMITS.admin.maxZipBytes),
+};
 
-const uploadZip = (req, res, next) => {
+const uploadForTier = (req, res, next) => {
+  const isAdmin = !!req.bulkImportUser.isAdmin;
+  const uploadSingle = isAdmin ? tierUploads.admin : tierUploads.standard;
   uploadSingle(req, res, err => {
     if (!err) {
       return next();
     }
     if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+      const mb = Math.round(getLimits(isAdmin).maxZipBytes / 1024 / 1024);
       return res.status(400).json({
-        error: 'El archivo ZIP es demasiado grande. El tamaño máximo de subida es 50 MB.',
+        error: `El archivo es demasiado grande. Tu tamaño máximo de subida es ${mb} MB.`,
       });
     }
     return res.status(400).json({ error: err.message });
@@ -104,7 +116,7 @@ const uploadZip = (req, res, next) => {
 router.post('/authorize', requireUserSession, authorizeRateLimit, authorizeAction);
 
 // POST /api/bulk-import/start
-router.post('/start', requireUserSession, requireActionToken, uploadZip, async (req, res) => {
+async function startImport(req, res) {
   try {
     // Validate ZIP file was uploaded
     if (!req.file) {
@@ -134,7 +146,8 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, async (
       csvBuffer = req.file.buffer;
       imageMap = new Map();
     } else {
-      // Per-tier compressed-ZIP size cap (multer only enforces the admin ceiling).
+      // Per-tier compressed-ZIP size cap (Multer already read the body with it;
+      // kept as a guard so the handler never trusts its caller).
       if (req.file.size > limits.maxZipBytes) {
         const mb = Math.round(limits.maxZipBytes / 1024 / 1024);
         return res.status(400).json({ error: `El ZIP supera tu límite de ${mb} MB.` });
@@ -218,6 +231,9 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, async (
       });
     }
 
+    // Final guards: admitUpload refused these before the upload was read; they
+    // stay so a job can never start without them. This request's own
+    // reservation is not a job, so it does not trip either check.
     // Prevent a user from running two imports at once.
     if (hasActiveJobForUser(req.bulkImportUser.userId)) {
       return res.status(409).json({
@@ -242,8 +258,10 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, async (
       });
     }
 
-    // Create job (owned by the signed-in user) and start processing.
+    // Create job (owned by the signed-in user) and start processing. From here
+    // the job holds the capacity the admission reservation was keeping.
     const job = createJob(validation.rows.length, req.bulkImportUser.userId);
+    req.bulkImportReservation?.release();
 
     // Start async processing (do not await)
     processImportJob(job.id, validation.rows, imageMap).catch(err => {
@@ -261,7 +279,17 @@ router.post('/start', requireUserSession, requireActionToken, uploadZip, async (
     console.error('[bulk-import] Start error:', err);
     res.status(500).json({ error: 'Error interno del servidor.' });
   }
-});
+}
+
+// admitUpload runs before the body is read: see uploadAdmission.js.
+router.post(
+  '/start',
+  requireUserSession,
+  requireActionToken,
+  admitUpload,
+  uploadForTier,
+  startImport
+);
 
 // GET /api/bulk-import/status/:jobId
 router.get('/status/:jobId', requireUserSession, requireActionToken, (req, res) => {

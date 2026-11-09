@@ -23,7 +23,6 @@ import {
   LISTING_STATE_PUBLISHED,
 } from '../../util/types';
 import { formatMoney } from '../../util/currency';
-import { types as sdkTypes } from '../../util/sdkLoader';
 import { createSlug, parse, stringify } from '../../util/urlHelpers';
 import { userDisplayNameAsString } from '../../util/data';
 import {
@@ -44,8 +43,7 @@ import SubmitFinePrint from './SubmitFinePrint/SubmitFinePrint';
 
 import css from './OrderPanel.module.css';
 import avCss from './OrderPanelAV.module.css';
-
-const { Money } = sdkTypes;
+import { getValidOriginalPrice } from '../../util/avOriginalPrice';
 
 const BookingTimeForm = loadable(() =>
   import(/* webpackChunkName: "BookingTimeForm" */ './BookingTimeForm/BookingTimeForm')
@@ -182,11 +180,7 @@ const PriceMaybe = props => {
   // Original money format.
   const formattedPriceOriginal = formatMoneyIfSupportedCurrency(price, intl);
 
-  const originalPriceRaw = publicData?.originalPrice;
-  const originalPriceMoney =
-    originalPriceRaw && originalPriceRaw.amount > price.amount
-      ? new Money(originalPriceRaw.amount, originalPriceRaw.currency)
-      : null;
+  const originalPriceMoney = getValidOriginalPrice(publicData?.originalPrice, price);
   const formattedOriginalPrice = originalPriceMoney
     ? customFormatPrice(originalPriceMoney, marketplaceCurrency, intl).formattedPrice
     : null;

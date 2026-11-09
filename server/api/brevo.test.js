@@ -143,7 +143,6 @@ describe('POST /subscribe', () => {
         email: 'new@example.com',
         enabled: true,
         source: 'footer_newsletter',
-        sharetribeUserId: 'user-1',
         ip: '203.0.113.4',
       })
     );
@@ -152,6 +151,21 @@ describe('POST /subscribe', () => {
     );
     expect(mockSetPreference.mock.invocationCallOrder[0]).toBeLessThan(
       mockUpsertContact.mock.invocationCallOrder[0]
+    );
+  });
+
+  it('never links another address to the signed-in account (audit A07)', async () => {
+    // The signed-in user is Person@Example.com; they subscribe a second address.
+    await handler(createReq({ email: ' New@Example.com ', hp: '' }), createRes());
+    expect(mockSetPreference).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'new@example.com', sharetribeUserId: null })
+    );
+  });
+
+  it('links the account when it subscribes its own address', async () => {
+    await handler(createReq({ email: ' person@EXAMPLE.com ', hp: '' }), createRes());
+    expect(mockSetPreference).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'person@example.com', sharetribeUserId: 'user-1' })
     );
   });
 

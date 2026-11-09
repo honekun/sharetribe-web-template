@@ -2,7 +2,7 @@
 
 const fs = require('fs/promises');
 const path = require('path');
-const { fetchWithTimeout } = require('../api-util/fetchWithTimeout');
+const { isFetchTimeout, requestWithTimeout } = require('../api-util/fetchWithTimeout');
 
 const {
   localDeliveryFailure,
@@ -85,32 +85,44 @@ async function sendBrevoEmail({
     ...(attachment.length > 0 ? { attachment } : {}),
   };
 
-  let response;
+  const rejected = status =>
+    rejectedProviderRequest(`Brevo transactional email failed: ${status}`, status);
+
   try {
-    response = await fetchWithTimeout(BREVO_EMAIL_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': apiKey,
-        accept: 'application/json',
+    // One deadline covers the headers and the body (audit A06).
+    return await requestWithTimeout(
+      BREVO_EMAIL_URL,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': apiKey,
+          accept: 'application/json',
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+      {
+        read: async response => {
+          if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            console.error('[brevoEmailService] Brevo API error:', response.status, body);
+            throw rejected(response.status);
+          }
+          const body = await response.json().catch(() => ({}));
+          return { providerMessageId: body.messageId || null };
+        },
+      }
+    );
   } catch (err) {
+    if (err?.notificationOutcome) throw err;
+    if (isFetchTimeout(err) && err.response) {
+      // Brevo already answered; only its body was late. A 2xx is an accepted
+      // send (as when the body is unreadable) and a rejection keeps its status.
+      if (err.response.ok) return { providerMessageId: null };
+      throw rejected(err.response.status);
+    }
     throw unknownProviderOutcome('Brevo request ended without a provider response', err);
   }
-
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    console.error('[brevoEmailService] Brevo API error:', response.status, body);
-    throw rejectedProviderRequest(
-      `Brevo transactional email failed: ${response.status}`,
-      response.status
-    );
-  }
-
-  const body = await response.json().catch(() => ({}));
-  return { providerMessageId: body.messageId || null };
 }
 
 module.exports = {

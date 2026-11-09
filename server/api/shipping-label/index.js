@@ -111,7 +111,9 @@ router.post('/label', express.json(), async (req, res) => {
     return res.status(200).json({ avLabel });
   } catch (e) {
     if (e?.code === 'LABEL_NOT_ALLOWED') {
-      return res.status(409).json({ code: 'LABEL_NOT_ALLOWED' });
+      return res
+        .status(409)
+        .json({ code: 'LABEL_NOT_ALLOWED', ...(e.reason ? { reason: e.reason } : {}) });
     }
     if (e?.code === 'LABEL_UNKNOWN') {
       return res.status(409).json({ code: 'LABEL_UNKNOWN' });

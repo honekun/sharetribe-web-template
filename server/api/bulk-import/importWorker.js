@@ -93,6 +93,14 @@ function delay(ms) {
 
 const avError = (message, avCode) => Object.assign(new Error(message), { avCode });
 
+// Same set the ZIP extractor accepts; anything else is uploaded as .jpg.
+const UPLOAD_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
+
+const uploadExtension = filename => {
+  const ext = path.extname(String(filename || '')).toLowerCase();
+  return UPLOAD_EXTENSIONS.has(ext) ? ext : '.jpg';
+};
+
 /**
  * Upload a single image buffer to Sharetribe via Integration SDK.
  * Returns the image UUID string.
@@ -102,19 +110,23 @@ const avError = (message, avCode) => Object.assign(new Error(message), { avCode 
  * Content-Type: application/octet-stream (→ API returns 500). Passing a file
  * path string makes the SDK call fs.createReadStream(), from which form-data
  * can both stat() the real file for Content-Length and infer the MIME type
- * from the extension. The temp file is deleted immediately after upload.
+ * from the extension.
+ *
+ * Up to three imports run in this process at once, so every upload gets its
+ * own `mkdtemp` directory (random suffix) and an exclusively created file in
+ * it; the directory is removed when the upload settles. A name derived from
+ * the pid and clock let two same-millisecond uploads overwrite or delete each
+ * other's file (audit A04). The file is transient, never durable state.
  */
 async function uploadImage(sdk, imageBuffer, filename) {
-  const ext = path.extname(filename) || '.jpg';
-  const tmpFile = path.join(os.tmpdir(), `av-bulk-${process.pid}-${Date.now()}${ext}`);
-  fs.writeFileSync(tmpFile, imageBuffer);
+  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'av-bulk-'));
   try {
+    const tmpFile = path.join(dir, `image${uploadExtension(filename)}`);
+    await fs.promises.writeFile(tmpFile, imageBuffer, { flag: 'wx' });
     const res = await sdk.images.upload({ image: tmpFile });
     return res.data.data.id.uuid;
   } finally {
-    try {
-      fs.unlinkSync(tmpFile);
-    } catch (_) {}
+    await fs.promises.rm(dir, { recursive: true, force: true }).catch(() => {});
   }
 }
 
@@ -592,4 +604,4 @@ async function reconcileTimedOutRows({
 }
 
 module.exports = { processImportJob, serializeSdkError };
-module.exports._test = { withTimeout, ROW_TIMEOUT_MS, RECONCILE_GRACE_MS };
+module.exports._test = { withTimeout, uploadImage, ROW_TIMEOUT_MS, RECONCILE_GRACE_MS };

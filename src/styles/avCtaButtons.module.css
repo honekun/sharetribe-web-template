@@ -1,0 +1,162 @@
+@import './customMediaQueries.css';
+
+/* ================ AV CTA button system ================
+   Shared by AV components (bag, welcome popup, listing page, bulk import,
+   manage listings, …) and by the PageBuilder section/block CTA tokens
+   (`- SectionCtaBtn*`, `blockCtaBtn*`). AV-owned on purpose (audit U01): the
+   button foundation used to live in upstream's SectionBuilder.module.css, so
+   unrelated components depended on a PageBuilder page stylesheet.
+
+   `.avCtaButton` is self-contained — it composes nothing upstream. It carries
+   every shared style and reads `--_av-*` theming vars; the color variants and
+   the modifiers below only set those vars.
+
+   Compose a variant, then pin layout locally with a self-chained `(0,2,0)`
+   rule (`.x.x { margin-top: 0 }`) so it beats this `(0,1,0)` base regardless of
+   stylesheet order in the production bundle. */
+
+.avCtaButton {
+  --_av-fg: var(--_av-color, var(--avYellowLight));
+  display: inline-block;
+  padding: 11px 22px;
+  margin-top: 24px;
+  /* Outline-based: an outline never changes the box size. */
+  border: none;
+  outline: 1px var(--_av-outline-style, solid) var(--_av-outline-color, var(--_av-fg));
+  outline-offset: 0;
+  text-align: center;
+  /* Centered as a grid item in PageBuilder section headers. */
+  justify-self: center;
+  text-decoration: none;
+  background-color: var(--_av-bg);
+  color: var(--_av-fg);
+  font-family: var(--_av-font, var(--fontFamily));
+  border-radius: var(--_av-radius, 26px);
+  font-size: var(--fontSizeBase, 16px);
+  font-weight: 700;
+  line-height: 150%;
+  /* Pin the global 1px here: <button> hosts don't inherit it from body (UA
+     form-control reset) and <a> hosts could sit in tighter-spaced parents. */
+  letter-spacing: 1px;
+  min-width: 140px;
+  transition: var(--colorTransition);
+
+  /* (0,2,0): beats the global `a:hover { text-decoration: underline }`. */
+  &:hover {
+    text-decoration: none;
+    background-color: var(--_av-bg-hover, var(--_av-bg));
+    color: var(--_av-fg);
+  }
+}
+
+/* PageBuilder renders CTAs through its Link primitive, whose `.link` sets
+   `display: inline` and the marketplace color at the same (0,1,0). */
+.avCtaButton[class*='Link_link__'] {
+  display: inline-block;
+  color: var(--_av-fg);
+}
+
+/* Inside a dark PageBuilder section the hover text turns white, as upstream's
+   `.darkTheme .ctaButton:hover` does for its own buttons. */
+[class*='SectionBuilder_darkTheme__'] .avCtaButton:hover {
+  color: var(--colorWhite);
+}
+
+/* ── Color variants: each only sets its colors ── */
+
+.ctaButtonBlue {
+  composes: avCtaButton;
+  --_av-bg: var(--avBlue);
+  --_av-bg-hover: var(--avBlueDark);
+}
+
+.ctaButtonLightBlue {
+  composes: avCtaButton;
+  --_av-bg: var(--avBlueLight);
+  --_av-bg-hover: #3489d2;
+}
+
+.ctaButtonPurple {
+  composes: avCtaButton;
+  --_av-bg: var(--avPurple);
+  --_av-bg-hover: #a468bc;
+}
+
+.ctaButtonPink {
+  composes: avCtaButton;
+  --_av-bg: var(--avPink);
+  --_av-bg-hover: #db2777;
+}
+
+.ctaButtonYellow {
+  composes: avCtaButton;
+  --_av-bg: var(--avYellow);
+  --_av-bg-hover: #bfbd59;
+  --_av-color: var(--avBlueLight);
+}
+
+/* Secondary: white with black text; the outline follows the text color, so
+   the black border comes from the base's fg default. */
+.ctaButtonSecondary {
+  composes: avCtaButton;
+  --_av-bg: var(--colorWhite);
+  --_av-color: var(--colorBlack);
+}
+
+/* ── Modifiers: override single theming vars ──
+   Usage: space-separate with a base style, e.g. "blue roundedFull headingFont" */
+
+/* border-radius */
+.roundedFull {
+  --_av-radius: 9999px;
+}
+.rounded {
+  --_av-radius: 10px;
+}
+.square {
+  --_av-radius: 4px;
+}
+
+/* outline style */
+.dashed {
+  --_av-outline-style: dashed;
+}
+.solid {
+  --_av-outline-style: solid;
+}
+.noOutline {
+  --_av-outline-color: transparent;
+}
+
+/* font */
+.headingFont {
+  --_av-font: var(--fontFamilyHeadings);
+}
+.bodyFont {
+  --_av-font: var(--fontFamily);
+}
+.accentFont {
+  --_av-font: var(--fontFamilyAccent);
+}
+
+/* ── Layout ──
+   Self-chained: these meet SectionBuilder's `.ctaButton` and AVBlockDefault's
+   `.buttonWrap` on the same element, at the same (0,1,0), from other modules. */
+
+/* center a single CTA button */
+.ctaBtnCenter.ctaBtnCenter {
+  display: block;
+  margin-inline: auto;
+  width: fit-content;
+}
+
+/* center a row of CTA buttons (two-button wrappers) */
+.ctaBtnCenterWrap.ctaBtnCenterWrap {
+  justify-content: center !important;
+  gap: 12px;
+
+  /* cancel the per-button margin-inline: auto that ctaBtnCenter adds */
+  & > * {
+    margin-inline: 0;
+  }
+}

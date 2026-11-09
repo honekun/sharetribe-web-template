@@ -3,12 +3,17 @@
 const { timingSafeEqual } = require('crypto');
 const express = require('express');
 
-const { getNotificationReadiness } = require('../services/notificationReadiness');
+const {
+  getNotificationReadinessDetails,
+  getPublicNotificationReadiness,
+} = require('../services/notificationReadiness');
 
 const router = express.Router();
 
+// Public probe: a cached, coalesced catalog check — never the diagnostic
+// aggregations below (audit A10).
 router.get('/readiness', async (_req, res) => {
-  const readiness = await getNotificationReadiness();
+  const readiness = await getPublicNotificationReadiness();
   return res.status(readiness.ready ? 200 : 503).json({ ready: readiness.ready });
 });
 
@@ -36,7 +41,7 @@ router.get(
     return next();
   },
   async (_req, res) => {
-    const readiness = await getNotificationReadiness();
+    const readiness = await getNotificationReadinessDetails();
     res.set('Cache-Control', 'no-store');
     return res.status(readiness.ready ? 200 : 503).json(readiness);
   }

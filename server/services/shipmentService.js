@@ -14,8 +14,14 @@ const {
 } = require('../api-util/eshipClient');
 const { createShippingLabelStore } = require('./shippingLabelStore');
 const { isShippingLabelsEnabled } = require('./notificationConfig');
-
-const LABEL_BUY_TRANSITIONS = new Set(['transition/confirm-payment']);
+// Which transactions and shipping records may buy a label. Shared with the sale
+// page's "Generar guía" control so it never offers a label refused here.
+const {
+  LABEL_BUY_TRANSITION,
+  isLabelPurchaseAllowed,
+  resolveLabelShippingRecord,
+  shippingChargeMatches,
+} = require('../../src/config/configAVShippingLabel');
 
 // Auto-buy the label on the event-poller path ONLY when explicitly opted in with
 // ESHIP_LABEL_AUTOBUY=true. Default (unset or anything other than 'true') means
@@ -26,10 +32,14 @@ function isLabelAutobuyEnabled() {
 }
 
 class LabelNotAllowedError extends Error {
-  constructor() {
-    super('Shipping labels can only be purchased after payment and before cancellation');
+  constructor(
+    message = 'Shipping labels can only be purchased after payment and before cancellation',
+    reason = 'TRANSACTION_STATE'
+  ) {
+    super(message);
     this.name = 'LabelNotAllowedError';
     this.code = 'LABEL_NOT_ALLOWED';
+    this.reason = reason;
   }
 }
 
@@ -39,19 +49,6 @@ class LabelPurchaseUnknownError extends Error {
     this.name = 'LabelPurchaseUnknownError';
     this.code = 'LABEL_UNKNOWN';
   }
-}
-
-const transitionNames = tx => {
-  const attrs = tx?.attributes || {};
-  const history = (attrs.transitions || []).map(item => item?.transition || item).filter(Boolean);
-  return attrs.lastTransition ? [...history, attrs.lastTransition] : history;
-};
-
-function isLabelPurchaseAllowed(tx) {
-  const transitions = transitionNames(tx);
-  const hasPaid = transitions.some(name => LABEL_BUY_TRANSITIONS.has(name));
-  const hasCancellation = transitions.some(name => /(^|\/)(?:auto-|operator-)?cancel/.test(name));
-  return hasPaid && !hasCancellation;
 }
 
 function validateShipment(shipment) {
@@ -107,9 +104,28 @@ async function buyLabelForTransaction(
   if (existing?.status === 'failed' && !force) return existing;
   if (existing?.status === 'unknown' && !confirmUnknown) return existing;
 
-  const av = attrs.protectedData?.avShipping;
+  const { record: av, source } = resolveLabelShippingRecord(tx);
+  if (source === 'legacy_rewritable') {
+    throw new LabelNotAllowedError(
+      'The shipping record could have been rewritten after payment',
+      'SHIPPING_RECORD_UNTRUSTED'
+    );
+  }
   if (!av?.rate_id) return null;
   if (!isLabelPurchaseAllowed(tx)) throw new LabelNotAllowedError();
+  if (!shippingChargeMatches(attrs.lineItems, av)) {
+    throw new LabelNotAllowedError(
+      'The transaction does not charge the recorded shipping price',
+      'SHIPPING_CHARGE_MISMATCH'
+    );
+  }
+  if (source === 'legacy') {
+    console.warn(
+      `[shipmentService] transaction ${transactionIdOf(
+        tx
+      )} uses its legacy protectedData shipping record`
+    );
+  }
 
   const transactionId = transactionIdOf(tx);
   const labelStore = store || createShippingLabelStore();
@@ -191,7 +207,7 @@ async function maybeBuyLabelForEvent(sdk, resource) {
   // Manual-only unless auto-buy is explicitly enabled.
   if (!isLabelAutobuyEnabled()) return null;
   const transition = resource?.attributes?.lastTransition || '';
-  if (!LABEL_BUY_TRANSITIONS.has(transition)) return null;
+  if (transition !== LABEL_BUY_TRANSITION) return null;
   const txId = resource?.id;
   if (!txId) return null;
   try {
@@ -215,5 +231,6 @@ module.exports = {
   isLabelAutobuyEnabled,
   isLabelPurchaseAllowed,
   maybeBuyLabelForEvent,
+  resolveLabelShippingRecord,
   validateShipment,
 };

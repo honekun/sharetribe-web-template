@@ -14,7 +14,7 @@
    right-align in the heading row and zero the base `margin-top: 24px` — without
    re-declaring the button look. See [[av-cta-button-system]]. */
 .profileLink {
-  composes: ctaButtonBlue from '../PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonBlue from '../../styles/avCtaButtons.module.css';
 }
 .profileLink.profileLink {
   margin: 0 0 0 auto;

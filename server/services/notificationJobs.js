@@ -199,7 +199,10 @@ class NotificationJobStore {
     return result.rowCount;
   }
 
-  async promotionalNextAvailableAt(sharetribeUserId) {
+  // `excludeJobId` keeps the job being evaluated out of its own cap: an operator
+  // retry of a job that a stale-claim recovery already marked `sent` must not be
+  // capped by that unconfirmed send.
+  async promotionalNextAvailableAt(sharetribeUserId, { excludeJobId = null } = {}) {
     const result = await this.pool.query(
       `SELECT sent_at
        FROM av_notification_jobs
@@ -210,23 +213,95 @@ class NotificationJobStore {
            'signup_no_listing', 'listing_no_activity'
          )
          AND sent_at > NOW() - INTERVAL '7 days'
+         AND ($2::bigint IS NULL OR id <> $2::bigint)
        ORDER BY sent_at DESC
        LIMIT 2`,
-      [sharetribeUserId]
+      [sharetribeUserId, excludeJobId]
     );
     if (result.rows.length < 2) return null;
     return new Date(new Date(result.rows[1].sent_at).getTime() + 7 * 24 * 60 * 60 * 1000);
   }
 
+  // The campaign job behind a promotional delivery row (audit A08). Deliveries
+  // use `trigger_event_id || job_key` as their event id; one publication event
+  // can fan out to many jobs, so the campaign and recipient narrow it.
+  //
+  // Any status but `cancelled`: the delivery row, not the job, says whether the
+  // email went out. A send that crashed leaves its job `processing`, and the
+  // stale-claim recovery then finishes that job as `sent` (its delivery claim is
+  // deduplicated) while the delivery row stays `processing` — that delivery must
+  // still be retryable. `prepareRetry` decides from the delivery's own status.
+  async findForDelivery({ campaign, recipientEmail, eventId }) {
+    const result = await this.pool.query(
+      `SELECT *
+       FROM av_notification_jobs
+       WHERE campaign = $1
+         AND recipient_email = $2
+         AND COALESCE(trigger_event_id, job_key) = $3
+         AND status <> 'cancelled'`,
+      [campaign, recipientEmail, eventId]
+    );
+    return result.rows;
+  }
+
+  // Record an operator retry's outcome on its job so a sent retry counts toward
+  // the rolling frequency cap like any other send. Same statuses as
+  // findForDelivery; a job taken by a worker meanwhile ends with this outcome
+  // and the worker's later finish() is a no-op.
+  async recordRetryOutcome(id, status, error = null, claimedBy = null) {
+    await this.pool.query(
+      `UPDATE av_notification_jobs
+       SET status = $2::text,
+           last_error = $3,
+           sent_at = CASE WHEN $2::text = 'sent' THEN NOW() ELSE sent_at END,
+           attempt_count = attempt_count + 1,
+           claimed_by = $4,
+           updated_at = NOW()
+       WHERE id = $1 AND status <> 'cancelled'`,
+      [id, status, error ? String(error).slice(0, 2000) : null, claimedBy]
+    );
+  }
+
+  /**
+   * Claim the publish-triggered work for a listing (audit A09).
+   *
+   * Returns the publication row while its work is unfinished — the first time,
+   * and again on every replay or later event until `completeListingPublication`
+   * runs — and null once it is complete. The row keeps the first observation
+   * (`published_at`, `event_id`, `created_at`) so a retry schedules the same jobs
+   * under the same keys; `attempt_count` bounds the retries.
+   */
   async claimListingPublication({ listingId, authorId, publishedAt, eventId }) {
     const result = await this.pool.query(
-      `INSERT INTO av_listing_publications (listing_id, author_id, published_at, event_id)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (listing_id) DO NOTHING
-       RETURNING listing_id`,
+      `INSERT INTO av_listing_publications
+         (listing_id, author_id, published_at, event_id, last_attempt_at)
+       VALUES ($1, $2, $3, $4, NOW())
+       ON CONFLICT (listing_id) DO UPDATE
+         SET attempt_count = av_listing_publications.attempt_count + 1,
+             last_attempt_at = NOW()
+         WHERE av_listing_publications.completed_at IS NULL
+       RETURNING listing_id, published_at, event_id, created_at, attempt_count`,
       [listingId, authorId, publishedAt, eventId]
     );
-    return result.rowCount === 1;
+    return result.rows[0] || null;
+  }
+
+  async completeListingPublication(listingId, { error = null } = {}) {
+    await this.pool.query(
+      `UPDATE av_listing_publications
+       SET completed_at = NOW(), last_error = $2
+       WHERE listing_id = $1 AND completed_at IS NULL`,
+      [listingId, error ? String(error).slice(0, 2000) : null]
+    );
+  }
+
+  async recordListingPublicationError(listingId, error) {
+    await this.pool.query(
+      `UPDATE av_listing_publications
+       SET last_error = $2
+       WHERE listing_id = $1 AND completed_at IS NULL`,
+      [listingId, String(error || 'unknown error').slice(0, 2000)]
+    );
   }
 }
 
@@ -287,8 +362,11 @@ class MarketingEngagementStore {
       `SELECT DISTINCT ON (eng.sharetribe_user_id)
          eng.sharetribe_user_id, eng.email, eng.first_name, eng.listing_data
        FROM av_marketing_engagement eng
+       -- Consent is per address: the engaged email must itself be opted in, and
+       -- a row linked to another account never counts (audit A07).
        JOIN av_marketing_preferences pref
-         ON (pref.sharetribe_user_id = eng.sharetribe_user_id OR pref.email = eng.email)
+         ON pref.email = eng.email
+        AND (pref.sharetribe_user_id IS NULL OR pref.sharetribe_user_id = eng.sharetribe_user_id)
        WHERE eng.occurred_at >= NOW() - INTERVAL '90 days'
          AND eng.action IN ('view', 'favorite')
          AND eng.listing_data->>'category' = $1

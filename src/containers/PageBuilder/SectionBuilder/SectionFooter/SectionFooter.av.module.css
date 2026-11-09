@@ -1,0 +1,9 @@
+/* AV-only SectionFooter class, kept out of the upstream SectionFooter.module.css
+   (audit U02). The `Footer.belowSlogan` microcopy rendered under the slogan.
+   The AV restyles of upstream's own footer classes are global overrides in
+   src/styles/avBrandOverrides.css. */
+.belowSlogan {
+  font-size: 14px;
+  line-height: 20px;
+  margin-top: 8px;
+}

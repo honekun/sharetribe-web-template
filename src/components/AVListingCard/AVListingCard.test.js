@@ -1,8 +1,11 @@
 import React from 'react';
+import { renderToString } from 'react-dom/server';
 import '@testing-library/jest-dom';
 
 import { createListing, createUser } from '../../util/testData';
+import { sanitizeEntity } from '../../util/sanitize';
 import {
+  TestProvider,
   getHostedConfiguration,
   renderWithProviders as render,
   testingLibrary,
@@ -82,6 +85,69 @@ describe('AVListingCard', () => {
     renderCard({ originalPrice: { amount: 5000, currency: 'USD' } });
 
     expect(screen.queryByText('$50.00')).not.toBeInTheDocument();
+  });
+
+  describe('malformed original price (audit A03)', () => {
+    const malformed = [
+      { amount: 90000, currency: 'NO-SUCH-CURRENCY' },
+      { amount: 90000 },
+      { amount: 90000, currency: 'MXN' },
+      { amount: '90000', currency: 'USD' },
+      { amount: 900.5, currency: 'USD' },
+      { amount: Number.MAX_SAFE_INTEGER + 1, currency: 'USD' },
+      'NO-SUCH-CURRENCY 900',
+    ];
+
+    it.each(malformed)('renders without a comparison price for %p', originalPrice => {
+      const { container } = renderCard({ originalPrice });
+      expect(container.querySelector('s')).toBeNull();
+      expect(screen.getByText('$55.00')).toBeInTheDocument();
+    });
+
+    it('cannot break a server-rendered result set that contains valid listings', () => {
+      const listing = (id, originalPrice) =>
+        sanitizeEntity(
+          createListing(id, {
+            title: `Listing ${id}`,
+            publicData: {
+              listingType: 'product-selling',
+              transactionProcessAlias: 'default-purchase/release-1',
+              unitType: 'item',
+              originalPrice,
+            },
+          }),
+          // The sanitizer reads the merged (array) listing-field config.
+          { listingFields: config.listingFields.listingFields }
+        );
+      const results = [
+        listing('valid-1', { amount: 8000, currency: 'USD' }),
+        listing('malformed', { amount: 90000, currency: 'NO-SUCH-CURRENCY' }),
+        listing('valid-2', null),
+      ];
+
+      const html = renderToString(
+        <TestProvider
+          config={config}
+          messages={{
+            'AVListingCard.sizeLabel': 'Size:',
+            'ListingCard.price': '{priceValue}{pricePerUnit}',
+            'ListingCard.perUnit': ' per {unitType}',
+          }}
+        >
+          {results.map(l => (
+            <AVListingCard key={l.id.uuid} listing={l} showAuthorInfo={false} />
+          ))}
+        </TestProvider>
+      );
+
+      // All three cards render; only the valid comparison price is shown.
+      expect(html.match(/class="cardLink"/g)).toHaveLength(3);
+      expect(html).toContain('/valid-1"');
+      expect(html).toContain('/malformed"');
+      expect(html).toContain('/valid-2"');
+      expect(html.match(/<s[ >]/g)).toHaveLength(1);
+      expect(html).toContain('$80.00');
+    });
   });
 
   it('shows store-type tags for vendedor-tienda authors', () => {

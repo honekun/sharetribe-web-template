@@ -26,6 +26,8 @@ import css from './EditListingPricingPanel.module.css';
 
 // AV: gate the "original price" (strike-through) field by seller user type
 import { canShowOriginalPrice } from '../../../../config/configAV';
+// AV: malformed stored original prices are dropped instead of crashing the form
+import { originalPriceInitialValueMaybe } from '../../../../util/avOriginalPrice';
 // AV: package-size default-from-category + "especial" size detection (Spec A shipping)
 
 const { Money } = sdkTypes;
@@ -39,7 +41,7 @@ const getListingTypeConfig = (publicData, listingTypes) => {
 // exporting helper functions that handle the initial values and the submission values.
 // This is a tentative approach to contain logic in one place.
 const getInitialValues = props => {
-  const { listing, listingTypes } = props;
+  const { listing, listingTypes, marketplaceCurrency } = props;
   const { publicData } = listing?.attributes || {};
   const { unitType } = publicData || {};
   const listingTypeConfig = getListingTypeConfig(publicData, listingTypes);
@@ -53,14 +55,10 @@ const getInitialValues = props => {
       }
     : {
         price: listing?.attributes?.price,
-        ...(publicData?.originalPrice
-          ? {
-              originalPrice: new Money(
-                publicData.originalPrice.amount,
-                publicData.originalPrice.currency
-              ),
-            }
-          : {}),
+        ...originalPriceInitialValueMaybe(
+          publicData?.originalPrice,
+          marketplaceCurrency || listing?.attributes?.price?.currency
+        ),
       };
 };
 

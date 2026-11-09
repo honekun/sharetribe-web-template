@@ -1,24 +1,13 @@
 import React, { useState } from 'react';
 import { apiBaseUrl } from '../../../util/api';
+import { isLabelPurchaseAllowed, labelShippingRecord } from '../../../config/configAVShippingLabel';
 import AVShippingLabelMaybe from './AVShippingLabelMaybe';
-
-const LABEL_BUY_TRANSITION = 'transition/confirm-payment';
-
-export const canGenerateShippingLabel = transaction => {
-  const attributes = transaction?.attributes || {};
-  const transitions = (attributes.transitions || [])
-    .map(item => item?.transition || item)
-    .filter(Boolean);
-  if (attributes.lastTransition) transitions.push(attributes.lastTransition);
-  const paid = transitions.includes(LABEL_BUY_TRANSITION);
-  const canceled = transitions.some(name => /(^|\/)(?:auto-|operator-)?cancel/.test(name));
-  return paid && !canceled;
-};
 
 /**
  * Self-contained provider-side wrapper around AVShippingLabelMaybe.
  *
- * Reads the chosen rate + label marker off the transaction and, on a manual
+ * Reads the chosen rate (`labelShippingRecord`, shared with the server) + label
+ * marker off the transaction and, on a manual
  * retry, POSTs to /api/shipping/label. Progress/error live in local state and
  * the endpoint's returned `avLabel` is preferred over the (now stale) persisted
  * one on success — so the button flips to "Descargar guía" without a page reload
@@ -33,11 +22,16 @@ const AVShippingLabelSection = props => {
   const [error, setError] = useState(null);
   const [freshLabel, setFreshLabel] = useState(null);
 
-  const avShipping = transaction?.attributes?.protectedData?.avShipping || null;
+  // The same rule the label endpoint applies (audit A01): the server-written
+  // metadata record, or a legacy protectedData copy no dispute could have
+  // rewritten, charged to the buyer at that price. Anything else — a pickup
+  // order, a stale or forged rate — shows no control, because the server would
+  // refuse the label.
+  const avShipping = labelShippingRecord(transaction);
   const avLabel = freshLabel || transaction?.attributes?.metadata?.avLabel || null;
   const transactionId = transaction?.id?.uuid;
   const hasUncertainAttempt = ['processing', 'unknown'].includes(avLabel?.status);
-  const canGenerate = canGenerateShippingLabel(transaction) && !hasUncertainAttempt;
+  const canGenerate = isLabelPurchaseAllowed(transaction) && !hasUncertainAttempt;
 
   const handleGenerate = () => {
     if (!transactionId) return;

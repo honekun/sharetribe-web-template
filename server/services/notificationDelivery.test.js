@@ -14,6 +14,7 @@ const { sendWelcomeEmail } = require('./welcomeEmailService');
 const { sendUserWhatsApp } = require('./whatsappService');
 const { recordDelivery } = require('./notificationMetrics');
 const {
+  PromotionalRetryRequiresPolicyError,
   deliverNotification,
   normalizeRecipient,
   notificationKey,
@@ -134,6 +135,12 @@ describe('notification delivery idempotency', () => {
       },
     };
     const store = {
+      get: jest.fn().mockResolvedValue({
+        notification_key: notificationKey(whatsappDelivery),
+        template_name: whatsappDelivery.templateName,
+        delivery_payload: whatsappDelivery.payload,
+        status: 'failed',
+      }),
       prepareRetry: jest.fn().mockResolvedValue({
         notification_key: notificationKey(whatsappDelivery),
         event_id: whatsappDelivery.eventId,
@@ -158,6 +165,39 @@ describe('notification delivery idempotency', () => {
       notificationKey(whatsappDelivery),
       expect.any(String),
       expect.objectContaining({ status: 'failed' })
+    );
+  });
+
+  test('refuses to replay a promotional payload as stored (audit A08)', async () => {
+    const store = {
+      get: jest.fn().mockResolvedValue({
+        notification_key: 'promo-key',
+        template_name: 'matching_listings_b',
+        delivery_payload: { email: 'buyer@example.com', tags: ['archivo-vintach'] },
+        status: 'failed',
+      }),
+      prepareRetry: jest.fn(),
+      claim: jest.fn(),
+      finish: jest.fn(),
+    };
+    await expect(retryNotification('promo-key', {}, store)).rejects.toThrow(
+      PromotionalRetryRequiresPolicyError
+    );
+    expect(store.prepareRetry).not.toHaveBeenCalled();
+    expect(store.claim).not.toHaveBeenCalled();
+  });
+
+  test('treats a promotional tag as promotional even with an unknown template name', async () => {
+    const store = {
+      get: jest.fn().mockResolvedValue({
+        template_name: 'something_new',
+        delivery_payload: { tags: ['archivo-vintach', 'abandoned_checkout'] },
+        status: 'failed',
+      }),
+      prepareRetry: jest.fn(),
+    };
+    await expect(retryNotification('k', {}, store)).rejects.toThrow(
+      PromotionalRetryRequiresPolicyError
     );
   });
 });

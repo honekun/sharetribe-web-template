@@ -775,3 +775,86 @@ describe('withTimeout', () => {
     await expect(workerTest.withTimeout(Promise.resolve('ok'), 1000, 'Fila 1')).resolves.toBe('ok');
   });
 });
+
+describe('uploadImage temporary files (audit A04)', () => {
+  const fs = require('fs');
+  const { uploadImage } = workerTest;
+  const uploaded = response => ({ data: { data: { id: { uuid: response } } } });
+  let nowSpy;
+
+  beforeEach(() => {
+    // The old name was pid + Date.now(); a frozen clock is the collision case.
+    nowSpy = jest.spyOn(Date, 'now').mockReturnValue(1767225600000);
+  });
+  afterEach(() => nowSpy.mockRestore());
+
+  it('gives concurrent same-extension uploads their own bytes', async () => {
+    const releases = [];
+    const seen = [];
+    const sdk = {
+      images: {
+        upload: jest.fn(async ({ image }) => {
+          // Hold both uploads open so their temp files coexist.
+          await new Promise(resolve => releases.push(resolve));
+          seen.push({ image, bytes: (await fs.promises.readFile(image)).toString() });
+          return uploaded(`img-${seen.length}`);
+        }),
+      },
+    };
+
+    const first = uploadImage(sdk, Buffer.from('first-image'), 'front.jpg');
+    const second = uploadImage(sdk, Buffer.from('second-image'), 'back.jpg');
+    while (releases.length < 2) await new Promise(resolve => setImmediate(resolve));
+    releases.forEach(release => release());
+    await Promise.all([first, second]);
+
+    expect(seen.map(entry => entry.bytes).sort()).toEqual(['first-image', 'second-image']);
+    expect(seen[0].image).not.toBe(seen[1].image);
+    expect(seen.every(entry => entry.image.endsWith('.jpg'))).toBe(true);
+    // Both directories are gone once the uploads settle.
+    expect(seen.some(entry => fs.existsSync(entry.image))).toBe(false);
+  });
+
+  it('cleans up only its own file when the SDK rejects', async () => {
+    let releaseOther;
+    let otherPath;
+    const sdk = {
+      images: {
+        upload: jest.fn(async ({ image }) => {
+          if (image.endsWith('.png')) throw new Error('upload refused');
+          otherPath = image;
+          await new Promise(resolve => {
+            releaseOther = resolve;
+          });
+          return uploaded('img-ok');
+        }),
+      },
+    };
+
+    const other = uploadImage(sdk, Buffer.from('keep-me'), 'side.webp');
+    while (!releaseOther) await new Promise(resolve => setImmediate(resolve));
+    await expect(uploadImage(sdk, Buffer.from('fails'), 'detail.png')).rejects.toThrow(
+      'upload refused'
+    );
+
+    // The other upload's file is untouched while it is still in flight.
+    expect(fs.readFileSync(otherPath).toString()).toBe('keep-me');
+    releaseOther();
+    await expect(other).resolves.toBe('img-ok');
+    expect(fs.existsSync(otherPath)).toBe(false);
+  });
+
+  it('falls back to .jpg for an unexpected extension', async () => {
+    let image;
+    const sdk = {
+      images: {
+        upload: jest.fn(async params => {
+          image = params.image;
+          return uploaded('img');
+        }),
+      },
+    };
+    await uploadImage(sdk, Buffer.from('x'), 'weird.name.exe');
+    expect(image.endsWith('image.jpg')).toBe(true);
+  });
+});

@@ -9,14 +9,17 @@ const LIMITS = {
   standard: {
     maxRows: 100,
     maxImages: 100,
-    maxZipBytes: 20 * 1024 * 1024, // 20 MB compressed
+    maxZipBytes: 20 * 1024 * 1024, // 20 MB compressed (also the upload ceiling)
     maxImportsPerHour: 3,
+    // Every /start attempt that reaches admission, valid or not (uploadAdmission.js).
+    maxUploadAttemptsPerHour: 20,
   },
   admin: {
     maxRows: 100,
     maxImages: 400,
-    maxZipBytes: 50 * 1024 * 1024, // 50 MB compressed
+    maxZipBytes: 50 * 1024 * 1024, // 50 MB compressed (also the upload ceiling)
     maxImportsPerHour: 20,
+    maxUploadAttemptsPerHour: 60,
   },
 };
 

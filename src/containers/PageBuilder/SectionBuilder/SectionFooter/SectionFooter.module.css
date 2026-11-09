@@ -1,14 +1,6 @@
 @import '../../../../styles/customMediaQueries.css';
 
 .root {
-  --contentMaxWidthPages: 1370px;
-  --contentPaddingX: 35px;
-
-  /* AV brand overrides — dark footer needs light text */
-  --footerCopyrightFontSize: 16px;
-  --footerCopyrightLineHeight: 24px;
-  --footerCopyrightColor: var(--colorWhite);
-
   border-top: 1px solid var(--colorGrey100);
 }
 
@@ -18,15 +10,7 @@
   grid-template-columns: repeat(1, 1fr);
   gap: 32px;
   margin: 0 auto;
-  padding: 10px 32px;
-
-  h2 {
-    color: var(--avYellow);
-    font-size: 16px;
-    font-style: normal;
-    font-weight: 400;
-    line-height: 139%; /* 22.24px */
-  }
+  padding: 24px 32px;
 }
 
 .footer ul {
@@ -79,11 +63,6 @@
   font-size: 16px;
   line-height: 24px;
 }
-.belowSlogan {
-  font-size: 14px;
-  line-height: 20px;
-  margin-top: 8px;
-}
 .sloganMobile {
   grid-area: details;
   padding-bottom: 24px;
@@ -106,10 +85,9 @@
 
 .copyright {
   display: inline-block;
-  font-size: var(--footerCopyrightFontSize, 12px);
-  line-height: var(--footerCopyrightLineHeight, 16px);
-  letter-spacing: 1px;
-  color: var(--footerCopyrightColor, var(--colorGrey600));
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--colorGrey600);
   margin-top: 24px;
 }
 
@@ -207,7 +185,7 @@
     /* 4/6 of space is for grid, and grid splits it to 4 columns */
     grid-template-columns: 2fr 2fr 2fr;
     grid-template-areas:
-      'logo grid grid'
+      'logo . .'
       'details grid grid'
       'details grid grid'
       'details grid grid';

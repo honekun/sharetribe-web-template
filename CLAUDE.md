@@ -31,7 +31,7 @@ yarn run clean            # Remove build directory
 
 yarn test                                  # Frontend tests, interactive watch
 yarn test -- --watchAll=false              # Run all tests once
-yarn test -- --testPathPattern=auth        # Match "auth" in path
+yarn test -- --testPathPatterns=auth       # Match "auth" in path (Jest 30 flag name)
 yarn test -- --testNamePattern="login"     # Match "login" in name
 yarn test-server                           # Server tests only
 CI=true yarn test-ci                       # Server then client (--runInBand); without CI=true the client half watches
@@ -152,8 +152,13 @@ it. Instead:
   `CustomLinksMenu/`, which were already clean. Any SHA written down here goes stale the next time
   upstream is merged; resolve the baseline at the time you use it.
 
-  The big forked files (TopbarDesktop/MobileMenu/SearchForm, SectionBuilder, SectionFeatures/Footer,
-  vendored `image-gallery.css`) are intentionally kept as-is.
+  The big forked files (TopbarDesktop/MobileMenu/SearchForm, the SectionBuilder/SectionFeatures/
+  SectionFooter **JS**, vendored `image-gallery.css`) are intentionally kept as-is. Their CSS modules
+  were restored to upstream for audit U02 (see "Already restored to pristine" below).
+  `CheckoutPage.module.css` stays a deliberate fork: it moves the whole two-column layout to
+  `--viewportMedium` with a fluid ramp, and re-declaring ~25 upstream rules for 768–1023px as
+  global overrides on the payment page would add risk without reducing merge exposure (decision
+  recorded 2026-11-06).
 
 ## Custom AV Components
 
@@ -199,7 +204,9 @@ more/less; rendered via OrderPanel `detailsSlot`.
 (`/admin/bulk-import`, CSV+image
 import open to any signed-in user — listings author to the current user;
 `BULK_IMPORT_OPERATOR_EMAILS` flags "admin" users who may add a `user_id` column to author for
-others. Tiered limits + per-user hourly rate limit + magic-byte image sniffing; blue CTA on
+others. Tiered limits + per-user hourly rate limit + magic-byte image sniffing; admission
+(`uploadAdmission.js`: attempt cap, one upload-or-job per user, 3 global) runs **before Multer**
+reads the body, and Multer uses the tier's ZIP size; blue CTA on
 `/l/new`. **Upload is a `.zip` (CSV + images) or a bare `.csv`** — same `zipFile` multipart field,
 told apart by `classifyUpload()`; the CSV path skips `extractZip` and passes `ignoreImages` to
 `validateRows`, so its image columns are dropped even when filled and every row takes the
@@ -306,7 +313,9 @@ balance API** — the list is a paginated client `sdk.transactions.query()`; the
 reads the process/transition lists from `balanceTransitions.js` (kept in step with the client
 helpers by `MyBalancePage/balanceTransitions.test.js`), walks the caller's sales in one capped
 pagination chain (5000 tx, `truncated` flag), and coalesces in-flight requests per user behind an
-IP rate limit and a bounded per-user 60 s cache. Shared util
+IP rate limit and a bounded per-user 60 s cache. The client (`MyBalancePage.duck.js`,
+`getMyBalanceSummary` in `util/api.js`) refetches the summary only when its copy is older than
+the same 60 s (`isSummaryStale`) and never twice at once. Shared util
 `src/transactions/transactionHelpers.js`: `getStatusFromLastTransition`, `getCompletedTransitions`,
 `getRefundedTransitions`, `buildFilteredQueryParams`. All three registered in
 `routeConfiguration.js`/`pageDataLoadingAPI.js`/`reducers.js`; linked from TopbarDesktop,
@@ -382,8 +391,14 @@ the browser receives raw rates only when `ESHIP_WEB_DEBUG=true`. Buyer picks a b
 Authoritative price is server-derived in **`transactionLineItems` (now `async`)** via
 `shippingQuoteService.resolveBucketPrice` (cache hit → pinned; **miss → re-quote**); the client
 price is never trusted. The 3 callers (`transaction-line-items.js`, `initiate-privileged.js`,
-`transition-privileged.js`) now `await` it. Chosen rate persisted to transaction
-`protectedData.avShipping` (for labels + payout). No static-grid fallback: no origin / `especial` /
+`transition-privileged.js`) now `await` it. Chosen rate persisted by the server to transaction
+**`metadata.avShipping`** (authoritative, Integration SDK, after a real initiate/transition) and to
+`protectedData.avShipping` (informational; a caller-supplied copy is always dropped). Label purchase
+trusts only the metadata record — or a legacy protectedData copy with no `transition/dispute` — and
+requires a matching customer `line-item/shipping-fee` (`resolveLabelShippingRecord` /
+`shippingChargeMatches` in the CommonJS `src/config/configAVShippingLabel.js`, shared by
+`shipmentService` and the sale page's label control so it never offers a refused label). No
+static-grid fallback: no origin / `especial` /
 carrier error → buyer sees **Contactar AV** (retry on transient). **Payout:** the
 `line-item/shipping-fee` is `includeFor: ['customer']` only (`server/api-util/lineItems.js`) — AV
 buys the label centrally so the platform (not the seller) retains the shipping fee; provider
@@ -511,6 +526,12 @@ const { screen } = testingLibrary;
 Minimum: `AV*` components → render + props + snapshot; `*Page/` containers → smoke + snapshot;
 `util/*.js` → unit tests per export; `extensions/*` → registry/detection tests. Ducks/utils → pure
 unit tests. Always run `yarn test -- --watchAll=false` before declaring done.
+
+**Client tests never reach the network.** `config/jest/avNoNetwork.js` (a Jest `setupFiles` entry
+after `react-app-polyfill/jsdom`) makes an unmocked `fetch` reject like a refused connection. A test
+that needs fetch installs its own mock (`window.fetch = jest.fn()…`). Without it, components that
+fetch on mount (the AV topbar menus) opened real sockets to `http://localhost:80`; with anything
+listening there (a local Docker proxy), `--runInBand` Jest never exited.
 
 **Gotchas (upstream v11.x merges):**
 
@@ -684,7 +705,18 @@ from `config/configMxStates.js`), `CheckoutPage/StripePaymentForm/StripePaymentF
 `TransactionPanel/TransactionPanel.js` (provider-only `shippingLabelSlot` for the Spec B eShip label
 control). Small CSS-module forks (restyles kept inline due to scoped-class/var coupling — see the
 `AV:` comments in each): `SectionContainer.module.css`, `SectionListings.module.css`,
-`FilterPlain.module.css`.
+`FilterPlain.module.css`, and `SectionBuilder.module.css` (only the var-driven `.blockContainer`
+padding — its cascade position against each section's column classes decides the padding, so it
+cannot move to a global override).
+
+**AV button system** (audit U01): `src/styles/avCtaButtons.module.css` owns `.avCtaButton`, the
+`ctaButton{Blue,LightBlue,Purple,Pink,Yellow,Secondary}` variants, the var-only modifiers and
+`ctaBtnCenter(Wrap)`. Consumers `composes: ctaButton<Color> from '<rel>/styles/avCtaButtons.module.css'`
+and pin layout with self-chained `(0,2,0)` rules (including any `@media` override of those pins).
+PageBuilder gets the classes through `extensions/pageBuilder/av/sectionStyles.js` / `blocks.js`;
+`.sectionDetailsH` lives in `extensions/pageBuilder/av/sectionLayout.module.css`; the restyle of
+upstream's plain `.ctaButton` and `.description` is a `:root [class*='SectionBuilder_…__']` override
+in `avBrandOverrides.css`.
 
 **Already restored to pristine — do not re-dirty, and do not re-add to the watchlist.** Verify with
 `git diff upstream/main -- <file>` before assuming any of these still carries AV code.
@@ -701,6 +733,10 @@ control). Small CSS-module forks (restyles kept inline due to scoped-class/var c
 | Signup/confirm/contact-details form CSS modules | Colocated `*.av.module.css` files own AV-only field spacing |
 | `InboxPage/InboxPage.module.css` | `styles/avBrandOverrides.css` owns AV inbox typography |
 | `ListingImageGallery/image-gallery.css` | `ListingImageGalleryAV.module.css` owns AV gallery sizing |
+| `PageBuilder/SectionBuilder/SectionFeatures/SectionFeatures.module.css` | `SectionFeatures.av.module.css` (`- ReverseFeature`/`- AvFeature` layouts) |
+| `PageBuilder/SectionBuilder/SectionFooter/SectionFooter.module.css` | `avBrandOverrides.css` (footer restyle) + `SectionFooter.av.module.css` (`belowSlogan`) |
+| `PageBuilder/SectionBuilder/SectionColumns/SectionColumns.module.css` | `avBrandOverrides.css` (var-driven `.baseColumn` gap); `SectionColumnsAV.module.css` |
+| `PageBuilder/SectionBuilder/SectionBuilder.module.css` (all but `.blockContainer` padding) | `styles/avCtaButtons.module.css`, `av/sectionLayout.module.css`, `avBrandOverrides.css` |
 
 ### Unavoidable upstream files — append AV additions at the bottom
 

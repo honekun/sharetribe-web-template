@@ -130,3 +130,79 @@ describe('marketing consent store', () => {
     expect(client.release).toHaveBeenCalled();
   });
 });
+
+describe('getPreference / isEligible (audit A07)', () => {
+  // A tiny in-memory stand-in for av_marketing_preferences that evaluates the
+  // lookup the way the SQL does, so the tests pin the semantics, not the text.
+  const storeWith = rows => {
+    const pool = {
+      query: jest.fn(async (sql, [email, userId]) => ({
+        rows: rows.filter(
+          row =>
+            row.email === email &&
+            (userId == null || row.sharetribe_user_id == null || row.sharetribe_user_id === userId)
+        ),
+      })),
+    };
+    return { pool, store: new MarketingConsentStore(pool) };
+  };
+  const row = overrides => ({
+    email: 'a@example.com',
+    sharetribe_user_id: 'user-a',
+    enabled: true,
+    suppressed: false,
+    ...overrides,
+  });
+
+  it("never authorizes A with a grant that belongs to B, even with A's user id", async () => {
+    const { store } = storeWith([row({ email: 'b@example.com' })]);
+    await expect(
+      store.isEligible({ email: 'a@example.com', sharetribeUserId: 'user-a' })
+    ).resolves.toBe(false);
+  });
+
+  it('ignores a row whose returned email is not the destination', async () => {
+    const pool = {
+      query: jest.fn().mockResolvedValue({ rows: [row({ email: 'b@example.com' })] }),
+    };
+    const store = new MarketingConsentStore(pool);
+    await expect(store.getPreference({ email: 'a@example.com' })).resolves.toBeNull();
+  });
+
+  it('accepts anonymous consent for the same address', async () => {
+    const { store } = storeWith([row({ sharetribe_user_id: null })]);
+    await expect(
+      store.isEligible({ email: ' A@Example.com ', sharetribeUserId: 'user-a' })
+    ).resolves.toBe(true);
+  });
+
+  it('refuses a row linked to another account', async () => {
+    const { store } = storeWith([row({ sharetribe_user_id: 'previous-owner' })]);
+    await expect(
+      store.isEligible({ email: 'a@example.com', sharetribeUserId: 'user-a' })
+    ).resolves.toBe(false);
+  });
+
+  it('keeps withdrawal and suppression authoritative', async () => {
+    await expect(
+      storeWith([row({ enabled: false })]).store.isEligible({ email: 'a@example.com' })
+    ).resolves.toBe(false);
+    await expect(
+      storeWith([row({ suppressed: true })]).store.isEligible({ email: 'a@example.com' })
+    ).resolves.toBe(false);
+  });
+
+  it('looks up by address only and passes the user id as a constraint', async () => {
+    const { pool, store } = storeWith([row()]);
+    await store.getPreference({ email: 'A@example.com', sharetribeUserId: 'user-a' });
+    const [sql, params] = pool.query.mock.calls[0];
+    expect(params).toEqual(['a@example.com', 'user-a']);
+    expect(sql).not.toMatch(/OR\s*\(\$2::text IS NOT NULL AND sharetribe_user_id = \$2\)/);
+  });
+
+  it('returns nothing without an address', async () => {
+    const { pool, store } = storeWith([row()]);
+    await expect(store.getPreference({ sharetribeUserId: 'user-a' })).resolves.toBeNull();
+    expect(pool.query).not.toHaveBeenCalled();
+  });
+});

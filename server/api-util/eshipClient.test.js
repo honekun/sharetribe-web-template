@@ -172,3 +172,46 @@ describe('describeEshipError', () => {
     expect(describeEshipError(new Error('connect ETIMEDOUT'))).toBe('Error: connect ETIMEDOUT');
   });
 });
+
+describe('eshipClient deadlines (audit A06)', () => {
+  const never = () => new Promise(() => {});
+  const flush = async () => {
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+  };
+
+  beforeEach(() => {
+    fetch.mockReset();
+    process.env.ESHIP_API_KEY = 'test-key';
+    jest.useFakeTimers();
+  });
+  afterEach(() => jest.useRealTimers());
+
+  it('times out a success response whose body never arrives', async () => {
+    fetch.mockResolvedValue({ ok: true, status: 200, json: never });
+    const pending = createShipment({ rateId: 'r1' }).catch(e => e);
+    await flush();
+    jest.advanceTimersByTime(8000);
+    expect(await pending).toBeInstanceOf(EshipTimeoutError);
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  it('keeps the status of a rejection whose body stalls', async () => {
+    fetch.mockResolvedValue({ ok: false, status: 422, text: never });
+    const pending = quote({ addressFrom: {}, addressTo: {}, parcels: [] }).catch(e => e);
+    await flush();
+    jest.advanceTimersByTime(8000);
+    const error = await pending;
+    expect(error).toBeInstanceOf(EshipApiError);
+    expect(error.status).toBe(422);
+  });
+
+  it('awaits the JSON body inside the request scope', async () => {
+    const malformed = Object.assign(new Error('invalid json response body'), {
+      name: 'FetchError',
+      type: 'invalid-json',
+    });
+    fetch.mockResolvedValue({ ok: true, status: 200, json: () => Promise.reject(malformed) });
+    await expect(createShipment({ rateId: 'r1' })).rejects.toBe(malformed);
+    expect(jest.getTimerCount()).toBe(0);
+  });
+});

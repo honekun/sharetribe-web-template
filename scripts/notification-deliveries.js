@@ -7,10 +7,8 @@ require('../server/env').configureEnv();
 
 const os = require('os');
 
-const {
-  createDeliveryStore,
-  retryNotification,
-} = require('../server/services/notificationDelivery');
+const { createDeliveryStore } = require('../server/services/notificationDelivery');
+const { retryDelivery } = require('../server/services/notificationRetry');
 const { closePostgresPool } = require('../server/services/postgres');
 
 function printUsage() {
@@ -19,7 +17,11 @@ function printUsage() {
   yarn notifications:retry <notification-key> [--confirm-unknown]
 
 Unknown outcomes and stale processing claims require --confirm-unknown. Before using it, check the
-provider dashboard because the original request may already have been accepted.`);
+provider dashboard because the original request may already have been accepted.
+
+Promotional (campaign) emails are re-checked before they are resent: current email, consent and
+suppression, the weekly frequency cap, campaign flag, and listing/transaction state. A retry that
+no longer qualifies is refused with the reason and nothing is changed.`);
 }
 
 async function main() {
@@ -52,18 +54,22 @@ async function main() {
       );
     }
 
-    const result = await retryNotification(
+    const result = await retryDelivery(
       value,
       {
         confirmUnknown,
         claimedBy: `operator:${os.hostname()}:${process.pid}`,
       },
-      store
+      { deliveryStore: store }
     );
-    if (!result) {
+    if (result.status === 'not_retryable') {
       throw new Error(
         'Notification is not retryable; only failed/pending, unknown, or processing claims older than the configured stale-claim threshold qualify'
       );
+    }
+    if (result.status === 'refused') {
+      const after = result.retryAfter ? ` (retry after ${result.retryAfter.toISOString()})` : '';
+      throw new Error(`Promotional retry refused: ${result.reason}${after}`);
     }
     console.log(`[notification-delivery] Retry completed with status=${result.status}`);
     return;

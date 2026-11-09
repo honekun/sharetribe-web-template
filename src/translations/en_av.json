@@ -61,6 +61,7 @@
   "AVShippingLabel.generate": "Generate label",
   "AVShippingLabel.generating": "Generating…",
   "AVShippingLabel.error": "The label couldn't be generated. Please try again.",
+  "AVShippingLabel.notAllowed": "A label can't be generated for this order. Please contact Archivo Vintach.",
   "StoreTypeTags.ariaLabel": "Store type tags",
   "ListingField.allSizes.group.standard": "Clothing (Standard)",
   "ListingField.allSizes.group.mx": "Clothing (MX)",

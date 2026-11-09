@@ -5,10 +5,11 @@
 // different function each time.
 const mockFetch = jest.fn();
 const mockGetAccessToken = jest.fn();
+const mockGetService = jest.fn(() => ({ getAccessToken: mockGetAccessToken }));
 
 jest.mock('node-fetch', () => (...args) => mockFetch(...args));
 jest.mock('../services/instagramTokenService', () => ({
-  getInstagramTokenService: () => ({ getAccessToken: mockGetAccessToken }),
+  getInstagramTokenService: (...args) => mockGetService(...args),
 }));
 
 const expiredTokenBody = JSON.stringify({
@@ -137,5 +138,68 @@ describe('GET /api/instagram/feed', () => {
     expect(res.body.posts[0].mediaUrl).toBe('https://cdn.test/1.jpg');
     // The refreshed token, not the raw env var, is what reaches Instagram.
     expect(mockFetch.mock.calls.every(([url]) => url.includes('stored-token'))).toBe(true);
+  });
+
+  describe('cache, coalescing and fallbacks (audit A06 follow-up)', () => {
+    const feedFetch = () =>
+      mockFetch.mockImplementation(async url => ({
+        ok: true,
+        json: async () =>
+          url.includes('/me/media') ? { data: [] } : { name: 'AV', username: 'av' },
+      }));
+
+    it('serves a warm cache without reading the token store', async () => {
+      useToken('stored-token');
+      feedFetch();
+      const handler = feedHandler();
+      await handler(createReq(), createRes());
+      expect(mockGetAccessToken).toHaveBeenCalledTimes(1);
+
+      const res = createRes();
+      await handler(createReq(), res);
+      expect(res.statusCode).toBe(200);
+      expect(mockGetAccessToken).toHaveBeenCalledTimes(1);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('shares one Instagram load between concurrent cold requests', async () => {
+      useToken('stored-token');
+      feedFetch();
+      const handler = feedHandler();
+      const responses = [createRes(), createRes(), createRes()];
+      await Promise.all(responses.map(res => handler(createReq(), res)));
+      expect(responses.every(res => res.statusCode === 200)).toBe(true);
+      // One media call + one profile call for all three requests.
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mockGetAccessToken).toHaveBeenCalledTimes(1);
+    });
+
+    it('falls back to the env token when the token service cannot be built', async () => {
+      const original = process.env.INSTAGRAM_ACCESS_TOKEN;
+      process.env.INSTAGRAM_ACCESS_TOKEN = 'env-token';
+      mockGetService.mockImplementationOnce(() => {
+        throw new Error('DATABASE_URL is not configured');
+      });
+      feedFetch();
+      const res = await callFeed();
+      expect(res.statusCode).toBe(200);
+      expect(mockFetch.mock.calls.every(([url]) => url.includes('env-token'))).toBe(true);
+      if (original === undefined) delete process.env.INSTAGRAM_ACCESS_TOKEN;
+      else process.env.INSTAGRAM_ACCESS_TOKEN = original;
+    });
+
+    it('bounds a stalled Instagram body', async () => {
+      jest.useFakeTimers();
+      useToken('stored-token');
+      mockFetch.mockResolvedValue({ ok: true, json: () => new Promise(() => {}) });
+      const handler = feedHandler();
+      const res = createRes();
+      const pending = handler(createReq(), res);
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      jest.advanceTimersByTime(10000);
+      await pending;
+      expect(res.statusCode).toBe(502);
+      jest.useRealTimers();
+    });
   });
 });

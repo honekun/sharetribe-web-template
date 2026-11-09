@@ -2,14 +2,14 @@
    ProductOrderForm.module.css so that file stays pristine. Imported by
    ProductOrderForm.js as `avCss`. */
 
-/* "Comprar" submit button — canonical blue CTA composed from SectionBuilder.
+/* "Comprar" submit button — canonical blue CTA from avCtaButtons.module.css.
    Hosted on a <PrimaryButton>: the global .buttonPrimary rest/hover/focus
    styles tie with the composed classes (emit order is unreliable), so the
    self-chained (0,2,0) rules pin the Button-root geometry AND re-assert the
    AV colors + outline via the --_av-* vars in every state. Disabled keeps the
    upstream grey. */
 .submitButtonCta {
-  composes: ctaButtonBlue from '../../../containers/PageBuilder/SectionBuilder/SectionBuilder.module.css';
+  composes: ctaButtonBlue from '../../../styles/avCtaButtons.module.css';
 }
 .submitButtonCta.submitButtonCta {
   display: block;

@@ -45,6 +45,8 @@ const { buildFieldOptions, buildCategoryTree } = require('./listingFieldOptions'
 const router = require('./index');
 const { _test: authTest } = require('./auth');
 const { _test: rateLimiterTest } = require('./rateLimiter');
+const { admitUpload, _test: admissionTest } = require('./uploadAdmission');
+const { EventEmitter } = require('events');
 const { classifyUpload, MAX_ZIP_UPLOAD_BYTES } = router._test;
 
 const ORIGINAL_ENV = process.env;
@@ -98,7 +100,10 @@ describe('bulk import router', () => {
     '/authorize',
     'post'
   );
-  const [, startTokenMiddleware, , startHandler] = getRouteStack('/start', 'post');
+  const [, startTokenMiddleware, startAdmission, startUpload, startHandler] = getRouteStack(
+    '/start',
+    'post'
+  );
   const [, statusTokenMiddleware, statusHandler] = getRouteStack('/status/:jobId', 'get');
   const [templateHandler] = getRouteStack('/template', 'get');
 
@@ -107,6 +112,8 @@ describe('bulk import router', () => {
     authTest.resetTokenStore();
     jobStoreTest.reset();
     rateLimiterTest.store.clear();
+    rateLimiterTest.attemptStore.clear();
+    admissionTest.reset();
     process.env = {
       ...ORIGINAL_ENV,
       BULK_IMPORT_OPERATOR_EMAILS: 'operator@example.com',
@@ -851,6 +858,146 @@ describe('bulk import router', () => {
 
     it('caps compressed ZIP uploads at 50 MB', () => {
       expect(MAX_ZIP_UPLOAD_BYTES).toBe(50 * 1024 * 1024);
+    });
+  });
+
+  describe('admission before the upload is read (audit A05)', () => {
+    // An Express-like response that can emit finish/close, plus a request that
+    // records whether Multer would have started reading it.
+    const createEventRes = () => Object.assign(new EventEmitter(), createMockRes());
+    const admit = (userId = 'seller-id', isAdmin = false) => {
+      const req = { bulkImportUser: { userId, isAdmin } };
+      const res = createEventRes();
+      const next = jest.fn();
+      admitUpload(req, res, next);
+      return { req, res, next };
+    };
+
+    it('runs admission before Multer on /start', () => {
+      expect(startAdmission).toBe(admitUpload);
+      expect(startUpload).not.toBe(admitUpload);
+      expect(startUpload.length).toBe(3);
+    });
+
+    it('refuses a user with an active job before reading the body', () => {
+      createJob(1, 'seller-id');
+      const { res, next } = admit();
+      expect(res.statusCode).toBe(409);
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('allows one in-flight upload per user', () => {
+      const first = admit();
+      expect(first.next).toHaveBeenCalledTimes(1);
+
+      const second = admit();
+      expect(second.res.statusCode).toBe(409);
+      expect(second.next).not.toHaveBeenCalled();
+    });
+
+    it('counts in-flight uploads toward the global cap', () => {
+      createJob(1, 'u1');
+      admit('u2');
+      admit('u3');
+      const { res, next } = admit('seller-id');
+      expect(res.statusCode).toBe(503);
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('refuses a user over the completed-import cap without uploading', () => {
+      const now = Date.now();
+      rateLimiterTest.store.set('seller-id', [now, now, now]);
+      const { res, next } = admit();
+      expect(res.statusCode).toBe(429);
+      expect(next).not.toHaveBeenCalled();
+      // Nothing extra was recorded against the import cap.
+      expect(rateLimiterTest.store.get('seller-id')).toHaveLength(3);
+    });
+
+    it('counts invalid attempts toward a separate attempt cap', () => {
+      for (let i = 0; i < 20; i++) {
+        const { res, next } = admit();
+        expect(next).toHaveBeenCalledTimes(1);
+        // Each attempt fails later (validation, parser error...) and ends.
+        res.emit('finish');
+      }
+      const { res, next } = admit();
+      expect(res.statusCode).toBe(429);
+      expect(res.body.error).toMatch(/intentos/);
+      expect(next).not.toHaveBeenCalled();
+      // The completed-import allowance is untouched.
+      expect(rateLimiterTest.store.get('seller-id') || []).toHaveLength(0);
+    });
+
+    it('gives admins their larger attempt cap', () => {
+      for (let i = 0; i < 21; i++) {
+        const { res, next } = admit('operator-user-id', true);
+        expect(next).toHaveBeenCalledTimes(1);
+        res.emit('finish');
+      }
+    });
+
+    it.each(['finish', 'close'])('releases the reservation on %s', event => {
+      const first = admit();
+      first.res.emit(event);
+      // A disconnect (close) or a rejected/failed request (finish) frees the slot.
+      expect(admissionTest.reservations.size).toBe(0);
+      expect(admit().next).toHaveBeenCalledTimes(1);
+    });
+
+    it('releases a reservation only once, even after a new one exists', () => {
+      const first = admit();
+      first.res.emit('finish');
+      const second = admit();
+      first.res.emit('close');
+      expect(admissionTest.reservations.get('seller-id')).toBe(second.req.bulkImportReservation);
+    });
+
+    it('hands the capacity to the job once the import starts', async () => {
+      const { req, res } = admit();
+      req.file = { buffer: Buffer.from('zip') };
+      await startHandler(req, res);
+      expect(res.statusCode).toBe(202);
+      expect(admissionTest.reservations.size).toBe(0);
+      // The running job now blocks a second upload by the same user.
+      expect(admit().res.statusCode).toBe(409);
+    });
+
+    it('releases the reservation when the configuration read fails', async () => {
+      resolveListingImportConfig.mockRejectedValueOnce(new Error('assets down'));
+      const { req, res } = admit();
+      req.file = { buffer: Buffer.from('zip') };
+      await startHandler(req, res);
+      expect(res.statusCode).toBe(503);
+      res.emit('finish');
+      expect(admissionTest.reservations.size).toBe(0);
+    });
+
+    it('reads a standard upload with the 20 MB tier cap', done => {
+      const { Readable } = require('stream');
+      const boundary = 'avboundary';
+      const body = Buffer.concat([
+        Buffer.from(
+          `--${boundary}\r\nContent-Disposition: form-data; name="zipFile"; filename="a.zip"\r\n` +
+            'Content-Type: application/zip\r\n\r\n'
+        ),
+        Buffer.alloc(21 * 1024 * 1024, 1),
+        Buffer.from(`\r\n--${boundary}--\r\n`),
+      ]);
+      const req = Readable.from([body]);
+      req.headers = {
+        'content-type': `multipart/form-data; boundary=${boundary}`,
+        'content-length': String(body.length),
+      };
+      req.bulkImportUser = { userId: 'seller-id', isAdmin: false };
+      const res = createEventRes();
+      res.json = payload => {
+        expect(res.statusCode).toBe(400);
+        expect(payload.error).toMatch(/20 MB/);
+        done();
+        return res;
+      };
+      startUpload(req, res, () => done(new Error('a 21 MB standard upload was accepted')));
     });
   });
 });

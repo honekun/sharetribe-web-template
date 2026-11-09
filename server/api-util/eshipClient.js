@@ -2,6 +2,7 @@
 
 const fetch = require('node-fetch');
 const { eshipBaseUrl } = require('../../src/config/configAVShipping');
+const { isFetchTimeout, requestWithTimeout } = require('./fetchWithTimeout');
 
 const DEFAULT_TIMEOUT_MS = 8000;
 
@@ -49,39 +50,53 @@ class EshipTimeoutError extends Error {
 
 // Request {base}/{path} with Bearer auth. Shared by quote(), createShipment(),
 // and webhook verification so every call has the same timeout/error behavior.
+// The deadline covers the body too (audit A06): a carrier that sends headers
+// and then stalls can no longer hold a checkout quote or a label purchase.
 async function eshipRequest(path, { method, payload = null }) {
   const apiKey = process.env.ESHIP_API_KEY;
   if (!apiKey) throw new EshipApiError(401, { error: 'ESHIP_API_KEY missing' });
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
   try {
-    const response = await fetch(`${eshipBaseUrl}/${path}`, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
+    return await requestWithTimeout(
+      `${eshipBaseUrl}/${path}`,
+      {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        ...(payload == null ? {} : { body: JSON.stringify(payload) }),
       },
-      ...(payload == null ? {} : { body: JSON.stringify(payload) }),
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      // Read as text first so non-JSON carrier/gateway errors aren't swallowed.
-      const text = await response.text().catch(() => '');
-      let body = null;
-      try {
-        body = text ? JSON.parse(text) : null;
-      } catch (_) {
-        body = null;
+      {
+        timeoutMs: DEFAULT_TIMEOUT_MS,
+        fetchImpl: fetch,
+        read: async response => {
+          if (!response.ok) {
+            // Read as text first so non-JSON carrier/gateway errors aren't swallowed.
+            const text = await response.text().catch(() => '');
+            let body = null;
+            try {
+              body = text ? JSON.parse(text) : null;
+            } catch (_) {
+              body = null;
+            }
+            throw new EshipApiError(response.status, body, text);
+          }
+          // Awaited inside the deadline. A malformed success body rejects with
+          // node-fetch's FetchError, which the label path treats as an unknown
+          // outcome (the carrier may have bought the label).
+          return response.json();
+        },
       }
-      throw new EshipApiError(response.status, body, text);
-    }
-    return response.json();
+    );
   } catch (e) {
-    if (e && e.name === 'AbortError') throw new EshipTimeoutError();
+    if (isFetchTimeout(e)) {
+      // A rejection whose status already arrived keeps its status-based
+      // classification; anything else is a timeout.
+      if (e.response && !e.response.ok) throw new EshipApiError(e.response.status, null, '');
+      throw new EshipTimeoutError();
+    }
     throw e;
-  } finally {
-    clearTimeout(timer);
   }
 }
 

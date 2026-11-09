@@ -1,7 +1,20 @@
 'use strict';
 
 const { types } = require('sharetribe-flex-sdk');
+const integrationSdkTypes = require('sharetribe-flex-integration-sdk').types;
+const { withRetry } = require('../services/retry');
+// Label-eligibility rules shared with the sale page's label control.
+const {
+  findShippingFeeLineItem,
+  shippingChargeMatches,
+} = require('../../src/config/configAVShippingLabel');
+
 const { Money } = types;
+
+// The transaction key that carries the chosen eShip rate. Clients may never
+// author it: the protectedData copy is informational, and the label step trusts
+// the server-written `metadata.avShipping` record (see recordAvShippingMetadata).
+const AV_SHIPPING_KEY = 'avShipping';
 
 // AV: shipping is NOT paid out to the provider. AV buys the eShip label centrally
 // (the "Segmail" account is billed directly; see shipmentService.js), so the
@@ -57,8 +70,9 @@ async function resolveAvShippingFee({ resolveBucketPrice, orderData, currency, l
   return resolved ? new Money(resolved.amountSubunits, resolved.currency || currency) : null;
 }
 
-// Shape the chosen eShip rate for persistence on the transaction. Read back by
-// the label-generation step (Spec B) and seller surplus/payout logic.
+// Shape the chosen eShip rate for persistence on the transaction. The
+// protectedData copy is display-only; the label step reads the server-written
+// metadata record built by buildAvShippingRecord.
 function buildAvShippingProtectedData(orderData, resolvedRate) {
   if (!resolvedRate) return {};
   const rate = resolvedRate.rate || {};
@@ -73,6 +87,14 @@ function buildAvShippingProtectedData(orderData, resolvedRate) {
       currency: resolvedRate.currency,
     },
   };
+}
+
+// The authoritative shipping record written to transaction metadata after a
+// successful privileged initiate/transition. Same fields as the protectedData
+// copy plus when it was recorded.
+function buildAvShippingRecord(orderData, resolvedRate, now = new Date()) {
+  const { avShipping } = buildAvShippingProtectedData(orderData, resolvedRate);
+  return avShipping ? { ...avShipping, recordedAt: now.toISOString() } : null;
 }
 
 // The checkout UI sends avDestination to support speculative pricing, but the
@@ -116,9 +138,10 @@ function authoritativeShippingDestination(fullOrderData, isSpeculative) {
 // The client-sent price is never trusted: `resolveBucketPrice` either replays the
 // cached quote for `quoteToken` or re-quotes eShip from scratch on a cache miss.
 //
-// Returns `{ resolvedRate, avShippingProtectedData }`. Throws
-// `ShippingQuoteRequiredError` when a real (non-speculative) shipping order has
-// no usable destination or rate, so the buyer can't pay without a priced label.
+// Returns `{ resolvedRate, avShippingProtectedData, avShippingRecord }`; the
+// record is only built for a real (non-speculative) shipping order. Throws
+// `ShippingQuoteRequiredError` when a real shipping order has no usable
+// destination or rate, so the buyer can't pay without a priced label.
 async function resolveAvShippingForOrder({
   resolveBucketPrice,
   listing,
@@ -127,7 +150,7 @@ async function resolveAvShippingForOrder({
 }) {
   const isShipping = fullOrderData?.deliveryMethod === 'shipping';
   if (!isShipping) {
-    return { resolvedRate: null, avShippingProtectedData: {} };
+    return { resolvedRate: null, avShippingProtectedData: {}, avShippingRecord: null };
   }
 
   const destination = authoritativeShippingDestination(fullOrderData, isSpeculative);
@@ -148,16 +171,88 @@ async function resolveAvShippingForOrder({
   return {
     resolvedRate,
     avShippingProtectedData: buildAvShippingProtectedData(fullOrderData, resolvedRate),
+    avShippingRecord: isSpeculative ? null : buildAvShippingRecord(fullOrderData, resolvedRate),
   };
 }
 
 // Merge the resolved eShip rate into the outgoing transaction params without
-// clobbering protectedData the caller already set. No-op when nothing resolved.
+// clobbering the rest of the caller's protectedData. A caller-supplied
+// `avShipping` is always dropped, even when nothing resolved (pickup orders):
+// the key is reserved for the server.
 function withAvShippingProtectedData(params, avShippingProtectedData) {
-  if (!avShippingProtectedData || Object.keys(avShippingProtectedData).length === 0) {
+  const clientProtectedData = params?.protectedData;
+  const hasClientCopy =
+    !!clientProtectedData &&
+    Object.prototype.hasOwnProperty.call(clientProtectedData, AV_SHIPPING_KEY);
+  const hasPatch = !!avShippingProtectedData && Object.keys(avShippingProtectedData).length > 0;
+  if (!hasClientCopy && !hasPatch) {
     return {};
   }
-  return { protectedData: { ...params?.protectedData, ...avShippingProtectedData } };
+  const { [AV_SHIPPING_KEY]: _ignoredClientCopy, ...rest } = clientProtectedData || {};
+  return { protectedData: { ...rest, ...(hasPatch ? avShippingProtectedData : {}) } };
+}
+
+const toIntegrationUuid = id => {
+  const uuid = typeof id === 'string' ? id : id?.uuid;
+  return uuid ? new integrationSdkTypes.UUID(uuid) : null;
+};
+
+/**
+ * Write the authoritative shipping record to `metadata.avShipping`. Metadata is
+ * operator-only, so neither party can replace it later (protectedData can be
+ * rewritten by customer transitions such as `transition/dispute`).
+ *
+ * Never throws: the transaction already exists, so a failed write is logged and
+ * the label step falls back to its stricter legacy checks.
+ *
+ * @returns {Promise<boolean>} whether the record was written
+ */
+async function recordAvShippingMetadata(integrationSdk, transactionId, record) {
+  const id = toIntegrationUuid(transactionId);
+  if (!record || !id) return false;
+  try {
+    await withRetry(
+      () => integrationSdk.transactions.updateMetadata({ id, metadata: { avShipping: record } }),
+      {
+        label: 'avShipping metadata',
+        // A 4xx will not succeed on a second try; network errors, 5xx and 429 may.
+        shouldRetry: error => !error?.status || error.status >= 500 || error.status === 429,
+      }
+    );
+    return true;
+  } catch (error) {
+    console.error(
+      `[avShipping] could not record the shipping rate for transaction ${id.uuid}:`,
+      error?.message || error
+    );
+    return false;
+  }
+}
+
+const logRecordNotWritten = error =>
+  console.error('[avShipping] shipping record not written:', error?.message || error);
+
+// One-call seam for the privileged endpoints: after a real initiate/transition,
+// start recording the rate and hand the API response straight back. The write
+// runs in the background, so checkout never waits on the Integration API (a
+// token exchange, the update, and a retry backoff when it is failing). Nothing
+// needs the record before the label step, and if the write fails that step
+// falls back to the protectedData copy this same call wrote (see
+// resolveLabelShippingRecord in src/config/configAVShippingLabel.js). Never
+// throws or rejects.
+function persistAvShippingRecord(apiResponse, record, transactionId) {
+  if (!record) return apiResponse;
+  try {
+    const { getIntegrationSdk } = require('../services/integrationSdk');
+    recordAvShippingMetadata(
+      getIntegrationSdk(),
+      transactionId || apiResponse?.data?.data?.id,
+      record
+    ).catch(logRecordNotWritten);
+  } catch (error) {
+    logRecordNotWritten(error);
+  }
+  return apiResponse;
 }
 
 class ShippingQuoteRequiredError extends Error {
@@ -172,11 +267,17 @@ class ShippingQuoteRequiredError extends Error {
 
 module.exports = {
   AV_SHIPPING_FEE_INCLUDE_FOR,
+  AV_SHIPPING_KEY,
   resolveAvShippingFee,
   authoritativeShippingDestination,
   buildAvShippingProtectedData,
+  buildAvShippingRecord,
   destinationFromShippingDetails,
+  findShippingFeeLineItem,
+  persistAvShippingRecord,
+  recordAvShippingMetadata,
   resolveAvShippingForOrder,
+  shippingChargeMatches,
   withAvShippingProtectedData,
   ShippingQuoteRequiredError,
 };

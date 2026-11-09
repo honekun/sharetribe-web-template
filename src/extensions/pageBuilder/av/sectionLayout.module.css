@@ -1,0 +1,25 @@
+@import '../../../styles/customMediaQueries.css';
+
+/* AV section header layout (audit U01): a horizontal header — title block on
+   the left, controls on the right — used by the AV carousel sections through
+   `defaultClasses.sectionDetailsH`. AV-owned so upstream's
+   SectionBuilder.module.css stays pristine. */
+.sectionDetailsH {
+  max-width: var(--contentMaxWidthPages);
+  display: flex;
+  justify-content: space-between;
+  margin: 0 auto;
+  padding: 0 32px;
+  position: relative;
+  align-items: center;
+
+  @media (--viewportMedium) {
+    align-items: flex-start;
+  }
+
+  /* Same vertical rhythm as upstream's `.sectionDetails` headings, at the same
+     (0,1,2) specificity. */
+  & :is(h1, h2, h3, h4, h5, h6) + :is(p, a, ul, ol, code, div, h1, h2, h3, h4, h5, h6) {
+    margin-top: 12px;
+  }
+}

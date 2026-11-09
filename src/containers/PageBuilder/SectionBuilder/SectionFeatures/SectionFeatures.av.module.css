@@ -1,0 +1,107 @@
+@import '../../../../styles/customMediaQueries.css';
+
+/* AV-only SectionFeatures layouts (the `- ReverseFeature` and `- AvFeature`
+   section tokens), kept out of the upstream SectionFeatures.module.css (audit
+   U02). Imported by SectionFeatures.js as `avCss`, after the upstream module,
+   so these rules keep their place after `.block`/`.featuresMain` in the bundle. */
+
+/* Reverses the default odd=image-right / even=image-left alternation.
+   `.block` is SectionFeatures.module.css's class, matched by its generated-name
+   prefix from this module; the selector keeps its (0,2,0) specificity. */
+.featuresMainReverseFeature {
+  & [class*='SectionFeatures_block__'] {
+    @media (--viewportMedium) {
+      flex-direction: row;
+    }
+
+    &:nth-child(even) {
+      @media (--viewportMedium) {
+        flex-direction: row-reverse;
+      }
+    }
+  }
+}
+
+/* ── AvFeature: full-bleed 50/50 rows, no gaps or paddings ── */
+.featuresMainAvFeature {
+  gap: 0;
+  padding: 0;
+  max-width: 100%;
+}
+
+.blockAvFeature {
+  padding: 0;
+  align-items: stretch;
+  gap: 0;
+  flex-direction: column;
+
+  @media (--viewportMedium) {
+    flex-direction: row-reverse;
+    /* Cap the side-by-side row height on desktop only. On mobile the media gets
+       an explicit 68vw height (see below) and the stacked text grows freely, so
+       the 780px cap must not constrain the column layout. */
+    max-height: 780px;
+  }
+
+  &:nth-child(even) {
+    @media (--viewportMedium) {
+      flex-direction: row;
+    }
+  }
+
+  /* Stack full width on mobile; side-by-side 50/50 on larger screens */
+  > * {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+
+    @media (--viewportMedium) {
+      flex: 0 0 50%;
+      width: 50%;
+    }
+  }
+
+  /* Media side: on mobile match SectionVideoSection's video height (68vw)
+     so the VideoSection video and the AvFeature media line up on screens ≤768px;
+     on side-by-side it fills the block height. */
+  > :first-child {
+    border-radius: 0;
+    aspect-ratio: 400 / 420;
+    overflow: hidden;
+
+    & img,
+    & video,
+    & iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 0;
+    }
+
+    @media (--viewportMedium) {
+      height: 100%;
+
+      & img,
+      & video,
+      & iframe {
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+  }
+
+  /* Text side: centered content + SectionVideoSection-style padding */
+  > :last-child {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 40px 24px;
+
+    @media (--viewportMedium) {
+      padding: 56px 64px;
+    }
+  }
+}

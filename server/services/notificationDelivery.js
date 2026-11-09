@@ -9,6 +9,7 @@ const { isWhatsAppEnabled } = require('./notificationConfig');
 const { getPostgresPool } = require('./postgres');
 const { recordDelivery } = require('./notificationMetrics');
 const { localDeliveryFailure } = require('./notificationProviderError');
+const { promotionalCampaignForDelivery } = require('./marketingCampaigns');
 const { withRetry } = require('./retry');
 
 const TERMINAL_STATUSES = new Set(['sent', 'failed', 'unknown']);
@@ -74,6 +75,7 @@ class NotificationDeliveryStore {
            claimed_by = EXCLUDED.claimed_by,
            claimed_at = NOW(),
            last_error = NULL,
+           delivery_payload = EXCLUDED.delivery_payload,
            updated_at = NOW()
        WHERE av_notification_deliveries.status = 'pending'
        RETURNING notification_key, claim_token, status`,
@@ -230,11 +232,28 @@ async function deliverNotification(delivery, claimedBy, store = createDeliverySt
   }
 }
 
+class PromotionalRetryRequiresPolicyError extends Error {
+  constructor() {
+    super(
+      'Promotional deliveries are retried through the campaign policy (notificationRetry.retryDelivery)'
+    );
+    this.name = 'PromotionalRetryRequiresPolicyError';
+  }
+}
+
+// Replays a stored payload as is: for essential mail (seller welcome,
+// transactional) only. A promotional payload would skip the consent, identity,
+// frequency-cap and resource checks it was built under (audit A08), so it is
+// refused before the row is touched; notificationRetry.retryDelivery routes it.
 async function retryNotification(
   key,
   { confirmUnknown = false, claimedBy = 'operator' } = {},
   store = createDeliveryStore()
 ) {
+  const existing = await store.get(key);
+  if (existing && promotionalCampaignForDelivery(existing)) {
+    throw new PromotionalRetryRequiresPolicyError();
+  }
   const prepared = await store.prepareRetry(key, { confirmUnknown });
   if (!prepared) return null;
 
@@ -257,6 +276,7 @@ async function retryNotification(
 module.exports = {
   DEFAULT_STALE_CLAIM_MINUTES,
   NotificationDeliveryStore,
+  PromotionalRetryRequiresPolicyError,
   createDeliveryStore,
   deliverNotification,
   normalizeRecipient,

@@ -9,8 +9,15 @@
 
   @media (--viewportMLarge) {
     grid-template-columns: 2fr 1fr;
-    /* AV: var-driven so `- SmallGapCols`/`- SmallGapRows` tokens still apply here;
-       2/3-col layouts keep their wider 64px default when no token is set. */
+  }
+}
+
+/* AV: var-driven so `- SmallGapCols`/`- SmallGapRows` tokens still apply here;
+   2/3-col layouts keep their wider 64px default when no token is set.
+   Self-chained to beat the global `.baseColumn` gap override (0,2,0) in
+   avBrandOverrides.css, which this composed class also carries. */
+@media (--viewportMLarge) {
+  .twoThirdsCols.twoThirdsCols {
     gap: var(--avSectionRowGap, 64px) var(--avSectionColGap, 64px);
   }
 }

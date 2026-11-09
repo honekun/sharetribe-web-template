@@ -9,7 +9,7 @@ quote or manual label-purchase implementation documented in
 - Keep `ESHIP_LABEL_AUTOBUY=false`; sellers purchase labels manually after payment.
 - eShip bills Archivo Vintach directly. The buyer-facing shipping line item is retained by the
   platform rather than paid to the seller.
-- `protectedData.avShipping` records what the buyer paid and `metadata.avLabel` records the label
+- `metadata.avShipping` records what the buyer paid and `metadata.avLabel` records the label
   outcome. The application does not currently void a carrier label or adjust a Stripe refund for its
   cost.
 - `eshipAmountIncludesIva=false`; the buyer-price calculation currently treats IVA as part of the
