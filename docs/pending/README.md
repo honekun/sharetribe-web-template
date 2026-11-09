@@ -5,28 +5,30 @@ explicitly requested future-use component record. Completed work belongs in the 
 implementation guides linked from [`docs/README.md`](../README.md), not in a historical archive
 inside `docs/`.
 
-Last reviewed: 2026-11-06 (custom-code audit remediation).
+Last reviewed: 2026-11-08 (audit remediation merged and deployed to Render/Test).
 
 The [2026-11-06 custom-code audit](../audits/2026-11-06-custom-code-audit.md) is the remediation
-register for its findings. All are resolved in code on `fix/audit-2026-11-06`; the remaining
-release steps are below. Remove the report and its links once they are done.
+register for its findings. All are resolved in code and merged to `main` (PR #142, `7c0a106c2`);
+the remaining release steps are below. Remove the report and its links once they are done.
 
 ## Release and operations
 
 - Production (Heroku, Sharetribe Live) is deployed since 2026-10-12 but **not signed off**. Close
   the [Live launch readiness](live-launch.md) items in the order of its §0 tracker: the Render Test
   gate, Live Console content fixes, Live configuration to confirm, and the Live smoke gate.
-- Release the `fix/audit-2026-11-06` branch through the normal flow (Render/Test gate first) and
-  finish the [audit](../audits/2026-11-06-custom-code-audit.md) verification it lists: run
-  migration `010_listing_publication_completion.sql` on the Test and Live notification databases
-  **before** deploying (`yarn db:migrate`; the `migrate-test-db` procedure for Render). It is
-  additive, so the running code is unaffected, but the new code's readiness check reports `503`
-  until it is applied wherever notifications are enabled. Then check a shipping order's
-  `metadata.avShipping` and its label purchase on Test.
+- Finish the [audit](../audits/2026-11-06-custom-code-audit.md) release steps. Render/Test runs the
+  merged code: migration `010_listing_publication_completion.sql` was applied to its database
+  (`archivovintach_v102026`) with the `migrate-test-db` procedure before the merge on 2026-11-08,
+  and readiness returns `200` on the new build. Still open:
+  - On Test, check that a shipping order gets `metadata.avShipping` and buys exactly one label, and
+    that a pickup order shows no **Generar guía** control.
+  - Run migration 010 on the Live notification database (`yarn db:migrate`) **before** Heroku is
+    rebuilt from this `main`. It is additive, so the running Live code is unaffected, but the new
+    code's readiness check reports `503` until it is applied.
 - `main` already merges upstream v12.6.0 (`76e55bc8d`, 2026-11-06, which brought Sentry 11 and the
-  earlier v12.4 fixes). That merge has not been validated on Render/Test or released to Heroku
-  Live; it ships with the next release above. Re-apply `engines.node` `24.x` if a later upstream
-  sync broadens it again.
+  earlier v12.4 fixes). It is deployed to Render/Test with the audit fixes but has not passed the
+  Test gate or been released to Heroku Live; it ships with the next release above. Re-apply
+  `engines.node` `24.x` if a later upstream sync broadens it again.
 - Complete the [production release checklist](../operations/release-checklist.md). It is an
   operational checklist, so its unchecked environment steps remain in that runbook.
 - Synchronize the retained [Spanish shareable draft](../shareable/pending/operator-guide-es.html)
