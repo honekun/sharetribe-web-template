@@ -2525,6 +2525,7 @@ The current delivery keys are `AVShippingSelector.*`:
 | Shipping label   | `AVShippingLabel.generate`                                   | `Generate label`                                     | `Generar guía`                                  | Retry button when no label is bought yet / it failed.                                |
 | Shipping label   | `AVShippingLabel.generating`                                 | `Generating…`                                        | `Generando…`                                    | Shown on the button while a retry runs.                                              |
 | Shipping label   | `AVShippingLabel.error`                                      | `The label couldn't be generated. Please try again.` | `No se pudo generar la guía. Intenta de nuevo.` | Error under the button after a failed retry.                                         |
+| Shipping label   | `AVShippingLabel.notAllowed`                                 | `A label can't be generated for this order…`         | `No es posible generar la guía de este pedido…` | Error after the server refused the label (not a retryable failure).                  |
 
 The address text below is operator-editable. These are AV-owned keys, so they will **not** appear in
 Console until you add them (use **Add translation** — see
@@ -3152,7 +3153,7 @@ After payment, the normal launch posture is seller-triggered label purchase with
 | Processing                            | Wait for completion; do not send another purchase request.                                                                                                                                                                           |
 | Unknown outcome                       | Check the eShip dashboard first. The carrier may have charged AV even though the app lost the response. After proving no label exists, an allowlisted operator uses the approved API/engineering procedure; there is no operator UI. |
 | `especial` / Contactar AV             | No automatic quote or label; follow the approved manual arrangement.                                                                                                                                                                 |
-| Refused (**Generar guía** shows an error, no label state) | The app only buys a label when the transaction charged the buyer the recorded shipping price. A pickup order, a price mismatch, or an older transaction whose buyer opened a dispute is refused on purpose. Do not buy a label manually in eShip; check the order's delivery method and price breakdown and escalate to engineering. |
+| Refused (no label control on a paid shipping order, or "No es posible generar la guía de este pedido") | The app only offers and buys a label when the transaction charged the buyer the recorded shipping price, so the sale page hides the control where the server would refuse it. A price mismatch, or an older transaction whose buyer opened a dispute, is refused on purpose; a pickup order never shows it. Do not buy a label manually in eShip; check the order's delivery method and price breakdown and escalate to engineering. |
 
 For the pickup email, confirm the eShip dashboard webhook uses the correct environment URL and the
 same secret as the deployment. The public `GET /api/notifications/readiness` probe reports only

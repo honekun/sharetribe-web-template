@@ -187,7 +187,10 @@ only) can never buy a label. A refusal throws `LabelNotAllowedError` before any 
 manual route answers `409 { code: 'LABEL_NOT_ALLOWED', reason }` with `reason`
 `SHIPPING_CHARGE_MISMATCH` or `SHIPPING_RECORD_UNTRUSTED`. The durable claim still binds the
 record's `rate_id`, so a later record change cannot reclaim a finished attempt. No
-transaction-process change was needed.
+transaction-process change was needed. These rules (`resolveLabelShippingRecord`,
+`shippingChargeMatches`, `isLabelPurchaseAllowed`) live in the CommonJS
+`src/config/configAVShippingLabel.js`, shared by `shipmentService` and the sale page's label
+control, so the control never offers a label the server would refuse.
 
 Only paid, non-cancelled transactions are eligible. A carrier 4xx response is `failed`; a timeout,
 network/5xx response, malformed 2xx success, or interrupted process is `unknown`. The 8-second eShip
@@ -209,9 +212,11 @@ route only; cross-seller retries and `confirmUnknown:true` must follow an approv
 procedure after carrier-dashboard reconciliation.
 
 **UI.** `TransactionPage/AVShippingLabelMaybe/` — `AVShippingLabelSection` (local-state wrapper that
-POSTs and prefers the returned `avLabel`) + `AVShippingLabelMaybe` (3-state: **Descargar guía** /
-**Generar guía** / hidden for especial). Rendered provider-only via a `shippingLabelSlot` prop
-threaded through `TransactionPanel`.
+POSTs and prefers the returned `avLabel`; its record is `labelShippingRecord` from
+`configAVShippingLabel.js`) + `AVShippingLabelMaybe` (3-state: **Descargar guía** /
+**Generar guía** / hidden for especial or an untrusted/unmatched record). A `409 LABEL_NOT_ALLOWED`
+shows `AVShippingLabel.notAllowed` ("contact Archivo Vintach") instead of the retry message.
+Rendered provider-only via a `shippingLabelSlot` prop threaded through `TransactionPanel`.
 
 ### 5.3 Tracking webhook → native Sharetribe email
 
@@ -302,6 +307,7 @@ remain pinned to their original process version.
 | `server/api/shipping-label/`                                                | `POST /api/shipping/label` (+ `rateLimiter.js`)              |
 | `server/api/eship-webhook.js`                                               | `POST /api/shipping/eship-webhook`                           |
 | `src/config/configAVShipping.js`                                            | Package sizes, markup math, bucket mapping                   |
+| `src/config/configAVShippingLabel.js`                                       | Label eligibility shared by server and label control         |
 | `src/containers/CheckoutPage/shippingQuote.duck.js` + `AVShippingSelector/` | Client quote UI (incl. `AVShippingNotice`)                   |
 | `src/containers/TransactionPage/AVShippingLabelMaybe/`                      | Provider label control                                       |
 

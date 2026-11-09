@@ -3,6 +3,11 @@
 const { types } = require('sharetribe-flex-sdk');
 const integrationSdkTypes = require('sharetribe-flex-integration-sdk').types;
 const { withRetry } = require('../services/retry');
+// Label-eligibility rules shared with the sale page's label control.
+const {
+  findShippingFeeLineItem,
+  shippingChargeMatches,
+} = require('../../src/config/configAVShippingLabel');
 
 const { Money } = types;
 
@@ -10,7 +15,6 @@ const { Money } = types;
 // author it: the protectedData copy is informational, and the label step trusts
 // the server-written `metadata.avShipping` record (see recordAvShippingMetadata).
 const AV_SHIPPING_KEY = 'avShipping';
-const SHIPPING_FEE_LINE_ITEM = 'line-item/shipping-fee';
 
 // AV: shipping is NOT paid out to the provider. AV buys the eShip label centrally
 // (the "Segmail" account is billed directly; see shipmentService.js), so the
@@ -234,7 +238,8 @@ const logRecordNotWritten = error =>
 // token exchange, the update, and a retry backoff when it is failing). Nothing
 // needs the record before the label step, and if the write fails that step
 // falls back to the protectedData copy this same call wrote (see
-// shipmentService.resolveLabelShippingRecord). Never throws or rejects.
+// resolveLabelShippingRecord in src/config/configAVShippingLabel.js). Never
+// throws or rejects.
 function persistAvShippingRecord(apiResponse, record, transactionId) {
   if (!record) return apiResponse;
   try {
@@ -248,33 +253,6 @@ function persistAvShippingRecord(apiResponse, record, transactionId) {
     logRecordNotWritten(error);
   }
   return apiResponse;
-}
-
-// The buyer's shipping charge as set by the privileged line-item calculation:
-// a non-reversal `line-item/shipping-fee` that the customer pays.
-function findShippingFeeLineItem(lineItems) {
-  return (
-    (lineItems || []).find(
-      item =>
-        item?.code === SHIPPING_FEE_LINE_ITEM &&
-        !item.reversal &&
-        (item.includeFor || []).includes('customer')
-    ) || null
-  );
-}
-
-// Does the transaction actually charge the buyer the recorded shipping price?
-// Line items are only ever set by the privileged server, so this binds a label
-// purchase to money that was collected.
-function shippingChargeMatches(lineItems, record) {
-  const fee = findShippingFeeLineItem(lineItems);
-  const total = fee?.lineTotal || fee?.unitPrice;
-  if (!total || !record) return false;
-  return (
-    Number.isSafeInteger(record.amountSubunits) &&
-    total.amount === record.amountSubunits &&
-    total.currency === record.currency
-  );
 }
 
 class ShippingQuoteRequiredError extends Error {

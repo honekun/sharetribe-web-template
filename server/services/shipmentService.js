@@ -12,14 +12,16 @@ const {
   EshipApiError,
   EshipTimeoutError,
 } = require('../api-util/eshipClient');
-const { shippingChargeMatches } = require('../api-util/avShipping');
 const { createShippingLabelStore } = require('./shippingLabelStore');
 const { isShippingLabelsEnabled } = require('./notificationConfig');
-
-const LABEL_BUY_TRANSITIONS = new Set(['transition/confirm-payment']);
-// The only post-payment transition in default-purchase that lets the customer
-// rewrite protectedData (`action/update-protected-data`).
-const CUSTOMER_PROTECTED_DATA_REWRITES = new Set(['transition/dispute']);
+// Which transactions and shipping records may buy a label. Shared with the sale
+// page's "Generar guía" control so it never offers a label refused here.
+const {
+  LABEL_BUY_TRANSITION,
+  isLabelPurchaseAllowed,
+  resolveLabelShippingRecord,
+  shippingChargeMatches,
+} = require('../../src/config/configAVShippingLabel');
 
 // Auto-buy the label on the event-poller path ONLY when explicitly opted in with
 // ESHIP_LABEL_AUTOBUY=true. Default (unset or anything other than 'true') means
@@ -47,44 +49,6 @@ class LabelPurchaseUnknownError extends Error {
     this.name = 'LabelPurchaseUnknownError';
     this.code = 'LABEL_UNKNOWN';
   }
-}
-
-const transitionNames = tx => {
-  const attrs = tx?.attributes || {};
-  const history = (attrs.transitions || []).map(item => item?.transition || item).filter(Boolean);
-  return attrs.lastTransition ? [...history, attrs.lastTransition] : history;
-};
-
-function isLabelPurchaseAllowed(tx) {
-  const transitions = transitionNames(tx);
-  const hasPaid = transitions.some(name => LABEL_BUY_TRANSITIONS.has(name));
-  const hasCancellation = transitions.some(name => /(^|\/)(?:auto-|operator-)?cancel/.test(name));
-  return hasPaid && !hasCancellation;
-}
-
-/**
- * The shipping record a label purchase may trust.
- *
- * `metadata.avShipping` is written by the privileged server after initiation
- * and cannot be changed by either party. Transactions created before that
- * record existed (or whose metadata write failed) fall back to the
- * protectedData copy, which the privileged request-payment call overwrites for
- * shipping orders — but only while no customer transition could have rewritten
- * it since. Either way the caller still requires a matching shipping charge.
- *
- * @returns {{ record: Object|null, source: 'metadata'|'legacy'|'legacy_rewritable'|null }}
- */
-function resolveLabelShippingRecord(tx) {
-  const attrs = tx?.attributes || {};
-  if (attrs.metadata?.avShipping) {
-    return { record: attrs.metadata.avShipping, source: 'metadata' };
-  }
-  const legacy = attrs.protectedData?.avShipping;
-  if (!legacy) return { record: null, source: null };
-  const rewritable = transitionNames(tx).some(name => CUSTOMER_PROTECTED_DATA_REWRITES.has(name));
-  return rewritable
-    ? { record: null, source: 'legacy_rewritable' }
-    : { record: legacy, source: 'legacy' };
 }
 
 function validateShipment(shipment) {
@@ -243,7 +207,7 @@ async function maybeBuyLabelForEvent(sdk, resource) {
   // Manual-only unless auto-buy is explicitly enabled.
   if (!isLabelAutobuyEnabled()) return null;
   const transition = resource?.attributes?.lastTransition || '';
-  if (!LABEL_BUY_TRANSITIONS.has(transition)) return null;
+  if (transition !== LABEL_BUY_TRANSITION) return null;
   const txId = resource?.id;
   if (!txId) return null;
   try {
