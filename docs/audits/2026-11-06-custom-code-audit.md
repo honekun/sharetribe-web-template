@@ -61,27 +61,28 @@ in code or closed with a recorded decision; see [Remediation status](#remediatio
 
 ## Remediation status
 
-Branch `fix/audit-2026-11-06`, cut from `76e55bc8d`; not pushed or released. Commits are listed per
-finding. The report stays until the Render/Test checks below are done (README rule); then remove it
-and its index links.
+Branch `fix/audit-2026-11-06`, cut from `76e55bc8d`; open as PR #142, not released. Commits are
+listed per finding, including the [code-review follow-up](#code-review-follow-up-2026-11-08). The
+report stays until the Render/Test checks below are done (README rule); then remove it and its index
+links.
 
-| ID  | Outcome                                    | Commits                  | Still to do outside the code                                                                                   |
-| --- | ------------------------------------------ | ------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| A01 | Resolved, no transaction-process change    | `4d9f0579c`, `6da9c89f3` | On Test: a shipping order gets `metadata.avShipping` and buys one label; a pickup order shows no label control |
-| A02 | Resolved                                   | `d7c547c40`, `6da9c89f3` | —                                                                                                              |
-| A03 | Resolved                                   | `61d39f1d1`              | —                                                                                                              |
-| A04 | Resolved                                   | `ba3969ccf`              | —                                                                                                              |
-| A05 | Resolved                                   | `fbc89f793`              | —                                                                                                              |
-| A06 | Resolved, Instagram follow-up included     | `b576a806d`              | —                                                                                                              |
-| A07 | Resolved, no data migration needed         | `1010f19a1`              | —                                                                                                              |
-| A08 | Resolved                                   | `fcf7aefda`              | —                                                                                                              |
-| A09 | Resolved                                   | `315b1a494`              | Apply migration 010 on the Test and Live databases before deploying                                            |
-| A10 | Resolved                                   | `f529c9919`              | Readiness `200` on Test after migration 010                                                                    |
-| A11 | Resolved                                   | `2da576b14`              | —                                                                                                              |
-| D01 | Resolved; 2 production moderates accepted  | `c93da3d9d`              | Re-run both audit scopes after each upstream sync                                                              |
-| U01 | Resolved; one intended visual change       | `d3b500572`              | —                                                                                                              |
-| U02 | Resolved; Checkout CSS closed as kept fork | `042f3d25e`              | —                                                                                                              |
-| O01 | Resolved                                   | `88e4b7983`              | —                                                                                                              |
+| ID  | Outcome                                    | Commits                                            | Still to do outside the code                                                                                   |
+| --- | ------------------------------------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| A01 | Resolved, no transaction-process change    | `4d9f0579c`, `6da9c89f3`, `d97567c07`, `383182925` | On Test: a shipping order gets `metadata.avShipping` and buys one label; a pickup order shows no label control |
+| A02 | Resolved                                   | `d7c547c40`, `6da9c89f3`, `8c47536e6`              | —                                                                                                              |
+| A03 | Resolved                                   | `61d39f1d1`                                        | —                                                                                                              |
+| A04 | Resolved                                   | `ba3969ccf`                                        | —                                                                                                              |
+| A05 | Resolved                                   | `fbc89f793`                                        | —                                                                                                              |
+| A06 | Resolved, Instagram follow-up included     | `b576a806d`                                        | —                                                                                                              |
+| A07 | Resolved, no data migration needed         | `1010f19a1`                                        | —                                                                                                              |
+| A08 | Resolved                                   | `fcf7aefda`, `cfb636c65`                           | —                                                                                                              |
+| A09 | Resolved                                   | `315b1a494`, `cfb636c65`                           | Apply migration 010 on the Test and Live databases before deploying                                            |
+| A10 | Resolved                                   | `f529c9919`                                        | Readiness `200` on Test after migration 010                                                                    |
+| A11 | Resolved                                   | `2da576b14`                                        | —                                                                                                              |
+| D01 | Resolved; 2 production moderates accepted  | `c93da3d9d`                                        | Re-run both audit scopes after each upstream sync                                                              |
+| U01 | Resolved; one intended visual change       | `d3b500572`, `ed06e6223`                           | —                                                                                                              |
+| U02 | Resolved; Checkout CSS closed as kept fork | `042f3d25e`                                        | —                                                                                                              |
+| O01 | Resolved                                   | `88e4b7983`                                        | —                                                                                                              |
 
 ## Custom-code findings
 
@@ -821,9 +822,33 @@ or partial-failure cases. Those need targeted regression tests as fixes are impl
 | `git diff upstream/main` of the restored CSS modules         | Empty for SectionFeatures, SectionFooter, SectionColumns                                             |
 
 **Not performed:** Render/Test deployment, migration 010 on the Test/Live databases, live provider
-calls, and a repository auditor-agent pass over the branch diff (attempted; it stopped on an account
-spend limit before reporting). The A01 Test checks and migration 010 are tracked in the
-[pending README](../pending/README.md#release-and-operations).
+calls, and the repository auditor-agent pass (`/review`; it stopped on an account spend limit before
+reporting). A `/code-review` pass ran instead, see below. The A01 Test checks and migration 010 are
+tracked in the [pending README](../pending/README.md#release-and-operations).
+
+### Code-review follow-up (2026-11-08)
+
+A `/code-review` (high) of PR #142 reported ten findings. Each was checked against the code first;
+six were fixed and three dismissed with evidence. The tenth, a cleanup, was not adopted.
+
+| Review finding                                                                                                                                 | Outcome                                                                                                                                               | Commit      |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| A08: a promotional send that crashed mid-delivery could never be retried (`campaign_job_not_found`; recovery had finished its job as `sent`)   | Fixed: the job lookup and outcome update take any status but `cancelled`; the frequency cap leaves out the job being evaluated                        | `cfb636c65` |
+| A09: a replay on a later day keyed the matching digest to a past day, due at once outside the 09:00 slot                                       | Fixed: `publicationDigestAt` keeps the pinned digest until its day is over, then uses the next one                                                    | `cfb636c65` |
+| A01: every shipping checkout waited for the `metadata.avShipping` write (token exchange, update, retry backoff)                                | Fixed: the write runs in the background; a failed write falls back to the protectedData copy the same call wrote                                      | `d97567c07` |
+| A01: the label control kept its own copy of the rule and showed **Generar guía** for a legacy record after a dispute, with a "try again" error | Fixed: one rule in `src/config/configAVShippingLabel.js` for the endpoint and the control; `409 LABEL_NOT_ALLOWED` shows `AVShippingLabel.notAllowed` | `383182925` |
+| A02: a dropped favorites operation stayed queued (replayed, queue never drained); one queue was reused across users in one session             | Fixed: dropped operations leave the queue; a queue belongs to one user                                                                                | `8c47536e6` |
+| U01: static CTA token maps rebuilt on every parse, with an unused `css` argument                                                               | Fixed: module-level constants                                                                                                                         | `ed06e6223` |
+| A05: an early `409`/`429`/`503` before Multer would reset the browser's upload                                                                 | Not reproduced: Node drains the unread body; headless Chromium received the JSON `409` for 1, 20 and 50 MB bodies, also with `Connection: close`      | —           |
+| A08: a retry that ends `deduplicated` leaves the job unrecorded                                                                                | Not a defect: whichever claimer sends records the outcome (the worker's `finish` or the other retry's `recordRetryOutcome`)                           | —           |
+| A06: the stalled-body classification is repeated in four clients                                                                               | Not adopted: each copy is about three lines mapping to a different domain error; a callback option would move them, not remove them                   | —           |
+
+Every new regression (A01 checkout write, A01 label control, A02, A08, A09) fails on the previous
+code and passes on the new. Verification after the follow-up: client 203 suites, 2,254 tests, 170
+snapshots; server 68 suites, 951 tests; `yarn format-ci`, `av-translation-check` (347 keys),
+`env-template-check`, `check-translations-sorted`, `git diff --check` and `yarn run build` passed.
+With `--runInBand`, `TransactionPage.test.js` keeps the Jest process alive after all its tests pass;
+`main` does the same, so it does not come from this branch.
 
 **Not performed:** live Sharetribe/Stripe/eShip money operations, deployed configuration inspection,
 real provider failure injection, multi-process/load testing, and a production build during this
