@@ -329,6 +329,62 @@ describe('favorites.duck', () => {
         expect(store.getState().favorites.favoriteListingIds).toEqual([]);
       });
 
+      it('starts a separate queue when the user changes without a logout', async () => {
+        const aliceUpdate = deferred();
+        const sdk = {
+          currentUser: {
+            updateProfile: jest
+              .fn()
+              .mockReturnValueOnce(aliceUpdate.promise)
+              .mockResolvedValueOnce(responseFor('bob', ['bob-2', 'bob-1'])),
+          },
+        };
+        const store = configureStore({ sdk });
+        signIn(store, 'alice');
+        const aliceToggle = store.dispatch(toggleFavorite('alice-1'));
+        await Promise.resolve();
+
+        // Same favorites session, different account.
+        signIn(store, 'bob', ['bob-1']);
+        await store.dispatch(toggleFavorite('bob-2'));
+        // Bob's write starts from his own list, not Alice's confirmed one.
+        expect(sdk.currentUser.updateProfile.mock.calls[1][0]).toEqual({
+          privateData: { favoriteListingIds: ['bob-2', 'bob-1'] },
+        });
+
+        aliceUpdate.resolve(responseFor('alice', ['alice-1']));
+        await aliceToggle;
+        await flush();
+        expect(store.getState().favorites.favoriteListingIds).toEqual(['bob-2', 'bob-1']);
+        expect(store.getState().user.currentUser.id.uuid).toBe('bob');
+      });
+
+      it('removes a dropped operation from the queue', async () => {
+        const sdk = {
+          currentUser: {
+            updateProfile: jest
+              .fn()
+              .mockResolvedValueOnce(responseFor('mallory', ['x']))
+              .mockResolvedValueOnce(responseFor('alice', ['y'])),
+          },
+        };
+        const store = configureStore({ sdk });
+        const dropped = store.dispatch(toggleFavorite('x'));
+        signIn(store, 'alice');
+        await dropped;
+
+        await store.dispatch(toggleFavorite('y'));
+        // The dropped intent is neither rewritten nor replayed, and the drained
+        // queue refreshes currentUser.
+        expect(sdk.currentUser.updateProfile.mock.calls[1][0]).toEqual({
+          privateData: { favoriteListingIds: ['y'] },
+        });
+        expect(store.getState().favorites.favoriteListingIds).toEqual(['y']);
+        expect(
+          store.getState().user.currentUser.attributes.profile.privateData.favoriteListingIds
+        ).toEqual(['y']);
+      });
+
       it('does not let a new session of the same user inherit stale intents', async () => {
         const firstUpdate = deferred();
         const thirdUpdate = deferred();

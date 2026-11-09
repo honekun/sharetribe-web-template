@@ -37,12 +37,17 @@ const getFavoriteUpdateQueue = (getState, confirmedIds) => {
   const session = selectFavoritesSession(state);
   const ownerId = selectCurrentUserId(state);
   const existing = favoriteUpdateQueues.get(getState);
-  if (existing && existing.session === session) return existing;
-  // A new session starts empty instead of inheriting the old one's intents. For
-  // the same (or a not-yet-known) user it still waits behind any request already
-  // in flight, so writes to one profile cannot land out of order; another user's
-  // queue never waits on the previous account's request.
   const sameOwner = existing && (!existing.ownerId || !ownerId || existing.ownerId === ownerId);
+  if (existing && existing.session === session && sameOwner) {
+    // A queue started before currentUser hydrated belongs to the first user seen.
+    if (!existing.ownerId) existing.ownerId = ownerId;
+    return existing;
+  }
+  // A new session or user starts empty instead of inheriting the old queue's
+  // intents and confirmed list. For the same (or a not-yet-known) user it still
+  // waits behind any request already in flight, so writes to one profile cannot
+  // land out of order; another user's queue never waits on the previous
+  // account's request.
   const queue = {
     tail: sameOwner ? existing.tail.catch(() => undefined) : Promise.resolve(),
     pending: [],
@@ -136,8 +141,16 @@ export const toggleFavorite = listingId => (dispatch, getState, sdk) => {
     return !responseUserId || !operation.ownerId || responseUserId === operation.ownerId;
   };
 
+  // A dropped operation leaves the queue too: left in `pending`, it would be
+  // replayed into every later optimistic list and keep the queue from ever
+  // draining (so currentUser would never be refreshed).
+  const dropOperation = () => {
+    queue.pending = queue.pending.filter(item => item !== operation);
+    return undefined;
+  };
+
   const persistOperation = async () => {
-    if (!isCurrent()) return undefined;
+    if (!isCurrent()) return dropOperation();
 
     const nextConfirmedIds = applyFavoriteIntent(queue.confirmedIds, listingId, shouldBeFavorite);
     let response;
@@ -155,7 +168,7 @@ export const toggleFavorite = listingId => (dispatch, getState, sdk) => {
     }
 
     const entities = succeeded ? denormalisedResponseEntities(response) : [];
-    if (!isCurrent(entities[0]?.id?.uuid)) return undefined;
+    if (!isCurrent(entities[0]?.id?.uuid)) return dropOperation();
 
     queue.pending = queue.pending.filter(item => item !== operation);
     const optimisticIds = queue.pending.reduce(
