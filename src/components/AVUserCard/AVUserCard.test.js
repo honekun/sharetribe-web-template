@@ -56,13 +56,32 @@ describe('AVUserCard', () => {
   });
 
   it('shows profile image when no overrideMedia', () => {
-    render(<AVUserCard user={mockUser} />);
-    expect(screen.getByRole('img')).toHaveAttribute('src', 'https://example.com/avatar.jpg');
+    const { container } = render(<AVUserCard user={mockUser} />);
+    expect(container.querySelector('img')).toHaveAttribute('src', 'https://example.com/avatar.jpg');
   });
 
   it('overrideMedia takes priority over profile image', () => {
-    render(<AVUserCard user={mockUser} overrideMedia={mockMedia} />);
-    expect(screen.getByRole('img')).toHaveAttribute('src', 'https://example.com/override.jpg');
+    const { container } = render(<AVUserCard user={mockUser} overrideMedia={mockMedia} />);
+    expect(container.querySelector('img')).toHaveAttribute(
+      'src',
+      'https://example.com/override.jpg'
+    );
+  });
+
+  it('treats the image as decorative so the name is announced once', () => {
+    const { container } = render(<AVUserCard user={mockUser} />);
+    expect(container.querySelector('img')).toHaveAttribute('alt', '');
+    expect(screen.queryByRole('img')).toBeNull();
+    expect(screen.getByRole('link')).toHaveAccessibleName('Mi Tienda');
+  });
+
+  it('hides the initials placeholder from assistive technology', () => {
+    const userNoImage = {
+      id: { uuid: 'user-4' },
+      attributes: { profile: { displayName: 'Diana Paz' } },
+    };
+    render(<AVUserCard user={userNoImage} />);
+    expect(screen.getByRole('link')).toHaveAccessibleName('Diana Paz');
   });
 
   it('renders initials placeholder when no image available', () => {

@@ -9,7 +9,7 @@ exports[`AVUserCard matches snapshot 1`] = `
     class="imageWrapper"
   >
     <img
-      alt="Mi Tienda"
+      alt=""
       class="image"
       src="https://example.com/avatar.jpg"
     />

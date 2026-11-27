@@ -56,9 +56,9 @@ export const getSelectionsSections = pageData => {
 /**
  * Returns a map of { [sectionId]: firstBlockName } for all av-tag-listings-* sections.
  * The firstBlockName encodes the filter value:
- *   - "tag:hot-list"  → filter by pub_tags = hot-list
+ *   - "tag:hot-list"  → filter by meta_tags = hot-list
  *   - "cat:blazers"   → filter by pub_categoryLevel1 = blazers
- *   - "hot-list"      → defaults to pub_tags = hot-list
+ *   - "hot-list"      → defaults to meta_tags = hot-list
  */
 export const getTagListingsSections = pageData => {
   const sections = pageData?.sections || [];

@@ -244,7 +244,7 @@
   "ProfileSettingsForm.bioHeadingTienda": "Acerca de tu tienda",
   "ProfileSettingsForm.bioPlaceholderTienda": "Cuéntanos sobre tu marca",
   "Topbar.custom.leftOne": "Lo Nuevo",
-  "Topbar.custom.leftOneHref": "?pub_tags=mas-nuevo",
+  "Topbar.custom.leftOneHref": "?meta_tags=mas-nuevo",
   "Topbar.custom.menuOne": "Ropa",
   "Topbar.custom.menuTwo": "Accesorios",
   "Topbar.custom.menuThree": "Diseño Local",

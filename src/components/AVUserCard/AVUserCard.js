@@ -53,10 +53,12 @@ const AVUserCard = props => {
       className={classNames(css.root, className)}
     >
       <div className={css.imageWrapper}>
+        {/* The name is rendered as text below, so the image and the initial are
+            decorative: naming them too would make screen readers announce it twice. */}
         {imageUrl ? (
-          <img src={imageUrl} alt={resolvedName} className={css.image} />
+          <img src={imageUrl} alt="" className={css.image} />
         ) : (
-          <div className={css.imagePlaceholder}>
+          <div className={css.imagePlaceholder} aria-hidden="true">
             <span className={css.initials}>{resolvedName.charAt(0).toUpperCase()}</span>
           </div>
         )}

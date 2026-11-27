@@ -46,20 +46,29 @@
   color: var(--colorGrey400);
 }
 
+/* The wrapper covers the whole image and centres the name with flexbox, so a
+   long (wrapped) name grows around its anchor and stays inside the card instead
+   of drifting off the bottom edge. The asymmetric top padding moves that anchor
+   below the centre on narrow cards. On the smallest screens it is a percentage
+   (of the card width), so a 2-up card ~160px wide still leaves room for a
+   two-line name; a fixed 100px left only ~30px and pushed it off the card. */
 .nameWrapper {
   position: absolute;
-  top: calc(50% + 50px);
-  left: 0;
-  right: 0;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   background: transparent;
-  padding: 0 8px;
+  padding: 35% 8px 8px;
+  pointer-events: none;
 
   @media (--viewportSmall) {
-    top: calc(50% + 25px);
+    padding-top: 50px;
   }
   @media (--viewportMedium) {
-    top: calc(50%);
+    padding-top: 8px;
   }
 }
 
@@ -70,9 +79,13 @@
   color: var(--avYellowLight);
   text-align: center;
   line-height: 1.1;
-  text-shadow: none;
+  /* Soft dark halo behind the light-yellow text: the 1px stroke alone is not
+     enough contrast on light photos. */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 0 12px rgba(0, 0, 0, 0.35);
   -webkit-text-stroke: 1px rgba(0, 0, 0, 0.5);
   display: block;
+  max-width: 100%;
+  overflow-wrap: break-word;
 
   @media (--viewportSmall) {
     font-size: 28px;
