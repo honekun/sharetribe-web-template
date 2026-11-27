@@ -108,15 +108,19 @@ const queryListingsByIds = (listingIds, config) => (dispatch, getState, sdk) => 
 
 /**
  * Parse a blockName into SDK filter params.
- *   "tag:hot-list"  → { pub_tags: 'hot-list' }
+ *   "tag:hot-list"  → { meta_tags: 'hot-list' }
  *   "cat:blazers"   → { pub_categoryLevel1: 'blazers' }
- *   "hot-list"      → { pub_tags: 'hot-list' }  (default: tag)
+ *   "hot-list"      → { meta_tags: 'hot-list' }  (default: tag)
+ *
+ * `tags` is an operator-only Console listing field (scope `metadata`), so it is
+ * searched with the `meta_` prefix. A `pub_tags` filter has no search schema and
+ * Sharetribe ignores it, returning unfiltered listings.
  */
 export const parseFilterFromBlockName = blockName => {
   if (!blockName) return null;
-  if (blockName.startsWith('tag:')) return { pub_tags: blockName.slice(4) };
+  if (blockName.startsWith('tag:')) return { meta_tags: blockName.slice(4) };
   if (blockName.startsWith('cat:')) return { pub_categoryLevel1: blockName.slice(4) };
-  return { pub_tags: blockName };
+  return { meta_tags: blockName };
 };
 
 const queryListingsByFilter = (filterParams, config) => (dispatch, getState, sdk) => {

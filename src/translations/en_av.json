@@ -244,7 +244,7 @@
   "ProfileSettingsForm.bioHeadingTienda": "About your store",
   "ProfileSettingsForm.bioPlaceholderTienda": "Tell us about your brand",
   "Topbar.custom.leftOne": "Hot list",
-  "Topbar.custom.leftOneHref": "?pub_tags=hot-list",
+  "Topbar.custom.leftOneHref": "?meta_tags=hot-list",
   "Topbar.custom.menuOne": "Shop",
   "Topbar.custom.menuTwo": "Explore",
   "Topbar.custom.menuThree": "Brands",

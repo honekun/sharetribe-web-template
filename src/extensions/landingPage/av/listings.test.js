@@ -35,9 +35,9 @@ const userResponse = id => ({
 });
 
 describe('parseFilterFromBlockName', () => {
-  it('parses tag: prefix into pub_tags filter', () => {
-    expect(parseFilterFromBlockName('tag:hot-list')).toEqual({ pub_tags: 'hot-list' });
-    expect(parseFilterFromBlockName('tag:summer')).toEqual({ pub_tags: 'summer' });
+  it('parses tag: prefix into a meta_tags filter (tags is an operator-only metadata field)', () => {
+    expect(parseFilterFromBlockName('tag:hot-list')).toEqual({ meta_tags: 'hot-list' });
+    expect(parseFilterFromBlockName('tag:summer')).toEqual({ meta_tags: 'summer' });
   });
 
   it('parses cat: prefix into pub_categoryLevel1 filter', () => {
@@ -47,9 +47,9 @@ describe('parseFilterFromBlockName', () => {
     });
   });
 
-  it('defaults plain values to pub_tags filter', () => {
-    expect(parseFilterFromBlockName('hot-list')).toEqual({ pub_tags: 'hot-list' });
-    expect(parseFilterFromBlockName('summer')).toEqual({ pub_tags: 'summer' });
+  it('defaults plain values to the meta_tags filter', () => {
+    expect(parseFilterFromBlockName('hot-list')).toEqual({ meta_tags: 'hot-list' });
+    expect(parseFilterFromBlockName('summer')).toEqual({ meta_tags: 'summer' });
   });
 
   it('returns null for empty or missing values', () => {
@@ -99,7 +99,7 @@ describe('loadCustomSectionListings', () => {
     const sdk = {
       listings: {
         query: jest.fn(params => {
-          if (params.pub_tags === 'hot-list') {
+          if (params.meta_tags === 'hot-list') {
             return Promise.resolve(listingResponse(['hot-1', 'hot-2']));
           }
           return Promise.resolve(listingResponse(['dress-1']));
@@ -121,7 +121,7 @@ describe('loadCustomSectionListings', () => {
     expect(sdk.listings.query).toHaveBeenCalledTimes(2);
     expect(sdk.listings.query.mock.calls.map(([params]) => params)).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ pub_tags: 'hot-list', perPage: 24 }),
+        expect.objectContaining({ meta_tags: 'hot-list', perPage: 24 }),
         expect.objectContaining({ pub_categoryLevel1: 'dresses', perPage: 24 }),
       ])
     );
@@ -183,7 +183,7 @@ describe('loadCustomSectionListings', () => {
     const sdk = {
       listings: {
         query: jest.fn(params => {
-          if (params.pub_tags === 'bad-tag') {
+          if (params.meta_tags === 'bad-tag') {
             return Promise.reject(new Error('rate limited'));
           }
           return Promise.resolve(listingResponse(['ok-1']));

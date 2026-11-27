@@ -62,9 +62,9 @@ const getGapValue = slider => {
  *
  * Carousel section that displays listings filtered by a tag or category.
  * The filter value is encoded in the first block's blockName:
- *   - "tag:hot-list"      → pub_tags: hot-list
+ *   - "tag:hot-list"      → meta_tags: hot-list
  *   - "cat:blazers"       → pub_categoryLevel1: blazers
- *   - "hot-list"          → pub_tags: hot-list  (no prefix defaults to tag)
+ *   - "hot-list"          → meta_tags: hot-list  (no prefix defaults to tag)
  *
  * Listings are loaded by the AV landing page extension during loadData.
  */
