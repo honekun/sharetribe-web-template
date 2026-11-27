@@ -73,7 +73,7 @@ campaigns (Phase B; templates 7–13 active with the approved footer since 2026-
 WA-01–08 ([notifications](notifications.md)); releasing the merged upstream v12.6.0 (Sentry 11
 included) and the audit fixes (see [pending README](README.md)); Spanish
 shareable operator guide; per-seller commission field `avCommissionPercentage` in Test and Live
-(code shipped 2026-10-23; operator guide §14.6); bulk-import scaling
+(code shipped 2026-10-23; operator guide §19.6); bulk-import scaling
 ([scaling](scaling.md)); listings-sheet and bidding decisions.
 
 ## 1. Snapshot
@@ -239,12 +239,18 @@ Remaining (Console or owner actions):
       location, shipping, and pickup off. (Identical to Test; the alias itself is checked below.)
 - [x] Categories (5 top-level, 150 total) and Console listing fields (`genero`, `brand`, `estado`,
       `estilo`, `temporada`, `tags`) exactly as in Test. Bulk-import option keys in the operator
-      guide §8.5 must match Live. (Identical to Test, 2026-10-15.)
-- [x] **`tags` is searchable in Test and Live** (2026-10-17): both now have the Console-owned
-      `metadata` multi-enum schema, so the `meta_tags` query behind the tag carousels and the Hot
-      List (`av-tag-listings`) narrows results instead of being ignored. No listing carries
-      `hot-list` or `ofertas` yet in either marketplace, so those sections stay empty until an
-      operator tags listings in Console.
+      guide §2–§3 must match Live. (Identical to Test, 2026-10-15.)
+- [x] **Tag filters query `meta_tags`** (code fixed 2026-11-26, ships with the next release).
+      Since 2026-10-17 `tags` is a Console-owned `metadata` multi-enum in Test and Live, but the
+      app queried `pub_tags`, which Sharetribe ignores: on Test `pub_tags=hot-list` returned all
+      288 listings, `meta_tags=hot-list` 0 (no listing is tagged yet). `parseFilterFromBlockName`
+      (`src/extensions/landingPage/av/listings.js`) and the `Topbar.custom.leftOneHref` defaults
+      in `en_av.json`/`es_av.json` now use `meta_tags`. The search page keeps `meta_tags` only
+      while the field's "show filter" is on and the value is a `tags` option.
+- [ ] **Console: "Lo Nuevo" link.** Test (and presumably Live) overrides
+      `Topbar.custom.leftOneHref` in Console with `?pub_tags=mas-nuevo`, which still wins over the
+      fixed default. Change it to `?meta_tags=<tag>` with a tag that exists, or add `mas-nuevo`
+      as a `tags` option and tag the listings (operator guide §6, "Highlighted link").
 - [x] `transactions/commission.json` **22 %** and **Minimum transaction size `$20.00`** (`2000`
       subunits), as in Test. (Identical, 2026-10-15.)
 - [x] Process and alias in Live (`archivovintach`): `default-purchase` v1 with

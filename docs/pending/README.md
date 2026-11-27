@@ -40,6 +40,15 @@ the remaining release steps are below. Remove the report and its links once they
   options are in [pending scaling](scaling.md).
 - Smoke-test Brevo lifecycle campaigns against Live data before setting
   `AV_BREVO_CAMPAIGNS_ENABLED=true`.
+- Console/code mismatches found in the 2026-11-26 operator-guide review (Test checked; confirm
+  Live):
+  - Tag filters now query `meta_tags` to match the `metadata` `tags` field (code fixed
+    2026-11-26; ships with the next release). See [Live launch readiness](live-launch.md) §3.
+  - The `tipoTienda` user field is **private** in Test, while store-type tags read it from the
+    author's public data, so no tags can appear. Make it public (operator guide §9, "User fields").
+  - The Console value of `Topbar.custom.leftOneHref` is still `?pub_tags=mas-nuevo`, overriding the
+    fixed default, and `mas-nuevo` is not a `tags` option. Retarget it to `?meta_tags=<tag>` with
+    an existing tag (operator guide §6).
 
 ## Product and integration decisions
 
@@ -49,7 +58,7 @@ the remaining release steps are below. Remove the report and its links once they
 - Per-seller provider commission override — **implemented 2026-10-23** as a Console `metadata` user
   field `avCommissionPercentage` (0–25 %, percentage only, \$15 fixed fee always charged, no end
   date; [design](../superpowers/specs/2026-08-14-per-seller-commission-override-design.md)).
-  Remaining: create the field in Console **Test** and **Live** (operator guide §14.6, "One-time
+  Remaining: create the field in Console **Test** and **Live** (operator guide §19.6, "One-time
   setup"), with Show on profile off, then verify one seller in Test end to end.
 - [WhatsApp hardening](notifications.md) — recipient direction, consent, Graph API version, delivery
   status, transition coverage, phone validation, and template governance. WhatsApp notifications are

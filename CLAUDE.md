@@ -575,7 +575,7 @@ Operator-facing reference for the full set lives in `docs/operator-guide.md` §5
 | `- NoGapCols`                            | `hasNoGapCols`                           | Column/grid sections: 0 column gap (sets `--avSectionColGap`)                          |
 | `- NoGapRows`                            | `hasNoGapRows`                           | Column/grid sections: 0 row gap (sets `--avSectionRowGap`)                             |
 
-**CTA tokens** (`parseSectionCtaClass`): `- SectionCtaBtn{Blue,LightBlue,Purple,Pink,Yellow}`.
+**CTA tokens** (`parseSectionCtaClass`): `- SectionCtaBtn{Blue,LightBlue,Purple,Pink,Yellow,Secondary}`.
 **Modifiers:** `- RoundedFull`, `- Rounded`, `- Square`, `- Dashed`, `- Solid`, `- NoOutline`,
 `- HeadingFont`, `- BodyFont`, `- AccentFont`, `- CtaBtnCenter`.
 
@@ -782,3 +782,10 @@ containers, `src/extensions/`. See the Watchlist above for the highest-risk file
 Start with `docs/README.md`. The canonical operator source remains `docs/operator-guide.md`; current
 technical guides are grouped by purpose, and unresolved work is under `docs/pending/`. Implemented
 plans and resolved audit histories do not remain under `docs/`; use Git history when needed.
+
+Operator guide layout: §1 is the task index, §2–§3 hold the only copy of every category ID and
+field option key (bulk import §8.5 links there), feature sections (§9–§15) own their translation
+tables, §16 holds the rest plus the index, §17 explains app-managed extended data, §18 lists every
+`.env-template` variable, §19 is operations. Keep §5.1/§5.2 numbered as they are: code comments and
+`CLAUDE.md` cite them. After editing it, run `yarn format-docs` (or `npx prettier --write` on the
+file) and `node docs/shareable/build-shareable-guide.js`.

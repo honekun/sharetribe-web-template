@@ -1,9 +1,10 @@
 # Archivo Vintach — Operator Guide
 
 This guide covers everything a marketplace operator needs to manage Archivo Vintach: configuring
-content through the Sharetribe Console, setting up listing fields and categories, importing listings
-in bulk, moderating users and listings, supporting transactions and shipping, and understanding the
-application settings. No technical background is required.
+content through the Sharetribe Console, setting up listing fields, categories and user fields,
+editing the site's text, importing listings in bulk, supporting buyers and sellers through checkout
+and shipping, and understanding the settings the development team controls. No technical background
+is required. Start with [Section 1](#1-start-here) to find the right section for a task.
 
 > **Canonical source.** This Markdown file is the complete operator source used to build shorter or
 > translated editions. Rebuild the English shareable HTML with
@@ -16,75 +17,124 @@ application settings. No technical background is required.
 
 ## Table of Contents
 
-1. [Sharetribe Console Overview](#1-sharetribe-console-overview)
+**Getting started**
+
+1. [Start Here](#1-start-here)
+
+**Catalog and content**
+
 2. [Listing Categories](#2-listing-categories)
-3. [Listing Fields](#3-listing-fields)
-   - [Color](#31-color-field)
-   - [Género](#32-género-field)
-   - [Estado (Condition)](#33-estado-condition-field)
-   - [Estilo](#34-estilo-field)
-   - [Tallas (Sizes)](#35-tallas-sizes-field)
-   - [Marca (Brand)](#36-marca-brand-field)
-4. [Landing Page and CMS Sections](#4-landing-page-and-cms-sections)
-   - [SEO and Social Settings](#seo-and-social-settings-for-each-page)
-   - [Hand-Picked Listing Carousel](#41-hand-picked-listing-carousel-avselections)
-   - [Category Card Carousel](#42-category-card-carousel-avselectedcats)
-   - [Tag or Category Filtered Carousel](#43-tag-or-category-filtered-carousel-avtaglistings)
-   - [Recommended Listings Grid](#44-recommended-listings-grid-avrecommendeds)
-   - [User Profile Carousel](#45-user-profile-carousel-avselectedusers)
-   - [Instagram-Style Image Grid](#46-instagram-style-image-grid-avinstagrid)
-   - [Hero Banner (Standard)](#47-hero-banner-standard-hero)
-   - [Hero Banner (Multi-Instance)](#48-hero-banner-multi-instance-avhero2)
-   - [Block-Based Hero](#49-block-based-hero-avhero3)
-   - [Video + Text Split](#410-video--text-split-avvideo)
-5. [Display Options](#5-display-options)
-   - [Section Display Options](#51-section-display-options)
-   - [Block Name Tokens](#52-block-name-tokens)
-6. [Navigation Bar](#6-navigation-bar)
-7. [The Hot List](#7-the-hot-list)
-8. [Bulk Import Tool](#8-bulk-import-tool)
-   - [Overview](#81-overview)
-   - [How to Use It](#82-how-to-use-it)
-   - [ZIP File Structure](#83-zip-file-structure)
-   - [CSV Column Reference](#84-csv-column-reference)
-   - [Field Values Quick Reference](#85-field-values-quick-reference)
-   - [What Is Validated Before the Import Starts](#86-what-is-validated-before-the-import-starts)
-   - [Troubleshooting](#87-troubleshooting)
-9. [Application Settings](#9-application-settings)
-10. [Custom Translation Strings](#10-custom-translation-strings)
-11. [Favorites (Wish List)](#11-favorites-wish-list)
-12. [Shopping Bag](#12-shopping-bag)
-13. [Upload Chooser Page](#13-upload-chooser-page-create-type)
-14. [Marketplace Operations](#14-marketplace-operations)
-    - [Access and Environment Safety](#141-access-and-environment-safety)
-    - [Content and Configuration Releases](#142-content-and-configuration-releases)
-    - [User Management](#143-user-management)
-    - [Listing Moderation](#144-listing-moderation)
-    - [Transaction and Refund Support](#145-transaction-and-refund-support)
-    - [Commission Rate Changes](#146-commission-rate-changes)
-    - [Shipping and Label Support](#147-shipping-and-label-support)
-    - [Notification Operations](#148-notification-operations)
-    - [Incident Records and Escalation](#149-incident-records-and-escalation)
+3. [Listing Fields](#3-listing-fields) — [Color](#31-color-field) · [Género](#32-género-field) ·
+   [Estado](#33-estado-condition-field) · [Estilo](#34-estilo-field) ·
+   [Tallas](#35-tallas-sizes-field) · [Marca](#36-marca-brand-field) ·
+   [Temporada](#37-temporada-season-field) · [Tags](#38-tags-curation-field)
+4. [Landing Page and CMS Sections](#4-landing-page-and-cms-sections) —
+   [SEO](#seo-and-social-settings-for-each-page) · [How sections work](#how-sections-work) ·
+   [4.1–4.10 section types](#41-hand-picked-listing-carousel-av-selections-)
+5. [Display Options](#5-display-options) — [Section tokens](#51-section-display-options) ·
+   [Block tokens](#52-block-name-tokens)
+6. [Navigation Bar and Footer](#6-navigation-bar-and-footer)
+7. [The Hot List and Tag Carousels](#7-the-hot-list-and-tag-carousels)
+8. [Bulk Import Tool](#8-bulk-import-tool) — [Overview](#81-overview) ·
+   [How to use it](#82-how-to-use-it) · [ZIP](#83-zip-file-structure) ·
+   [Columns](#84-csv-column-reference) · [Values](#85-field-values-quick-reference) ·
+   [Validation](#86-what-is-validated-before-the-import-starts) ·
+   [Troubleshooting](#87-troubleshooting)
+
+**Buyers, sellers and features**
+
+9. [Users, Sellers and Stores](#9-users-sellers-and-stores)
+10. [Listing Form and Listing Page](#10-listing-form-and-listing-page)
+11. [Checkout, Shipping and Labels](#11-checkout-shipping-and-labels)
+12. [Favorites (Wish List)](#12-favorites-wish-list)
+13. [Shopping Bag](#13-shopping-bag)
+14. [Upload Chooser Page](#14-upload-chooser-page-create-type)
+15. [My Purchases, My Sales and My Balance](#15-my-purchases-my-sales-and-my-balance)
+
+**Reference**
+
+16. [Text and Translations](#16-text-and-translations)
+17. [Data Fields the App Stores](#17-data-fields-the-app-stores)
+18. [Application Settings](#18-application-settings)
+
+**Operations**
+
+19. [Marketplace Operations](#19-marketplace-operations) —
+    [Access](#191-access-and-environment-safety) ·
+    [Releases](#192-content-and-configuration-releases) · [Users](#193-user-management) ·
+    [Listings](#194-listing-moderation) · [Transactions](#195-transaction-and-refund-support) ·
+    [Commission](#196-commission-rate-changes) · [Shipping](#197-shipping-and-label-support) ·
+    [Notifications](#198-notification-operations) ·
+    [Incidents](#199-incident-records-and-escalation)
 
 ---
 
-## 1. Sharetribe Console Overview
+## 1. Start Here
 
-All marketplace configuration is managed through the **Sharetribe Console** at
-[console.sharetribe.com](https://console.sharetribe.com). The main areas you will use:
+Most changes are made in the **Sharetribe Console** at
+[console.sharetribe.com](https://console.sharetribe.com), without a deploy. A few are text keys, and
+some are fixed in the application or its server settings and need the development team. This section
+tells you which is which and where each task is documented.
 
-| Console Area                   | What you manage there                                               |
-| ------------------------------ | ------------------------------------------------------------------- |
-| **Content → Pages**            | Landing page sections, about page, and other CMS pages              |
-| **Content → Assets**           | Hosted JSON and other data files used by current integrations       |
-| **Content → Translations**     | Text strings used by custom sections                                |
-| **Build → Listing fields**     | Custom product attributes (color, size, brand, etc.)                |
-| **Build → Listing types**      | Which fields apply to which listing types                           |
-| **Build → Listing categories** | Category tree (Ropa, Bolsas, Zapatos, etc.)                         |
-| **Manage → Listings**          | View, edit, and moderate listings                                   |
-| **Manage → Users**             | View users and find their UUIDs                                     |
-| **Manage → Transactions**      | Find transactions, review state, and use valid operator transitions |
-| **Manage → Reviews**           | Review feedback and use available moderation actions                |
+### Find it fast
+
+| I want to…                                                         | Where                                                           | Go to                                                                                   |
+| ------------------------------------------------------------------ | --------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Change a home-page carousel, banner or text block                  | Console → Content → Pages → Landing Page                        | [Section 4](#4-landing-page-and-cms-sections)                                           |
+| Change a section's width, title colour or button colour            | The section's **Section Name** / the block's **Block Name**     | [Section 5](#5-display-options)                                                         |
+| Feature listings in the Hot List                                   | Console → Manage → Listings → `tags`                            | [Section 7](#7-the-hot-list-and-tag-carousels)                                          |
+| Set a page's search-engine title, description or share image       | Console → Content → Pages → the page → SEO & Social             | [SEO settings](#seo-and-social-settings-for-each-page)                                  |
+| Reword any button, label, popup or message                         | Console → Content → Translations                                | [Section 16](#16-text-and-translations)                                                 |
+| Edit the emails Sharetribe sends (verification, orders, reminders) | Console → Content → Email texts                                 | [Section 16](#email-texts)                                                              |
+| Add a category, or an option to género / estado / estilo           | Console → Build → Listing categories / Listing fields           | [Sections 2](#2-listing-categories) and [3](#3-listing-fields)                          |
+| Add a brand                                                        | Console → Build → Listing fields → `brand`                      | [3.6](#36-marca-brand-field)                                                            |
+| Add a color or a size                                              | Development team                                                | [3.1](#31-color-field), [3.5](#35-tallas-sizes-field)                                   |
+| Edit top-bar links or the footer                                   | Console → Content → Top bar / Footer; dropdowns are a code file | [Section 6](#6-navigation-bar-and-footer)                                               |
+| Put a store in the "Diseño Local" menu                             | Console → Manage → Users → Local Design                         | [Dropdown 3](#dropdown-3--diseño-local-automatic)                                       |
+| Give a seller a negotiated commission                              | Console → Manage → Users → Comisión (%)                         | [19.6](#196-commission-rate-changes)                                                    |
+| Change the welcome popup new sellers see                           | Console → Content → Translations (`AVWelcomePopup.*`)           | [Welcome popup](#welcome-popup-shown-after-first-registration)                          |
+| Import many listings from a spreadsheet                            | `/admin/bulk-import`                                            | [Section 8](#8-bulk-import-tool)                                                        |
+| Understand why checkout shows "Contactar AV"                       | Seller origin address, package size, eShip                      | [Section 11](#11-checkout-shipping-and-labels), [19.7](#197-shipping-and-label-support) |
+| Help with a payment, cancellation or refund                        | Console → Manage → Transactions                                 | [19.5](#195-transaction-and-refund-support)                                             |
+| Know what a server setting (environment variable) does             | Heroku (Live) / Render (Test) — development team                | [Section 18](#18-application-settings)                                                  |
+
+### Who changes what
+
+| Kind of setting                                         | Examples                                                                                           | Who changes it   | When it takes effect                                           |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ---------------- | -------------------------------------------------------------- |
+| **Console content and configuration**                   | Pages, sections, top bar, footer, categories, Console listing fields, user fields, commission      | Operator         | Usually the next page load; allow a few minutes                |
+| **Translation keys** (Console → Content → Translations) | Every label, button and message; per-section keys such as `AVHero2.<name>.cta1Text`                | Operator         | Usually the next page load                                     |
+| **Records in Console**                                  | A listing's tags, a user's Local Design or Comisión (%), transactions                              | Operator         | Saved at once; the Diseño Local menu can take up to 10 minutes |
+| **Application code**                                    | `color` and `all_sizes` options, the code brand list, package-size rules, top-bar dropdowns, icons | Development team | After a release                                                |
+| **Server settings** (environment variables)             | Payment keys, eShip, email, feature switches, bulk-import admins                                   | Development team | After a restart; `REACT_APP_…` values after a rebuild          |
+
+### Sharetribe Console areas
+
+| Console area                                       | What you manage there                                                                               |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Content → Pages**                                | Landing page and content pages (sections, blocks, SEO & Social)                                     |
+| **Content → Top bar** / **Content → Footer**       | Top-bar custom links and search bar; footer columns, social links and copyright                     |
+| **Content → Translations**                         | Every text key used by the site ([Section 16](#16-text-and-translations))                           |
+| **Content → Email texts**                          | Text of the emails Sharetribe sends ([Email texts](#email-texts))                                   |
+| **Content → Assets**                               | Hosted JSON and other data files used by current integrations                                       |
+| **Design → Branding / Layout**                     | Logo, colours and sharing image; search and listing-page layout ([Section 10](#listing-page))       |
+| **Build → Listing types / fields / categories**    | The `av-listing` type, listing fields and the category tree ([Sections 2–3](#2-listing-categories)) |
+| **Build → Users** (user types, user fields)        | Persona and Tienda types; fields such as Local Design ([Section 9](#9-users-sellers-and-stores))    |
+| **Build → Transactions**                           | Seller commission and minimum transaction size ([19.6](#196-commission-rate-changes))               |
+| **Build → Payments / Applications / Integrations** | Stripe and API credentials (development team)                                                       |
+| **Manage → Listings**                              | View, edit, tag and moderate listings                                                               |
+| **Manage → Users**                                 | Find users and their IDs; edit operator-only fields                                                 |
+| **Manage → Transactions**                          | Find transactions, review state, and use valid operator transitions                                 |
+| **Manage → Reviews**                               | Review feedback and use available moderation actions                                                |
+
+### Test and Live
+
+There are two separate marketplaces. **Test** (`https://archivo-vintach.onrender.com/`) is where
+changes are tried; **Live** (`https://www.archivovintach.com`) has the real users, listings and
+payments. Each has its own Console environment, users, listings, IDs, fields and translations, so a
+change made in Test must be repeated in Live. Always check the Console environment selector before
+editing, and follow [19.1](#191-access-and-environment-safety) and
+[19.2](#192-content-and-configuration-releases).
 
 ---
 
@@ -93,59 +143,173 @@ All marketplace configuration is managed through the **Sharetribe Console** at
 The marketplace uses a three-level category hierarchy. When creating or editing a listing, sellers
 choose from these categories.
 
-### Category Tree
+### Category Tree and IDs
 
-| Level 1           | Level 2                     | Level 3                                                                                                                       |
-| ----------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **Ropa**          | Tops                        | Blusas, T-shirts, Crop-tops, Manga larga, Manga corta, Strapless, Bodys                                                       |
-|                   | Camisetas                   | Manga corta, Manga larga, Sin mangas, Oversized, Gráficas / Estampadas, Básicas                                               |
-|                   | Camisas                     | Manga corta, Manga larga, Vaqueras, Formales, Casuales, Seda                                                                  |
-|                   | Pantalones                  | Formales, Casuales, Leggings, Sweatpants, Vintage, Cargo                                                                      |
-|                   | Jeans                       | Mom fit, Boyfriend jeans, Baggy / Oversized, Rectos, Wide leg, Carpenter / Cargo, Acampanados / Flare, Slim fit, Skinny jeans |
-|                   | Faldas                      | Larga, Midi, Mini, Denim, Seda                                                                                                |
-|                   | Vestidos                    | Vestidos formales, Vestidos casuales, Largos, Midi, Mini, Manga larga, Manga corta, Sin manga, Novia / Bridal                 |
-|                   | Chamarras / Abrigos / Sacos | —                                                                                                                             |
-|                   | Sudaderas                   | —                                                                                                                             |
-|                   | Shorts                      | —                                                                                                                             |
-|                   | Ropa deportiva              | —                                                                                                                             |
-|                   | Trajes / Sets               | —                                                                                                                             |
-|                   | Jumpsuits                   | —                                                                                                                             |
-|                   | Lencería / Pijama           | —                                                                                                                             |
-|                   | De baño                     | —                                                                                                                             |
-|                   | Maternidad                  | —                                                                                                                             |
-| **Bolsas**        | De mano                     | —                                                                                                                             |
-|                   | Cruzadas                    | —                                                                                                                             |
-|                   | Clutch                      | —                                                                                                                             |
-|                   | Formales                    | —                                                                                                                             |
-|                   | Mochilas casuales           | —                                                                                                                             |
-|                   | Mochilas de deporte         | —                                                                                                                             |
-|                   | Totes                       | —                                                                                                                             |
-|                   | Riñoneras                   | —                                                                                                                             |
-|                   | Carteras                    | —                                                                                                                             |
-|                   | Monederos                   | —                                                                                                                             |
-| **Zapatos**       | Tacones                     | —                                                                                                                             |
-|                   | Sandalias                   | —                                                                                                                             |
-|                   | Sandalias con tacón         | —                                                                                                                             |
-|                   | Zapatillas y Flats          | —                                                                                                                             |
-|                   | Mocasines                   | —                                                                                                                             |
-|                   | Plataformas                 | —                                                                                                                             |
-|                   | Tenis casuales              | —                                                                                                                             |
-|                   | Tenis deportivos            | —                                                                                                                             |
-|                   | Botas                       | —                                                                                                                             |
-|                   | Botas vaqueras              | —                                                                                                                             |
-|                   | Botas con tacón             | —                                                                                                                             |
-|                   | Botas de montaña            | —                                                                                                                             |
-|                   | Botín                       | —                                                                                                                             |
-|                   | Botín con tacón             | —                                                                                                                             |
-| **Accesorios**    | Gorras / Gorros             | —                                                                                                                             |
-|                   | Sombreros                   | —                                                                                                                             |
-|                   | Lentes                      | —                                                                                                                             |
-|                   | Cinturones                  | —                                                                                                                             |
-|                   | Bufandas / Pañuelos         | —                                                                                                                             |
-|                   | Joyerías                    | Collares, Aretes, Anillos, Pulseras, Relojes                                                                                  |
-|                   | Guantes                     | —                                                                                                                             |
-|                   | Otros                       | —                                                                                                                             |
-| **Home Antiques** | Antigüedades                | —                                                                                                                             |
+This is the tree as defined in the Test Console on 2026-11-26. The **ID** is what listings store and
+what every other tool uses: bulk-import CSVs (`pub_categoryLevel1`–`3`), category cards
+([4.2](#42-category-card-carousel-av-selected-cats-)), `cat:` carousels
+([4.3](#43-tag-or-category-filtered-carousel-av-tag-listings-)), the top-bar dropdowns
+([Section 6](#editing-dropdowns-1-and-2)), search links (`/s?pub_categoryLevel2=ropa-jeans`) and the
+automatic package size ([Section 11](#package-sizes)). The names are what people see and can be
+edited freely.
+
+A listing must reach the deepest level available: if a category has subcategories, one of them must
+be chosen, both in the listing form and in a bulk import.
+
+| Level 1           | Level 2                     | Level 3               | ID to use                                   |
+| ----------------- | --------------------------- | --------------------- | ------------------------------------------- |
+| **Ropa**          |                             |                       | `ropa`                                      |
+|                   | Tops                        |                       | `ropa-tops`                                 |
+|                   |                             | Blusas                | `ropa-tops-blusas`                          |
+|                   |                             | T-shirts              | `ropa-tops-tshirts`                         |
+|                   |                             | Crop-tops             | `ropa-tops-croptops`                        |
+|                   |                             | Manga larga           | `ropa-tops-mangalarga`                      |
+|                   |                             | Manga corta           | `ropa-tops-mangacorta`                      |
+|                   |                             | Strapless             | `ropa-tops-strapless`                       |
+|                   |                             | Bodys                 | `ropa-tops-bodys`                           |
+|                   | Camisetas                   |                       | `ropa-camisetas`                            |
+|                   |                             | Manga corta           | `ropa-camisetas-mangacorta`                 |
+|                   |                             | Manga larga           | `ropa-camisetas-mangalarga`                 |
+|                   |                             | Sin mangas            | `ropa-camisetas-sinmangas`                  |
+|                   |                             | Oversized             | `ropa-camisetas-oversized`                  |
+|                   |                             | Gráficas / Estampadas | `ropa-camisetas-graficas`                   |
+|                   |                             | Básicas               | `ropa-camisetas-basicas`                    |
+|                   | Camisas                     |                       | `ropa-camisas`                              |
+|                   |                             | Manga corta           | `ropa-camisas-mangacorta`                   |
+|                   |                             | Manga larga           | `ropa-camisas-mangalarga`                   |
+|                   |                             | Vaqueras              | `ropa-camisas-vaqueras`                     |
+|                   |                             | Formales              | `ropa-camisas-formales`                     |
+|                   |                             | Casuales              | `ropa-camisas-casuales`                     |
+|                   |                             | Seda                  | `ropa-camisas-seda`                         |
+|                   | Chamarras / Abrigos / Sacos |                       | `ropa-sacos-chamarras`                      |
+|                   |                             | Chamarras de piel     | `ropa-sacos-chamarras-chamarras-de-piel`    |
+|                   |                             | Chamarras de plumas   | `ropa-sacos-chamarras-chamarras-de-plumas`  |
+|                   |                             | Sacos                 | `ropa-sacos-chamarras-sacos`                |
+|                   |                             | Bomber/Biker jackets  | `ropa-sacos-chamarras-bomber-biker-jackets` |
+|                   |                             | Abrigos formales      | `ropa-sacos-chamarras-abrigos-formales`     |
+|                   |                             | Trench coats          | `ropa-sacos-chamarras-trench-coats`         |
+|                   |                             | Mini jackets          | `ropa-sacos-chamarras-mini-jackets`         |
+|                   |                             | Denim jackets         | `ropa-sacos-chamarras-denim-jackets`        |
+|                   |                             | Varsity jackets       | `ropa-sacos-chamarras-varsity-jackets`      |
+|                   |                             | Impermeable           | `ropa-sacos-chamarras-impermeable`          |
+|                   |                             | Rompevientos          | `ropa-sacos-chamarras-rompevientos`         |
+|                   |                             | Capa                  | `ropa-sacos-chamarras-capa`                 |
+|                   |                             | Chalecos              | `ropa-sacos-chamarras-chalecos`             |
+|                   |                             | Chalecos denim        | `ropa-sacos-chamarras-chalecos-denim`       |
+|                   |                             | Chamarra              | `chamarra`                                  |
+|                   |                             | Suéter                | `sueter`                                    |
+|                   | Sudaderas                   |                       | `ropa-sudaderas`                            |
+|                   |                             | Hoodies sin cierre    | `ropa-sudaderas-hoodies-sin-cierre`         |
+|                   |                             | Hoodies con cierre    | `ropa-sudaderas-hoodies-con-cierre`         |
+|                   |                             | Sudaderas deportivas  | `ropa-sudaderas-sudaderas-deportivas`       |
+|                   |                             | Sudaderas de montaña  | `ropa-sudaderas-sudaderas-de-montana`       |
+|                   |                             | Sudaderas casuales    | `ropa-sudaderas-sudaderas-casuales`         |
+|                   | Pantalones                  |                       | `ropa-pantalones`                           |
+|                   |                             | Formales              | `ropa-pantalones-formales`                  |
+|                   |                             | Casuales              | `ropa-pantalones-casuales`                  |
+|                   |                             | Leggings              | `ropa-pantalones-leggings`                  |
+|                   |                             | Sweatpants            | `ropa-pantalones-sweatpants`                |
+|                   |                             | Vintage               | `ropa-pantalones-vintage`                   |
+|                   |                             | Cargo                 | `ropa-pantalones-cargo`                     |
+|                   |                             | Leather               | `ropa-pantalones-leather`                   |
+|                   | Jeans                       |                       | `ropa-jeans`                                |
+|                   |                             | Mom fit               | `ropa-jeans-momfit`                         |
+|                   |                             | Boyfriend jeans       | `ropa-jeans-boyfriend`                      |
+|                   |                             | Baggy / Oversized     | `ropa-jeans-baggy`                          |
+|                   |                             | Rectos                | `ropa-jeans-rectos`                         |
+|                   |                             | Wide leg              | `ropa-jeans-wideleg`                        |
+|                   |                             | Carpenter / Cargo     | `ropa-jeans-cargo`                          |
+|                   |                             | Acampanados / Flare   | `ropa-jeans-acampanados`                    |
+|                   |                             | Slim fit              | `ropa-jeans-slimfit`                        |
+|                   |                             | Skinny jeans          | `ropa-jeans-skinny`                         |
+|                   | Faldas                      |                       | `ropa-faldas`                               |
+|                   |                             | Larga                 | `ropa-faldas-larga`                         |
+|                   |                             | Midi                  | `ropa-faldas-midi`                          |
+|                   |                             | Mini                  | `ropa-faldas-mini`                          |
+|                   |                             | Denim                 | `ropa-faldas-denim`                         |
+|                   |                             | Seda                  | `ropa-faldas-seda`                          |
+|                   |                             | Leather               | `ropa-faldas-leather`                       |
+|                   | Vestidos                    |                       | `ropa-vestidos`                             |
+|                   |                             | Vestidos formales     | `ropa-vestidos-formales`                    |
+|                   |                             | Vestidos casuales     | `ropa-vestidos-casuales`                    |
+|                   |                             | Largos                | `ropa-vestidos-largos`                      |
+|                   |                             | Midi                  | `ropa-vestidos-midi`                        |
+|                   |                             | Mini                  | `ropa-vestidos-mini`                        |
+|                   |                             | Manga larga           | `ropa-vestidos-mangalarga`                  |
+|                   |                             | Manga corta           | `ropa-vestidos-mangacorta`                  |
+|                   |                             | Sin manga             | `ropa-vestidos-sinmanga`                    |
+|                   |                             | Novia / Bridal        | `ropa-vestidos-novia`                       |
+|                   | Ropa deportiva              |                       | `ropa-deportiva`                            |
+|                   |                             | Tops                  | `ropa-deportiva-tops`                       |
+|                   |                             | Bikers                | `ropa-deportiva-bikers`                     |
+|                   |                             | Shorts                | `ropa-deportiva-shorts`                     |
+|                   |                             | Leggings              | `ropa-deportiva-leggings`                   |
+|                   |                             | Sportbra              | `ropa-deportiva-sportbra`                   |
+|                   |                             | De montaña            | `ropa-deportiva-de-montana`                 |
+|                   |                             | Ski                   | `ropa-deportiva-ski`                        |
+|                   | Shorts                      |                       | `ropa-shorts`                               |
+|                   |                             | Mini                  | `ropa-shorts-mini`                          |
+|                   |                             | Baggy/Oversized       | `ropa-shorts-baggy-oversized`               |
+|                   |                             | Bermudas              | `ropa-shorts-bermudas`                      |
+|                   | Trajes / Sets               |                       | `ropa-trajes`                               |
+|                   |                             | Traje                 | `ropa-trajes-traje`                         |
+|                   |                             | Falda/Top             | `ropa-trajes-falda-top`                     |
+|                   |                             | Pantalón/Top          | `ropa-trajes-pantalon-top`                  |
+|                   |                             | Short/Top             | `ropa-trajes-short-top`                     |
+|                   | Jumpsuits                   |                       | `ropa-jumpsuits`                            |
+|                   |                             | Mini                  | `ropa-jumpsuits-mini`                       |
+|                   |                             | Largo                 | `ropa-jumpsuits-largo`                      |
+|                   | Lencería / pijama           |                       | `ropa-lenceria`                             |
+|                   |                             | Sets                  | `ropa-lenceria-sets`                        |
+|                   |                             | Pijamas               | `ropa-lenceria-pijamas`                     |
+|                   |                             | Top/Bra               | `ropa-lenceria-top-bra`                     |
+|                   | De baño                     |                       | `ropa-de-bano`                              |
+|                   |                             | Bikinis               | `ropa-de-bano-bikinis`                      |
+|                   |                             | Traje completo        | `ropa-de-bano-traje-completo`               |
+|                   |                             | Salidas               | `ropa-de-bano-salidas`                      |
+|                   | Maternidad                  |                       | `ropa-maternidad`                           |
+| **Bolsas**        |                             |                       | `bolsas`                                    |
+|                   | De mano                     |                       | `bolsas-mano`                               |
+|                   | Cruzadas                    |                       | `bolsas-cruzadas`                           |
+|                   | Clutch                      |                       | `bolsas-clutch`                             |
+|                   | Formales                    |                       | `bolsas-formales`                           |
+|                   | Mochilas casuales           |                       | `bolsas-mochilas_casuales`                  |
+|                   | Mochilas de deporte         |                       | `bolsas-mochilas_deporte`                   |
+|                   | Totes                       |                       | `bolsas-totes`                              |
+|                   | Riñoneras                   |                       | `bolsas-rinoneras`                          |
+|                   | Carteras                    |                       | `bolsas-carteras`                           |
+|                   | Monederos                   |                       | `bolsas-monederos`                          |
+| **Zapatos**       |                             |                       | `zapatos`                                   |
+|                   | Tacones                     |                       | `zapatos-tacones`                           |
+|                   | Sandalias                   |                       | `zapatos-sandalias`                         |
+|                   | Sandalias con tacón         |                       | `zapatos-sandalias_tacon`                   |
+|                   | Zapatillas y Flats          |                       | `zapatos-zapatillas_flats`                  |
+|                   | Mocasines                   |                       | `zapatos-mocasines`                         |
+|                   | Plataformas                 |                       | `zapatos-plataformas`                       |
+|                   | Tenis casuales              |                       | `zapatos-tenis_casuales`                    |
+|                   | Tenis deportivos            |                       | `zapatos-tenis_deportivos`                  |
+|                   | Botas                       |                       | `zapatos-botas`                             |
+|                   | Botas vaqueras              |                       | `zapatos-botas_vaqueras`                    |
+|                   | Botas con tacón             |                       | `zapatos-botas_tacon`                       |
+|                   | Botas de montaña            |                       | `zapatos-botas_montana`                     |
+|                   | Botín                       |                       | `zapatos-botin`                             |
+|                   | Botín con tacón             |                       | `zapatos-botin_tacon`                       |
+| **Accesorios**    |                             |                       | `accesorios`                                |
+|                   | Gorras / Gorros             |                       | `accesorios-gorras_gorros`                  |
+|                   | Sombreros                   |                       | `accesorios-sombreros`                      |
+|                   | Lentes                      |                       | `accesorios-lentes`                         |
+|                   | Cinturones                  |                       | `accesorios-cinturones`                     |
+|                   | Bufandas / Pañuelos         |                       | `accesorios-bufandas_panuelos`              |
+|                   | Joyerías                    |                       | `accesorios-joyerias`                       |
+|                   |                             | Collares              | `accesorios-joyerias-collares`              |
+|                   |                             | Aretes                | `accesorios-joyerias-aretes`                |
+|                   |                             | Anillos               | `accesorios-joyerias-anillos`               |
+|                   |                             | Pulseras              | `accesorios-joyerias-pulseras`              |
+|                   |                             | Relojes               | `accesorios-joyerias-relojes`               |
+|                   | Guantes                     |                       | `accesorios-guantes`                        |
+|                   | Otros                       |                       | `accesorios-otros`                          |
+| **Home Antiques** |                             |                       | `home-antiques`                             |
+|                   | Antigueadades               |                       | `home-antiques-antiguedades`                |
 
 ### Adding or Editing Categories
 
@@ -157,50 +321,72 @@ their current assignment.
 > when a category is created and cannot be changed later. Choose IDs carefully. The display name can
 > always be updated.
 
+When you add, move, or delete a category, also check what refers to its ID:
+
+- **Category cards and `cat:` carousels** that name a deleted or moved ID lose their link
+  ([4.2](#42-category-card-carousel-av-selected-cats-)).
+- **Top-bar dropdowns** are a file the development team maintains
+  ([Section 6](#editing-dropdowns-1-and-2)); a new level-2 category does not appear there until it
+  is added.
+- **Package size**: new categories ship as size **M** until the development team adds them to the
+  category-to-size rules ([Section 11](#package-sizes)).
+- **Test and Live** have separate trees. Make the same change in both, with the same IDs.
+
 ---
 
 ## 3. Listing Fields
 
 Listing fields are the attributes sellers fill in when creating a listing (color, size, brand,
-etc.).
+etc.). They drive the listing form, the search filters, and the attribute summary on the listing
+page. This section is also the single reference for every field's **option keys** — the values the
+bulk importer, search links (`/s?pub_color=azul`) and category cards use.
 
-> **Important — where each field lives:** Archivo Vintach uses **two sources** for listing fields.
-> Most are managed in the Sharetribe Console, but three are defined in the application code and
-> **cannot be edited in the Console**.
->
-> | Field       | Where it lives                           | Who can edit          |
-> | ----------- | ---------------------------------------- | --------------------- |
-> | `color`     | App code (`src/config/configListing.js`) | Development team only |
-> | `all_sizes` | App code (`src/config/configListing.js`) | Development team only |
-> | `brand`     | App code (`src/config/configListing.js`) | Development team only |
-> | `genero`    | Console → Build → Listing fields         | Operator              |
-> | `estado`    | Console → Build → Listing fields         | Operator              |
-> | `estilo`    | Console → Build → Listing fields         | Operator              |
->
-> When a field with the same key exists in both Console and code, the **code definition wins**. So
-> adding `color`, `all_sizes`, or `brand` in the Console has no effect — the app will ignore the
-> Console version and use the code version. To add, rename, or remove options for these three
-> fields, ask the development team to update `src/config/configListing.js`.
->
-> The sections below describe the canonical setup. For the three code-only fields, the tables
-> document what the app expects; you do **not** need to recreate them in the Console.
+**Where each field lives.** Archivo Vintach uses two sources. Three fields are defined in the
+application code (`src/config/configListingAV.js`); the rest are created in **Console → Build →
+Listing fields**.
+
+| Field       | Section                           | Where it lives                   | Who changes it                                 | Required in the listing form |
+| ----------- | --------------------------------- | -------------------------------- | ---------------------------------------------- | ---------------------------- |
+| `color`     | [3.1](#31-color-field)            | App code                         | Development team only                          | Yes                          |
+| `genero`    | [3.2](#32-género-field)           | Console                          | Operator                                       | Yes (Console setting)        |
+| `estado`    | [3.3](#33-estado-condition-field) | Console                          | Operator                                       | Yes (Console setting)        |
+| `estilo`    | [3.4](#34-estilo-field)           | Console                          | Operator                                       | Yes (Console setting)        |
+| `all_sizes` | [3.5](#35-tallas-sizes-field)     | App code                         | Development team only                          | Yes                          |
+| `brand`     | [3.6](#36-marca-brand-field)      | App code, plus Console additions | Development team; operators can **add** brands | Yes                          |
+| `temporada` | [3.7](#37-temporada-season-field) | Console                          | Operator                                       | No                           |
+| `tags`      | [3.8](#38-tags-curation-field)    | Console                          | Operator (curation only)                       | No                           |
+
+When a field with the same key exists in both Console and code, the **code definition wins**: adding
+`color` or `all_sizes` in Console has no effect, and for `brand` only the Console field's options
+are read ([3.6](#36-marca-brand-field)). To add, rename, or remove options of a code field, ask the
+development team. The tables below for the code fields document what the app expects; you do **not**
+need to recreate those fields in Console.
 
 Fields managed in the Console (**Console → Build → Listing fields**) have:
 
-- **Key** — the internal ID (never changes once created)
-- **Schema type** — `enum` (pick one) or `multi-enum` (pick several)
-- **Scope** — always `public` for searchable fields
-- **Options** — the values sellers can choose from
+- **Key** — the internal ID. It cannot change once created, and every listing, search link and CSV
+  uses it.
+- **Schema type** — `enum` (pick one) or `multi-enum` (pick several).
+- **Scope** — `public` for every field on this page. A field with another scope (for example
+  operator-only "metadata") is searched with a different prefix, so the app's `pub_…` filters and
+  carousels will not see it.
+- **Options** — each option has a **key** (stored on the listing; never change it once listings use
+  it) and a **label** (the text people see; safe to edit at any time).
+- **Required / search filter / show on listing page** — set per field in Console.
 
-After creating fields, go to **Console → Build → Listing types**, open your listing type, and add
-the fields there so they appear in the listing form.
+After creating fields, go to **Console → Build → Listing types**, open the `av-listing` type (the
+only listing type), and add the fields there so they appear in the listing form.
+
+The listing form shows the three code fields with custom controls: a color grid (`color`), a grouped
+size picker with removable chips (`all_sizes`), and a searchable brand box (`brand`). Their wording
+is listed in [Section 10](#10-listing-form-and-listing-page).
 
 ---
 
 ### 3.1 Color Field
 
-> **Code-only field.** `color` is defined in `src/config/configListing.js`. Operators cannot edit it
-> in the Console — changes require a development update.
+> **Code-only field.** `color` is defined in `src/config/configListingAV.js`. Operators cannot edit
+> it in the Console — changes require a development update.
 
 | Property    | Value                                           |
 | ----------- | ----------------------------------------------- |
@@ -263,15 +449,16 @@ the fields there so they appear in the listing form.
 | Schema type | `enum` (pick one) |
 | Scope       | `public`          |
 
-**Options (add in this order — best to most worn):**
+**Options (best to most worn).** The labels are the ones currently set in the Test Console; labels
+can be reworded at any time, keys cannot:
 
-| Display Name       | Option Key           |
-| ------------------ | -------------------- |
-| Nuevo con etiqueta | `nuevo-con-etiqueta` |
-| Nuevo sin etiqueta | `nuevo-sin-etiqueta` |
-| Como nuevo         | `como-nuevo`         |
-| Buen estado        | `buen-estado`        |
-| Usado              | `usado`              |
+| Display Name (label)             | Option Key           |
+| -------------------------------- | -------------------- |
+| Nuevo con etiqueta               | `nuevo-con-etiqueta` |
+| Nuevo sin etiqueta               | `nuevo-sin-etiqueta` |
+| Usado en perfecto estado         | `como-nuevo`         |
+| Usado en buen estado             | `buen-estado`        |
+| Usado con varios signos visibles | `usado`              |
 
 ---
 
@@ -302,7 +489,7 @@ the fields there so they appear in the listing form.
 
 ### 3.5 Tallas (Sizes) Field
 
-> **Code-only field.** `all_sizes` is defined in `src/config/configListing.js`. Operators cannot
+> **Code-only field.** `all_sizes` is defined in `src/config/configListingAV.js`. Operators cannot
 > edit it in the Console — changes require a development update.
 
 | Property    | Value                                          |
@@ -312,7 +499,9 @@ the fields there so they appear in the listing form.
 | Scope       | `public`                                       |
 
 The grouping (Estándar, MX, US, Jeans, Curvy, Calzado/Shoes, Anillos/Rings) is handled by the app
-automatically. The list below documents the canonical options defined in code.
+automatically; the group headings in the size picker are translation keys
+(`ListingField.allSizes.group.*`, [Section 10](#listing-field-controls)). The list below documents
+the canonical options defined in code.
 
 **Estándar group**
 
@@ -413,23 +602,23 @@ size and therefore imports as `xl`.
 The bulk importer also accepts grouped Google Sheets values such as `Zapatos / 5 US / 2 MX` and
 stores the corresponding option key (`mx_shoes_22x`).
 
-| Display Name | Option Key       |
-| ------------ | ---------------- |
-| 5 US / 2 MX     | `mx_shoes_22x`   |
-| 5.5 US / 2.5 MX | `mx_shoes_22.5x` |
-| 6 US / 3 MX     | `mx_shoes_23x`   |
-| 6.5 US / 3.5 MX | `mx_shoes_23.5x` |
-| 7 US / 4 MX     | `mx_shoes_24x`   |
-| 7.5 US / 4.5 MX | `mx_shoes_24.5x` |
-| 8 US / 5 MX     | `mx_shoes_25x`   |
-| 8.5 US / 5.5 MX | `mx_shoes_25.5x` |
-| 9 US / 6 MX     | `mx_shoes_26x`   |
-| 9.5 US / 6.5 MX | `mx_shoes_26.5x` |
-| 10 US / 7 MX    | `mx_shoes_27x`   |
+| Display Name     | Option Key       |
+| ---------------- | ---------------- |
+| 5 US / 2 MX      | `mx_shoes_22x`   |
+| 5.5 US / 2.5 MX  | `mx_shoes_22.5x` |
+| 6 US / 3 MX      | `mx_shoes_23x`   |
+| 6.5 US / 3.5 MX  | `mx_shoes_23.5x` |
+| 7 US / 4 MX      | `mx_shoes_24x`   |
+| 7.5 US / 4.5 MX  | `mx_shoes_24.5x` |
+| 8 US / 5 MX      | `mx_shoes_25x`   |
+| 8.5 US / 5.5 MX  | `mx_shoes_25.5x` |
+| 9 US / 6 MX      | `mx_shoes_26x`   |
+| 9.5 US / 6.5 MX  | `mx_shoes_26.5x` |
+| 10 US / 7 MX     | `mx_shoes_27x`   |
 | 10.5 US / 7.5 MX | `mx_shoes_27.5x` |
-| 11 US / 8 MX    | `mx_shoes_28x`   |
+| 11 US / 8 MX     | `mx_shoes_28x`   |
 | 11.5 US / 8.5 MX | `mx_shoes_28.5x` |
-| 12 US / 9 MX    | `mx_shoes_29x`   |
+| 12 US / 9 MX     | `mx_shoes_29x`   |
 
 **Anillos / Rings group**
 
@@ -445,8 +634,8 @@ stores the corresponding option key (`mx_shoes_22x`).
 | 11 / 20.6mm  | `rings_11` |
 | 12 / 21.4mm  | `rings_12` |
 
-The bulk importer also accepts the grouped Google Sheets values, such as `Anillos / 4 / 14.8mm`,
-and stores the corresponding option key (`rings_4`).
+The bulk importer also accepts the grouped Google Sheets values, such as `Anillos / 4 / 14.8mm`, and
+stores the corresponding option key (`rings_4`).
 
 ---
 
@@ -474,31 +663,108 @@ load:
 - **Removing a brand:** not possible from the Console. Deleting a Console option only removes brands
   that exist nowhere else; the 624 code options always remain. Ask the development team.
 - **Ordering:** the merged list is sorted alphabetically, with `Otra` (`other`) always first.
-- **Only the options are read.** Changing the Console field's label, filter or display settings
-  has no effect, and only `brand` behaves this way — `color` and `all_sizes` ignore Console
-  entirely.
+- **Only the options are read.** Changing the Console field's label, filter or display settings has
+  no effect, and only `brand` behaves this way — `color` and `all_sizes` ignore Console entirely.
+
+**Common brand keys.** The complete code list is `docs/data/brand.csv` (label, key). Brands added in
+the Console are valid too, using the key entered there. A brand label shared by two options (today
+`Rat & Boa`: code key `rat-boa`, Console key `rat_boa`) must be given by key in a bulk-import CSV.
+
+| Brand            | Key            | Brand         | Key             |
+| ---------------- | -------------- | ------------- | --------------- |
+| Otra (no listed) | `other`        | Gucci         | `gucci`         |
+| Zara             | `zara`         | Louis Vuitton | `louis-vuitton` |
+| Mango            | `mango`        | Prada         | `prada`         |
+| H&M              | `h-m`          | Chanel        | `chanel`        |
+| LEVI'S           | `levi-s`       | Dior          | `dior`          |
+| Nike             | `nike`         | Valentino     | `valentino`     |
+| Adidas           | `adidas`       | Versace       | `versace`       |
+| Free People      | `free-people`  | Balenciaga    | `balenciaga`    |
+| Reformation      | `reformation`  | Zimmermann    | `zimmermann`    |
+| Aritzia          | `aritzia`      | Isabel Marant | `isabel-marant` |
+| Stradivarius     | `stradivarius` | Jacquemus     | `jacquemus`     |
+| Pull & Bear      | `pull-bear`    | Ganni         | `ganni`         |
+| Bershka          | `bershka`      | Vintage       | `vintage`       |
+
+---
+
+### 3.7 Temporada (Season) Field
+
+| Property    | Value             |
+| ----------- | ----------------- |
+| Key         | `temporada`       |
+| Schema type | `enum` (pick one) |
+| Scope       | `public`          |
+| Required    | No                |
+
+**Options:**
+
+| Display Name | Option Key    |
+| ------------ | ------------- |
+| Primavera    | `primavera`   |
+| Verano       | `verano`      |
+| Otoño        | `otono`       |
+| Invierno     | `invierno`    |
+| Todo el Año  | `todo-el-ano` |
+
+---
+
+### 3.8 Tags (Curation) Field
+
+`tags` is not a product attribute: it marks listings for curated carousels and links, such as the
+Hot List ([Section 7](#7-the-hot-list-and-tag-carousels)) and the top bar's highlighted link
+([Section 6](#highlighted-link-and-console-links)). Sellers do not set it; operators add tags in
+Console, and the bulk importer ignores a `pub_tags` column.
+
+| Property    | Value                                                         |
+| ----------- | ------------------------------------------------------------- |
+| Key         | `tags`                                                        |
+| Schema type | `multi-enum`                                                  |
+| Scope       | **Operator-only (metadata)** — required by the app, see below |
+| Search      | Included in search, with the search filter shown              |
+
+**Options** currently defined in the Test Console:
+
+| Display Name | Option Key |
+| ------------ | ---------- |
+| HotList      | `hot-list` |
+| Ofertas      | `ofertas`  |
+
+Every tag used by a carousel or link must exist as an option here. The listing page always shows the
+field's value, even if Console hides it, and the app keeps it last in the field list.
+
+> **Keep `tags` operator-only (metadata), searchable, with "show filter" on.** The app searches tags
+> as `meta_tags=…`, the form Sharetribe uses for operator-only fields, so sellers cannot tag their
+> own listings. If the field were changed to the public scope, every tag carousel and tag link would
+> show **arbitrary listings**, and tags already saved would no longer be found. The search page also
+> needs the field's "show filter" setting on, or it drops the tag from search links. Test and Live
+> have used this setup since 2026-10-17.
 
 ---
 
 ## 4. Landing Page and CMS Sections
 
-The landing page is built in **Console → Content → Pages → Landing Page**. Other PageBuilder pages
-are managed under **Console → Content → Pages**. Each section creates one visual block, but not
-every custom type is available on every page:
+The landing page is built in **Console → Content → Pages → Landing Page**. The other content pages
+(Cómo funciona, FAQs, Contacto, Acerca, Cómo vender, Terms, Privacy) are managed under **Console →
+Content → Pages** and are published at `/p/<page-id>`. Every page is a list of **sections**; each
+section is one horizontal band of the page.
 
-| Section                                                                                               | Landing page | Other CMS pages |
-| ----------------------------------------------------------------------------------------------------- | ------------ | --------------- |
-| `avSelections`, `avSelectedCats`, `avTagListings`, `avRecommendeds`, `avSelectedUsers`, `avInstaGrid` | Yes          | No              |
-| Standard `hero`, `avHero2`, `avHero3`, `avVideo`                                                      | Yes          | Yes             |
+**Which AV sections work where:**
 
-Do not add a landing-only section to another CMS page; those rendering components are not registered
-there.
+| Section (Section ID prefix)                                                                                          | Landing page | Other content pages |
+| -------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------- |
+| `av-selections-`, `av-selected-cats-`, `av-tag-listings-`, `av-recommendeds`, `av-selected-users-`, `av-insta-grid-` | Yes          | No                  |
+| `av-hero2-`, `av-hero3-`, `av-video-`                                                                                | Yes          | Yes                 |
+| Standard Console templates (Article, Carousel, Columns, Features, Hero) with any other Section ID                    | Yes          | Yes                 |
+
+Do not use a landing-only Section ID on another content page: the section then renders as the plain
+Console template it was created with, without its listings, users or images.
 
 ### SEO and Social settings for each page
 
-Complete these settings whenever you create a page or make a substantial change to its purpose.
-They control the page title and description that search engines may show and the title, description,
-and image that services such as Facebook, LinkedIn, and X may show when someone shares the page.
+Complete these settings whenever you create a page or make a substantial change to its purpose. They
+control the page title and description that search engines may show and the title, description, and
+image that services such as Facebook, LinkedIn, and X may show when someone shares the page.
 Well-written, page-specific metadata makes the result clearer and more trustworthy, improves the
 chance that the right visitor opens it, and prevents placeholder content such as `Change Me` from
 appearing publicly. Metadata is guidance: search and social platforms may still choose a different
@@ -517,13 +783,13 @@ excerpt or crop.
      still accurate version.
    - **Page description for social media** — normally use the page description; make sure it still
      makes sense when seen without the rest of the page.
-   - **Social media image** — upload a relevant image with a **1.91:1 ratio** and at least
-     **1200 × 630 px**. Keep important faces, products, logos, and text away from the edges because
-     platforms may crop the image.
+   - **Social media image** — upload a relevant image with a **1.91:1 ratio** and at least **1200 ×
+     630 px**. Keep important faces, products, logos, and text away from the edges because platforms
+     may crop the image.
 4. Save the page, use **View page**, and confirm the browser-tab title and the visible page content
    agree. Test the public URL in a social-link preview tool when the page will be promoted.
 5. After approval in Test, copy the page changes to Live using the release process in
-   [Section 14.2](#142-content-and-configuration-releases), then verify the production URL while
+   [Section 19.2](#192-content-and-configuration-releases), then verify the production URL while
    signed out.
 
 Use the same language as the page and write for people, not just search engines. Avoid duplicate
@@ -538,30 +804,45 @@ changed through this workflow.
 
 ### How sections work
 
-Every section has:
+Console offers only its standard **section templates** (Article, Carousel, Columns, Features, Hero).
+Archivo Vintach's own sections are switched on by the **Section ID**: a section whose ID starts with
+an AV prefix (for example `av-selections-verano`) is drawn by the AV component, whatever template it
+was created with. The template still matters, because it decides which fields Console shows you
+(blocks, background image, call to action).
 
-- **Section Type** — determines what the section does (the "template")
-- **Section ID** — a unique name for this specific section
-- **Section Name** — optional display name; also used to apply visual style tokens (see
-  [Section 5 — Display Options](#5-display-options))
-- **Blocks** — individual items inside the section (listings, categories, images, etc.)
-- **Block Name** — used by custom sections to pass data; also carries display tokens for block-level
-  styling (see [Block Name Tokens](#52-block-name-tokens))
+| Field                                                 | What it does                                                                                                                                                                                      |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Template**                                          | The Console section type. For AV sections, pick the one listed in each section's setup below (usually **Columns**, which has blocks).                                                             |
+| **Section ID**                                        | Unique per page. An AV prefix activates an AV section; it is also the anchor (`/p/faqs#envios`) and, for some sections, the start of their translation keys.                                      |
+| **Section Name**                                      | Internal label, plus optional style tokens such as `- Large` ([Section 5.1](#51-section-display-options)).                                                                                        |
+| **Title / Description / Call to action / Appearance** | Shown as in any Console section. Appearance holds the background colour or image.                                                                                                                 |
+| **Blocks**                                            | The items inside the section (listings, categories, panels, images, text).                                                                                                                        |
+| **Block Name**                                        | Internal label for standard blocks. AV sections read data from it (a listing or user ID, a category ID, a filter), and it also carries block style tokens ([Section 5.2](#52-block-name-tokens)). |
+| **Block ID**                                          | Optional. A few special IDs turn a block into a widget ([Block ID shorthands](#block-id-shorthands)), and some block tokens build their translation keys from it.                                 |
+
+**Limits per page.** Listing carousels show at most 24 listings each, and a page loads at most 100
+hand-picked listing IDs in total. Up to 8 tag/category carousels (`av-tag-listings-…`) are loaded
+per page; any more are left empty. User carousels show at most 24 users.
+
+**Finding IDs.** A listing's or user's ID (UUID) is in its Console URL: open **Manage → Listings**
+or **Manage → Users**, open the record, and copy the long ID from the address bar. IDs differ
+between Test and Live, so a page copied from Test must have its listing and user blocks updated in
+Live.
 
 ---
 
-### 4.1 Hand-Picked Listing Carousel (`avSelections`)
+### 4.1 Hand-Picked Listing Carousel (`av-selections-`)
 
-Displays a horizontal scrollable carousel of specific listings you choose manually.
+Displays a horizontal scrollable carousel of specific listings you choose manually. The landing
+page's "Nuevo Drop" and "Favoritos de Archivo" carousels are this section.
 
 **Setup:**
 
-1. Add a section. Set **Section Type** to `avSelections`.
+1. Add a section with the **Columns** template.
 2. Set **Section ID** to `av-selections` or `av-selections-[any-name]` (e.g.
    `av-selections-verano`). Each unique ID is a separate independent carousel.
-3. Add one block per listing. In each block, set **Block Name** to the listing's UUID.
-   - Find a listing's UUID in Console → Manage → Listings → open the listing → copy the ID from the
-     URL.
+3. Add one block per listing (up to 24). In each block, set **Block Name** to the listing's UUID
+   ([Finding IDs](#how-sections-work)).
 4. Optionally add a Title, Description, and Call to Action to the section header.
 
 **Notes:**
@@ -572,7 +853,7 @@ Displays a horizontal scrollable carousel of specific listings you choose manual
 
 ---
 
-### 4.2 Category Card Carousel (`avSelectedCats`)
+### 4.2 Category Card Carousel (`av-selected-cats-`)
 
 Displays a horizontal carousel of category cards. Each card shows a photo and category name, and
 clicking it opens the search page filtered to one category or a group of categories. No automatic
@@ -580,11 +861,12 @@ data loading — all content comes from what you enter in the Console.
 
 **Setup:**
 
-1. Set **Section Type** to `avSelectedCats`.
+1. Add a section with the **Columns** template.
 2. Set **Section ID** to `av-selected-cats` or `av-selected-cats-[name]`.
 3. Add one block per card:
-   - **Block Name** — one category ID (e.g. `ropa`, `ropa-vestidos`, `bolsas`, `zapatos`), or
-     comma-separated category IDs to combine them in a single search.
+   - **Block Name** — one category ID from [Section 2](#2-listing-categories) (e.g. `ropa`,
+     `ropa-vestidos`, `bolsas`, `zapatos`), or comma-separated category IDs to combine them in a
+     single search.
    - **Title** — the display name. Set a short title for a category group; if omitted, the app
      formats the Block Name as its label.
    - **Media** — upload the photo shown on the card.
@@ -593,9 +875,9 @@ data loading — all content comes from what you enter in the Console.
 
 - Each category ID must exactly match an ID in your Console category tree. Nested categories are
   resolved to their complete paths automatically.
-- A group includes listings from **any** of its categories. All IDs in one group must be at the
-  same category level (for example, all level 3). Unknown IDs or mixed levels in a group leave the
-  card without a link; they never fall back to an all-category search.
+- A group includes listings from **any** of its categories. All IDs in one group must be at the same
+  category level (for example, all level 3). Unknown IDs or mixed levels in a group leave the card
+  without a link; they never fall back to an all-category search.
 - Sorting, price filters, and pagination preserve the category combination. The category sidebar
   still selects one category path; choosing a category there replaces the combination.
 
@@ -613,14 +895,14 @@ this single card opens a search containing leather skirts, leather pants, and le
 
 ---
 
-### 4.3 Tag or Category Filtered Carousel (`avTagListings`)
+### 4.3 Tag or Category Filtered Carousel (`av-tag-listings-`)
 
 Displays a carousel of listings automatically fetched by a filter. The filter is defined in the
 first block's Block Name.
 
 **Setup:**
 
-1. Set **Section Type** to `avTagListings`.
+1. Add a section with the **Columns** template.
 2. Set **Section ID** to `av-tag-listings-[name]` (e.g. `av-tag-listings-hot`).
 3. Add **one block**. Set its **Block Name** using one of these formats:
 
@@ -632,7 +914,9 @@ first block's Block Name.
 
 **Notes:**
 
-- Shows up to 24 published listings.
+- Shows up to 24 published listings. At most 8 of these sections are loaded per page.
+- `tag:` filters need the `tags` field set up as in [3.8](#38-tags-curation-field), and the tag must
+  be one of its options.
 - Only the first block's Block Name is used as the filter. Additional blocks are ignored.
 - `cat:` filters only `categoryLevel1`. Use a level-1 ID such as `ropa`; nested IDs such as
   `ropa-vestidos` are not resolved as level-2 filters by this section.
@@ -640,41 +924,43 @@ first block's Block Name.
 
 ---
 
-### 4.4 Recommended Listings Grid (`avRecommendeds`)
+### 4.4 Recommended Listings Grid (`av-recommendeds`)
 
 Displays a multi-column grid of hand-picked listings. Works the same as the carousel but renders as
 a grid.
 
 **Setup:**
 
-1. Set **Section ID** to exactly `av-recommendeds` (this is fixed — only one per page).
-2. Set **Section Type** to `avRecommendeds`.
-3. Add one block per listing, setting **Block Name** to the listing's UUID.
+1. Add a section with the **Columns** template.
+2. Set **Section ID** to exactly `av-recommendeds` (this is fixed — only one per page).
+3. Add one block per listing (up to 24), setting **Block Name** to the listing's UUID.
 
 ---
 
-### 4.5 User Profile Carousel (`avSelectedUsers`)
+### 4.5 User Profile Carousel (`av-selected-users-`)
 
-Displays a horizontal carousel of user profile cards. Useful for featuring sellers or brand
-partners.
+Displays a horizontal carousel of user profile cards (the landing page's "Closets Destacados"). Each
+card shows the user's photo and display name and opens their profile. Useful for featuring sellers
+or brand partners.
 
 **Setup:**
 
-1. Set **Section Type** to `avSelectedUsers`.
+1. Add a section with the **Columns** template.
 2. Set **Section ID** to `av-selected-users` or `av-selected-users-[name]`.
-3. Add one block per user. Set **Block Name** to the user's UUID.
-   - Find a user's UUID in Console → Manage → Users → open the user → copy the ID from the URL.
+3. Add one block per user (up to 24). Set **Block Name** to the user's UUID
+   ([Finding IDs](#how-sections-work)).
 
 ---
 
-### 4.6 Instagram-Style Image Grid (`avInstaGrid`)
+### 4.6 Instagram-Style Image Grid (`av-insta-grid-`)
 
 Displays a responsive photo grid from images you upload directly in the Console. Best for lookbook
-galleries or mood boards. No listing data is loaded.
+galleries or mood boards. No listing data is loaded. (For a live feed of the Instagram account, use
+the `av-insta-feed` block instead — see [Block ID shorthands](#block-id-shorthands).)
 
 **Setup:**
 
-1. Set **Section Type** to `avInstaGrid`.
+1. Add a section with the **Columns** template.
 2. Set **Section ID** to `av-insta-grid` or `av-insta-grid-[name]`.
 3. Add one block per image. Upload the image in the block's **Media** field. Block title and
    description are optional overlays.
@@ -690,15 +976,15 @@ galleries or mood boards. No listing data is loaded.
 
 ---
 
-### 4.7 Hero Banner (Standard) (`hero`)
+### 4.7 Hero Banner (Standard Console Hero)
 
 The standard Sharetribe hero is available on the landing page and other PageBuilder pages. Use it
 when one background image, one title, one description, and one call-to-action are enough.
 
 **Setup:**
 
-1. Set **Section Type** to `hero`.
-2. Give the section a unique Section ID.
+1. Add a section with the **Hero** template.
+2. Give the section a unique Section ID that does **not** start with an AV prefix.
 3. Upload the background image in the section appearance settings.
 4. Fill in the title, description, and optional Call to Action fields.
 5. Preview on desktop and mobile before publishing; keep important text away from image edges where
@@ -709,7 +995,7 @@ This is the standard component, so AV-only translation patterns and display toke
 
 ---
 
-### 4.8 Hero Banner (Multi-Instance) (`avHero2`)
+### 4.8 Hero Banner (Multi-Instance) (`av-hero2-`)
 
 A flexible hero banner: a background image with a title, description, and up to two CTA buttons. It
 supports an optional mobile-only background, an optional whole-section link, and per-instance button
@@ -724,7 +1010,7 @@ its Section ID.
 
 **Setup (Console → Content → Pages → [page] → Add section):**
 
-1. Set **Section Type** to `avHero2`.
+1. Add a section with the **Hero** template (the Cómo funciona, Contacto and Acerca pages use it).
 2. Set **Section ID** to `av-hero2-[unique-name]` (e.g. `av-hero2-summer`).
 3. Set the **desktop background image** in the section's **appearance** settings.
 4. Fill in the **Title** and **Description** in the section fields.
@@ -773,7 +1059,7 @@ which reduces the hero's height.
 
 ---
 
-### 4.9 Block-Based Hero (`avHero3`)
+### 4.9 Block-Based Hero (`av-hero3-`)
 
 A two-panel hero. Each panel is a full-bleed background image with a text overlay and an optional
 button. Best for split layouts such as "Women / Men" or "New In / Sale".
@@ -788,9 +1074,9 @@ button. Best for split layouts such as "Women / Men" or "New In / Sale".
 
 **Setup (Console → Content → Pages → [page] → Add section):**
 
-1. Set **Section Type** to `avHero3`.
-2. Set **Section ID** to `av-hero3-[name]` (e.g. `av-hero3-shop`). The part after `av-hero3-` (here,
-   `shop`) is the instance name used by the optional style keys below.
+1. Add a section with the **Columns** template (one column), so that it has blocks.
+2. Set **Section ID** to `av-hero3-[name]` (e.g. `av-hero3-shop`; the landing page uses
+   `av-hero3-landing`).
 3. Add up to two blocks. For each block:
    - **Block image (Media):** upload the panel's background image. Required for the panel to show an
      image.
@@ -834,27 +1120,28 @@ tokens).
 
 ---
 
-### 4.10 Video + Text Split (`avVideo`)
+### 4.10 Video + Text Split (`av-video-`)
 
 A full-width section split in two halves: an autoplay video on the left, and title, description, and
 CTA on the right. On mobile the halves stack vertically.
 
 **Setup:**
 
-1. Set **Section Type** to `avVideo`.
+1. Add a section with the **Columns** template (one column, no blocks needed).
 2. Set **Section ID** to `av-video-[name]`.
 3. Fill in Title, Description, and Call to Action for the right side.
-4. To set the video URL, go to Console → Content → Translations and add:
+4. To set the video URL, go to Console → Content → Translations and add the key below. Use the
+   suffix after `av-video-`, not the complete Section ID. For example, section ID `av-video-summer`
+   uses:
 
-Use the suffix after `av-video-`, not the complete Section ID. For example, section ID
-`av-video-summer` uses:
-
-> `AVVideo.summer.videoUrl` = (direct video file URL, e.g. an MP4 link)
+   > `AVVideo.summer.videoUrl` = (direct video file URL, e.g. an MP4 link)
 
 **Notes:**
 
 - The video autoplays muted and loops.
 - Browser autoplay policies may prevent autoplay on some devices unless the video is muted.
+- Without a video URL there is no video half: the text spans the full width. Use a direct MP4 file
+  link, not a YouTube or Instagram page link.
 
 ---
 
@@ -883,7 +1170,9 @@ dash, a space, then the token (`- Token`). Combine as many as you like.
 **Example:** `My Hero Section - Large - CenterTitleText - NoPaddings`
 
 > Tokens are matched as whole words, so similar tokens never collide — `- Large` does not trigger
-> `- LargeDesc`, and `- NoPaddings` is not triggered by any longer token.
+> `- LargeDesc`, and `- NoPaddings` is not triggered by any longer token. Capitalization matters
+> (`- large` does nothing), and a word that is not in the tables below is simply ignored: for
+> example `- Heading2`, which appears in some landing-page Section Names, has no effect.
 
 #### Layout and width
 
@@ -956,21 +1245,28 @@ restyle the section's default button.
 ### 5.2 Block Name Tokens
 
 Block-level styling is controlled by tokens placed inside a block's **Block Name** field in Console.
-Each token ends with `::` (a space, then a double colon). Combine as many as you like, in any order.
+Each token ends with `::` (a space, then a double colon). Combine as many as you like, in any order,
+and put the block's ordinary label after them.
 
-**Example:** `2Buttons :: smallerTitles ::`
+**Example:** `2Buttons :: smallerTitles :: Moda circular`
+
+> **Tokens that need a Block ID.** `2Buttons ::` and `photoSlider ::` read their content from
+> translation keys named after the block's **Block ID** (for example Block ID `moda-circular` →
+> `TwoButtons.moda-circular.cta1Text`). Give the block a unique Block ID first. A `2Buttons ::`
+> block whose text or link keys are missing shows placeholder buttons reading **Hello**, so add all
+> four keys (`cta1Text`, `cta1Link`, `cta2Text`, `cta2Link`) before publishing.
 
 #### Layout and structure
 
-| Token                | Effect                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `2Buttons ::`        | Adds a row of two buttons below the block content. Button text, links and styles come from the intl keys `TwoButtons.<blockId>.*` (see §10).                                                                                                                                                                                                                                                                              |
-| `photoSlider ::`     | Adds a photo carousel that auto-advances every 7 seconds, in place of the block's image. Image URLs come from `PhotoSlider.<blockId>.image_1` … `.image_4` (see §10); blank keys are skipped, and if none is set the block shows its own image instead. A pause button sits in the bottom-right corner, and visitors whose device asks for reduced motion get the slider paused on the first image until they press play. |
-| `mediaTitle ::`      | Moves the block's image to sit **between** the title and the rest of the content (title → image → text/button) instead of above the title.                                                                                                                                                                                                                                                                                |
-| `imgTop ::`          | When the block media is cropped (e.g. inside an AvFeature row), anchors it to the **top** instead of the default centre (`object-position: top`).                                                                                                                                                                                                                                                                         |
-| `icon img ::`        | Renders the block's image as a small centred icon (48 px) and tightens the surrounding text — for icon-and-label feature blocks.                                                                                                                                                                                                                                                                                          |
-| `social links ::`    | Shows social-media icon links (rendered by the footer block).                                                                                                                                                                                                                                                                                                                                                             |
-| `newsletter form ::` | Embeds the Brevo email signup form. Disclaimer / success / error text come from the `NewsletterForm.*` keys (see §10).                                                                                                                                                                                                                                                                                                    |
+| Token                | Effect                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `2Buttons ::`        | Adds a row of two buttons below the block content. Button text, links and styles come from the intl keys `TwoButtons.<blockId>.*` ([Section 16](#pagebuilder-block-key-patterns)).                                                                                                                                                                                                                                                                              |
+| `photoSlider ::`     | Adds a photo carousel that auto-advances every 7 seconds, in place of the block's image. Image URLs come from `PhotoSlider.<blockId>.image_1` … `.image_4` ([Section 16](#pagebuilder-block-key-patterns)); blank keys are skipped, and if none is set the block shows its own image instead. A pause button sits in the bottom-right corner, and visitors whose device asks for reduced motion get the slider paused on the first image until they press play. |
+| `mediaTitle ::`      | Moves the block's image to sit **between** the title and the rest of the content (title → image → text/button) instead of above the title.                                                                                                                                                                                                                                                                                                                      |
+| `imgTop ::`          | When the block media is cropped (e.g. inside an AvFeature row), anchors it to the **top** instead of the default centre (`object-position: top`).                                                                                                                                                                                                                                                                                                               |
+| `icon img ::`        | Renders the block's image as a small centred icon (48 px) and tightens the surrounding text — for icon-and-label feature blocks.                                                                                                                                                                                                                                                                                                                                |
+| `social links ::`    | Footer blocks only: shows the social-media icons from Console → Content → Footer inside this block instead of in the footer's own icon row ([Footer](#footer)).                                                                                                                                                                                                                                                                                                 |
+| `newsletter form ::` | Embeds the newsletter signup form (Brevo list). Disclaimer / success / error text come from the `NewsletterForm.*` keys ([Section 16](#newsletter-form)). Used by the footer's Newsletter block.                                                                                                                                                                                                                                                                |
 
 #### Title style
 
@@ -983,7 +1279,8 @@ Each token ends with `::` (a space, then a double colon). Combine as many as you
 #### Block CTA button colour
 
 These set the colour of a single block's call-to-action button. They are mainly used to override the
-section-level button colour on one `avHero3` panel (see §4.9). Pick **one** colour.
+section-level button colour on one `avHero3` panel ([4.9](#49-block-based-hero-av-hero3-)). Pick
+**one** colour.
 
 | Token                     | Effect                                        |
 | ------------------------- | --------------------------------------------- |
@@ -1006,27 +1303,57 @@ its own (e.g. `ctaBtnCenter ::`) keeps whatever colour the section already set.
 These special **Block ID** values activate a specific block component automatically — you do not
 need to set the Block Type field.
 
-| Block ID          | Block component rendered                                       |
-| ----------------- | -------------------------------------------------------------- |
-| `av-insta-feed`   | Instagram feed widget                                          |
-| `av-table-*`      | Markdown table (e.g. `av-table-fees`); content from block text |
-| `av-contact-form` | Brevo contact form                                             |
+| Block ID          | Block component rendered                                                                                                                                                                                |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `av-insta-feed`   | Live grid of the marketplace's latest Instagram posts (landing page "Instagram Feed"). Needs the Instagram token on the server ([Section 18](#instagram-feed)); on any error the block renders nothing. |
+| `av-table-*`      | A table (e.g. `av-table-beneficios` on Cómo vender). Write the table in the block text as a Markdown table: a header row, a `---` separator row, then one row per line, cells separated by `\|`.        |
+| `av-contact-form` | Brevo contact form (Contacto page), described below.                                                                                                                                                    |
 
 **Brevo contact form (`av-contact-form`).** In the block's text, paste the **iframe** embed code
 from Brevo (Forms → your form → Share → _Embed as an iframe_), or just its URL
 (`https://….sibforms.com/serve/…`). Only that URL is used: the form is shown in a sandboxed frame,
-and anything else in the text is ignored. Brevo's other embed option — the HTML/JavaScript snippet
-— is **not supported** and renders nothing, because it would run Brevo's scripts on the marketplace
+and anything else in the text is ignored. Brevo's other embed option — the HTML/JavaScript snippet —
+is **not supported** and renders nothing, because it would run Brevo's scripts on the marketplace
 itself. The frame has a fixed height per screen size; if you add many fields to the form in Brevo,
 ask a developer to raise it (`BlockBrevoForm.module.css`).
 
 ---
 
-## 6. Navigation Bar
+## 6. Navigation Bar and Footer
 
-The desktop and mobile navigation can show up to three custom dropdowns. The labels are translation
-keys (`Topbar.custom.menuOne`, `menuTwo`, and `menuThree`; currently Ropa/Accesorios/Diseño Local in
-Spanish and Shop/Explore/Brands in English), while the contents come from two different sources.
+The top bar's menu row shows, from left to right: one **highlighted link**, up to three
+**dropdowns**, then the **custom links** entered in Console. The search box, the **VENDE** button
+and the icons sit on the right. The mobile menu lists the same entries. The dropdown labels are
+translation keys (`Topbar.custom.menuOne`, `menuTwo`, and `menuThree`; currently
+Ropa/Accesorios/Diseño Local), while the dropdown contents come from two different sources.
+
+| Menu item                 | Where it is configured                                                                    | Section                                                 |
+| ------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Highlighted link          | Translation keys `Topbar.custom.leftOne` (label) and `Topbar.custom.leftOneHref` (search) | [Highlighted link](#highlighted-link-and-console-links) |
+| Dropdowns 1 and 2         | File `public/static/data/top-bar.json` (development team)                                 | [Editing Dropdowns 1 and 2](#editing-dropdowns-1-and-2) |
+| Dropdown 3 (Diseño Local) | Automatic, from store accounts with Local Design = Si                                     | [Dropdown 3](#dropdown-3--diseño-local-automatic)       |
+| Custom links              | Console → Content → Top bar → custom links (today: "Cómo Funciona")                       | [Highlighted link](#highlighted-link-and-console-links) |
+| VENDE, inbox, heart, bag  | Built in                                                                                  | [Top-right icons](#top-right-action-icons-desktop)      |
+
+### Highlighted link and Console links
+
+**Highlighted link.** The first item is a single link to a search. Its label is
+`Topbar.custom.leftOne` (currently **Lo Nuevo**) and its target is `Topbar.custom.leftOneHref`, a
+search query that starts with `?` — for example `?meta_tags=hot-list` for tagged listings,
+`?pub_categoryLevel1=bolsas` for a category, `?pub_brand=levi-s` for a brand, or `?sort=createdAt`
+for the newest listings. Edit both in **Console → Content → Translations**.
+
+> Tag links must use `meta_tags`, and the tag must be one of the `tags` options
+> ([3.8](#38-tags-curation-field)); the search page silently drops an unknown tag and shows every
+> listing. The Test Console still overrides this key with the old `?pub_tags=mas-nuevo`, and
+> `mas-nuevo` is not a tag option. Either add `mas-nuevo` as an option, tag the new listings with it
+> and set the key to `?meta_tags=mas-nuevo`, or point the link at another search such as
+> `?sort=createdAt`.
+
+**Console custom links.** **Console → Content → Top bar** controls the logo link, whether the search
+bar is shown, and the **custom links** (for example "Cómo Funciona" → `/p/como-funciona`). Custom
+links appear after the dropdowns. On desktop the **VENDE** button is always shown to signed-in users
+([top-right icons](#top-right-action-icons-desktop)).
 
 ### Editing Dropdowns 1 and 2
 
@@ -1081,7 +1408,7 @@ until an operator sets it.
 
 Set **Local Design** to **No** and save. The store's account, profile, and listings are not
 affected; only the menu entry disappears. Closing or banning the account is a moderation decision
-([Section 14.3](#143-user-management)), not the way to remove a menu entry.
+([Section 19.3](#193-user-management)), not the way to remove a menu entry.
 
 #### When the change appears
 
@@ -1112,43 +1439,62 @@ development team.
 
 The top-right area of the desktop top bar shows a row of actions. From left to right:
 
-| Item                              | Appearance                              | Links to                                                                                     | Shown when                |
-| --------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------- |
-| **VENDE** (Sell / Create listing) | Blue pill button                        | Upload chooser page (`/create-type`) — see [Section 13](#13-upload-chooser-page-create-type) | Signed in                 |
-| **Inbox**                         | Black envelope icon with a pink count badge | Inbox                                                                                    | Signed in                 |
-| **Favorites**                     | Black heart icon                        | Favorites page (`/favorites`)                                                                | Signed in, except store sellers ([hidden entries](#store-sellers-tienda-hidden-menu-entries)) |
-| **Bag**                           | Black bag icon with a blue item-count badge | Bag page (`/bag`)                                                                        | Always (works logged out) |
+| Item                              | Appearance                                  | Links to                                                                                     | Shown when                                                                                    |
+| --------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| **VENDE** (Sell / Create listing) | Blue pill button                            | Upload chooser page (`/create-type`) — see [Section 14](#14-upload-chooser-page-create-type) | Signed in                                                                                     |
+| **Inbox**                         | Black envelope icon with a pink count badge | Inbox                                                                                        | Signed in                                                                                     |
+| **Favorites**                     | Black heart icon                            | Favorites page (`/favorites`)                                                                | Signed in, except store sellers ([hidden entries](#store-sellers-tienda-hidden-menu-entries)) |
+| **Bag**                           | Black bag icon with a blue item-count badge | Bag page (`/bag`)                                                                            | Always (works logged out)                                                                     |
 
 The three icons (envelope, heart, bag) are icon-only — their text is used as a hover tooltip and for
 screen readers, not shown on screen. None of this requires configuration. The relevant labels are
 `TopbarDesktop.favoritesLink`, `BagLink.label`, and `TopbarDesktop.inbox`. See
-[Section 11 — Favorites](#11-favorites-wish-list) and [Section 12 — Shopping Bag](#12-shopping-bag)
+[Section 12 — Favorites](#12-favorites-wish-list) and [Section 13 — Shopping Bag](#13-shopping-bag)
 for the full features.
 
 The envelope's pink badge counts the sales and orders waiting on the user — the same numbers as the
-**Sales** and **Orders** tab badges in the inbox, added together. It shows `1` to `9`, then `9+`, and
-is hidden at zero. It counts transactions that need the user's action, not unread chat messages:
+**Sales** and **Orders** tab badges in the inbox, added together. It shows `1` to `9`, then `9+`,
+and is hidden at zero. It counts transactions that need the user's action, not unread chat messages:
 Sharetribe has no unread-message count.
+
+### Footer
+
+The footer is edited in **Console → Content → Footer**: slogan, copyright line, number of columns,
+social-media links, and the footer blocks (columns of links or text). Two block-name tokens turn a
+footer block into something more ([Section 5.2](#52-block-name-tokens)):
+
+| Footer block (Test Console) | Block Name                      | What it shows                                                       |
+| --------------------------- | ------------------------------- | ------------------------------------------------------------------- |
+| Quick Links, Soporte        | `Quick Links`, `Soporte`        | The block's own text and links                                      |
+| Follow Us                   | `social links :: Follow Us`     | The Console social-media icons, inside this column                  |
+| Newsletter                  | `newsletter form :: Newsletter` | The newsletter signup form ([newsletter wording](#newsletter-form)) |
+
+The white footer logo is a fixed image shipped with the app. The optional text under the slogan
+(address and opening hours today) is the translation key `Footer.belowSlogan`; line breaks in the
+value are kept.
 
 ---
 
-## 7. The Hot List
+## 7. The Hot List and Tag Carousels
 
-The Hot List is a curated carousel of featured listings. Any published listing tagged with
-`hot-list` automatically appears in it.
+The Hot List is a curated carousel of featured listings: an `av-tag-listings-…` section
+([4.3](#43-tag-or-category-filtered-carousel-av-tag-listings-)) whose block filters on the tag
+`hot-list`. Any published listing tagged `hot-list` appears in it automatically. The same mechanism
+powers any other tag carousel and the top bar's highlighted link.
 
-> This only works when the `tags` listing field is searchable (Console → Listing fields → `tags` →
-> include in search). If it is not, the tag filter is ignored and the carousel shows arbitrary
-> listings instead of the tagged ones.
+> **Before relying on tags**, confirm in **Console → Build → Listing fields** that `tags` is still
+> an operator-only (metadata), searchable field with its filter shown, and that every tag you use is
+> one of its options ([3.8](#38-tags-curation-field)). Otherwise the tag filter is ignored and
+> carousels show arbitrary listings instead of the tagged ones.
 
 ### Adding a listing to the Hot List
 
 **Via Sharetribe Console:**
 
 1. Go to Console → Manage → Listings.
-2. Open the listing.
-3. In the Extended Data / Public Data section, find the `tags` field and add `hot-list`.
-4. Save.
+2. Open the listing and edit it.
+3. In the `tags` field, add `hot-list` (keep any tags already there).
+4. Save. The carousel picks it up on the next page load.
 
 **Not via the bulk import tool.** Bulk import no longer sets tags: a `pub_tags` column in the CSV is
 ignored (the rest of the file still imports). Tag imported listings in Console afterwards.
@@ -1160,12 +1506,16 @@ on the next page load.
 
 ### Creating additional curated carousels
 
-You can create as many tag-based carousels as you want. For example, to create a "New Arrivals"
-carousel:
+You can create tag-based carousels for other selections (up to 8 per page). For example, to create a
+"New Arrivals" carousel:
 
-1. Tag the relevant listings with `nueva-llegada` in their public data.
-2. Add a `avTagListings` section to the landing page with Section ID `av-tag-listings-nuevas`.
-3. Add one block with Block Name `nueva-llegada`.
+1. Add the option `nueva-llegada` to the `tags` listing field in Console.
+2. Tag the relevant listings with `nueva-llegada`.
+3. Add a **Columns** section to the landing page with Section ID `av-tag-listings-nuevas`.
+4. Add one block with Block Name `tag:nueva-llegada`.
+
+To link to the same selection from anywhere (a button, the highlighted top-bar link), use the search
+URL `/s?meta_tags=nueva-llegada`.
 
 ---
 
@@ -1174,8 +1524,9 @@ carousel:
 ### 8.1 Overview
 
 The bulk import tool lets you create many listings at once from a CSV spreadsheet. It is available
-at `/admin/bulk-import` on the marketplace. The current seller page uses a simplified three-step CSV
-flow; imported listings receive a placeholder image that can be replaced afterward.
+at `/admin/bulk-import` on the marketplace. The page is a three-step flow — open the template, fill
+it in, upload it — and accepts either the CSV alone (every listing gets a placeholder photo that can
+be replaced afterward) or a ZIP with the CSV and its photos.
 
 **Who can use it.** Any signed-in user who can create listings can use the tool to bulk-create
 listings **for their own account** — every listing is created under the person who uploads. There is
@@ -1191,18 +1542,18 @@ rejected.
 
 - Each row in the CSV creates one listing; rows are processed one by one, so if one row fails the
   others still continue.
-- The seller page accepts a bare `.csv` up to 5 MB and begins the import as soon as the file is
-  selected or dropped.
+- The page accepts a bare `.csv` up to 5 MB or a `.zip` up to your tier's size limit, and begins the
+  import as soon as the file is selected or dropped — there is no separate start button.
 - Listings are created under the uploader's account by default (admins can override per row).
 - The tool is **tiered** — admins can import bigger batches than regular sellers:
 
-  | Limit                       | Regular seller | Admin |
-  | --------------------------- | -------------- | ----- |
-  | Listings per import         | 100            | 100   |
-  | Images per ZIP              | 100            | 400   |
-  | ZIP file size               | 20 MB          | 50 MB |
-  | Imports per hour            | 3              | 20    |
-  | Upload attempts per hour    | 20             | 60    |
+  | Limit                    | Regular seller | Admin |
+  | ------------------------ | -------------- | ----- |
+  | Listings per import      | 100            | 100   |
+  | Images per ZIP           | 100            | 400   |
+  | ZIP file size            | 20 MB          | 50 MB |
+  | Imports per hour         | 3              | 20    |
+  | Upload attempts per hour | 20             | 60    |
 
 - You can only run **one import at a time** per account — counting an upload that is still being
   sent — and the server runs at most **3 imports at once** across all users. If it's busy you'll be
@@ -1211,11 +1562,11 @@ rejected.
 - Every upload attempt counts toward the hourly **upload attempts** limit, including ones that fail
   validation; only imports that actually start count toward **imports per hour**.
 - **Uploading the same file again is safe.** Within 24 hours, rows that were already imported are
-  skipped (the page shows "already imported (skipped)") and listings left unfinished are completed
-  — nothing is duplicated. So when rows fail with a timeout or "created but not finished", just
-  upload the same file again. A listing is only made visible once it is fully set up; until then it
-  shows as pending in Manage listings. To create a second identical listing on purpose, change
-  something in its row (for example the stock).
+  skipped (the page shows "already imported (skipped)") and listings left unfinished are completed —
+  nothing is duplicated. So when rows fail with a timeout or "created but not finished", just upload
+  the same file again. A listing is only made visible once it is fully set up; until then it shows
+  as pending in Manage listings. To create a second identical listing on purpose, change something
+  in its row (for example the stock).
 
 ---
 
@@ -1224,10 +1575,10 @@ rejected.
 1. **Open the tool** — go to `[your marketplace URL]/admin/bulk-import`, or click the blue **"Bulk
    import"** button on the new-listing screen. Just be signed in — there is no import key or
    password to enter.
-2. **Open the template** — click "Abrir plantilla" to open the shared Google Drive template in a
-   new tab, and make a copy to fill in. Spanish Google Sheets headers are accepted as compatibility
-   aliases; the marketplace-generated CSV with the machine-readable headers (`title`,
-   `description`, `price`, `pub_*`, and `imagen_*`) plus one example row is still available at
+2. **Open the template** — click "Abrir plantilla" to open the shared Google Drive template in a new
+   tab, and make a copy to fill in. Spanish Google Sheets headers are accepted as compatibility
+   aliases; the marketplace-generated CSV with the machine-readable headers (`title`, `description`,
+   `price`, `pub_*`, and `imagen_*`) plus one example row is still available at
    `/api/bulk-import/template`.
 3. **Fill in the CSV** — one row per listing, replacing the example row. See the
    [CSV Column Reference](#84-csv-column-reference) below. Leave the `user_id` column empty unless
@@ -1240,8 +1591,9 @@ rejected.
    you can't check it from a different account.
 
 A bare `.csv` is imported with the placeholder image for every row; a `.zip` imports the photos it
-contains. Any other file type is refused before upload. (The earlier full ZIP/CSV page is still in
-the codebase as an unrouted V2; the routed page is the simplified one.)
+contains. Any other file type is refused before upload. (An older, longer version of this page is
+still in the codebase but is not reachable; its wording keys are listed separately in
+[Section 16](#bulk-import-page).)
 
 ---
 
@@ -1297,6 +1649,7 @@ my-listings.zip
 | `user_id`          | The current user | **Admins only.** The Sharetribe UUID of the seller the listing should belong to. Leave empty for normal use — a non-admin who fills it in gets a clear error. |
 | `currency`         | `MXN`            | Currency code. Leave blank for MXN.                                                                                                                           |
 | `publish`          | `yes`            | `yes` to publish immediately, `no` to save as draft.                                                                                                          |
+| `stock`            | `1`              | Units available: a whole number, `0` or more. Leave it empty — the `av-listing` type sells one item per listing, and `0` imports the listing as sold out.     |
 | `shipping_enabled` | `true`           | `true` or `false`                                                                                                                                             |
 | `pickup_enabled`   | `false`          | `true` or `false`                                                                                                                                             |
 | `location_address` | _(empty)_        | Human-readable address (optional).                                                                                                                            |
@@ -1330,10 +1683,10 @@ is ignored — only the filename matters). The legacy `image_front`/`image_back`
 > row that names a file which is not in the ZIP is still an error, so a typo is caught rather than
 > quietly turned into a placeholder.
 
-**No photos at all?** You can skip the ZIP entirely and upload just the filled-in `.csv` (up to
-5 MB). Every listing in it is created with the placeholder image, exactly as if you had left the
-image columns blank. Note that in this mode the image columns are **ignored even when filled in** —
-there are no photos to match them against — so upload a ZIP whenever you do have the pictures.
+**No photos at all?** You can skip the ZIP entirely and upload just the filled-in `.csv` (up to 5
+MB). Every listing in it is created with the placeholder image, exactly as if you had left the image
+columns blank. Note that in this mode the image columns are **ignored even when filled in** — there
+are no photos to match them against — so upload a ZIP whenever you do have the pictures.
 
 **Finding the listings that still need photos.** Placeholder listings are tagged behind the scenes,
 so you can list them at any time by opening:
@@ -1354,27 +1707,31 @@ These columns set the listing's searchable attributes. Each column name is the f
 `pub_` prefix; the prefix is stripped when saving — so `pub_brand` becomes the `brand` attribute on
 the listing. (The legacy `pd_` prefix is still accepted.)
 
-| CSV Column           | Required | Valid values                                                                                                        |
-| -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
-| `pub_categoryLevel1` | Yes      | See [Category IDs](#category-ids) below                                                                             |
-| `pub_categoryLevel2` | Yes\*    | A subcategory of level 1. \*Needed whenever the level-1 category has subcategories                                  |
-| `pub_categoryLevel3` | Yes\*    | A subcategory of level 2. \*Needed whenever the level-2 category has subcategories                                  |
-| `pub_color`          | Yes      | One or more color option keys, pipe-separated (e.g. `azul` or `azul\|negro`)                                        |
-| `pub_all_sizes`      | Yes      | One or more size option keys, pipe-separated (e.g. `s\|m\|l`)                                                       |
-| `pub_brand`          | Yes      | One brand option key (e.g. `zara`, `gucci`)                                                                         |
-| `pub_genero`         | Yes      | One gender option key                                                                                               |
-| `pub_estado`         | Yes      | One condition option key                                                                                            |
-| `pub_estilo`         | Yes      | One or more style option keys, pipe-separated                                                                       |
-| `pub_temporada`      | No       | One season option key: `primavera`, `verano`, `otono`, `invierno` or `todo-el-ano`                                  |
-| `pub_originalPrice`  | No       | The original retail price in pesos (e.g. `650.00`). Must be higher than `price` to show as a strike-through.        |
+"Checked" means a missing value stops the upload. "Fill in" columns are not checked by the importer,
+but the listing form requires them: a listing imported without one is missing from that filter, and
+the form asks for the value the next time someone saves the listing's details.
 
-> **Multi-value fields** (`pub_color`, `pub_all_sizes`, `pub_estilo`): separate multiple
-> values with a pipe character `|`. A single value is also valid. Example: `azul|negro|crema`
+| CSV Column           | Required  | Valid values                                                                                             |
+| -------------------- | --------- | -------------------------------------------------------------------------------------------------------- |
+| `pub_categoryLevel1` | Checked   | A level-1 category ID from [Section 2](#2-listing-categories)                                            |
+| `pub_categoryLevel2` | Checked\* | A subcategory of level 1. \*Needed whenever the level-1 category has subcategories                       |
+| `pub_categoryLevel3` | Checked\* | A subcategory of level 2. \*Needed whenever the level-2 category has subcategories                       |
+| `pub_color`          | Fill in   | One or more [color keys](#31-color-field), pipe-separated (e.g. `azul` or `azul\|negro`)                 |
+| `pub_all_sizes`      | Fill in   | One or more [size keys](#35-tallas-sizes-field), pipe-separated (e.g. `s\|m\|l`)                         |
+| `pub_brand`          | Fill in   | One [brand key](#36-marca-brand-field) (e.g. `zara`, `gucci`)                                            |
+| `pub_genero`         | Fill in   | One [género key](#32-género-field)                                                                       |
+| `pub_estado`         | Fill in   | One [estado key](#33-estado-condition-field)                                                             |
+| `pub_estilo`         | Fill in   | One or more [estilo keys](#34-estilo-field), pipe-separated                                              |
+| `pub_temporada`      | No        | One [temporada key](#37-temporada-season-field)                                                          |
+| `pub_originalPrice`  | No        | The original retail price in pesos (e.g. `650.00`). Must be higher than `price`, or the row is rejected. |
 
-> **Keys or names.** Each value can be the option key (`negro`, `todo-el-ano`, `levi-s`) or the
-> name shown in the listing form (`Negro`, `Todo el año`, `LEVI'S`). Capitals and accents don't
-> matter, and the listing always saves the key. Anything else rejects the file, including a brand
-> that isn't in the brand list: add the brand in Console first ([§3.6](#36-marca-brand-field)).
+> **Multi-value fields** (`pub_color`, `pub_all_sizes`, `pub_estilo`): separate multiple values with
+> a pipe character `|`. A single value is also valid. Example: `azul|negro|crema`
+
+> **Keys or names.** Each value can be the option key (`negro`, `todo-el-ano`, `levi-s`) or the name
+> shown in the listing form (`Negro`, `Todo el año`, `LEVI'S`). Capitals and accents don't matter,
+> and the listing always saves the key. Anything else rejects the file, including a brand that isn't
+> in the brand list: add the brand in Console first ([3.6](#36-marca-brand-field)).
 
 > **Only listing fields are accepted.** A `pub_` column must be one of the columns above or a
 > listing field configured in Console (Build → Listing fields). Any other `pub_` column with a value
@@ -1387,369 +1744,26 @@ the listing. (The legacy `pd_` prefix is still accepted.)
 
 ### 8.5 Field Values Quick Reference
 
-Use these exact option keys (the second column) in your CSV — not the display names.
+Each value can be the option **key** or its **label** (capitals and accents don't matter); the
+listing always stores the key. The complete lists are kept in one place:
 
-#### Category IDs
+| CSV column                     | Values                                                                                          |
+| ------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `pub_categoryLevel1`, `2`, `3` | Category IDs (or names) — [Section 2](#2-listing-categories)                                    |
+| `pub_color`                    | [3.1 Color](#31-color-field) — e.g. `negro`, `animal-print`                                     |
+| `pub_genero`                   | [3.2 Género](#32-género-field) — `mujer`, `hombre`, `unisex`                                    |
+| `pub_estado`                   | [3.3 Estado](#33-estado-condition-field) — e.g. `como-nuevo`                                    |
+| `pub_estilo`                   | [3.4 Estilo](#34-estilo-field) — e.g. `vintage`, `urbano_streetwear`                            |
+| `pub_all_sizes`                | [3.5 Tallas](#35-tallas-sizes-field) — e.g. `m`, `mx_28`, `jeans_32`, `mx_shoes_24x`, `rings_7` |
+| `pub_brand`                    | [3.6 Marca](#36-marca-brand-field) — full list in `docs/data/brand.csv`                         |
+| `pub_temporada`                | [3.7 Temporada](#37-temporada-season-field) — e.g. `todo-el-ano`                                |
 
-Use these IDs in `pub_categoryLevel1`, `pub_categoryLevel2`, and `pub_categoryLevel3`.
+Size values that need care:
 
-| Category                                  | ID to use                                   |
-| ----------------------------------------- | ------------------------------------------- |
-| **Level 1**                               |                                             |
-| Ropa                                      | `ropa`                                      |
-| Bolsas                                    | `bolsas`                                    |
-| Zapatos                                   | `zapatos`                                   |
-| Accesorios                                | `accesorios`                                |
-| Home Antiques                             | `home-antiques`                             |
-| **Level 2 — Ropa**                        |                                             |
-| Tops                                      | `ropa-tops`                                 |
-| Camisetas                                 | `ropa-camisetas`                            |
-| Camisas                                   | `ropa-camisas`                              |
-| Chamarras / Abrigos / Sacos               | `ropa-sacos-chamarras`                      |
-| Sudaderas                                 | `ropa-sudaderas`                            |
-| Pantalones                                | `ropa-pantalones`                           |
-| Jeans                                     | `ropa-jeans`                                |
-| Faldas                                    | `ropa-faldas`                               |
-| Vestidos                                  | `ropa-vestidos`                             |
-| Ropa deportiva                            | `ropa-deportiva`                            |
-| Shorts                                    | `ropa-shorts`                               |
-| Trajes / Sets                             | `ropa-trajes`                               |
-| Jumpsuits                                 | `ropa-jumpsuits`                            |
-| Lencería / pijama                         | `ropa-lenceria`                             |
-| De baño                                   | `ropa-de-bano`                              |
-| Maternidad                                | `ropa-maternidad`                           |
-| **Level 2 — Bolsas**                      |                                             |
-| De mano                                   | `bolsas-mano`                               |
-| Cruzadas                                  | `bolsas-cruzadas`                           |
-| Clutch                                    | `bolsas-clutch`                             |
-| Formales                                  | `bolsas-formales`                           |
-| Mochilas casuales                         | `bolsas-mochilas_casuales`                  |
-| Mochilas de deporte                       | `bolsas-mochilas_deporte`                   |
-| Totes                                     | `bolsas-totes`                              |
-| Riñoneras                                 | `bolsas-rinoneras`                          |
-| Carteras                                  | `bolsas-carteras`                           |
-| Monederos                                 | `bolsas-monederos`                          |
-| **Level 2 — Zapatos**                     |                                             |
-| Tacones                                   | `zapatos-tacones`                           |
-| Sandalias                                 | `zapatos-sandalias`                         |
-| Sandalias con tacón                       | `zapatos-sandalias_tacon`                   |
-| Zapatillas y Flats                        | `zapatos-zapatillas_flats`                  |
-| Mocasines                                 | `zapatos-mocasines`                         |
-| Plataformas                               | `zapatos-plataformas`                       |
-| Tenis casuales                            | `zapatos-tenis_casuales`                    |
-| Tenis deportivos                          | `zapatos-tenis_deportivos`                  |
-| Botas                                     | `zapatos-botas`                             |
-| Botas vaqueras                            | `zapatos-botas_vaqueras`                    |
-| Botas con tacón                           | `zapatos-botas_tacon`                       |
-| Botas de montaña                          | `zapatos-botas_montana`                     |
-| Botín                                     | `zapatos-botin`                             |
-| Botín con tacón                           | `zapatos-botin_tacon`                       |
-| **Level 2 — Accesorios**                  |                                             |
-| Gorras / Gorros                           | `accesorios-gorras_gorros`                  |
-| Sombreros                                 | `accesorios-sombreros`                      |
-| Lentes                                    | `accesorios-lentes`                         |
-| Cinturones                                | `accesorios-cinturones`                     |
-| Bufandas / Pañuelos                       | `accesorios-bufandas_panuelos`              |
-| Joyerías                                  | `accesorios-joyerias`                       |
-| Guantes                                   | `accesorios-guantes`                        |
-| Otros                                     | `accesorios-otros`                          |
-| **Level 2 — Home Antiques**               |                                             |
-| Antigueadades                             | `home-antiques-antiguedades`                |
-| **Level 3 — Tops**                        |                                             |
-| Blusas                                    | `ropa-tops-blusas`                          |
-| T-shirts                                  | `ropa-tops-tshirts`                         |
-| Crop-tops                                 | `ropa-tops-croptops`                        |
-| Manga larga                               | `ropa-tops-mangalarga`                      |
-| Manga corta                               | `ropa-tops-mangacorta`                      |
-| Strapless                                 | `ropa-tops-strapless`                       |
-| Bodys                                     | `ropa-tops-bodys`                           |
-| **Level 3 — Camisetas**                   |                                             |
-| Manga corta                               | `ropa-camisetas-mangacorta`                 |
-| Manga larga                               | `ropa-camisetas-mangalarga`                 |
-| Sin mangas                                | `ropa-camisetas-sinmangas`                  |
-| Oversized                                 | `ropa-camisetas-oversized`                  |
-| Gráficas / Estampadas                     | `ropa-camisetas-graficas`                   |
-| Básicas                                   | `ropa-camisetas-basicas`                    |
-| **Level 3 — Camisas**                     |                                             |
-| Manga corta                               | `ropa-camisas-mangacorta`                   |
-| Manga larga                               | `ropa-camisas-mangalarga`                   |
-| Vaqueras                                  | `ropa-camisas-vaqueras`                     |
-| Formales                                  | `ropa-camisas-formales`                     |
-| Casuales                                  | `ropa-camisas-casuales`                     |
-| Seda                                      | `ropa-camisas-seda`                         |
-| **Level 3 — Chamarras / Abrigos / Sacos** |                                             |
-| Chamarras de piel                         | `ropa-sacos-chamarras-chamarras-de-piel`    |
-| Chamarras de plumas                       | `ropa-sacos-chamarras-chamarras-de-plumas`  |
-| Sacos                                     | `ropa-sacos-chamarras-sacos`                |
-| Bomber/Biker jackets                      | `ropa-sacos-chamarras-bomber-biker-jackets` |
-| Abrigos formales                          | `ropa-sacos-chamarras-abrigos-formales`     |
-| Trench coats                              | `ropa-sacos-chamarras-trench-coats`         |
-| Mini jackets                              | `ropa-sacos-chamarras-mini-jackets`         |
-| Denim jackets                             | `ropa-sacos-chamarras-denim-jackets`        |
-| Varsity jackets                           | `ropa-sacos-chamarras-varsity-jackets`      |
-| Impermeable                               | `ropa-sacos-chamarras-impermeable`          |
-| Rompevientos                              | `ropa-sacos-chamarras-rompevientos`         |
-| Capa                                      | `ropa-sacos-chamarras-capa`                 |
-| Chalecos                                  | `ropa-sacos-chamarras-chalecos`             |
-| Chalecos denim                            | `ropa-sacos-chamarras-chalecos-denim`       |
-| **Level 3 — Sudaderas**                   |                                             |
-| Hoodies sin cierre                        | `ropa-sudaderas-hoodies-sin-cierre`         |
-| Hoodies con cierre                        | `ropa-sudaderas-hoodies-con-cierre`         |
-| Sudaderas deportivas                      | `ropa-sudaderas-sudaderas-deportivas`       |
-| Sudaderas de montaña                      | `ropa-sudaderas-sudaderas-de-montana`       |
-| Sudaderas casuales                        | `ropa-sudaderas-sudaderas-casuales`         |
-| **Level 3 — Pantalones**                  |                                             |
-| Formales                                  | `ropa-pantalones-formales`                  |
-| Casuales                                  | `ropa-pantalones-casuales`                  |
-| Leggings                                  | `ropa-pantalones-leggings`                  |
-| Sweatpants                                | `ropa-pantalones-sweatpants`                |
-| Vintage                                   | `ropa-pantalones-vintage`                   |
-| Cargo                                     | `ropa-pantalones-cargo`                     |
-| Leather                                   | `ropa-pantalones-leather`                   |
-| **Level 3 — Jeans**                       |                                             |
-| Mom fit                                   | `ropa-jeans-momfit`                         |
-| Boyfriend jeans                           | `ropa-jeans-boyfriend`                      |
-| Baggy / Oversized                         | `ropa-jeans-baggy`                          |
-| Rectos                                    | `ropa-jeans-rectos`                         |
-| Wide leg                                  | `ropa-jeans-wideleg`                        |
-| Carpenter / Cargo                         | `ropa-jeans-cargo`                          |
-| Acampanados / Flare                       | `ropa-jeans-acampanados`                    |
-| Slim fit                                  | `ropa-jeans-slimfit`                        |
-| Skinny jeans                              | `ropa-jeans-skinny`                         |
-| **Level 3 — Faldas**                      |                                             |
-| Larga                                     | `ropa-faldas-larga`                         |
-| Midi                                      | `ropa-faldas-midi`                          |
-| Mini                                      | `ropa-faldas-mini`                          |
-| Denim                                     | `ropa-faldas-denim`                         |
-| Seda                                      | `ropa-faldas-seda`                          |
-| Leather                                   | `ropa-faldas-leather`                       |
-| **Level 3 — Vestidos**                    |                                             |
-| Vestidos formales                         | `ropa-vestidos-formales`                    |
-| Vestidos casuales                         | `ropa-vestidos-casuales`                    |
-| Largos                                    | `ropa-vestidos-largos`                      |
-| Midi                                      | `ropa-vestidos-midi`                        |
-| Mini                                      | `ropa-vestidos-mini`                        |
-| Manga larga                               | `ropa-vestidos-mangalarga`                  |
-| Manga corta                               | `ropa-vestidos-mangacorta`                  |
-| Sin manga                                 | `ropa-vestidos-sinmanga`                    |
-| Novia / Bridal                            | `ropa-vestidos-novia`                       |
-| **Level 3 — Ropa deportiva**              |                                             |
-| Tops                                      | `ropa-deportiva-tops`                       |
-| Bikers                                    | `ropa-deportiva-bikers`                     |
-| Shorts                                    | `ropa-deportiva-shorts`                     |
-| Leggings                                  | `ropa-deportiva-leggings`                   |
-| Sportbra                                  | `ropa-deportiva-sportbra`                   |
-| De montaña                                | `ropa-deportiva-de-montana`                 |
-| Ski                                       | `ropa-deportiva-ski`                        |
-| **Level 3 — Shorts**                      |                                             |
-| Mini                                      | `ropa-shorts-mini`                          |
-| Baggy/Oversized                           | `ropa-shorts-baggy-oversized`               |
-| Bermudas                                  | `ropa-shorts-bermudas`                      |
-| **Level 3 — Trajes / Sets**               |                                             |
-| Traje                                     | `ropa-trajes-traje`                         |
-| Falda/Top                                 | `ropa-trajes-falda-top`                     |
-| Pantalón/Top                              | `ropa-trajes-pantalon-top`                  |
-| Short/Top                                 | `ropa-trajes-short-top`                     |
-| **Level 3 — Jumpsuits**                   |                                             |
-| Mini                                      | `ropa-jumpsuits-mini`                       |
-| Largo                                     | `ropa-jumpsuits-largo`                      |
-| **Level 3 — Lencería / pijama**           |                                             |
-| Sets                                      | `ropa-lenceria-sets`                        |
-| Pijamas                                   | `ropa-lenceria-pijamas`                     |
-| Top/Bra                                   | `ropa-lenceria-top-bra`                     |
-| **Level 3 — De baño**                     |                                             |
-| Bikinis                                   | `ropa-de-bano-bikinis`                      |
-| Traje completo                            | `ropa-de-bano-traje-completo`               |
-| Salidas                                   | `ropa-de-bano-salidas`                      |
-| **Level 3 — Joyerías**                    |                                             |
-| Collares                                  | `accesorios-joyerias-collares`              |
-| Aretes                                    | `accesorios-joyerias-aretes`                |
-| Anillos                                   | `accesorios-joyerias-anillos`               |
-| Pulseras                                  | `accesorios-joyerias-pulseras`              |
-| Relojes                                   | `accesorios-joyerias-relojes`               |
-
-#### Color option keys
-
-| Display name | Use this key   |
-| ------------ | -------------- |
-| Rojo         | `rojo`         |
-| Rosa         | `rosa`         |
-| Amarillo     | `amarillo`     |
-| Naranja      | `naranja`      |
-| Dorado       | `dorado`       |
-| Plateado     | `plateado`     |
-| Verde        | `verde`        |
-| Azul         | `azul`         |
-| Morado       | `morado`       |
-| Negro        | `negro`        |
-| Gris         | `gris`         |
-| Blanco       | `blanco`       |
-| Crema        | `crema`        |
-| Beige        | `beige`        |
-| Café         | `cafe`         |
-| Animal Print | `animal-print` |
-| Floral       | `floral-print` |
-| Multicolor   | `multicolor`   |
-
-#### Género option keys
-
-| Display name | Use this key |
-| ------------ | ------------ |
-| Mujer        | `mujer`      |
-| Hombre       | `hombre`     |
-| Unisex       | `unisex`     |
-
-#### Estado option keys
-
-| Display name       | Use this key         |
-| ------------------ | -------------------- |
-| Nuevo con etiqueta | `nuevo-con-etiqueta` |
-| Nuevo sin etiqueta | `nuevo-sin-etiqueta` |
-| Como nuevo         | `como-nuevo`         |
-| Buen estado        | `buen-estado`        |
-| Usado              | `usado`              |
-
-#### Estilo option keys
-
-| Display name        | Use this key        |
-| ------------------- | ------------------- |
-| Vintage             | `vintage`           |
-| Urbano / Streetwear | `urbano_streetwear` |
-| Fiesta / Noche      | `fiesta_noche`      |
-| Formal              | `formal`            |
-| Casual              | `casual`            |
-| Boho                | `boho`              |
-| Retro               | `retro`             |
-| Oficina             | `oficina`           |
-| Vacaciones          | `vacaciones`        |
-| Seda                | `seda`              |
-
-#### Temporada option keys
-
-The `Temporada` column is optional. Use the key, not the display name — lowercase, no accent. A
-value such as `Otoño` is stored as typed and matches no option:
-
-| Display name | Value to use  |
-| ------------ | ------------- |
-| Primavera    | `primavera`   |
-| Verano       | `verano`      |
-| Otoño        | `otono`       |
-| Invierno     | `invierno`    |
-| Todo el Año  | `todo-el-ano` |
-
-#### Talla option keys
-
-| Display name | Use this key     | Group    |
-| ------------ | ---------------- | -------- |
-| Unitalla     | `unitalla`       | Estándar |
-| XXS          | `xxs`            | Estándar |
-| XS           | `xs`             | Estándar |
-| S            | `s`              | Estándar |
-| M            | `m`              | Estándar |
-| L            | `l`              | Estándar |
-| XL           | `xl`             | Estándar |
-| MX 24        | `mx_24`          | MX       |
-| MX 25        | `mx_25`          | MX       |
-| MX 26        | `mx_26`          | MX       |
-| MX 27        | `mx_27`          | MX       |
-| MX 28        | `mx_28`          | MX       |
-| MX 29        | `mx_29`          | MX       |
-| MX 30        | `mx_30`          | MX       |
-| MX 31        | `mx_31`          | MX       |
-| MX 32        | `mx_32`          | MX       |
-| MX 33        | `mx_33`          | MX       |
-| MX 34        | `mx_34`          | MX       |
-| MX 35        | `mx_35`          | MX       |
-| MX 36        | `mx_36`          | MX       |
-| MX 37        | `mx_37`          | MX       |
-| MX 38        | `mx_38`          | MX       |
-| MX 39        | `mx_39`          | MX       |
-| MX 40        | `mx_40`          | MX       |
-| MX 41        | `mx_41`          | MX       |
-| MX 42        | `mx_42`          | MX       |
-| MX 43        | `mx_43`          | MX       |
-| MX 44        | `mx_44`          | MX       |
-| US 00        | `us_00`          | US       |
-| US 0         | `us_0`           | US       |
-| US 2         | `us_2`           | US       |
-| US 4         | `us_4`           | US       |
-| US 6         | `us_6`           | US       |
-| US 8         | `us_8`           | US       |
-| US 10        | `us_10`          | US       |
-| US 12        | `us_12`          | US       |
-| US 14        | `us_14`          | US       |
-| US 16        | `us_16`          | US       |
-| US 18        | `us_18`          | US       |
-| US 20        | `us_20`          | US       |
-| Jeans / 22   | `jeans_22`       | Jeans    |
-| Jeans / 23   | `jeans_23`       | Jeans    |
-| Jeans / 24   | `jeans_24`       | Jeans    |
-| Jeans / 25   | `jeans_25`       | Jeans    |
-| Jeans / 26   | `jeans_26`       | Jeans    |
-| Jeans / 27   | `jeans_27`       | Jeans    |
-| Jeans / 28   | `jeans_28`       | Jeans    |
-| Jeans / 29   | `jeans_29`       | Jeans    |
-| Jeans / 30   | `jeans_30`       | Jeans    |
-| Jeans / 31   | `jeans_31`       | Jeans    |
-| Jeans / 32   | `jeans_32`       | Jeans    |
-| Jeans / 33   | `jeans_33`       | Jeans    |
-| Jeans / 34   | `jeans_34`       | Jeans    |
-| Jeans / 35   | `jeans_35`       | Jeans    |
-| Jeans / 36   | `jeans_36`       | Jeans    |
-| Jeans / 38   | `jeans_38`       | Jeans    |
-| Jeans / 40   | `jeans_40`       | Jeans    |
-| XL           | `curvy_0x`       | Curvy    |
-| 1XL          | `curvy_1x`       | Curvy    |
-| 2XL          | `curvy_2x`       | Curvy    |
-| 3XL          | `curvy_3x`       | Curvy    |
-| 4XL          | `curvy_4x`       | Curvy    |
-| 5XL          | `curvy_5x`       | Curvy    |
-| 5 US / 2 MX     | `mx_shoes_22x`   | Calzado  |
-| 5.5 US / 2.5 MX | `mx_shoes_22.5x` | Calzado  |
-| 6 US / 3 MX     | `mx_shoes_23x`   | Calzado  |
-| 6.5 US / 3.5 MX | `mx_shoes_23.5x` | Calzado  |
-| 7 US / 4 MX     | `mx_shoes_24x`   | Calzado  |
-| 7.5 US / 4.5 MX | `mx_shoes_24.5x` | Calzado  |
-| 8 US / 5 MX     | `mx_shoes_25x`   | Calzado  |
-| 8.5 US / 5.5 MX | `mx_shoes_25.5x` | Calzado  |
-| 9 US / 6 MX     | `mx_shoes_26x`   | Calzado  |
-| 9.5 US / 6.5 MX | `mx_shoes_26.5x` | Calzado  |
-| 10 US / 7 MX    | `mx_shoes_27x`   | Calzado  |
-| 10.5 US / 7.5 MX | `mx_shoes_27.5x` | Calzado  |
-| 11 US / 8 MX    | `mx_shoes_28x`   | Calzado  |
-| 11.5 US / 8.5 MX | `mx_shoes_28.5x` | Calzado  |
-| 12 US / 9 MX    | `mx_shoes_29x`   | Calzado  |
-| 4 / 14.8mm   | `rings_4`        | Anillos  |
-| 5 / 15.7mm   | `rings_5`        | Anillos  |
-| 6 / 16.5mm   | `rings_6`        | Anillos  |
-| 7 / 17.3mm   | `rings_7`        | Anillos  |
-| 8 / 18.1mm   | `rings_8`        | Anillos  |
-| 9 / 18.9mm   | `rings_9`        | Anillos  |
-| 10 / 19.8mm  | `rings_10`       | Anillos  |
-| 11 / 20.6mm  | `rings_11`       | Anillos  |
-| 12 / 21.4mm  | `rings_12`       | Anillos  |
-
-#### Brand option keys
-
-The code brand list has 624 entries. The most common ones are listed here. For the complete list,
-see `docs/data/brand.csv`; brands added in the Console ([§3.6](#36-marca-brand-field)) are valid
-too, using the key entered there.
-
-| Brand                   | Key            | Brand         | Key             |
-| ----------------------- | -------------- | ------------- | --------------- |
-| Zara                    | `zara`         | Gucci         | `gucci`         |
-| Mango                   | `mango`        | Louis Vuitton | `louis-vuitton` |
-| H&M                     | `h-m`          | Prada         | `prada`         |
-| LEVI'S                  | `levi-s`       | Chanel        | `chanel`        |
-| Nike                    | `nike`         | Dior          | `dior`          |
-| Adidas                  | `adidas`       | Valentino     | `valentino`     |
-| Free People             | `free-people`  | Versace       | `versace`       |
-| Reformation             | `reformation`  | Balenciaga    | `balenciaga`    |
-| Anthropologie / Aritzia | `aritzia`      | Zimmermann    | `zimmermann`    |
-| Stradivarius            | `stradivarius` | Isabel Marant | `isabel-marant` |
-| Pull & Bear             | `pull-bear`    | Jacquemus     | `jacquemus`     |
-| Bershka                 | `bershka`      | Ganni         | `ganni`         |
-| Vintage (no brand)      | `vintage`      |               |                 |
+- The importer also accepts the grouped Google Sheets values, such as `Jeans / 32`,
+  `Zapatos / 5 US / 2 MX` or `Anillos / 4 / 14.8mm`, and stores the matching key (`jeans_32`,
+  `mx_shoes_22x`, `rings_4`).
+- A bare `XL` is the standard clothing size (`xl`). For the Curvy **XL**, use `curvy_0x`.
 
 ---
 
@@ -1789,8 +1803,7 @@ This is the "missing values" check. It runs in two stages.
 **File-level checks (stop the import right away):**
 
 - The CSV has at least one data row.
-- It has no more than your tier's row cap (regular sellers 25, admins 100; a hard ceiling of 100
-  applies to everyone).
+- It has no more than 100 data rows (the same cap for regular sellers and admins).
 - The header row contains the three **required columns**: `title`, `price`, and `description`
   (Spanish template headers such as `Nombre de Producto*` are recognised and mapped automatically).
   If any required column is missing entirely, the check stops here.
@@ -1803,19 +1816,19 @@ This is the "missing values" check. It runs in two stages.
 | `description`                   | Not empty.                                                                                                         |
 | `price`                         | Reads as a **positive** number. A `$` sign and thousands separators are fine; `0`, negatives, and text are not.    |
 | `price` (minimum)               | At least the marketplace **minimum listing price** (Console; \$20.00 by default), the floor the listing form uses. |
-| Image columns                   | None are required. A row that leaves all four blank is imported with the placeholder image.                       |
+| Image columns                   | None are required. A row that leaves all four blank is imported with the placeholder image.                        |
 | Image filenames                 | Every filename referenced in the row **exists in the ZIP**. A typo or wrong extension fails here.                  |
 | `pub_*` keys                    | A `pub_*`/`pd_*` column does not use a reserved name (`__proto__`, `constructor`, `prototype`).                    |
 | Option values                   | Colour, size, brand, `género`, `estado`, `estilo`, `temporada`: each value is an option key or its form name.      |
-| Category                        | A category, then each subcategory level until there are none, forming a path that exists in Console.             |
+| Category                        | A category, then each subcategory level until there are none, forming a path that exists in Console.               |
 | `location_lat` / `location_lng` | If present, both are valid numbers.                                                                                |
 | `stock`                         | Empty defaults to `1`; otherwise must be a whole number that is zero or greater.                                   |
 | `user_id`                       | May only be filled in by an **admin**. A non-admin who sets it gets a clear error and the row is rejected.         |
 
-**Option values and categories are checked here** (since 2026-10-16). The Sharetribe API does
-not check them: before that date a typo such as `pub_color = blu`, a name instead of a key, or a
-missing category imported without an error. Such a listing then matched no filter or category
-page. Now the row fails with a message naming the column and listing valid values, e.g.:
+**Option values and categories are checked here** (since 2026-10-16). The Sharetribe API does not
+check them: before that date a typo such as `pub_color = blu`, a name instead of a key, or a missing
+category imported without an error. Such a listing then matched no filter or category page. Now the
+row fails with a message naming the column and listing valid values, e.g.:
 
 ```
 Fila 3: "pub_color": "blu" no es una opción válida. Valores válidos: rojo, rosa, amarillo, … (18 en total).
@@ -1823,8 +1836,9 @@ Fila 4: Falta la categoría ("pub_categoryLevel1"). Valores válidos: ropa, bols
 Fila 5: Falta "pub_categoryLevel2": "ropa" tiene subcategorías. Valores válidos: ropa-tops, ropa-camisetas, …
 ```
 
-`Rat & Boa` belongs to two brand options. If the importer reports that ambiguity, use the option key
-(`rat-boa` or `rat_boa`) from [8.5 Field Values Quick Reference](#85-field-values-quick-reference).
+A label shared by two options is reported as ambiguous (`… coincide con varias opciones …`). Today
+that is `Rat & Boa`: use the option key `rat-boa` or `rat_boa` instead
+([3.6](#36-marca-brand-field)).
 
 If the marketplace configuration can't be read at upload time, the upload is refused (_No se pudo
 leer la configuración de anuncios del marketplace…_). Try again in a few minutes.
@@ -1885,305 +1899,112 @@ columns.
 
 ### 8.7 Troubleshooting
 
-| Problem                                                                                    | Likely cause                                                                     | What to do                                                                                                     |
-| ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| "…requiere una sesión iniciada" error                                                      | You are signed out                                                               | Sign in to the marketplace and try again                                                                       |
-| "Token de acción… inválido o expirado"                                                     | The short-lived upload token expired                                             | Reload the page and start the upload again                                                                     |
-| `La sustitución de "user_id" no está permitida`                                            | A non-admin filled in the `user_id` column                                       | Remove the `user_id` column (your listings are created under you)                                              |
-| "El archivo es demasiado grande…" / "El ZIP supera tu límite…" / "Demasiadas imágenes" / "El CSV tiene … filas. Tu límite es…" | The import is over your tier's limit                                             | Split it into smaller batches, or ask an admin to run the larger import                                        |
-| "Demasiadas importaciones" (try again later)                                               | You hit your hourly import limit                                                 | Wait up to an hour and try again (3/hr seller, 20/hr admin)                                                    |
-| "Demasiados intentos de importación"                                                       | Too many upload attempts in the last hour, including failed ones                 | Fix the file offline, then wait up to an hour (20 attempts/hr seller, 60/hr admin)                             |
-| "Ya tienes una importación en curso"                                                       | A previous import of yours is still running                                      | Wait for it to finish before starting another                                                                  |
-| "La capacidad de importación está llena"                                                   | Three imports are already running across all users                               | Wait a few minutes and retry                                                                                   |
-| "El ZIP no contiene ningún archivo .csv"                                                   | CSV is missing from the archive                                                  | Make sure you included exactly one CSV file inside the ZIP                                                     |
-| "El ZIP contiene N archivos .csv"                                                          | Multiple CSVs in the archive                                                     | Remove extra CSV files — only one is allowed                                                                   |
-| "…nombre de imagen duplicado…"                                                             | Two images share the same filename in different folders                          | Rename images so all filenames are unique across the entire ZIP                                                |
-| "…no coincide con su extensión de archivo"                                                 | A file isn't a real image (e.g. renamed to `.jpg`)                               | Re-export it as a genuine `.jpg`, `.png`, or `.webp`                                                           |
-| "…no se encontró en los archivos subidos"                                                  | Filename in the CSV doesn't match the image file                                 | Check spelling, case, and file extension — they must match exactly                                             |
-| `Falta la columna obligatoria: "X"`                                                        | A required header column (`title`/`price`/`description`) is missing              | Add the missing column header and re-export the CSV                                                            |
-| `Fila N: "X" es obligatorio` / `Fila N: "X" está vacío`                                    | A required field (title, description, or a required image) is empty              | Fill in that field for the listed row                                                                          |
-| `Fila N: "price" debe ser un número positivo`                                              | Price is zero, negative, or not a number                                         | Enter a positive number like `450.00`                                                                          |
-| All rows fail with API error                                                               | Integration API credentials are wrong                                            | Contact your administrator to check the server configuration                                                   |
-| All rows fail "user not found" (409)                                                       | The server's Integration API points at a different marketplace than your account | Admin: ensure the Integration API and the marketplace your users sign into are the same Sharetribe marketplace |
-| Job not found (after waiting)                                                              | Job data expired, or the server restarted mid-import                             | Jobs expire after 1 hour and don't survive a server restart. Re-run the import.                                |
+| Problem                                                                                                                        | Likely cause                                                                     | What to do                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| "…requiere una sesión iniciada" error                                                                                          | You are signed out                                                               | Sign in to the marketplace and try again                                                                            |
+| "Token de acción… inválido o expirado"                                                                                         | The short-lived upload token expired                                             | Reload the page and start the upload again                                                                          |
+| `La sustitución de "user_id" no está permitida`                                                                                | A non-admin filled in the `user_id` column                                       | Remove the `user_id` column (your listings are created under you)                                                   |
+| "El archivo es demasiado grande…" / "El ZIP supera tu límite…" / "Demasiadas imágenes" / "El CSV tiene … filas. Tu límite es…" | The import is over your tier's limit                                             | Split it into smaller batches, or ask an admin to run the larger import                                             |
+| "Demasiadas importaciones" (try again later)                                                                                   | You hit your hourly import limit                                                 | Wait up to an hour and try again (3/hr seller, 20/hr admin)                                                         |
+| "Demasiados intentos de importación"                                                                                           | Too many upload attempts in the last hour, including failed ones                 | Fix the file offline, then wait up to an hour (20 attempts/hr seller, 60/hr admin)                                  |
+| "Ya tienes una importación en curso"                                                                                           | A previous import of yours is still running                                      | Wait for it to finish before starting another                                                                       |
+| "La capacidad de importación está llena"                                                                                       | Three imports are already running across all users                               | Wait a few minutes and retry                                                                                        |
+| "El ZIP no contiene ningún archivo .csv"                                                                                       | CSV is missing from the archive                                                  | Make sure you included exactly one CSV file inside the ZIP                                                          |
+| "El ZIP contiene N archivos .csv"                                                                                              | Multiple CSVs in the archive                                                     | Remove extra CSV files — only one is allowed                                                                        |
+| "…nombre de imagen duplicado…"                                                                                                 | Two images share the same filename in different folders                          | Rename images so all filenames are unique across the entire ZIP                                                     |
+| "…no coincide con su extensión de archivo"                                                                                     | A file isn't a real image (e.g. renamed to `.jpg`)                               | Re-export it as a genuine `.jpg`, `.png`, or `.webp`                                                                |
+| "…no se encontró en los archivos subidos"                                                                                      | Filename in the CSV doesn't match the image file                                 | Check spelling, case, and file extension — they must match exactly                                                  |
+| `Falta la columna obligatoria: "X"`                                                                                            | A required header column (`title`/`price`/`description`) is missing              | Add the missing column header and re-export the CSV                                                                 |
+| `Fila N: "X" está vacío`                                                                                                       | A required field (title or description) is empty                                 | Fill in that field for the listed row                                                                               |
+| `Fila N: "X": "…" no es una opción válida`                                                                                     | A value is neither an option key nor its label                                   | Use a value from [8.5](#85-field-values-quick-reference); add a missing brand in Console first                      |
+| `Fila N: Falta la categoría…` / `Falta "pub_categoryLevel2"…`                                                                  | The category path is missing or stops before the deepest level                   | Fill in every level the category has ([Section 2](#2-listing-categories))                                           |
+| `Fila N: "price" debe ser un número positivo`                                                                                  | Price is zero, negative, or not a number                                         | Enter a positive number like `450.00`                                                                               |
+| All rows fail with API error                                                                                                   | Integration API credentials are wrong                                            | Contact your administrator to check the server configuration                                                        |
+| All rows fail "user not found" (409)                                                                                           | The server's Integration API points at a different marketplace than your account | Admin: ensure the Integration API and the marketplace your users sign into are the same Sharetribe marketplace      |
+| "Esta importación ya no está disponible…"                                                                                      | Job data expired, or the server restarted mid-import                             | Jobs expire after 1 hour and don't survive a server restart. Upload the same file again; finished rows are skipped. |
+
+**Errors on individual rows while the import runs.** These appear in the page's errors table, one
+row each; the other rows keep going. Uploading the same file again within 24 hours is the fix for
+most of them, because finished rows are skipped and half-done ones are completed.
+
+| Message (start)                                                                                            | Meaning and what to do                                                                                             |
+| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| "… ya importados (omitidos)" (summary count)                                                               | Rows already imported from an earlier upload of the same file. Nothing to do.                                      |
+| "La creación de esta publicación tardó demasiado…"                                                         | Timed out. If it was created it stays hidden; upload the same file again in a few minutes.                         |
+| "La publicación se creó pero no se terminó…"                                                               | Created but not finished (hidden). Upload the same file again to finish it.                                        |
+| "Una importación anterior de esta fila todavía…"                                                           | An earlier upload is still working on this row. Wait a few minutes, then upload again.                             |
+| "No pudimos comprobar si esta fila ya se había…"                                                           | The duplicate check failed, so the row was skipped to be safe. Try again.                                          |
+| "La imagen no es válida o está dañada…"                                                                    | The photo file is corrupt or not a real JPG/PNG/WebP. Replace it in the ZIP.                                       |
+| "Esta publicación no tiene fotos y no se pudo cargar…"                                                     | The placeholder photo could not be loaded. Report it to the development team.                                      |
+| "No se encontró la cuenta del autor…"                                                                      | The `user_id` (admins) or the uploader's account does not exist in this marketplace. Check the ID and environment. |
+| "No tienes permiso…" / "Hubo un conflicto…" / "Demasiadas solicitudes…" / "Ocurrió un error del servidor…" | Sharetribe refused or failed the request. Wait and upload the same file again; escalate if it repeats.             |
 
 ---
 
-## 9. Application Settings
+## 9. Users, Sellers and Stores
 
-These settings are configured in the server environment, not in the Console. They are set once by
-the development team when deploying the application. This section explains what each setting does in
-plain language.
+Every account is either a **Persona** or a **Tienda**, and both can buy and sell. The user type
+decides the wording, menus and onboarding a person sees; a few operator-only user fields add store
+features such as the Diseño Local menu. This section is the reference for user types and user
+fields, store-seller behaviour, and the welcome popup.
 
-### Marketplace identity
+### User types
 
-| Setting              | What it controls                                            |
-| -------------------- | ----------------------------------------------------------- |
-| **Marketplace name** | The name shown in the browser tab and emails                |
-| **Marketplace URL**  | The full web address of the marketplace (no trailing slash) |
+Console defines two user types (**Console → Build → Users → User types**). There is no buyer-only
+type: any signed-in user can buy.
 
-### Browser and home-screen icons
+| User type ID      | Console label | Who it is for     | What is different for them                                                                                                                                        |
+| ----------------- | ------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vendedor`        | Persona       | Individual seller | Can set an original ("was") price ([Section 10](#original-price)); sees the Persona welcome popup.                                                                |
+| `vendedor-tienda` | Tienda        | Store or brand    | Store wording, store-type tags, the Diseño Local menu, and fewer buyer menu entries (all below); sees the Tienda welcome popup; **cannot** set an original price. |
 
-The approved Archivo Vintach icon set is shipped with the application. It supplies browser-tab and
-bookmark icons, the iPhone/iPad home-screen icon, and Android/web-app icons. The web-app manifest
-uses Archivo blue (`#0f26e4`) for its theme and background, and opens the marketplace home page.
+Both types receive the seller welcome email after signing up, when that email is switched on
+([Section 18](#email-and-brevo)), and both are asked for a phone number at signup.
 
-These icons are maintained in code under `public/static/icons/`; uploading another favicon or app
-icon in Console does not replace this approved set. Other Console branding, including logos and
-sharing images, remains editable as usual. Ask the development team to replace the shipped assets
-when the approved artwork changes. Browsers and search engines may continue showing cached icons
-until they refresh them.
+The type is chosen at signup and stored on the account. `vendedor-stock` is still recognized by the
+original-price rule in code, but no Console user type uses it; do not assign it. Ask the development
+team before changing an existing account's type: its menus, wording and onboarding change with it.
 
-### Sharetribe connection
+### User fields
 
-| Setting                                                            | What it controls                                                                                        |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
-| **Marketplace API Client ID**                                      | Identifies this app to Sharetribe. Found in Console → Build → Applications.                             |
-| **Marketplace API Client Secret** (`SHARETRIBE_SDK_CLIENT_SECRET`) | Server-side secret paired with the Marketplace API application. Keep it in the deployment secret store. |
-| **Integration API Client ID**                                      | Allows server-side operations (bulk import, notifications). Found in Console → Build → Integrations.    |
-| **Integration API Client Secret**                                  | The password for the Integration API. Keep this private.                                                |
+User fields are created in **Console → Build → Users → User fields**. The application reads the
+fields below by their **field ID**, so the ID must be typed exactly. Do this in Test and in Live;
+fields are not copied between environments.
 
-### Payments
+| Field ID                 | Label in Console | Type and scope                                                | User types | Who sets it                    | Used for                                                                 |
+| ------------------------ | ---------------- | ------------------------------------------------------------- | ---------- | ------------------------------ | ------------------------------------------------------------------------ |
+| `localDesign`            | Local Design     | Enum `true` (Si) / `false` (No); **operator-only** (metadata) | Tienda     | Operator, in Manage → Users    | The Diseño Local menu ([Section 6](#dropdown-3--diseño-local-automatic)) |
+| `tipoTienda`             | (store type)     | Enum; **public**; options `local`, `vintage`, `upcycling`     | Tienda     | The store, in profile settings | [Store-type tags](#store-type-tags) on its listings                      |
+| `avCommissionPercentage` | Comisión (%)     | Number `0`–`25`; **operator-only** (metadata)                 | Both       | Operator, in Manage → Users    | A negotiated seller commission ([19.6](#196-commission-rate-changes))    |
 
-| Setting                    | What it controls                                                                                                                                                                                      |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Stripe Publishable Key** | Connects the browser to the matching Stripe account. Obtain `pk_test_…` or `pk_live_…` from Stripe Dashboard; Sharetribe Console → Build → Payments holds the matching secret/platform configuration. |
+Rules that apply to every user field:
 
-### Bulk import
+- **Operator-only (metadata) fields never appear in the signup or profile forms**, even if "display
+  in sign-up" is ticked. Only an operator can set them, in Manage → Users.
+- **Public fields** can be read by anyone who views the user, so never put anything confidential
+  there. Operator-only fields are also readable through Sharetribe's API (see the privacy note in
+  [19.6](#196-commission-rate-changes)).
+- **Private fields** are visible only to the user themselves. A field the site has to show to other
+  people — such as `tipoTienda` — must not be private.
+- Leave **Show on profile** off for `localDesign` and `avCommissionPercentage`.
 
-The bulk import tool no longer uses an access password or a default-author setting — any signed-in
-user imports for their own account. The only access-related setting is the admin list.
+> **Status in Test (2026-11-26).** `localDesign` and `tipoTienda` exist; `avCommissionPercentage`
+> has not been created yet (one-time setup in [19.6](#196-commission-rate-changes)). `tipoTienda` is
+> defined with the **private** scope, so store-type tags cannot appear on Test listings until it is
+> public. Check the Live definitions against this table.
 
-| Setting                                                 | What it controls                                                                                                                                                                                                                      |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Admin emails** (`BULK_IMPORT_OPERATOR_EMAILS`)        | A comma-separated list of emails treated as bulk-import **admins**. Admins may add a `user_id` column to import on behalf of other sellers, and get the larger size/rate limits. Optional — leave empty if no one needs admin powers. |
-| **Listing Type** (`BULK_IMPORT_LISTING_TYPE`)           | The listing type all imported listings use. The deployment template configures `av-listing`; if omitted, the server fallback is `product-selling`. It must match a published Console listing type.                                    |
-| **Transaction alias** (`BULK_IMPORT_TRANSACTION_ALIAS`) | The hosted process alias assigned to imported listings. Configured/default: `default-purchase/release-1`; it must exist in the selected Sharetribe environment.                                                                       |
-| **Unit type** (`BULK_IMPORT_UNIT_TYPE`)                 | Unit type assigned to imported listings. Configured/default: `item`; it must match the selected listing type/process.                                                                                                                 |
+The standard Sharetribe fields — display name, first and last name, bio, profile picture and phone
+number — are enabled for both types. Store sellers see store wording for the display name, bio and
+picture ([Store sellers wording](#store-sellers-tienda-wording)).
 
-> Removed settings: the old **Bulk Import API Key**, **Default Author ID**, and operator user-ID
-> allowlist are no longer used and have been deleted from the server configuration.
+### Store-type tags
 
-### Email notifications
-
-| Setting                                                               | What it controls                                                                                                                                                            |
-| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Notification poller** (`AV_NOTIFICATIONS_ENABLED`)                  | Master flag for event-driven notification channels. When `true`, all channel flags below must also be explicit and readiness must pass.                                     |
-| **Seller welcome email** (`AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED`)   | Enables the Brevo seller-welcome send when the poller is enabled and its template/sender configuration is complete.                                                         |
-| **Lifecycle campaigns** (`AV_BREVO_CAMPAIGNS_ENABLED`)                | Enables implemented lifecycle campaign triggers. Keep `false` until the templates, consent flow, and Live data have passed the release smoke test.                          |
-| **Brevo API Key**                                                     | Connects to the Brevo account for enabled email sends.                                                                                                                      |
-| **Brevo List ID**                                                     | The newsletter list subscribers are added to when they use the newsletter signup form; also required by enabled lifecycle campaigns.                                        |
-| **Sender Email**                                                      | The verified "from" address used for transactional emails. Confirm the exact approved address in Brevo before deployment.                                                   |
-| **Sender Name**                                                       | The "from" display name used for emails (e.g. `Archivo Vintach`).                                                                                                           |
-| **Notification database** (`DATABASE_URL`, deployment-managed secret) | Durable poller cursor, leadership, send claims, consent records, and label-purchase claims. Migrations and readiness must be healthy before notifications or labels launch. |
-
-### WhatsApp notifications
-
-| Setting                                                    | What it controls                                                                                                         |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **WhatsApp enabled** (`AV_WHATSAPP_NOTIFICATIONS_ENABLED`) | Keep `false`. WhatsApp is code-level release-locked out of the first release; the flag cannot override that lock.        |
-| **WhatsApp Access Token**                                  | Permanent Meta system-user token for server-side sends. Keep private.                                                    |
-| **WhatsApp Phone Number ID**                               | Numeric ID of the registered WhatsApp sender number.                                                                     |
-| **Admin Phone**                                            | Consenting operator destination for admin alerts, stored as canonical E.164 (`+` plus country code and national number). |
-
-The sender implementation is retained for a future release, but event sends and operator retries are
-blocked and signup does not collect the WhatsApp phone field. Existing contact/shipping phone fields
-and the bulk-import WhatsApp support link are separate and remain available. See the
-[WhatsApp guide](integrations/whatsapp.md) and [pending blockers](pending/notifications.md) before a
-reviewed code change removes the release lock.
-
-### Shipping (eShip)
-
-Buyer shipping prices are quoted live from eShip at checkout. Shipping labels are enabled as a
-capability, but purchase is **manual by default**: after payment, the seller clicks **Generar
-guía**. Automatic purchase happens only when the label capability and `ESHIP_LABEL_AUTOBUY=true` are
-both enabled.
-
-| Setting                                                      | What it controls                                                                                                                                                                                                                                                                                                                 |
-| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **eShip API Key** (`ESHIP_API_KEY`)                          | Connects to the eShip carrier account used to quote shipping and buy labels. Without it, buyers see _Contactar a AV_ instead of priced options. Keep private.                                                                                                                                                                    |
-| **eShip Base URL** (`ESHIP_BASE_URL`)                        | Which eShip environment to use — the test/QA carrier system or the live one. Set by the dev team per environment.                                                                                                                                                                                                                |
-| **Shipping markup** (`ESHIP_MARKUP_PCT`)                     | The margin buffer added on top of the raw carrier cost to get the buyer's shipping price. Default: 18%; Live runs with 0 (the commission includes the margin).                                                                                                                                                                                                                          |
-| **Label capability** (`AV_SHIPPING_LABELS_ENABLED`)          | Enables label-purchase storage, readiness checks, the seller action, and the shared poller path. It does not turn on auto-buy by itself.                                                                                                                                                                                         |
-| **Pickup email** (`AV_ESHIP_TRACKING_EMAILS_ENABLED`)        | Enables one native Sharetribe buyer email after the carrier reports `TRANSIT/picked_up`. Requires the new hosted purchase-process version, migration 009, and webhook setup.                                                                                                                                                     |
-| **eShip webhook secret** (`ESHIP_WEBHOOK_SECRET`)            | At least 32 random bytes shared between the server and the eShip dashboard, so the marketplace can tell a real carrier update from a forged one. In the eShip dashboard it is entered as the `X-AV-Webhook-Secret` header — never in the webhook URL (see below). Keep private and rotate both sides together. |
-| **Label retry operators** (`SHIPPING_LABEL_OPERATOR_EMAILS`) | Comma-separated support emails authorized to use the label API for any seller. There is no operator UI; cross-seller or unknown retries require the approved engineering procedure. Sellers retry their own labels in the sale UI.                                                                                               |
-| **Auto-buy labels** (`ESHIP_LABEL_AUTOBUY`)                  | `true` plus enabled label capability = buy automatically after confirmed payment. Default/unset/`false` = seller buys with **Generar guía**. Keep off until cancellation/refund policy is approved.                                                                                                                              |
-
-> The eShip carrier account is billed directly for every label, so **the marketplace (not the
-> seller) pays the carrier**. Because of that, the buyer's shipping payment is kept by the
-> marketplace to cover the label cost — it is **not** added to the seller's payout. (Provider
-> commission is charged on the item price only, so it is unaffected.)
->
-> A purchased-label cancellation/refund policy and final IVA treatment are still business/accounting
-> decisions. Follow [pending work](pending/README.md) and do not improvise an automatic refund or
-> carrier-cost adjustment.
-
-**Where the pickup email comes from.** eShip notifies the marketplace when the carrier scans a
-package. In the eShip dashboard (**Ver tus Webhooks**), the notification address is the marketplace
-address followed by `/api/shipping/eship-webhook`, and the shared secret goes in the **Encabezados**
-table as key `X-AV-Webhook-Secret` with the secret as its value. The secret must **not** go in the
-URL: web hosts and error monitoring routinely record full URLs in their logs, so a secret in the URL
-ends up stored in those logs, while a header does not. The marketplace rejects a secret sent after
-`?secret=` in the URL. If a dashboard ever had the secret in its URL, ask the dev team to rotate it.
-Treat the secret like a password. The dev team sets this up per environment; the test and
-production marketplaces use different secrets.
-
-### Security and search indexing
-
-| Setting                                            | What it controls                                                                                                                                       |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **HTTPS** (`REACT_APP_SHARETRIBE_USING_SSL`)       | `true` on every deployed site: redirects HTTP to HTTPS and marks login cookies secure.                                                                 |
-| **Proxy hops** (`SERVER_SHARETRIBE_TRUST_PROXY`)   | `1` on Heroku, `3` on Render, so the server sees each visitor's real address (rate limits, consent records). Never `true`.                                            |
-| **Content Security Policy** (`REACT_APP_CSP`)      | `report` while testing, `block` in production.                                                                                                         |
-| **Hide from search engines** (`AV_NOINDEX`)        | `true` on Render staging; unset on Heroku production (removed at the Live cutover). Any address other than the main site address is always hidden from search. |
-
-### Seller earnings estimator
-
-| Setting                            | What it controls                                                                                                          |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| **Provider commission percentage** | The marketplace fee percentage charged to sellers. Shown in the earnings estimator when sellers set a price. Read from Console (`commission.json`, 22 % in Test and Live); 22 % is also the code fallback. A seller with a **Comisión (%)** value ([Section 14.6](#146-commission-rate-changes)) sees and pays their own percentage instead. |
-| **Provider fixed fee** (`REACT_APP_PROVIDER_COMMISSION_FIXED_FEE`) | Fixed fee in centavos charged to the seller on every sale, on top of the percentage. Set by the dev team, not in Console: 1500 (= MXN \$15.00) on Heroku. The same value drives both the estimate and the fee actually charged, so changing it needs a rebuild. |
-| **Stripe fee** (`REACT_APP_STRIPE_FEE_PERCENTAGE`, `REACT_APP_STRIPE_FEE_FIXED_AMOUNT`) | Not shown to Archivo Vintach sellers. The `av-listing` pricing step shows only the commission and fixed fee, because the platform pays Stripe out of its commission. These values (default 2.9 % + 30 centavos) reach only the booking-style pricing form, which no listing type uses. |
-
-Sellers see an estimate of their net earnings while setting a price. The percentage actually charged
-comes from Console → Build → Transactions; the fixed fee comes from the setting above. To change
-either, including a temporary rate, follow [Section 14.6](#146-commission-rate-changes).
-
-**Minimum listing price.** Console → Build → Transactions → Minimum transaction size must leave room
-for the provider fixed fee: at 22 % plus \$15.00 that is at least \$19.24, and Archivo Vintach uses
-**\$20.00** in both Test and Live. The listing form and bulk import both refuse prices below it. If
-the minimum is ever set too low, a sale still completes, but the fixed fee is reduced to whatever is
-left after the percentage (down to zero) and the server logs `Provider fixed fee clamped`. Raising
-the commission percentage or the fixed fee means raising the minimum too.
-
----
-
-## 10. Custom Translation Strings
-
-Custom translation strings control operator-editable text throughout the app. They live in two
-places:
-
-- **App translation files** (`en_av.json` / `es_av.json`) — the baseline defaults shipped with the
-  code. Updated by the development team.
-- **Sharetribe Console → Content → Translations** — operator overrides. Console values take
-  precedence over the app files.
-- **Paste-ready Spanish reference**
-  ([`reference/marketplace-texts-es.json`](reference/marketplace-texts-es.json)) — the audited union
-  of the current Test Console text and all used Spanish defaults from `es_av.json` and `es.json`.
-  Use this file when replacing the complete Spanish marketplace-text JSON in Console.
-
-The runtime order is **Console → `es_av.json` → `en.json`**. `es.json` is retained as an upstream
-translation source but is not loaded by this marketplace, so a key missing from both Console and
-`es_av.json` falls back to English.
-
-### How to update a string in the Console
-
-1. Go to **Console → Content → Translations**.
-2. Use the search box to find the key you want (e.g. `AVWelcomePopup.vendedor.title`).
-3. If the key already exists, click it and edit the value in the text field, then save.
-4. If the key does not appear yet (common for per-section dynamic keys like
-   `AVHero2.my-section.mobileBackgroundUrl`), click **Add translation**, enter the key exactly as
-   shown in the tables below, type the value, and save.
-
-Changes take effect on the next page load. Most keys below have defaults in `en_av.json` and
-`es_av.json`, so removing a Console override restores the shipped value. Only explicitly optional
-dynamic keys—such as per-instance `AVHero2` buttons, mobile backgrounds, and `AVVideo` URLs—use a
-missing or blank value to hide that optional element. Do not blank a standard key to hide its UI.
-
-> **One language:** The marketplace has a single locale, Spanish (`es`, set in Console's
-> localization), so each key has one value to edit. `en_av.json` is never shown to users; it only
-> keeps the AV keys in step with `es_av.json` (`yarn av-translation-check`).
-
----
-
-### Listing field controls
-
-| Area           | Key                                    | English default       | Spanish default          | Operator note                                                |
-| -------------- | -------------------------------------- | --------------------- | ------------------------ | ------------------------------------------------------------ |
-| Size selector  | `ListingField.allSizes.group.standard` | `Clothing (Standard)` | `Ropa (Estándar)`        | Group heading for standard letter sizes.                     |
-| Size selector  | `ListingField.allSizes.group.mx`       | `Clothing (MX)`       | `Ropa (MX)`              | Group heading for Mexican numeric sizes.                     |
-| Size selector  | `ListingField.allSizes.group.us`       | `Clothing (US)`       | `Ropa (US)`              | Group heading for US numeric sizes.                          |
-| Size selector  | `ListingField.allSizes.group.curvy`    | `Curvy Sizes`         | `Tallas Curvy`           | Group heading for curvy sizes.                               |
-| Size selector  | `ListingField.allSizes.group.shoes`    | `Shoes (US / MX)`     | `Calzado (US / MX)`      | Group heading for US / Mexican shoe sizes (half sizes).      |
-| Size selector  | `ListingField.allSizes.group.rings`    | `Rings`               | `Anillos`                | Group heading for ring sizes.                                |
-| Size selector  | `FieldGroupedMultiSelect.placeholder`  | `Select sizes…`       | `Selecciona tallas…`     | Empty field placeholder.                                     |
-| Size selector  | `FieldGroupedMultiSelect.clearAll`     | `Clear all`           | `Borrar todo`            | Clear all selected sizes button.                             |
-| Size selector  | `FieldGroupedMultiSelect.expand`       | `Expand`              | `Expandir`               | Collapsed dropdown toggle label.                             |
-| Size selector  | `FieldGroupedMultiSelect.collapse`     | `Collapse`            | `Contraer`               | Expanded dropdown toggle label.                              |
-| Size selector  | `FieldGroupedMultiSelect.removeOption` | `Remove {label}`      | `Quitar {label}`         | Chip remove button. `{label}` is the selected size.          |
-| Color selector | `FieldColorDropdown.placeholder`       | `Select colors…`      | `Selecciona colores…`    | Empty color field placeholder.                               |
-| Color selector | `FieldColorDropdown.title`             | `Select Color`        | `Seleccionar Color`      | Dropdown panel heading.                                      |
-| Color selector | `FieldColorDropdown.clearAll`          | `Clear all`           | `Borrar todo`            | Clear-all-selected-colors button.                            |
-| Color selector | `FieldColorDropdown.expand`            | `Expand`              | `Expandir`               | Collapsed dropdown toggle label.                             |
-| Color selector | `FieldColorDropdown.collapse`          | `Collapse`            | `Contraer`               | Expanded dropdown toggle label.                              |
-| Size selector  | `FieldGroupedMultiSelect.maxHint`      | `Select up to {max}`  | `Selecciona hasta {max}` | Hint shown when the field caps how many sizes can be picked. |
-| Brand selector | `FieldSearchableSelect.placeholder`    | `Search brand…`       | `Buscar marca…`          | Empty brand field placeholder.                               |
-| Brand selector | `FieldSearchableSelect.clear`          | `Clear`               | `Borrar`                 | Clear (×) button.                                            |
-| Brand selector | `FieldSearchableSelect.expand`         | `Expand`              | `Expandir`               | Collapsed dropdown toggle label.                             |
-| Brand selector | `FieldSearchableSelect.collapse`       | `Collapse`            | `Contraer`               | Expanded dropdown toggle label.                              |
-
-### Listing form — photos and pricing
-
-| Area                  | Key                                                       | English default                                             | Spanish default                                                | Operator note                                                                                      |
-| --------------------- | --------------------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Photo upload (inline) | `EditListingDetailsPanel.photosTitle`                     | `Photos`                                                    | `Subir Fotos`                                                  | Section heading above the inline photo uploader. Displayed in ALL CAPS by CSS.                     |
-| Details form heading  | `EditListingDetailsPanel.detailsTitle`                    | `Detalles del producto`                                     | `Detalles del producto`                                        | Section heading above the details fields (below the photo uploader). Displayed in ALL CAPS by CSS. |
-| Photo upload (inline) | `EditListingDetailsPanel.photosMinRequired`               | `Add at least 3 photos to continue.`                        | `Agrega almenos 3 fotos.`                                      | Validation message when too few photos are uploaded.                                               |
-| Photo upload (inline) | `EditListingDetailsPanel.photosAddTip`                    | `You can add up to 10 photos.`                              | `Máximo 10 fotos.`                                             | Helper text under the uploader.                                                                    |
-| Photo upload (inline) | `EditListingDetailsPanel.photosMaxReached`                | `Maximum of 10 photos reached.`                             | `El máximo de 10 fotos se ha alcanzado.`                       | Shown when the photo limit is hit.                                                                 |
-| Photo upload (inline) | `EditListingDetailsPanel.photosUploadInProgress`          | `Please wait for all photos to finish uploading.`           | `Espera a que todas los fotos terminen de cargarse.`           | Shown while photos are still uploading.                                                            |
-| Photo upload (step)  | `EditListingPhotosForm.addImagesTip`                      | `Tip: Upload 2-3 good-quality photos from different angles.` | `Consejo: sube las mejores 2-3 fotos desde diferentes ángulos.` | Tip in the standalone Photos step (hidden while photos are uploaded in Details).                                                      |
-| Original price field  | `EditListingPricingForm.originalPrice`                    | `Original Price (optional)`                                 | `Precio Original (opcional)`                                   | Label for the strike-through original price field.                                                 |
-| Original price field  | `EditListingPricingForm.originalPricePlaceholder`         | `Add original price…`                                       | `Agrega el precio original…`                                   | Placeholder in the original price input.                                                           |
-| Earnings estimator    | `EarningsEstimator.title`                                 | `Estimated Earnings`                                        | `Ganancias Estimadas`                                          | Card heading in the pricing panel.                                                                 |
-| Earnings estimator    | `EarningsEstimator.listingPrice`                          | `Listing price`                                             | `Precio del producto`                                          | Row label for the listing price.                                                                   |
-| Earnings estimator    | `EarningsEstimator.marketplaceFeeLabel`                   | `Marketplace fee`                                           | `Comisión del marketplace`                                     | Row label for the marketplace commission.                                                          |
-| Earnings estimator    | `EarningsEstimator.stripeFee`                             | `Payment processing`                                        | `Procesamiento de pago`                                        | Row label for the Stripe fee. Not shown on the `av-listing` pricing step (booking form only). |
-| Earnings estimator    | `EarningsEstimator.yourEarnings`                          | `Your earnings`                                             | `Tus ganancias`                                                | Row label for the net earnings.                                                                    |
-| Earnings estimator    | `EarningsEstimator.enterPrice`                            | `Enter a price to see estimated earnings.`                  | `Ingresa un precio para ver las ganancias estimadas.`          | Shown before a price is entered.                                                                   |
-| Earnings estimator    | `EarningsEstimator.disclaimer`                            | `This is an estimate. Actual fees may vary.`                | `Esta es una estimación. Las comisiones reales pueden variar.` | Small disclaimer below the estimate.                                                               |
-| Photo upload (inline) | `EditListingDetailsPanel.photoLabel1`                     | `Front photo`                                               | `Foto frontal`                                                 | Caption under photo slot 1.                                                                        |
-| Photo upload (inline) | `EditListingDetailsPanel.photoLabel2`                     | `Back photo`                                                | `Foto posterior`                                               | Caption under photo slot 2.                                                                        |
-| Photo upload (inline) | `EditListingDetailsPanel.photoLabel3`                     | `Label or detail`                                           | `Etiqueta o detalle`                                           | Caption under photo slot 3.                                                                        |
-| Photo upload (inline) | `EditListingDetailsPanel.photoLabel4`                     | `Selfie (optional)`                                         | `Selfie (si quieres)`                                          | Caption under photo slot 4.                                                                        |
-| Photo upload (inline) | `EditListingDetailsPanel.photosTipText`                   | `Learn how to take the best photos {link}.`                 | `Aprende a tomar las mejores fotos {link}.`                    | Tip under the uploader; `{link}` renders the link text below.                                      |
-| Photo upload (inline) | `EditListingDetailsPanel.photosTipLinkText`               | `here`                                                      | `aquí`                                                         | Link text inside the photos tip.                                                                   |
-| Pricing (with stock)  | `EditListingPricingAndStockForm.originalPrice`            | `Original Price (optional)`                                 | `Precio Original (Opcional)`                                   | "Was" price label on the pricing + stock panel.                                                    |
-| Pricing (with stock)  | `EditListingPricingAndStockForm.originalPricePlaceholder` | `Add original price…`                                       | `Cuanto te costó?`                                             | Placeholder for that original price input.                                                         |
-
-### Search filters
-
-| Area         | Key                             | English default | Spanish default | Operator note                              |
-| ------------ | ------------------------------- | --------------- | --------------- | ------------------------------------------ |
-| Brand filter | `BrandFilter.searchPlaceholder` | `Search brand…` | `Buscar marca…` | Placeholder inside the brand search input. |
-| Brand filter | `BrandFilter.noResults` | `No results` | `Sin resultados` | Shown when the brand search matches nothing. |
-| Size filter  | `SearchPage.groupedSizesLabel`  | `Size`          | `Talla`         | Sidebar grouped size filter label.         |
-
-### Navigation
-
-| Area                     | Key                                                   | English default      | Spanish default       | Operator note                                              |
-| ------------------------ | ----------------------------------------------------- | -------------------- | --------------------- | ---------------------------------------------------------- |
-| Topbar highlighted link  | `Topbar.custom.leftOne`                               | `Hot list`           | `Lo Nuevo`            | Label for the single highlighted link in the top bar.      |
-| Topbar highlighted link  | `Topbar.custom.leftOneHref`                           | `?pub_tags=hot-list` | `?pub_tags=mas-nuevo` | Search query URL for the highlighted link.                 |
-| Topbar menu 1 label      | `Topbar.custom.menuOne`                               | `Shop`               | `Ropa`                | First dropdown menu label.                                 |
-| Topbar menu 2 label      | `Topbar.custom.menuTwo`                               | `Explore`            | `Accesorios`          | Second dropdown menu label.                                |
-| Topbar menu 3 label      | `Topbar.custom.menuThree`                             | `Brands`             | `Diseño Local`        | Third dropdown menu label.                                 |
-| Desktop favorites icon   | `TopbarDesktop.favoritesLink`                         | `Favorites`          | `Favoritos`           | Heart icon tooltip in the top bar (also the profile menu). |
-| Mobile menu              | `TopbarMobileMenu.favoritesLink`                      | `Favorites`          | `Favoritos`           | Mobile menu link to the favorites page.                    |
-| Account sidebar tab      | `UserNav.favorites`                                   | `Favorites`          | `Favoritos`           | Tab label in the account navigation sidebar.               |
-| Desktop bag icon         | `BagLink.label`                                       | `Shopping bag`       | `Bolsa de compras`    | Tooltip / label for the top-bar bag icon.                  |
-| Mobile menu              | `TopbarMobileMenu.bagLink`                            | `My bag`             | `Mi carrito`          | Mobile menu link to the bag page.                          |
-| Desktop profile menu     | `TopbarDesktop.myPurchasesLink`                       | `My Purchases`       | `Mis Compras`         | Profile dropdown link to the purchases page.               |
-| Desktop profile menu     | `TopbarDesktop.mySalesLink`                           | `My Sales`           | `Mis Ventas`          | Profile dropdown link to the sales page.                   |
-| Desktop profile menu     | `TopbarDesktop.myBalanceLink`                         | `My Balance`         | `Mi Balance`          | Profile dropdown link to the balance page.                 |
-| Mobile menu              | `TopbarMobileMenu.myPurchasesLink`                    | `My Purchases`       | `Mis Compras`         | Mobile menu link to the purchases page.                    |
-| Mobile menu              | `TopbarMobileMenu.mySalesLink`                        | `My Sales`           | `Mis Ventas`          | Mobile menu link to the sales page.                        |
-| Mobile menu              | `TopbarMobileMenu.myBalanceLink`                      | `My Balance`         | `Mi Balance`          | Mobile menu link to the balance page.                      |
-| Account sidebar tab      | `UserNav.myPurchases`                                 | `My Purchases`       | `Mis Compras`         | Tab label in the account navigation sidebar.               |
-| Account sidebar tab      | `UserNav.mySales`                                     | `My Sales`           | `Mis Ventas`          | Tab label in the account navigation sidebar.               |
-| Account sidebar tab      | `UserNav.myBalance`                                   | `My Balance`         | `Mi Balance`          | Tab label in the account navigation sidebar.               |
-| Account settings sidebar | `LayoutWrapperAccountSettingsSideNav.profileTabTitle` | `Profile`            | `Perfil`              | Label for the Profile tab in the account settings sidebar. |
+A Tienda's `tipoTienda` values are shown as small coloured chips over the photo of each of its
+listings — on listing cards everywhere and on the listing page gallery. At most three are shown,
+coloured in order from a fixed four-colour palette. The chip text is the option **label** of the
+Console `tipoTienda` field (today Diseño Local, Vintage, Upcycling), so rewording a label changes
+every chip; a new option appears as soon as a store selects it. Persona accounts never show chips.
+The screen-reader label of the chip group is the key `StoreTypeTags.ariaLabel`.
 
 ### Welcome popup (shown after first registration)
 
@@ -2254,196 +2075,226 @@ used alongside the regular keys.
 Store sellers sell through the marketplace rather than buying on it, so three buyer-side entries are
 left out of their menus:
 
-| Entry                 | Where it is normally shown                                                       |
-| --------------------- | -------------------------------------------------------------------------------- |
-| **Mis direcciones**   | Account settings sidebar (`/account/my-addresses`).                              |
-| **Favoritos**         | Profile dropdown, mobile menu, the account tab strip, and the topbar heart icon. |
-| **Compras** (Orders)  | The left sidebar inside the inbox (`/inbox/orders`).                             |
+| Entry                | Where it is normally shown                                                       |
+| -------------------- | -------------------------------------------------------------------------------- |
+| **Mis direcciones**  | Account settings sidebar (`/account/my-addresses`).                              |
+| **Favoritos**        | Profile dropdown, mobile menu, the account tab strip, and the topbar heart icon. |
+| **Compras** (Orders) | The left sidebar inside the inbox (`/inbox/orders`).                             |
 
 The **inbox itself stays visible** for store sellers — the topbar envelope, the mobile menu's inbox
-row, and the **Ventas** (Sales) tab all work as usual, because that is where they read messages about
-their own sales. Only the Orders tab is dropped from the inbox sidebar, and the envelope always opens
-on Ventas for them.
+row, and the **Ventas** (Sales) tab all work as usual, because that is where they read messages
+about their own sales. Only the Orders tab is dropped from the inbox sidebar, and the envelope
+always opens on Ventas for them.
 
 This is a **display rule only** — nothing is deleted or blocked. All three destinations stay
 reachable by typing the URL, and anything already saved (an address, favorites, past orders) is
 untouched and reappears if the account's user type is changed back. There is no per-user switch: the
 rule follows the `vendedor-tienda` user type, so changing what a given account sees means changing
-its user type in Console.
+its user type ([User types](#user-types) — ask the development team first).
 
 If a store seller reports that they cannot find their favorites or the Compras tab, this is the
 expected behaviour, not a fault.
 
-### Landing and PageBuilder sections
+---
 
-| Area                | Key / pattern                        | English default               | Spanish default                                        | Operator note                                                                        |
-| ------------------- | ------------------------------------ | ----------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| AV carousels        | `AVCarousel.previous`                | `Previous`                    | `Anterior`                                             | Previous arrow label for listing, category, tag, and user carousels.                 |
-| AV carousels        | `AVCarousel.next`                    | `Next`                        | `Siguiente`                                            | Next arrow label.                                                                    |
-| Multi-instance hero | `AVHero2.<name>.cta1Text`            | Empty                         | Empty                                                  | `<name>` is the suffix after `av-hero2-`; e.g. `AVHero2.shop.cta1Text`.              |
-| Multi-instance hero | `AVHero2.<name>.cta1Link`            | `/s`                          | `/s`                                                   | Link used when `cta1Text` is set.                                                    |
-| Multi-instance hero | `AVHero2.<name>.cta1Style`           | `primary`                     | `primary`                                              | Style tokens such as `primary`, `secondary`, `blue`, `roundedFull`.                  |
-| Multi-instance hero | `AVHero2.<name>.cta2Text`            | Empty                         | Empty                                                  | Optional second CTA text.                                                            |
-| Multi-instance hero | `AVHero2.<name>.cta2Link`            | `/s`                          | `/s`                                                   | Link used when `cta2Text` is set.                                                    |
-| Multi-instance hero | `AVHero2.<name>.cta2Style`           | `secondary`                   | `secondary`                                            | Optional second CTA style tokens.                                                    |
-| Multi-instance hero | `AVHero2.<name>.mobileBackgroundUrl` | Empty                         | Empty                                                  | Optional mobile-specific background image URL.                                       |
-| Clickable hero      | `AVHero2.<name>.bgLink`              | Empty                         | Empty                                                  | Makes the entire hero section a link.                                                |
-| Video section       | `AVVideo.<name>.videoUrl`            | Empty                         | Empty                                                  | `<name>` is the suffix after `av-video-`; direct video file URL (MP4) for `avVideo`. |
-| Instagram grid      | `SectionInstaGrid.dialogLabel`       | `Instagram post`              | `Publicación de Instagram`                             | Modal dialog accessible label.                                                       |
-| Instagram grid      | `SectionInstaGrid.closePost`         | `Close post`                  | `Cerrar publicación`                                   | Modal close button label.                                                            |
-| Instagram grid      | `SectionInstaGrid.viewPost`          | `View Instagram post {index}` | `Ver publicación de Instagram {index}`                 | Grid cell button label. `{index}` is 1-based.                                        |
-| Instagram feed      | `InstagramFeed.dialogLabel`          | `Instagram post`              | `Publicación de Instagram`                             | Modal dialog label for the Instagram feed block.                                     |
-| Instagram feed      | `InstagramFeed.closePost`            | `Close post`                  | `Cerrar publicación`                                   | Modal close button label.                                                            |
-| Instagram feed      | `InstagramFeed.viewPost`             | `View Instagram post {index}` | `Ver publicación de Instagram {index}`                 | Grid cell button label. `{index}` is 1-based.                                        |
-| Instagram feed      | `InstagramFeed.mediaAlt`             | `Instagram post`              | `Publicación de Instagram`                             | Fallback image alt text when caption is missing.                                     |
-| Instagram feed      | `InstagramFeed.mute`                 | `Mute`                        | `Silenciar`                                            | Video mute button aria label.                                                        |
-| Instagram feed      | `InstagramFeed.unmute`               | `Unmute`                      | `Activar sonido`                                       | Video unmute button aria label.                                                      |
-| Instagram feed      | `InstagramFeed.pause`                | `Pause`                       | `Pausar`                                               | Video pause button aria label.                                                       |
-| Instagram feed      | `InstagramFeed.play`                 | `Play`                        | `Reproducir`                                           | Video play button aria label.                                                        |
-| Footer              | `Footer.belowSlogan`                 | Empty                         | Address and opening hours (see Console/reference JSON) | Optional extra text displayed below the footer slogan.                               |
+## 10. Listing Form and Listing Page
 
-### PageBuilder block key patterns
+Sellers create a listing at `/l/new` (reached from **VENDE** → "Subir un Producto",
+[Section 14](#14-upload-chooser-page-create-type)). This section explains the form's custom parts,
+the rules it enforces, and what buyers see on the listing page, so you can answer seller questions
+and edit the wording.
 
-| Area               | Key / pattern                               | English default             | Spanish default                       | Operator note                                                                 |
-| ------------------ | ------------------------------------------- | --------------------------- | ------------------------------------- | ----------------------------------------------------------------------------- |
-| Two-buttons block  | `TwoButtons.<blockId>.titleEyebrow`         | Empty                       | Empty                                 | Optional eyebrow above the block title.                                       |
-| Two-buttons block  | `TwoButtons.<blockId>.cta1Text`             | —                           | —                                     | First CTA text.                                                               |
-| Two-buttons block  | `TwoButtons.<blockId>.cta1Link`             | —                           | —                                     | First CTA link.                                                               |
-| Two-buttons block  | `TwoButtons.<blockId>.cta1Style`            | Empty                       | Empty                                 | Optional style tokens.                                                        |
-| Two-buttons block  | `TwoButtons.<blockId>.cta2Text`             | —                           | —                                     | Second CTA text.                                                              |
-| Two-buttons block  | `TwoButtons.<blockId>.cta2Link`             | —                           | —                                     | Second CTA link.                                                              |
-| Two-buttons block  | `TwoButtons.<blockId>.cta2Style`            | Empty                       | Empty                                 | Optional style tokens.                                                        |
-| Photo slider block | `PhotoSlider.<blockId>.image_1` … `image_4` | Empty                       | Empty                                 | Image URLs for `photoSlider ::` blocks. Set at least one; blanks are skipped. |
-| Photo slider block | `AVPhotoSlider.pause`                       | `Pause the photo slideshow` | `Pausar la presentación de fotos`     | Label read out for the slider's pause button. Not shown on screen.            |
-| Photo slider block | `AVPhotoSlider.play`                        | `Play the photo slideshow`  | `Reproducir la presentación de fotos` | Same button once the slideshow is paused.                                     |
+### The listing form, step by step
 
-### Newsletter form
+The `av-listing` type uses a two-step form; there is no delivery or location step, because every
+product ships and shipping is switched on automatically when the listing is saved.
 
-| Key                               | English default                                                                                                                                 | Spanish default                                                                                                                                                                                        | Operator note                     |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
-| `NewsletterForm.emailPlaceholder` | `Your Email`                                                                                                                                    | `Tu Email`                                                                                                                                                                                             | Email input placeholder.          |
-| `NewsletterForm.disclaimerText`   | `By entering your email, you agree to receive promotional emails from Archivo Vintach per our Privacy Policy. You may unsubscribe at any time.` | `Al introducir tu correo electrónico, aceptas recibir correos electrónicos promocionales de Archivo Vintach de acuerdo con nuestra Política de Privacidad. Puedes darte de baja en cualquier momento.` | Disclaimer below the email field. |
-| `NewsletterForm.successMessage`   | `You're subscribed! Thanks for joining our newsletter.`                                                                                         | `¡Gracias! Revisa tu bandeja de entrada.`                                                                                                                                                              | Shown after successful signup.    |
-| `NewsletterForm.errorMessage`     | `Subscription failed. Try again later.`                                                                                                         | `Error en la suscripción. Inténtalo más tarde.`                                                                                                                                                        | Server error state.               |
-| `NewsletterForm.invalidEmail`     | `Please enter a valid email.`                                                                                                                   | `Introduce un email válido.`                                                                                                                                                                           | Client-side validation message.   |
-| `NewsletterForm.networkError`     | `Network error. Try again.`                                                                                                                     | `Error de red. Inténtalo de nuevo.`                                                                                                                                                                    | Network failure state.            |
+| Step                   | What the seller fills in                                                                                                    | Rules                                                                                                   |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **1. Details**         | Photos, title, description, category, and the listing fields ([Section 3](#3-listing-fields))                               | **3 to 10 photos**; the category must reach its deepest level; fields marked required must be filled in |
+| **2. Pricing & stock** | Price, optional original price (Persona only), package size, and the earnings estimate. The listing is published from here. | Price at least the minimum listing price (**\$20.00**); original price higher than the price            |
 
-### My Purchases, My Sales, My Balance pages
+Sellers must also complete their Stripe payout details before a listing can be published, and set a
+shipping-origin address before buyers can get a shipping quote
+([Section 11](#11-checkout-shipping-and-labels)). Sellers without a shipping origin see a reminder
+banner on **Manage listings**.
 
-The balance totals refresh at most once a minute: after a sale is completed or cancelled, the
-totals on **My Balance** catch up within about a minute, even without reloading the page (the
-transaction list underneath updates straight away).
+**Photos.** Photos are uploaded inside the Details step, and sellers can drag them to reorder; the
+first photo is the one shown on listing cards. The first four places carry captions — front, back,
+label or detail, selfie — that guide the seller but are not enforced. Photos beyond the tenth are
+refused with a message. Listings imported in bulk without photos show a placeholder image until the
+seller replaces it ([8.4](#image-columns)).
 
-| Area            | Key                              | English default                                  | Spanish default                                          | Operator note           |
-| --------------- | -------------------------------- | ------------------------------------------------ | -------------------------------------------------------- | ----------------------- |
-| Purchases page  | `MyPurchasesPage.heading`        | `My Purchases`                                   | `Mis Compras`                                            | Page heading.           |
-| Purchases page  | `MyPurchasesPage.title`          | `My Purchases \| Archivo Vintach`                | `Mis Compras \| Archivo Vintach`                         | Browser tab title.      |
-| Purchases page  | `MyPurchasesPage.loadingError`   | `Failed to load purchases. Please try again.`    | `No se pudieron cargar las compras. Inténtalo de nuevo.` | Error state.            |
-| Purchases page  | `MyPurchasesPage.noResults`      | `You haven't made any purchases yet.`            | `Aún no has realizado ninguna compra.`                   | Empty state.            |
-| Sales page      | `MySalesPage.heading`            | `My Sales`                                       | `Mis Ventas`                                             | Page heading.           |
-| Sales page      | `MySalesPage.title`              | `My Sales \| Archivo Vintach`                    | `Mis Ventas \| Archivo Vintach`                          | Browser tab title.      |
-| Sales page      | `MySalesPage.loadingError`       | `Failed to load sales. Please try again.`        | `No se pudieron cargar las ventas. Inténtalo de nuevo.`  | Error state.            |
-| Sales page      | `MySalesPage.noResults`          | `You don't have any sales yet.`                  | `Aún no tienes ninguna venta.`                           | Empty state.            |
-| Balance page    | `MyBalancePage.heading`          | `My Balance`                                     | `Mi Balance`                                             | Page heading.           |
-| Balance page    | `MyBalancePage.title`            | `My Balance \| Archivo Vintach`                  | `Mi Balance \| Archivo Vintach`                          | Browser tab title.      |
-| Balance page    | `MyBalancePage.loadingError`     | `Failed to load balance data. Please try again.` | `No se pudieron cargar los datos del balance. Inténtalo de nuevo.` | Error state.            |
-| Balance page    | `MyBalancePage.noResults`        | `No transactions found.`                         | `No se encontraron transacciones.`                       | Empty state.            |
-| Balance summary | `BalanceSummary.totalEarnings`   | `Total Earnings`                                 | `Ganancias Totales`                                      | Summary card heading.   |
-| Balance summary | `BalanceSummary.pending`         | `Pending`                                        | `Pendiente`                                              | Summary card heading.   |
-| Balance summary | `BalanceSummary.cancelled`       | `Cancelled`                                      | `Canceladas`                                             | Summary card heading.   |
-| Balance summary | `BalanceSummary.tabAllTime`      | `All Time`                                       | `Todo el tiempo`                                         | Time-range tab label.   |
-| Balance summary | `BalanceSummary.tabCurrentMonth` | `This Month`                                     | `Este mes`                                               | Time-range tab label.   |
-| Payout row      | `PayoutItem.gross`               | `Gross`                                          | `Bruto`                                                  | Column header.          |
-| Payout row      | `PayoutItem.net`                 | `Net`                                            | `Neto`                                                   | Column header.          |
-| Payout row      | `PayoutItem.statusCompleted`     | `Completed`                                      | `Completada`                                             | Status badge text.      |
-| Payout row      | `PayoutItem.statusPending`       | `Pending`                                        | `Pendiente`                                              | Status badge text.      |
-| Payout row      | `PayoutItem.statusCancelled`     | `Cancelled`                                      | `Cancelada`                                              | Status badge text.      |
-| Filters         | `TransactionFilters.status`      | `Status`                                         | `Estado`                                                 | Filter label.           |
-| Filters         | `TransactionFilters.dateFrom`    | `From`                                           | `Desde`                                                  | Date range start label. |
-| Filters         | `TransactionFilters.dateTo`      | `To`                                             | `Hasta`                                                  | Date range end label.   |
-| Filters         | `TransactionFilters.clearAll`    | `Clear filters`                                  | `Limpiar filtros`                                        | Clear button.           |
-| Filters         | `TransactionFilters.all`         | `All`                                            | `Todos`                                                  | Status option.          |
-| Filters         | `TransactionFilters.completed`   | `Completed`                                      | `Completadas`                                            | Status option.          |
-| Filters         | `TransactionFilters.pending`     | `Pending`                                        | `Pendientes`                                             | Status option.          |
-| Filters         | `TransactionFilters.cancelled`   | `Cancelled`                                      | `Canceladas`                                             | Status option.          |
+### Original price
 
-### Bulk import page
+A Persona seller may enter the item's original retail price. It is shown struck through next to the
+price on the listing page and on listing cards, as long as it is higher than the price; the form
+refuses a lower or equal value. Tienda sellers do not see the field. The rule is the same for bulk
+import (`pub_originalPrice`).
 
-| Key                                 | English default                                                 | Spanish default                                                        | Operator note                                                         |
-| ----------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `BulkImportPage.simpleHeading`      | `Upload multiple products`                                      | `Sube varios productos`                                                | Active page heading.                                                  |
-| `BulkImportPage.simpleDescription`  | `Upload your inventory in 3 steps.`                             | `Carga tu inventario en 3 pasos.`                                      | Active page subtitle.                                                 |
-| `BulkImportPage.simpleStep1Title`   | `Open the template`                                             | `Abre la plantilla`                                                    | Active step 1 title.                                                  |
-| `BulkImportPage.simpleStep1Text`    | `Create a copy to get started.`                                 | `Crea una copia para empezar.`                                         | Active step 1 help.                                                   |
-| `BulkImportPage.simpleTemplateCta`  | `Open template`                                                 | `Abrir plantilla`                                                      | Opens the shared Google Drive template in a new tab.                  |
-| `BulkImportPage.simpleStep2Title`   | `Complete and download`                                         | `Completa y descarga`                                                  | Active step 2 title.                                                  |
-| `BulkImportPage.simpleStep2Text`    | `Add your products and download the template when you're done.` | `Agrega tus productos y descarga la plantilla cuando termines.`        | Active step 2 help.                                                   |
-| `BulkImportPage.simpleStep3Title`   | `Upload your template`                                          | `Sube tu plantilla`                                                    | Active step 3 title.                                                  |
-| `BulkImportPage.simpleDropTitle`    | `Drag your CSV or ZIP file here`                                | `Arrastra tu archivo CSV o ZIP aquí`                                   | Active drop-zone heading.                                             |
-| `BulkImportPage.simpleDropSubtitle` | `or select it from your computer`                               | `o selecciónalo desde tu computadora`                                  | Active drop-zone help.                                                |
-| `BulkImportPage.simpleSelectFile`   | `Select file`                                                   | `Seleccionar archivo`                                                  | Active file-picker button.                                            |
-| `BulkImportPage.simpleFileHelp`     | `CSV (max. 5 MB) or ZIP with photos (max. 20 MB)`               | `CSV (máx. 5 MB) o ZIP con fotos (máx. 20 MB)`                         | Matches the enforced bare-CSV and standard-tier ZIP limits.           |
-| `BulkImportPage.simpleCsvLabel`     | `CSV or ZIP file`                                               | `Archivo CSV o ZIP`                                                    | Accessible file-input label.                                          |
-| `BulkImportPage.simpleWhatsappCta`  | `Message us on WhatsApp`                                        | `Escríbenos por WhatsApp`                                              | Active support-link label.                                            |
-| `BulkImportPage.simpleErrorNoCsv`   | `Please select a .csv or .zip file.`                            | `Por favor, selecciona un archivo .csv o .zip.`                        | Active file-type validation message.                                  |
-| `BulkImportPage.heading`            | `Upload your inventory in minutes`                              | `Sube tu inventario en minutos`                                        | Page heading.                                                         |
-| `BulkImportPage.description`        | `Upload several items at once with a template — with your…`     | `Carga varias prendas a la vez con una plantilla: con tus…`            | Intro paragraph.                                                      |
-| `BulkImportPage.zipLabel`           | `ZIP or CSV file`                                               | `Archivo ZIP o CSV`                                                    | Upload field label.                                                   |
-| `BulkImportPage.zipHelp`            | `Maximum 50 MB per file • .zip with CSV and photos (JPG or…`    | `Máximo 50 MB por archivo • .zip con CSV y fotos (JPG o…`              | Helper text below the upload field.                                   |
-| `BulkImportPage.zipSelected`        | `Selected: {name}`                                              | `Seleccionado: {name}`                                                 | Shown after a file is selected.                                       |
-| `BulkImportPage.startImport`        | `Start Import`                                                  | `Iniciar Importación`                                                  | Primary action button.                                                |
-| `BulkImportPage.downloadTemplate`   | `Download template`                                             | `Descargar plantilla`                                                  | Downloads the generated seller CSV template.                          |
-| `BulkImportPage.uploading`          | `Uploading files...`                                            | `Subiendo archivos...`                                                 | Status while uploading.                                               |
-| `BulkImportPage.processing`         | `Processing...`                                                 | `Procesando...`                                                        | Status while the server is working.                                   |
-| `BulkImportPage.progress`           | `{processed} of {total} processed ({percent}%)`                 | `{processed} de {total} procesados ({percent}%)`                       | Progress indicator text.                                              |
-| `BulkImportPage.completed`          | `Import completed`                                              | `Importación completada`                                               | Final status heading.                                                 |
-| `BulkImportPage.succeeded`          | `{count} succeeded`                                             | `{count} exitosos`                                                     | Success count in the result summary.                                  |
-| `BulkImportPage.failed`             | `{count} failed`                                                | `{count} fallidos`                                                     | Failure count in the result summary.                                  |
-| `BulkImportPage.errorsTitle`        | `Errors`                                                        | `Errores`                                                              | Table heading for failed rows.                                        |
-| `BulkImportPage.errorsCapped`       | `Some errors were omitted — only the first 200 are shown.`      | `Algunos errores fueron omitidos — solo se muestran los primeros 200.` | Shown when there are more than 200 errors.                            |
-| `BulkImportPage.tableRow`           | `Row`                                                           | `Fila`                                                                 | Error table column header.                                            |
-| `BulkImportPage.tableTitle`         | `Title`                                                         | `Título`                                                               | Error table column header.                                            |
-| `BulkImportPage.tableError`         | `Error`                                                         | `Error`                                                                | Error table column header.                                            |
-| `BulkImportPage.newImport`          | `New Import`                                                    | `Nueva Importación`                                                    | Button to start another import after one finishes.                    |
-| `BulkImportPage.viewListings`       | `View your listings`                                            | `Ver tus anuncios`                                                     | Button shown when every row imported successfully; opens `/listings`. |
-| `BulkImportPage.title`              | `Bulk Import \| Archivo Vintach`                                | `Importación Masiva \| Archivo Vintach`                                | Browser tab title.                                                    |
-| `BulkImportPage.stepsTitle`         | `Before uploading:`                                             | `Antes de subir:`                                                      | Heading of the three-step instructions sidebar.                       |
-| `BulkImportPage.step1Title`         | `1. Complete the template`                                      | `Completa la plantilla`                                                | Step 1 title.                                                         |
-| `BulkImportPage.step1Text`          | `Add one row per item.`                                         | `Agrega una fila por prenda.`                                          | Step 1 text.                                                          |
-| `BulkImportPage.step2Title`         | `2. Photo instructions`                                         | `Instrucciones de fotos`                                               | Step 2 title.                                                         |
-| `BulkImportPage.step2Text`          | `Photos are optional. If you include them, each photo's…`       | `Las fotos son opcionales. Si las incluyes, el nombre de…`             | Step 2 text.                                                          |
-| `BulkImportPage.step3Title`         | `3. Upload the CSV, or a ZIP with photos`                       | `Sube el CSV, o un ZIP con fotos`                                      | Step 3 title.                                                         |
-| `BulkImportPage.step3Text`          | `With photos, put the template and the photos folder in a…`     | `Con fotos, incluye la plantilla y la carpeta de fotos en un…`         | Step 3 text.                                                          |
-| `BulkImportPage.dropzoneTitle`      | `Upload your ZIP or CSV file`                                   | `Sube tu archivo ZIP o CSV`                                            | Drop-zone heading.                                                    |
-| `BulkImportPage.dropzoneSubtitle`   | `Drag your file here or select it from your computer.`          | `Arrastra tu archivo aquí o selecciónalo desde tu computadora.`        | Drop-zone subtitle.                                                   |
-| `BulkImportPage.selectZip`          | `Select file`                                                   | `Seleccionar archivo`                                                  | File-picker button label.                                             |
-| `BulkImportPage.noFileSelected`     | `No file selected`                                              | `Ningún archivo seleccionado`                                          | Shown before a file is chosen.                                        |
-| `BulkImportPage.dividerOr`          | `or`                                                            | `o`                                                                    | Divider between drag-and-drop and the button.                         |
-| `BulkImportPage.reviewNotice`       | `We'll review your file before creating your listings…`         | `Revisaremos tu archivo antes de crear tus publicaciones…`             | Review notice under the drop zone.                                    |
-| `BulkImportPage.exampleZipTitle`    | `View ZIP example`                                              | `Ver ejemplo de ZIP`                                                   | Example-download card title.                                          |
-| `BulkImportPage.exampleZipText`     | `Download an example of how your file should look.`             | `Descarga un ejemplo de cómo debe ir tu archivo.`                      | Example-download card text.                                           |
-| `BulkImportPage.helpTitle`          | `Need help?`                                                    | `¿Necesitas ayuda?`                                                    | Help bar heading.                                                     |
-| `BulkImportPage.whatsappContact`    | `Contact us on WhatsApp`                                        | `Contáctanos por WhatsApp`                                             | WhatsApp support link label.                                          |
-| `ManageListingsPage.bulkImport`     | `Carga Masiva`                                                  | `Subir Varios`                                                         | Blue bulk-import CTA on Manage listings and the new-listing flow.     |
-| `BulkImportPage.errorNoZip`         | `Please select a .zip or .csv file.`                            | `Por favor selecciona un archivo .zip o .csv.`                         | Validation message.                                                   |
+### Package size
 
-### Checkout — delivery options and shipping address
+The Pricing & stock step shows a **Talla de paquete** (package size) selector — S, M or L, with
+their dimensions — preset from the listing's category. The seller can change it; it determines the
+parcel used for the live shipping quote. See [Package sizes](#package-sizes) for the sizes, the
+category rules, and the operator-only `especial` and lock settings.
+
+### Earnings estimator
+
+Under the price, the **Ganancias Estimadas** card shows the seller's fee and what they will receive:
+_Comisión del marketplace (22% + \$15.00)_, or the seller's own percentage, then **Tus ganancias**.
+The percentage comes from Console (Build → Transactions) or the seller's **Comisión (%)** field; the
+fixed fee is a deployment setting. See [19.6](#196-commission-rate-changes) for the full rules and
+[Commission settings](#commission-and-seller-earnings-estimator).
+
+### Listing page
+
+The layout is chosen in **Console → Design → Layout**: Archivo Vintach uses the **carousel**
+listing-page layout and a cropped **3:4** listing image (on cards and in the gallery). With that
+layout the page shows:
+
+- the photo gallery, with the favorites heart and any store-type tags on top;
+- a curated attribute summary — brand, sizes, condition, colours, category and género — where each
+  value is a link to the matching search, followed by the start of the description with **Ver más**
+  / **Ver menos**;
+- the price (and struck-through original price), **Comprar ahora**, **Agregar al carrito**
+  ([Section 13](#13-shopping-bag)) and a **Chat** button that opens a message to the seller;
+- "Publicado hace …" (how long ago the listing was published), the seller, and reviews.
+
+The listing's `tags` are always listed with the other fields, even when the Console field is set to
+hide them. Below 1024 px the buy buttons move to a bar fixed at the bottom of the screen.
+
+### Listing field controls
+
+Wording of the custom size, colour and brand pickers in the Details step
+([Section 3](#3-listing-fields)).
+
+| Area           | Key                                    | English default       | Spanish default          | Operator note                                                |
+| -------------- | -------------------------------------- | --------------------- | ------------------------ | ------------------------------------------------------------ |
+| Size selector  | `ListingField.allSizes.group.standard` | `Clothing (Standard)` | `Ropa (Estándar)`        | Group heading for standard letter sizes.                     |
+| Size selector  | `ListingField.allSizes.group.mx`       | `Clothing (MX)`       | `Ropa (MX)`              | Group heading for Mexican numeric sizes.                     |
+| Size selector  | `ListingField.allSizes.group.us`       | `Clothing (US)`       | `Ropa (US)`              | Group heading for US numeric sizes.                          |
+| Size selector  | `ListingField.allSizes.group.jeans`    | `Jeans`               | `Jeans`                  | Group heading for jeans waist sizes.                         |
+| Size selector  | `ListingField.allSizes.group.curvy`    | `Curvy Sizes`         | `Tallas Curvy`           | Group heading for curvy sizes.                               |
+| Size selector  | `ListingField.allSizes.group.shoes`    | `Shoes (US / MX)`     | `Calzado (US / MX)`      | Group heading for US / Mexican shoe sizes (half sizes).      |
+| Size selector  | `ListingField.allSizes.group.rings`    | `Rings`               | `Anillos`                | Group heading for ring sizes.                                |
+| Size selector  | `FieldGroupedMultiSelect.placeholder`  | `Select sizes…`       | `Selecciona tallas…`     | Empty field placeholder.                                     |
+| Size selector  | `FieldGroupedMultiSelect.clearAll`     | `Clear all`           | `Borrar todo`            | Clear all selected sizes button.                             |
+| Size selector  | `FieldGroupedMultiSelect.expand`       | `Expand`              | `Expandir`               | Collapsed dropdown toggle label.                             |
+| Size selector  | `FieldGroupedMultiSelect.collapse`     | `Collapse`            | `Contraer`               | Expanded dropdown toggle label.                              |
+| Size selector  | `FieldGroupedMultiSelect.removeOption` | `Remove {label}`      | `Quitar {label}`         | Chip remove button. `{label}` is the selected size.          |
+| Color selector | `FieldColorDropdown.placeholder`       | `Select colors…`      | `Selecciona colores…`    | Empty color field placeholder.                               |
+| Color selector | `FieldColorDropdown.title`             | `Select Color`        | `Seleccionar Color`      | Dropdown panel heading.                                      |
+| Color selector | `FieldColorDropdown.clearAll`          | `Clear all`           | `Borrar todo`            | Clear-all-selected-colors button.                            |
+| Color selector | `FieldColorDropdown.expand`            | `Expand`              | `Expandir`               | Collapsed dropdown toggle label.                             |
+| Color selector | `FieldColorDropdown.collapse`          | `Collapse`            | `Contraer`               | Expanded dropdown toggle label.                              |
+| Size selector  | `FieldGroupedMultiSelect.maxHint`      | `Select up to {max}`  | `Selecciona hasta {max}` | Hint shown when the field caps how many sizes can be picked. |
+| Brand selector | `FieldSearchableSelect.placeholder`    | `Search brand…`       | `Buscar marca…`          | Empty brand field placeholder.                               |
+| Brand selector | `FieldSearchableSelect.clear`          | `Clear`               | `Borrar`                 | Clear (×) button.                                            |
+| Brand selector | `FieldSearchableSelect.expand`         | `Expand`              | `Expandir`               | Collapsed dropdown toggle label.                             |
+| Brand selector | `FieldSearchableSelect.collapse`       | `Collapse`            | `Contraer`               | Expanded dropdown toggle label.                              |
+
+### Listing form — photos and pricing
+
+Wording of the photo uploader (Details step) and of the Pricing & stock step.
+
+| Area                  | Key                                                       | English default                                                       | Spanish default                                                            | Operator note                                                                                      |
+| --------------------- | --------------------------------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Photo upload (inline) | `EditListingDetailsPanel.photosTitle`                     | `Photos`                                                              | `Subir Fotos`                                                              | Section heading above the inline photo uploader. Displayed in ALL CAPS by CSS.                     |
+| Details form heading  | `EditListingDetailsPanel.detailsTitle`                    | `Detalles del producto`                                               | `Detalles del producto`                                                    | Section heading above the details fields (below the photo uploader). Displayed in ALL CAPS by CSS. |
+| Photo upload (inline) | `EditListingDetailsPanel.photosMinRequired`               | `Add at least 3 photos to continue.`                                  | `Agrega almenos 3 fotos.`                                                  | Validation message when too few photos are uploaded.                                               |
+| Photo upload (inline) | `EditListingDetailsPanel.photosAddTip`                    | `You can add up to 10 photos.`                                        | `Máximo 10 fotos.`                                                         | Helper text under the uploader.                                                                    |
+| Photo upload (inline) | `EditListingDetailsPanel.photosMaxReached`                | `Maximum of 10 photos reached.`                                       | `El máximo de 10 fotos se ha alcanzado.`                                   | Shown when the photo limit is hit.                                                                 |
+| Photo upload (inline) | `EditListingDetailsPanel.photosUploadInProgress`          | `Please wait for all photos to finish uploading.`                     | `Espera a que todas los fotos terminen de cargarse.`                       | Shown while photos are still uploading.                                                            |
+| Original price field  | `EditListingPricingForm.originalPrice`                    | `Original Price (optional)`                                           | `Precio Original (opcional)`                                               | Booking-style pricing form only; not shown for `av-listing` (see the "Pricing (with stock)" rows). |
+| Original price field  | `EditListingPricingForm.originalPricePlaceholder`         | `Add original price…`                                                 | `Agrega el precio original…`                                               | Booking-style pricing form only.                                                                   |
+| Earnings estimator    | `EarningsEstimator.title`                                 | `Estimated Earnings`                                                  | `Ganancias Estimadas`                                                      | Card heading in the pricing panel.                                                                 |
+| Earnings estimator    | `EarningsEstimator.listingPrice`                          | `Listing price`                                                       | `Precio del producto`                                                      | Row label for the listing price.                                                                   |
+| Earnings estimator    | `EarningsEstimator.marketplaceFeeLabel`                   | `Marketplace fee`                                                     | `Comisión del marketplace`                                                 | Row label for the marketplace commission.                                                          |
+| Earnings estimator    | `EarningsEstimator.stripeFee`                             | `Payment processing`                                                  | `Procesamiento de pago`                                                    | Row label for the Stripe fee. Not shown on the `av-listing` pricing step (booking form only).      |
+| Earnings estimator    | `EarningsEstimator.yourEarnings`                          | `Your earnings`                                                       | `Tus ganancias`                                                            | Row label for the net earnings.                                                                    |
+| Earnings estimator    | `EarningsEstimator.enterPrice`                            | `Enter a price to see estimated earnings.`                            | `Ingresa un precio para ver las ganancias estimadas.`                      | Shown before a price is entered.                                                                   |
+| Earnings estimator    | `EarningsEstimator.disclaimer`                            | `This is an estimate. Actual fees may vary.`                          | `Esta es una estimación. Las comisiones reales pueden variar.`             | Small disclaimer below the estimate.                                                               |
+| Photo upload (inline) | `EditListingDetailsPanel.photoLabel1`                     | `Front photo`                                                         | `Foto frontal`                                                             | Caption under photo slot 1.                                                                        |
+| Photo upload (inline) | `EditListingDetailsPanel.photoLabel2`                     | `Back photo`                                                          | `Foto posterior`                                                           | Caption under photo slot 2.                                                                        |
+| Photo upload (inline) | `EditListingDetailsPanel.photoLabel3`                     | `Label or detail`                                                     | `Etiqueta o detalle`                                                       | Caption under photo slot 3.                                                                        |
+| Photo upload (inline) | `EditListingDetailsPanel.photoLabel4`                     | `Selfie (optional)`                                                   | `Selfie (si quieres)`                                                      | Caption under photo slot 4.                                                                        |
+| Photo upload (inline) | `EditListingDetailsPanel.photosTipText`                   | `Learn how to take the best photos {link}.`                           | `Aprende a tomar las mejores fotos {link}.`                                | Tip under the uploader; `{link}` renders the link text below.                                      |
+| Photo upload (inline) | `EditListingDetailsPanel.photosTipLinkText`               | `here`                                                                | `aquí`                                                                     | Link text inside the photos tip.                                                                   |
+| Pricing (with stock)  | `EditListingPricingAndStockForm.originalPrice`            | `Original Price (optional)`                                           | `Precio Original (Opcional)`                                               | "Was" price label on the pricing + stock panel.                                                    |
+| Pricing (with stock)  | `EditListingPricingAndStockForm.originalPricePlaceholder` | `Add original price…`                                                 | `Cuanto te costó?`                                                         | Placeholder for that original price input.                                                         |
+| Photo upload (inline) | `EditListingDetailsPanel.photosLimitSkipped`              | `{count, plural, one {# photo was} other {# photos were}} not added…` | `No {count, plural, one {se agregó # foto} other {se agregaron # fotos}}…` | Shown when more than 10 photos are added. Keep the plural part.                                    |
+| Pricing (with stock)  | `EditListingPricingAndStockForm.originalPriceTooLow`      | `The original price must be higher than the listing price.`           | `El precio original debe ser mayor que el precio del anuncio.`             | Shown when the original price is not above the price.                                              |
+| Package size          | `EditListingPricingForm.packageSizeLabel`                 | `Package size`                                                        | `Talla de paquete`                                                         | Label of the package-size selector on the pricing + stock step.                                    |
+| Package size          | `EditListingPricingForm.packageSize.S`, `.M`, `.L`        | `S — 25×20×8 cm · ≤0.5 kg · padded envelope` …                        | `S — 25×20×8 cm · ≤0.5 kg · sobre acolchado` …                             | The three options. Keep the dimensions in step with [Package sizes](#package-sizes).               |
+
+### Listing page wording
+
+| Area              | Key                              | English default        | Spanish default        | Operator note                                                      |
+| ----------------- | -------------------------------- | ---------------------- | ---------------------- | ------------------------------------------------------------------ |
+| Listing page      | `ListingPage.chat`               | `Chat`                 | `Chat`                 | Button that opens a message to the seller.                         |
+| Listing page      | `ListingPage.publishedRelative`  | `Published {relative}` | `Publicado {relative}` | Publication age; `{relative}` becomes, for example, "hace 3 días". |
+| Attribute summary | `AVListingDetails.categoryLabel` | `Category`             | `Categoría`            | Label of the category line.                                        |
+| Attribute summary | `AVListingDetails.showMore`      | `Show more`            | `Ver más`              | Expands the description excerpt.                                   |
+| Attribute summary | `AVListingDetails.showLess`      | `Show less`            | `Ver menos`            | Collapses it again.                                                |
+
+---
+
+## 11. Checkout, Shipping and Labels
+
+Every Archivo Vintach purchase is shipped within Mexico. Shipping is quoted live from the carrier
+(eShip) at checkout, the buyer pays it with the item, and after payment the seller prints a carrier
+label from the sale page. This section explains each step, the deadlines that follow, and the
+wording you can change. For support procedures see [19.7](#197-shipping-and-label-support); for the
+server settings see [Shipping settings](#shipping-eship).
+
+### Package sizes
+
+Each listing has a package size that sets the parcel sent to the carrier for the quote and label.
+
+| Size       | Parcel                      | Max weight | Assigned automatically to                                                                                                |
+| ---------- | --------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `S`        | 25 × 20 × 8 cm, polymailer  | 0.5 kg     | Lencería / pijama, De baño, Bolsas → Clutch, Bolsas → Carteras                                                           |
+| `M`        | 35 × 30 × 10 cm, medium box | 1.0 kg     | **Everything else** (the default), including new categories                                                              |
+| `L`        | 50 × 40 × 15 cm, large box  | 1.5 kg     | Chamarras / Abrigos / Sacos, Totes, Mochilas casuales and de deporte, Tenis casuales and deportivos, all Botas and Botín |
+| `especial` | —                           | —          | Never automatic: set by an operator for items that cannot ship as S/M/L                                                  |
+
+How a listing's size is decided:
+
+1. The seller's choice in the Pricing & stock step ([Section 10](#package-size)), which is saved on
+   the listing — so changing the listing's category later does not change a size already saved.
+2. Otherwise, the category rule above (the most specific category wins).
+3. Otherwise, `M`.
+
+**Operator-only settings**, made by editing the listing's public data in **Console → Manage →
+Listings**:
+
+- `avPackageSize` = `especial` — no automatic quote or label: buyers see **Contactar AV** and the
+  shipment is arranged by hand. The seller no longer sees the size selector.
+- `avPackageSizeLocked` = `true` — the seller can see but not change the size.
+
+The category rules come from `docs/data/categoria-paquete.csv`; changing them, or the box
+dimensions, is a development change.
+
+### What the buyer sees at checkout
 
 The checkout (step shown after the buyer clicks **Comprar ahora**) has these AV-specific parts:
 
 1. **Shipping address form** — a Mexico-only address layout: Nombre, Calle, Número Exterior / Número
    Interior, Colonia, C.P. / Ciudad, Estado (a dropdown of the 32 Mexican states) and Teléfono. The
-   country is always Mexico, so there is no country field. The list of states is fixed in code.
+   country is always Mexico, so there is no country field. The list of states is fixed in code. If
+   the buyer saved an address under **Mis direcciones** (`/account/my-addresses`), the form starts
+   filled in with it.
 2. **Delivery options (live quote)** — once the address is complete, the platform requests a **live
-   shipping quote** from the carrier (eShip) using the listing's package size (S/M/L) and the
-   buyer's address. The buyer then picks **Express** (the cheapest rate delivered in 1–3 days) or
-   **Estándar** (the cheapest rate taking 4 or more days). If both cost the buyer the same, only one
-   card is shown, labelled **Estándar**, using the faster rate. If the carrier returns no rate in
-   one of the two ranges, that card is not shown. Buyer prices include a margin buffer over the raw
-   carrier cost. Prices are **not** set in the Console — they come from the carrier in real time.
-   The **Pay** button stays disabled until a delivery option is chosen. When the server-only
-   `ESHIP_WEB_DEBUG=true` flag is enabled, every raw carrier rate is also listed below the cards;
-   the list is hidden by default and in production.
+   shipping quote** from the carrier (eShip) using the listing's [package size](#package-sizes)
+   (S/M/L) and the buyer's address. The buyer then picks **Express** (the cheapest rate delivered in
+   1–3 days) or **Estándar** (the cheapest rate taking 4 or more days). If both cost the buyer the
+   same, only one card is shown, labelled **Estándar**, using the faster rate. If the carrier
+   returns no rate in one of the two ranges, that card is not shown. Buyer prices include a margin
+   buffer over the raw carrier cost. Prices are **not** set in the Console — they come from the
+   carrier in real time. The **Pay** button stays disabled until a delivery option is chosen. When
+   the server-only `ESHIP_WEB_DEBUG=true` flag is enabled, every raw carrier rate is also listed
+   below the cards; the list is hidden by default and in production.
 3. **Confirm-with-seller notice** — an amber notice box sits directly below the two delivery
    options, reminding the buyer that same-day dispatch isn't guaranteed and that they should message
    the seller. It has a bold title line and a body line, both editable (`AVShippingSelector.notice*`
@@ -2459,18 +2310,20 @@ The checkout (step shown after the buyer clicks **Comprar ahora**) has these AV-
 > Dirección de origen** (`/account/shipping-origin`). Without it, their listings can't be quoted and
 > buyers see _Contactar a AV_. Sellers missing it get a reminder banner on **Manage listings**.
 
-**After the sale — the shipping label.** On the sale detail page (**My Sales → open a sale**) the
-seller manages the carrier label. By default the seller buys it themselves with a **Generar guía**
-button; once bought, that becomes a **Descargar guía** button to download the label PDF (an error
-note shows if a purchase fails). If **Auto-buy labels** (`ESHIP_LABEL_AUTOBUY`, Section 9) is turned
-on, the label is bought automatically after confirmed payment, so the seller usually sees
+### After the sale: label, pickup email and deadlines
+
+**The shipping label.** On the sale detail page (**My Sales → open a sale**) the seller manages the
+carrier label. By default the seller buys it themselves with a **Generar guía** button; once bought,
+that becomes a **Descargar guía** button to download the label PDF (an error note shows if a
+purchase fails). If **Auto-buy labels** (`ESHIP_LABEL_AUTOBUY`, [Section 18](#shipping-eship)) is
+turned on, the label is bought automatically after confirmed payment, so the seller usually sees
 **Descargar guía** immediately. A definitive failure may be retried with **Generar guía**; an
 unknown outcome must be checked in eShip before an allowlisted operator releases a retry. Buyers
 never see this control, and it does not appear for _especial_ (Contactar AV) sales. Support staff
-listed under **Label retry operators** (Section 9) can buy/retry the label for any seller's sale.
-There is no operator label screen: cross-seller and unknown-outcome actions require the approved
-authenticated API/engineering procedure after eShip reconciliation. The keys are `AVShippingLabel.*`
-(see below).
+listed under **Label retry operators** ([Section 18](#shipping-eship)) can buy/retry the label for
+any seller's sale. There is no operator label screen: cross-seller and unknown-outcome actions
+require the approved authenticated API/engineering procedure after eShip reconciliation. The keys
+are `AVShippingLabel.*` (see below).
 
 When the eShip carrier reports **TRANSIT / picked_up**, the buyer receives one native Sharetribe
 email with the provider's tracking link. This internal email transition leaves the transaction in
@@ -2489,7 +2342,9 @@ process alias is activated.
 > is paid out — buyers get a reminder email on **day 5** (`PurchaseMarkOrderReceivedReminder.*`).
 > This window was 14 days until 2026-08-14.
 
-The current delivery keys are `AVShippingSelector.*`:
+### Customizing the checkout and shipping wording
+
+Delivery options (`AVShippingSelector.*`), seller origin, saved buyer address and shipping label:
 
 | Area             | Key                                                          | English meaning                                      | Spanish (shipped)                               | Operator note                                                                        |
 | ---------------- | ------------------------------------------------------------ | ---------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------ |
@@ -2564,7 +2419,7 @@ optional field; everything else is required.
 
 ---
 
-## 11. Favorites (Wish List)
+## 12. Favorites (Wish List)
 
 Favorites let a shopper save listings they like and revisit them later from a personal page. It
 works like a "wish list" or "likes" feature. **There is nothing to configure** — it is on by
@@ -2612,8 +2467,8 @@ The favorites page is linked from four places (all created automatically). Store
 ### Customizing the wording
 
 All favorites text can be changed via **Console → Content → Translations** (see
-[Section 1](#1-sharetribe-console-overview) for how translations work). The navigation labels are
-also listed in the [Navigation](#navigation) table above.
+[Section 16](#how-to-update-a-string-in-the-console) for how translations work). The navigation
+labels are also listed in the [Navigation](#navigation) table in Section 16.
 
 | Area            | Key                                  | English default                                                                   | Spanish default                                                                            | Operator note                                                  |
 | --------------- | ------------------------------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
@@ -2629,7 +2484,7 @@ also listed in the [Navigation](#navigation) table above.
 
 ---
 
-## 12. Shopping Bag
+## 13. Shopping Bag
 
 The shopping bag lets a shopper collect listings they intend to buy and check them out one at a
 time. It behaves like a "cart" / "wishlist to buy". **There is nothing to configure** — it is on by
@@ -2637,7 +2492,7 @@ default. This section explains how it works so you can support shoppers and, if 
 the wording.
 
 > **Bag vs. Favorites:** the **bag** is for items a shopper plans to buy now (checkout from it); the
-> **favorites/wish list** ([Section 11](#11-favorites-wish-list)) is for items they want to save for
+> **favorites/wish list** ([Section 12](#12-favorites-wish-list)) is for items they want to save for
 > later. They are separate lists.
 
 ### What the shopper sees
@@ -2646,8 +2501,8 @@ the wording.
   now) button, a full-width **Add to bag** button adds the item to the bag. Once added it reads **In
   your bag**; clicking again removes it.
 - **Bag icon in the top bar.** A black bag icon (with a small blue badge showing how many items are
-  in the bag) sits to the right of the Favorites heart, just before the profile menu. It is visible to everyone,
-  including signed-out visitors. Clicking it opens the full bag page (`/bag`).
+  in the bag) sits to the right of the Favorites heart, just before the profile menu. It is visible
+  to everyone, including signed-out visitors. Clicking it opens the full bag page (`/bag`).
 - **Bag dropdown (quick view).** Hovering the bag icon (when the bag has items), or adding an item,
   opens a small dropdown under the icon listing the bag's contents. Each row shows the seller, a
   thumbnail, title, price, size, a **Remove** action, a per-item **total**, and a **Checkout**
@@ -2658,11 +2513,11 @@ the wording.
 
 ### How a shopper reaches the bag
 
-| Location            | What it looks like                                          |
-| ------------------- | ----------------------------------------------------------- |
-| **Desktop top bar** | The bag icon with the item-count badge → opens `/bag`.      |
-| **Mobile menu**     | A "My bag" entry in the slide-out menu.                     |
-| **Direct URL**      | `/bag`.                                                     |
+| Location            | What it looks like                                     |
+| ------------------- | ------------------------------------------------------ |
+| **Desktop top bar** | The bag icon with the item-count badge → opens `/bag`. |
+| **Mobile menu**     | A "My bag" entry in the slide-out menu.                |
+| **Direct URL**      | `/bag`.                                                |
 
 ### Rules and behavior
 
@@ -2688,7 +2543,7 @@ the wording.
 ### Customizing the wording
 
 All bag text can be changed via **Console → Content → Translations** (see
-[Section 1](#1-sharetribe-console-overview)).
+[Section 16](#how-to-update-a-string-in-the-console)).
 
 > **Watch the `{count, plural, …}` parts.** Two strings (`BagPopup.titleCount` and
 > `AVBagItemCard.checkout`) use a plural placeholder that adapts to the number of items. Keep the
@@ -2717,7 +2572,7 @@ All bag text can be changed via **Console → Content → Translations** (see
 
 ---
 
-## 13. Upload Chooser Page (`/create-type`)
+## 14. Upload Chooser Page (`/create-type`)
 
 When a signed-in seller clicks the **VENDE** button in the desktop top bar, they land on the upload
 chooser page instead of going straight into the listing form. The page asks how they want to upload
@@ -2737,12 +2592,12 @@ their products and offers two cards:
 - **The mobile menu goes here too.** The "create listing" link in the mobile slide-out menu
   (`TopbarMobileMenu.newListingLink`) opens the same chooser page.
 - The VENDE button label itself is the existing `TopbarDesktop.createListing` translation (see
-  [Section 6](#6-navigation-bar)).
+  [Section 6](#6-navigation-bar-and-footer)).
 
 ### Customizing the wording
 
 All text on the page can be changed via **Console → Content → Translations** (see
-[Section 1](#1-sharetribe-console-overview)).
+[Section 16](#how-to-update-a-string-in-the-console)).
 
 | Area             | Key                          | English default                                                             | Spanish default                                                                             | Operator note                               |
 | ---------------- | ---------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------- |
@@ -2757,12 +2612,572 @@ All text on the page can be changed via **Console → Content → Translations**
 
 ---
 
-## 14. Marketplace Operations
+## 15. My Purchases, My Sales and My Balance
+
+Three account pages give buyers and sellers a history of their transactions. They are linked from
+the profile dropdown, the mobile menu and the account sidebar, and need no configuration.
+
+| Page                              | Shows                                                                                                                                                                                                |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Mis Compras** (`/my-purchases`) | The signed-in user's orders as a buyer, newest first, each with its current status; opening one shows the order page.                                                                                |
+| **Mis Ventas** (`/my-sales`)      | The user's sales as a seller, newest first; opening one shows the sale page (where the shipping label is managed).                                                                                   |
+| **Mi Balance** (`/my-balance`)    | A seller summary — **Ganancias Totales**, **Pendiente** and **Canceladas**, for all time or this month — and the list of sales with gross and net amounts and status, filterable by status and date. |
+
+My Balance is calculated from the seller's Archivo Vintach transactions; it is not read from Stripe,
+so it does not show bank transfers or Stripe's own payout schedule. The totals refresh at most once
+a minute: after a sale is completed or cancelled, they catch up within about a minute, even without
+reloading the page (the transaction list underneath updates straight away).
+
+### My Purchases, My Sales and My Balance wording
+
+| Area            | Key                              | English default                                  | Spanish default                                                    | Operator note           |
+| --------------- | -------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------ | ----------------------- |
+| Purchases page  | `MyPurchasesPage.heading`        | `My Purchases`                                   | `Mis Compras`                                                      | Page heading.           |
+| Purchases page  | `MyPurchasesPage.title`          | `My Purchases \| Archivo Vintach`                | `Mis Compras \| Archivo Vintach`                                   | Browser tab title.      |
+| Purchases page  | `MyPurchasesPage.loadingError`   | `Failed to load purchases. Please try again.`    | `No se pudieron cargar las compras. Inténtalo de nuevo.`           | Error state.            |
+| Purchases page  | `MyPurchasesPage.noResults`      | `You haven't made any purchases yet.`            | `Aún no has realizado ninguna compra.`                             | Empty state.            |
+| Sales page      | `MySalesPage.heading`            | `My Sales`                                       | `Mis Ventas`                                                       | Page heading.           |
+| Sales page      | `MySalesPage.title`              | `My Sales \| Archivo Vintach`                    | `Mis Ventas \| Archivo Vintach`                                    | Browser tab title.      |
+| Sales page      | `MySalesPage.loadingError`       | `Failed to load sales. Please try again.`        | `No se pudieron cargar las ventas. Inténtalo de nuevo.`            | Error state.            |
+| Sales page      | `MySalesPage.noResults`          | `You don't have any sales yet.`                  | `Aún no tienes ninguna venta.`                                     | Empty state.            |
+| Balance page    | `MyBalancePage.heading`          | `My Balance`                                     | `Mi Balance`                                                       | Page heading.           |
+| Balance page    | `MyBalancePage.title`            | `My Balance \| Archivo Vintach`                  | `Mi Balance \| Archivo Vintach`                                    | Browser tab title.      |
+| Balance page    | `MyBalancePage.loadingError`     | `Failed to load balance data. Please try again.` | `No se pudieron cargar los datos del balance. Inténtalo de nuevo.` | Error state.            |
+| Balance page    | `MyBalancePage.noResults`        | `No transactions found.`                         | `No se encontraron transacciones.`                                 | Empty state.            |
+| Balance summary | `BalanceSummary.totalEarnings`   | `Total Earnings`                                 | `Ganancias Totales`                                                | Summary card heading.   |
+| Balance summary | `BalanceSummary.pending`         | `Pending`                                        | `Pendiente`                                                        | Summary card heading.   |
+| Balance summary | `BalanceSummary.cancelled`       | `Cancelled`                                      | `Canceladas`                                                       | Summary card heading.   |
+| Balance summary | `BalanceSummary.tabAllTime`      | `All Time`                                       | `Todo el tiempo`                                                   | Time-range tab label.   |
+| Balance summary | `BalanceSummary.tabCurrentMonth` | `This Month`                                     | `Este mes`                                                         | Time-range tab label.   |
+| Payout row      | `PayoutItem.gross`               | `Gross`                                          | `Bruto`                                                            | Column header.          |
+| Payout row      | `PayoutItem.net`                 | `Net`                                            | `Neto`                                                             | Column header.          |
+| Payout row      | `PayoutItem.statusCompleted`     | `Completed`                                      | `Completada`                                                       | Status badge text.      |
+| Payout row      | `PayoutItem.statusPending`       | `Pending`                                        | `Pendiente`                                                        | Status badge text.      |
+| Payout row      | `PayoutItem.statusCancelled`     | `Cancelled`                                      | `Cancelada`                                                        | Status badge text.      |
+| Filters         | `TransactionFilters.status`      | `Status`                                         | `Estado`                                                           | Filter label.           |
+| Filters         | `TransactionFilters.dateFrom`    | `From`                                           | `Desde`                                                            | Date range start label. |
+| Filters         | `TransactionFilters.dateTo`      | `To`                                             | `Hasta`                                                            | Date range end label.   |
+| Filters         | `TransactionFilters.clearAll`    | `Clear filters`                                  | `Limpiar filtros`                                                  | Clear button.           |
+| Filters         | `TransactionFilters.all`         | `All`                                            | `Todos`                                                            | Status option.          |
+| Filters         | `TransactionFilters.completed`   | `Completed`                                      | `Completadas`                                                      | Status option.          |
+| Filters         | `TransactionFilters.pending`     | `Pending`                                        | `Pendientes`                                                       | Status option.          |
+| Filters         | `TransactionFilters.cancelled`   | `Cancelled`                                      | `Canceladas`                                                       | Status option.          |
+
+---
+
+## 16. Text and Translations
+
+Almost every word on the site — labels, buttons, messages, popups and per-section button text — is a
+translation key you can change in Console without a deploy. This section explains how to edit them
+and lists the keys that are not documented with their feature. Text comes from:
+
+- **App translation files** (`en_av.json` / `es_av.json`) — the baseline defaults shipped with the
+  code. Updated by the development team.
+- **Sharetribe Console → Content → Translations** — operator overrides. Console values take
+  precedence over the app files.
+- **Paste-ready Spanish reference**
+  ([`reference/marketplace-texts-es.json`](reference/marketplace-texts-es.json)) — the audited union
+  of the current Test Console text and all used Spanish defaults from `es_av.json` and `es.json`.
+  Use this file when replacing the complete Spanish marketplace-text JSON in Console.
+
+The runtime order is **Console → `es_av.json` → `en.json`**. `es.json` is retained as an upstream
+translation source but is not loaded by this marketplace, so a key missing from both Console and
+`es_av.json` falls back to English.
+
+### How to update a string in the Console
+
+1. Go to **Console → Content → Translations**.
+2. Use the search box to find the key you want (e.g. `AVWelcomePopup.vendedor.title`).
+3. If the key already exists, click it and edit the value in the text field, then save.
+4. If the key does not appear yet (common for per-section dynamic keys like
+   `AVHero2.my-section.mobileBackgroundUrl`), click **Add translation**, enter the key exactly as
+   shown in the tables below, type the value, and save.
+
+Changes take effect on the next page load. Most keys below have defaults in `en_av.json` and
+`es_av.json`, so removing a Console override restores the shipped value. Only explicitly optional
+dynamic keys—such as per-instance `AVHero2` buttons, mobile backgrounds, and `AVVideo` URLs—use a
+missing or blank value to hide that optional element. Do not blank a standard key to hide its UI.
+
+> **One language:** The marketplace has a single locale, Spanish (`es`, set in Console's
+> localization), so each key has one value to edit. `en_av.json` is never shown to users; it only
+> keeps the AV keys in step with `es_av.json` (`yarn av-translation-check`).
+
+### Where each area's text is documented
+
+Feature sections list their own keys next to the explanation of the feature. Use this index to find
+the right table; the remaining tables follow below.
+
+| Area                                                                                                            | Keys start with                                                                                                                         | Table                                                        |
+| --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Welcome popup, store-seller wording                                                                             | `AVWelcomePopup.`, `…Tienda`                                                                                                            | [Section 9](#welcome-popup-shown-after-first-registration)   |
+| Listing form: size, color and brand pickers, photos, pricing, listing page                                      | `ListingField.`, `Field…`, `EditListingDetailsPanel.`, `EditListingPricing…`, `EarningsEstimator.`, `ListingPage.`, `AVListingDetails.` | [Section 10](#listing-field-controls)                        |
+| Checkout delivery options, address form, seller origin, saved address, shipping label                           | `AVShippingSelector.`, `ShippingDetails.mx`, `ShippingOrigin…`, `MyAddressesPage.`, `AVShippingLabel.`                                  | [Section 11](#customizing-the-checkout-and-shipping-wording) |
+| Favorites                                                                                                       | `FavoriteButton.`, `FavoritesPage.`                                                                                                     | [Section 12](#12-favorites-wish-list)                        |
+| Shopping bag                                                                                                    | `AddToBagButton.`, `BagLink.`, `BagPopup.`, `AVBagItemCard.`, `BagPage.`                                                                | [Section 13](#13-shopping-bag)                               |
+| Upload chooser page                                                                                             | `CreateTypePage.`                                                                                                                       | [Section 14](#14-upload-chooser-page-create-type)            |
+| My Purchases / My Sales / My Balance                                                                            | `MyPurchasesPage.`, `MySalesPage.`, `MyBalancePage.`, `BalanceSummary.`, `PayoutItem.`, `TransactionFilters.`                           | [Section 15](#my-purchases-my-sales-and-my-balance-wording)  |
+| Search filters, navigation, page sections and blocks, newsletter, bulk import, sign-up consent, system messages | various                                                                                                                                 | Below in this section                                        |
+
+### Email texts
+
+The emails Sharetribe sends — email verification, password reset, new message, and every order email
+(payment, shipping reminders on days 3 and 5, the buyer's confirmation reminder, the pickup notice,
+disputes) — are edited in **Console → Content → Email texts**, not in Translations. The paste-ready
+Spanish set, including the keys the custom order process needs, is
+[`reference/email-texts-es.json`](reference/email-texts-es.json) (explained in
+[`reference/email-texts-es.md`](reference/email-texts-es.md)).
+
+The seller welcome email and the marketing campaigns are sent by Brevo instead and are edited as
+Brevo templates ([Brevo Spanish templates](integrations/brevo-templates-es.md)); see
+[Email and Brevo settings](#email-and-brevo) for which system sends what.
+
+### Search filters
+
+| Area         | Key                             | English default | Spanish default  | Operator note                                |
+| ------------ | ------------------------------- | --------------- | ---------------- | -------------------------------------------- |
+| Brand filter | `BrandFilter.searchPlaceholder` | `Search brand…` | `Buscar marca…`  | Placeholder inside the brand search input.   |
+| Brand filter | `BrandFilter.noResults`         | `No results`    | `Sin resultados` | Shown when the brand search matches nothing. |
+| Size filter  | `SearchPage.groupedSizesLabel`  | `Size`          | `Talla`          | Sidebar grouped size filter label.           |
+
+### Navigation
+
+| Area                     | Key                                                   | English default       | Spanish default        | Operator note                                                                                                                                           |
+| ------------------------ | ----------------------------------------------------- | --------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Topbar highlighted link  | `Topbar.custom.leftOne`                               | `Hot list`            | `Lo Nuevo`             | Label for the single highlighted link in the top bar.                                                                                                   |
+| Topbar highlighted link  | `Topbar.custom.leftOneHref`                           | `?meta_tags=hot-list` | `?meta_tags=mas-nuevo` | Search query for the highlighted link ([details](#highlighted-link-and-console-links)); the Test Console still overrides it with `?pub_tags=mas-nuevo`. |
+| Topbar menu 1 label      | `Topbar.custom.menuOne`                               | `Shop`                | `Ropa`                 | First dropdown menu label.                                                                                                                              |
+| Topbar menu 2 label      | `Topbar.custom.menuTwo`                               | `Explore`             | `Accesorios`           | Second dropdown menu label.                                                                                                                             |
+| Topbar menu 3 label      | `Topbar.custom.menuThree`                             | `Brands`              | `Diseño Local`         | Third dropdown menu label.                                                                                                                              |
+| Desktop VENDE button     | `TopbarDesktop.createListing`                         | `Post a new listing`  | `VENDE` (Console)      | Button that opens the upload chooser. Upstream key; the Spanish text is set in Console.                                                                 |
+| Mobile menu              | `TopbarMobileMenu.newListingLink`                     | `Post a new listing`  | `VENDE` (Console)      | Mobile menu link to the upload chooser.                                                                                                                 |
+| Desktop favorites icon   | `TopbarDesktop.favoritesLink`                         | `Favorites`           | `Favoritos`            | Heart icon tooltip in the top bar (also the profile menu).                                                                                              |
+| Mobile menu              | `TopbarMobileMenu.favoritesLink`                      | `Favorites`           | `Favoritos`            | Mobile menu link to the favorites page.                                                                                                                 |
+| Account sidebar tab      | `UserNav.favorites`                                   | `Favorites`           | `Favoritos`            | Tab label in the account navigation sidebar.                                                                                                            |
+| Desktop bag icon         | `BagLink.label`                                       | `Shopping bag`        | `Bolsa de compras`     | Tooltip / label for the top-bar bag icon.                                                                                                               |
+| Mobile menu              | `TopbarMobileMenu.bagLink`                            | `My bag`              | `Mi carrito`           | Mobile menu link to the bag page.                                                                                                                       |
+| Desktop profile menu     | `TopbarDesktop.myPurchasesLink`                       | `My Purchases`        | `Mis Compras`          | Profile dropdown link to the purchases page.                                                                                                            |
+| Desktop profile menu     | `TopbarDesktop.mySalesLink`                           | `My Sales`            | `Mis Ventas`           | Profile dropdown link to the sales page.                                                                                                                |
+| Desktop profile menu     | `TopbarDesktop.myBalanceLink`                         | `My Balance`          | `Mi Balance`           | Profile dropdown link to the balance page.                                                                                                              |
+| Mobile menu              | `TopbarMobileMenu.myPurchasesLink`                    | `My Purchases`        | `Mis Compras`          | Mobile menu link to the purchases page.                                                                                                                 |
+| Mobile menu              | `TopbarMobileMenu.mySalesLink`                        | `My Sales`            | `Mis Ventas`           | Mobile menu link to the sales page.                                                                                                                     |
+| Mobile menu              | `TopbarMobileMenu.myBalanceLink`                      | `My Balance`          | `Mi Balance`           | Mobile menu link to the balance page.                                                                                                                   |
+| Account sidebar tab      | `UserNav.myPurchases`                                 | `My Purchases`        | `Mis Compras`          | Tab label in the account navigation sidebar.                                                                                                            |
+| Account sidebar tab      | `UserNav.mySales`                                     | `My Sales`            | `Mis Ventas`           | Tab label in the account navigation sidebar.                                                                                                            |
+| Account sidebar tab      | `UserNav.myBalance`                                   | `My Balance`          | `Mi Balance`           | Tab label in the account navigation sidebar.                                                                                                            |
+| Account settings sidebar | `LayoutWrapperAccountSettingsSideNav.profileTabTitle` | `Profile`             | `Perfil`               | Label for the Profile tab in the account settings sidebar.                                                                                              |
+
+### Landing and PageBuilder sections
+
+| Area                | Key / pattern                        | English default               | Spanish default                                        | Operator note                                                                        |
+| ------------------- | ------------------------------------ | ----------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| AV carousels        | `AVCarousel.previous`                | `Previous`                    | `Anterior`                                             | Previous arrow label for listing, category, tag, and user carousels.                 |
+| AV carousels        | `AVCarousel.next`                    | `Next`                        | `Siguiente`                                            | Next arrow label.                                                                    |
+| Multi-instance hero | `AVHero2.<name>.cta1Text`            | Empty                         | Empty                                                  | `<name>` is the suffix after `av-hero2-`; e.g. `AVHero2.shop.cta1Text`.              |
+| Multi-instance hero | `AVHero2.<name>.cta1Link`            | `/s`                          | `/s`                                                   | Link used when `cta1Text` is set.                                                    |
+| Multi-instance hero | `AVHero2.<name>.cta1Style`           | Empty (→ `primary`)           | Empty                                                  | Style tokens such as `primary`, `secondary`, `blue`, `roundedFull`.                  |
+| Multi-instance hero | `AVHero2.<name>.cta2Text`            | Empty                         | Empty                                                  | Optional second CTA text.                                                            |
+| Multi-instance hero | `AVHero2.<name>.cta2Link`            | `/s`                          | `/s`                                                   | Link used when `cta2Text` is set.                                                    |
+| Multi-instance hero | `AVHero2.<name>.cta2Style`           | Empty (→ `secondary`)         | Empty                                                  | Optional second CTA style tokens.                                                    |
+| Multi-instance hero | `AVHero2.<name>.mobileBackgroundUrl` | Empty                         | Empty                                                  | Optional mobile-specific background image URL.                                       |
+| Clickable hero      | `AVHero2.<name>.bgLink`              | Empty                         | Empty                                                  | Makes the entire hero section a link.                                                |
+| Video section       | `AVVideo.<name>.videoUrl`            | Empty                         | Empty                                                  | `<name>` is the suffix after `av-video-`; direct video file URL (MP4) for `avVideo`. |
+| Instagram grid      | `SectionInstaGrid.dialogLabel`       | `Instagram post`              | `Publicación de Instagram`                             | Modal dialog accessible label.                                                       |
+| Instagram grid      | `SectionInstaGrid.closePost`         | `Close post`                  | `Cerrar publicación`                                   | Modal close button label.                                                            |
+| Instagram grid      | `SectionInstaGrid.viewPost`          | `View Instagram post {index}` | `Ver publicación de Instagram {index}`                 | Grid cell button label. `{index}` is 1-based.                                        |
+| Instagram feed      | `InstagramFeed.dialogLabel`          | `Instagram post`              | `Publicación de Instagram`                             | Modal dialog label for the Instagram feed block.                                     |
+| Instagram feed      | `InstagramFeed.closePost`            | `Close post`                  | `Cerrar publicación`                                   | Modal close button label.                                                            |
+| Instagram feed      | `InstagramFeed.viewPost`             | `View Instagram post {index}` | `Ver publicación de Instagram {index}`                 | Grid cell button label. `{index}` is 1-based.                                        |
+| Instagram feed      | `InstagramFeed.mediaAlt`             | `Instagram post`              | `Publicación de Instagram`                             | Fallback image alt text when caption is missing.                                     |
+| Instagram feed      | `InstagramFeed.mute`                 | `Mute`                        | `Silenciar`                                            | Video mute button aria label.                                                        |
+| Instagram feed      | `InstagramFeed.unmute`               | `Unmute`                      | `Activar sonido`                                       | Video unmute button aria label.                                                      |
+| Instagram feed      | `InstagramFeed.pause`                | `Pause`                       | `Pausar`                                               | Video pause button aria label.                                                       |
+| Instagram feed      | `InstagramFeed.play`                 | `Play`                        | `Reproducir`                                           | Video play button aria label.                                                        |
+| Footer              | `Footer.belowSlogan`                 | Empty                         | Address and opening hours (see Console/reference JSON) | Optional extra text displayed below the footer slogan.                               |
+
+### PageBuilder block key patterns
+
+| Area               | Key / pattern                               | English default             | Spanish default                       | Operator note                                                                 |
+| ------------------ | ------------------------------------------- | --------------------------- | ------------------------------------- | ----------------------------------------------------------------------------- |
+| Two-buttons block  | `TwoButtons.<blockId>.titleEyebrow`         | Empty                       | Empty                                 | Optional eyebrow above the block title.                                       |
+| Two-buttons block  | `TwoButtons.<blockId>.cta1Text`             | —                           | —                                     | First CTA text.                                                               |
+| Two-buttons block  | `TwoButtons.<blockId>.cta1Link`             | —                           | —                                     | First CTA link.                                                               |
+| Two-buttons block  | `TwoButtons.<blockId>.cta1Style`            | Empty                       | Empty                                 | Optional style tokens.                                                        |
+| Two-buttons block  | `TwoButtons.<blockId>.cta2Text`             | —                           | —                                     | Second CTA text.                                                              |
+| Two-buttons block  | `TwoButtons.<blockId>.cta2Link`             | —                           | —                                     | Second CTA link.                                                              |
+| Two-buttons block  | `TwoButtons.<blockId>.cta2Style`            | Empty                       | Empty                                 | Optional style tokens.                                                        |
+| Photo slider block | `PhotoSlider.<blockId>.image_1` … `image_4` | Empty                       | Empty                                 | Image URLs for `photoSlider ::` blocks. Set at least one; blanks are skipped. |
+| Photo slider block | `AVPhotoSlider.pause`                       | `Pause the photo slideshow` | `Pausar la presentación de fotos`     | Label read out for the slider's pause button. Not shown on screen.            |
+| Photo slider block | `AVPhotoSlider.play`                        | `Play the photo slideshow`  | `Reproducir la presentación de fotos` | Same button once the slideshow is paused.                                     |
+
+### Newsletter form
+
+| Key                               | English default                                                                                                                                 | Spanish default                                                                                                                                                                                        | Operator note                     |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
+| `NewsletterForm.emailPlaceholder` | `Your Email`                                                                                                                                    | `Tu Email`                                                                                                                                                                                             | Email input placeholder.          |
+| `NewsletterForm.disclaimerText`   | `By entering your email, you agree to receive promotional emails from Archivo Vintach per our Privacy Policy. You may unsubscribe at any time.` | `Al introducir tu correo electrónico, aceptas recibir correos electrónicos promocionales de Archivo Vintach de acuerdo con nuestra Política de Privacidad. Puedes darte de baja en cualquier momento.` | Disclaimer below the email field. |
+| `NewsletterForm.successMessage`   | `You're subscribed! Thanks for joining our newsletter.`                                                                                         | `¡Gracias! Revisa tu bandeja de entrada.`                                                                                                                                                              | Shown after successful signup.    |
+| `NewsletterForm.errorMessage`     | `Subscription failed. Try again later.`                                                                                                         | `Error en la suscripción. Inténtalo más tarde.`                                                                                                                                                        | Server error state.               |
+| `NewsletterForm.invalidEmail`     | `Please enter a valid email.`                                                                                                                   | `Introduce un email válido.`                                                                                                                                                                           | Client-side validation message.   |
+| `NewsletterForm.networkError`     | `Network error. Try again.`                                                                                                                     | `Error de red. Inténtalo de nuevo.`                                                                                                                                                                    | Network failure state.            |
+
+### Bulk import page
+
+These keys are used by the bulk-import page at `/admin/bulk-import`
+([Section 8](#8-bulk-import-tool)).
+
+| Key                                     | English default                                                   | Spanish default                                                   | Operator note                                                             |
+| --------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `BulkImportPage.title`                  | `Bulk Import \| Archivo Vintach`                                  | `Importación Masiva \| Archivo Vintach`                           | Browser tab title.                                                        |
+| `BulkImportPage.simpleHeading`          | `Upload multiple products`                                        | `Sube varios productos`                                           | Page heading.                                                             |
+| `BulkImportPage.simpleDescription`      | `Upload your inventory in 3 steps.`                               | `Carga tu inventario en 3 pasos.`                                 | Page subtitle.                                                            |
+| `BulkImportPage.simpleStep1Title`       | `Open the template`                                               | `Abre la plantilla`                                               | Step 1 title.                                                             |
+| `BulkImportPage.simpleStep1Text`        | `Create a copy to get started.`                                   | `Crea una copia para empezar.`                                    | Step 1 help.                                                              |
+| `BulkImportPage.simpleTemplateCta`      | `Open template`                                                   | `Abrir plantilla`                                                 | Opens the shared Google Drive template in a new tab.                      |
+| `BulkImportPage.simpleStep2Title`       | `Complete and download`                                           | `Completa y descarga`                                             | Step 2 title.                                                             |
+| `BulkImportPage.simpleStep2Text`        | `Add your products and download the template when you're done.`   | `Agrega tus productos y descarga la plantilla cuando termines.`   | Step 2 help.                                                              |
+| `BulkImportPage.simpleStep3Title`       | `Upload your template`                                            | `Sube tu plantilla`                                               | Step 3 title.                                                             |
+| `BulkImportPage.simpleDropTitle`        | `Drag your CSV or ZIP file here`                                  | `Arrastra tu archivo CSV o ZIP aquí`                              | Drop-zone heading.                                                        |
+| `BulkImportPage.simpleDropSubtitle`     | `or select it from your computer`                                 | `o selecciónalo desde tu computadora`                             | Drop-zone help.                                                           |
+| `BulkImportPage.simpleSelectFile`       | `Select file`                                                     | `Seleccionar archivo`                                             | File-picker button.                                                       |
+| `BulkImportPage.simpleFileHelp`         | `CSV (max. 5 MB) or ZIP with photos (max. 20 MB)`                 | `CSV (máx. 5 MB) o ZIP con fotos (máx. 20 MB)`                    | Matches the enforced bare-CSV and standard-tier ZIP limits.               |
+| `BulkImportPage.simpleCsvLabel`         | `CSV or ZIP file`                                                 | `Archivo CSV o ZIP`                                               | Accessible file-input label.                                              |
+| `BulkImportPage.simpleErrorNoCsv`       | `Please select a .csv or .zip file.`                              | `Por favor, selecciona un archivo .csv o .zip.`                   | Wrong file type.                                                          |
+| `BulkImportPage.helpTitle`              | `Need help?`                                                      | `¿Necesitas ayuda?`                                               | Help bar heading.                                                         |
+| `BulkImportPage.simpleWhatsappCta`      | `Message us on WhatsApp`                                          | `Escríbenos por WhatsApp`                                         | Support link (WhatsApp).                                                  |
+| `BulkImportPage.zipSelected`            | `Selected: {name}`                                                | `Seleccionado: {name}`                                            | Shown after a file is selected.                                           |
+| `BulkImportPage.uploading`              | `Uploading files...`                                              | `Subiendo archivos...`                                            | Status while uploading.                                                   |
+| `BulkImportPage.processing`             | `Processing...`                                                   | `Procesando...`                                                   | Status while the server is working.                                       |
+| `BulkImportPage.progress`               | `{processed} of {total} processed ({percent}%)`                   | `{processed} de {total} procesados ({percent}%)`                  | Progress text.                                                            |
+| `BulkImportPage.completed`              | `Import completed`                                                | `Importación completada`                                          | Final status heading.                                                     |
+| `BulkImportPage.succeeded`              | `{count} succeeded`                                               | `{count} exitosos`                                                | Success count.                                                            |
+| `BulkImportPage.failed`                 | `{count} failed`                                                  | `{count} fallidos`                                                | Failure count.                                                            |
+| `BulkImportPage.existing`               | `{count} already imported (skipped)`                              | `{count} ya importados (omitidos)`                                | Rows skipped because they were already imported.                          |
+| `BulkImportPage.viewListings`           | `View your listings`                                              | `Ver tus anuncios`                                                | Shown when every row imported; opens /listings.                           |
+| `BulkImportPage.newImport`              | `New Import`                                                      | `Nueva Importación`                                               | Button to start another import.                                           |
+| `BulkImportPage.errorsTitle`            | `Errors`                                                          | `Errores`                                                         | Errors table heading.                                                     |
+| `BulkImportPage.errorsCapped`           | `Some errors were omitted — only the first 200 are shown.`        | `Algunos errores fueron omitidos — solo se muestran los primero…` | Shown when there are more than 200 errors.                                |
+| `BulkImportPage.tableRow`               | `Row`                                                             | `Fila`                                                            | Errors table column.                                                      |
+| `BulkImportPage.tableTitle`             | `Title`                                                           | `Título`                                                          | Errors table column.                                                      |
+| `BulkImportPage.tableError`             | `Error`                                                           | `Error`                                                           | Errors table column.                                                      |
+| `BulkImportPage.errorJobUnavailable`    | `This import is no longer available — it may have expired or th…` | `Esta importación ya no está disponible: pudo haber expirado o…`  | The import expired or the server restarted.                               |
+| `BulkImportPage.errorStatusUnavailable` | `We couldn't check the import status. It may still be processin…` | `No pudimos verificar el estado de la importación. Puede seguir…` | Progress could not be checked.                                            |
+| `BulkImportPage.rowError.*`             | —                                                                 | —                                                                 | Per-row error messages (12 keys); meanings in [8.7](#87-troubleshooting). |
+| `EditListingWizard.bulkImportLink`      | `Bulk import`                                                     | `Subir Varios`                                                    | Blue bulk-import button on the new-listing form (`/l/new`).               |
+| `ManageListingsPage.bulkImport`         | `Carga Masiva`                                                    | `Subir Varios`                                                    | Blue bulk-import button on Manage listings.                               |
+
+The codebase also keeps an older, unreachable version of this page. Its keys have no effect on the
+live page: `errorNoZip`, `heading`, `description`, `downloadTemplate`, `stepsTitle`,
+`dropzoneTitle`, `dropzoneSubtitle`, `selectZip`, `dividerOr`, `noFileSelected`, `zipLabel`,
+`reviewNotice`, `startImport`, `zipHelp`, `exampleZipTitle`, `exampleZipText`, `whatsappContact`
+(all prefixed `BulkImportPage.`).
+
+### Sign-up and email preferences (marketing consent)
+
+The sign-up forms and **Account → Contact details** carry the newsletter/marketing opt-in. This is
+legal consent copy: get approval before changing its meaning
+([19.2](#192-content-and-configuration-releases)), and keep the "unsubscribe at any time" promise.
+Consent belongs to the email address it was given for ([19.8](#198-notification-operations)).
+
+| Area             | Key                                                    | Spanish default (shortened)                                                 | Operator note                                                   |
+| ---------------- | ------------------------------------------------------ | --------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Sign-up          | `SignupForm.marketingConsentLabel`                     | `Quiero recibir novedades, recomendaciones personalizadas y recordatorios…` | Opt-in checkbox on the email sign-up form. Unticked by default. |
+| Sign-up (social) | `ConfirmSignupForm.marketingConsentLabel`              | Same text                                                                   | Same checkbox on the Google/Facebook sign-up confirmation step. |
+| Contact details  | `ContactDetailsForm.marketingPreferenceTitle`          | `Preferencias de correo`                                                    | Heading of the preference in account settings.                  |
+| Contact details  | `ContactDetailsForm.marketingConsentLabel`             | Same text                                                                   | The checkbox in account settings.                               |
+| Contact details  | `ContactDetailsForm.emailChangeConsentReset`           | `El consentimiento está asociado a tu correo actual…`                       | Explains that changing the email turns the preference off.      |
+| Contact details  | `ContactDetailsForm.genericMarketingPreferenceFailure` | `No pudimos actualizar tu preferencia de correo…`                           | Shown when saving the preference fails.                         |
+
+### Other system text
+
+| Area               | Key                                               | Spanish default (shortened)                                       | Operator note                                                                                |
+| ------------------ | ------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Maintenance page   | `MaintenanceMode.title`, `.info`, `.howToProceed` | `Modo de mantenimiento` / `El marketplace no está completamente…` | Shown only when the site cannot load its Console configuration. Escalate if visitors see it. |
+| Contact form block | `BlockBrevoForm.title`                            | `Formulario de contacto`                                          | Screen-reader title of the embedded Brevo form (`av-contact-form`).                          |
+| Payment methods    | `PaymentMethodsForm.missingStripeKey`             | `Algo salió mal. Actualiza la página…`                            | Shown when the site's Stripe key is missing — a configuration problem, escalate.             |
+| Payout details     | `StripeConnectAccountForm.submitButtonText`       | `Guardar datos`                                                   | Save button of the seller payout form.                                                       |
+
+The Spanish overlay also gives Spanish wording to a handful of screen-reader labels (image
+reordering, gallery arrows, inbox search). They are read aloud, never shown, and rarely need
+changes.
+
+---
+
+## 17. Data Fields the App Stores
+
+Besides the listing and user fields you create in Console, the app saves its own values on listings,
+users and transactions. You will see them in Console when you open a record (under public data,
+protected data, private data or metadata). This section explains what each one means so you can read
+a record during support — and which ones must not be edited by hand.
+
+**Visibility of each kind of data.** **Public data** can be read by anyone. **Protected data** is
+shared only with the other party of a transaction (for example, the buyer's address with the
+seller). **Private data** is visible only to the user. **Metadata** can be set only by the operator
+and the server, but can still be read through the API.
+
+### On listings
+
+| Field                                                                                    | Kind     | Set by               | Meaning                                                                                                                | Edit by hand?                               |
+| ---------------------------------------------------------------------------------------- | -------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `categoryLevel1`, `categoryLevel2`, `categoryLevel3`                                     | Public   | Seller / bulk import | The listing's category path ([Section 2](#2-listing-categories))                                                       | Only with valid IDs, all levels             |
+| `color`, `all_sizes`, `brand`, `genero`, `estado`, `estilo`, `temporada`                 | Public   | Seller / bulk import | Listing field values — option **keys** ([Section 3](#3-listing-fields))                                                | Only with valid keys                        |
+| `tags`                                                                                   | Metadata | Operator             | Curation tags such as `hot-list` ([3.8](#38-tags-curation-field))                                                      | Yes — that is how tags are set              |
+| `originalPrice`                                                                          | Public   | Seller (Persona)     | Struck-through "was" price, as amount in centavos and currency                                                         | No — the seller edits it in the form        |
+| `avPackageSize`                                                                          | Public   | Seller / operator    | `S`, `M`, `L` or `especial` ([Package sizes](#package-sizes))                                                          | Yes, for `especial` or to correct a size    |
+| `avPackageSizeLocked`                                                                    | Public   | Operator             | `true` stops the seller changing the package size                                                                      | Yes                                         |
+| `avPlaceholderImage`, `avPlaceholderImageId`                                             | Public   | Bulk import          | The listing still has the placeholder photo; cleared automatically when real photos replace it ([8.4](#image-columns)) | No                                          |
+| `imageSlots`                                                                             | Public   | Older photo step     | Captions for a four-slot photo layout; not written by the current `av-listing` form                                    | No                                          |
+| `listingType`, `transactionProcessAlias`, `unitType`, `shippingEnabled`, `pickupEnabled` | Public   | The app              | Standard Sharetribe settings that tie the listing to its type and order process                                        | **No** — engineering only                   |
+| `avBulkImport`                                                                           | Metadata | Bulk import          | Fingerprint of the CSV row that created the listing, used to skip rows already imported                                | **No** — duplicate protection depends on it |
+
+### On users
+
+| Field                    | Kind      | Set by                                | Meaning                                                                                              | Edit by hand?                                                                |
+| ------------------------ | --------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `userType`               | Public    | Signup                                | `vendedor` (Persona) or `vendedor-tienda` (Tienda) ([Section 9](#user-types))                        | Ask the development team first                                               |
+| `tipoTienda`             | Public    | The store                             | Store-type tags ([Store-type tags](#store-type-tags))                                                | Yes                                                                          |
+| `onboardingCompleted`    | Public    | The welcome popup                     | `true` once the seller closed the welcome popup; remove it to show the popup again                   | Yes, to re-show the popup                                                    |
+| `localDesign`            | Metadata  | Operator                              | `true` puts a Tienda in the Diseño Local menu ([Section 6](#dropdown-3--diseño-local-automatic))     | Yes                                                                          |
+| `avCommissionPercentage` | Metadata  | Operator                              | The seller's negotiated commission percentage ([19.6](#196-commission-rate-changes))                 | Yes                                                                          |
+| `shippingOrigin`         | Protected | Seller, at `/account/shipping-origin` | The address shipments are quoted and picked up from ([Section 11](#11-checkout-shipping-and-labels)) | No — ask the seller to update it                                             |
+| `shippingAddress`        | Protected | Buyer, at `/account/my-addresses`     | The saved delivery address that pre-fills checkout                                                   | No                                                                           |
+| `marketingConsent`       | Protected | Signup / contact details              | The user's current newsletter opt-in. The authoritative consent record is kept on the server         | **No** — never opt someone in by hand ([19.8](#198-notification-operations)) |
+| `favoriteListingIds`     | Private   | The shopper                           | Their favorites, newest first, up to 100 ([Section 12](#12-favorites-wish-list))                     | No                                                                           |
+
+### On transactions
+
+| Field                    | Kind      | Set by | Meaning                                                                                                                      |
+| ------------------------ | --------- | ------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `avShipping` (metadata)  | Metadata  | Server | The authoritative shipping record: the option the buyer chose (Express or Estándar), the carrier rate, and the price charged |
+| `avShipping` (protected) | Protected | Server | An informational copy of the same; older transactions only have this one                                                     |
+| `avLabel`                | Metadata  | Server | The label: `purchased` with tracking number, carrier and PDF link, or `failed` with the error                                |
+
+None of the transaction fields should be edited by hand: label purchase and support decisions rely
+on them ([19.5](#195-transaction-and-refund-support), [19.7](#197-shipping-and-label-support)).
+
+### Stored outside Sharetribe
+
+- **Shopping bag** — in each visitor's browser only ([Section 13](#13-shopping-bag)).
+- **Consent records, notification queue, label-purchase claims, tracking events and the Instagram
+  token** — in the app's own PostgreSQL database, managed by the development team.
+
+---
+
+## 18. Application Settings
+
+These settings are server environment variables, not Console options. The development team sets them
+in **Heroku** (Live) and **Render** (Test); `.env-template` in the repository lists them all. This
+section explains in plain language what each one does, so you know what a behaviour depends on and
+whom to ask.
+
+- Names starting with **`REACT_APP_`** are compiled into the website itself and are **public**:
+  changing one requires a rebuild, and they must never hold a secret.
+- All other settings are **server-only**; a change takes effect after a restart. Many are secrets
+  (keys, tokens, passwords). Never paste their values into this guide, a ticket, a screenshot or a
+  chat ([19.1](#191-access-and-environment-safety)).
+
+### Marketplace identity
+
+| Setting                                                | What it controls                                                                                                            |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| **Marketplace name** (`REACT_APP_MARKETPLACE_NAME`)    | The name shown in the browser tab and emails.                                                                               |
+| **Marketplace URL** (`REACT_APP_MARKETPLACE_ROOT_URL`) | The site's full web address, without a trailing slash; used in links and emails. The domain itself is attached by the host. |
+| **Environment** (`REACT_APP_ENV`)                      | `production` on every deployed site.                                                                                        |
+| **Default country** (`REACT_APP_AV_DEFAULT_COUNTRY`)   | Country preselected in the Stripe payment and payout forms. Default `MX`.                                                   |
+| **Price format** (`REACT_APP_AV_PRICE_FORMAT_LOCALE`)  | Number format of price inputs. Default `en-US` (`$1,325.00`), to match how prices are displayed.                            |
+
+### Browser and home-screen icons
+
+The approved Archivo Vintach icon set is shipped with the application. It supplies browser-tab and
+bookmark icons, the iPhone/iPad home-screen icon, and Android/web-app icons. The web-app manifest
+uses Archivo blue (`#0f26e4`) for its theme and background, and opens the marketplace home page.
+
+These icons are maintained in code under `public/static/icons/`; uploading another favicon or app
+icon in Console does not replace this approved set. Other Console branding, including logos and
+sharing images, remains editable as usual. Ask the development team to replace the shipped assets
+when the approved artwork changes. Browsers and search engines may continue showing cached icons
+until they refresh them.
+
+### Sharetribe connection
+
+| Setting                                                                                                             | What it controls                                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Marketplace API Client ID** (`REACT_APP_SHARETRIBE_SDK_CLIENT_ID`)                                                | Identifies the site to Sharetribe and decides which marketplace (Test or Live) it shows. Found in Console → Build → Applications.                                                 |
+| **Marketplace API Client Secret** (`SHARETRIBE_SDK_CLIENT_SECRET`)                                                  | Server-side secret paired with that application, used for the server-side checkout steps (pricing and payment). Keep it in the deployment secret store.                           |
+| **Integration API Client ID / Secret** (`SHARETRIBE_INTEGRATION_CLIENT_ID`, `SHARETRIBE_INTEGRATION_CLIENT_SECRET`) | Operator-level server access, found in Console → Build → Integrations. Needed by bulk import, notifications, shipping quotes and labels, and the Diseño Local menu. Keep private. |
+
+### Payments
+
+| Setting                                                         | What it controls                                                                                                                                                                                      |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Stripe Publishable Key** (`REACT_APP_STRIPE_PUBLISHABLE_KEY`) | Connects the browser to the matching Stripe account. Obtain `pk_test_…` or `pk_live_…` from Stripe Dashboard; Sharetribe Console → Build → Payments holds the matching secret/platform configuration. |
+
+### Commission and seller earnings estimator
+
+| Setting                                                                                 | What it controls                                                                                                                                                                                                                                                                                                                                 |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Provider commission percentage** (`REACT_APP_PROVIDER_COMMISSION_PERCENTAGE`)         | The marketplace fee percentage charged to sellers. The real value is read from Console (Build → Transactions, 22 % in Test and Live); this setting is only the fallback if Console cannot be read (code default 22 %). A seller with a **Comisión (%)** value ([19.6](#196-commission-rate-changes)) sees and pays their own percentage instead. |
+| **Provider fixed fee** (`REACT_APP_PROVIDER_COMMISSION_FIXED_FEE`)                      | Fixed fee in centavos charged to the seller on every sale, on top of the percentage. Set by the dev team, not in Console: 1500 (= MXN \$15.00) on Heroku. The same value drives both the estimate and the fee actually charged, so changing it needs a rebuild.                                                                                  |
+| **Stripe fee** (`REACT_APP_STRIPE_FEE_PERCENTAGE`, `REACT_APP_STRIPE_FEE_FIXED_AMOUNT`) | Not shown to Archivo Vintach sellers. The `av-listing` pricing step shows only the commission and fixed fee, because the platform pays Stripe out of its commission. These values (default 2.9 % + 30 centavos) reach only the booking-style pricing form, which no listing type uses.                                                           |
+
+Sellers see an estimate of their net earnings while setting a price
+([Section 10](#earnings-estimator)). The percentage actually charged comes from Console → Build →
+Transactions; the fixed fee comes from the setting above. To change either, including a temporary
+rate, follow [19.6](#196-commission-rate-changes).
+
+**Minimum listing price.** Console → Build → Transactions → Minimum transaction size must leave room
+for the provider fixed fee: at 22 % plus \$15.00 that is at least \$19.24, and Archivo Vintach uses
+**\$20.00** in both Test and Live. The listing form and bulk import both refuse prices below it. If
+the minimum is ever set too low, a sale still completes, but the fixed fee is reduced to whatever is
+left after the percentage (down to zero) and the server logs `Provider fixed fee clamped`. Raising
+the commission percentage or the fixed fee means raising the minimum too.
+
+### Bulk import
+
+The bulk import tool has no access password or default-author setting — any signed-in user imports
+for their own account. The only access-related setting is the admin list.
+
+| Setting                                                 | What it controls                                                                                                                                                                                                                      |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Admin emails** (`BULK_IMPORT_OPERATOR_EMAILS`)        | A comma-separated list of emails treated as bulk-import **admins**. Admins may add a `user_id` column to import on behalf of other sellers, and get the larger size/rate limits. Optional — leave empty if no one needs admin powers. |
+| **Listing Type** (`BULK_IMPORT_LISTING_TYPE`)           | The listing type all imported listings use. The deployment template configures `av-listing`; if omitted, the server fallback is `product-selling`. It must match a published Console listing type.                                    |
+| **Transaction alias** (`BULK_IMPORT_TRANSACTION_ALIAS`) | The hosted process alias assigned to imported listings. Configured/default: `default-purchase/release-1`; it must exist in the selected Sharetribe environment.                                                                       |
+| **Unit type** (`BULK_IMPORT_UNIT_TYPE`)                 | Unit type assigned to imported listings. Configured/default: `item`; it must match the selected listing type/process.                                                                                                                 |
+
+### Email and Brevo
+
+**Which system sends which email.** Sharetribe sends everything tied to an account or an order:
+email verification, password reset, new messages, and every order email, including the shipping
+reminders and the pickup notice. Their text is in Console → Content → Email texts
+([Email texts](#email-texts)). Brevo sends what happens outside an order: the seller welcome email
+(with the PDF guide) and the marketing campaigns below, which need consent. The
+[Brevo guide](integrations/brevo.md) has the full rules.
+
+| Campaign                 | Sent when                                                                                     |
+| ------------------------ | --------------------------------------------------------------------------------------------- |
+| Seller welcome           | Right after a Persona or Tienda signs up (not consent-gated; transactional onboarding)        |
+| Viewed listing (A/B)     | 24 hours after a signed-in shopper spent 10 seconds on a listing they did not favorite or buy |
+| Abandoned checkout       | 30 minutes after a started payment expired                                                    |
+| Matching listings (A/B)  | The morning after new listings match what the shopper viewed or favorited in the last 90 days |
+| Signup without listing   | 24 hours after a seller signed up without publishing                                          |
+| Listing without activity | 72 hours after a listing was published with no views, favorites, inquiries or sales           |
+
+Promotional campaigns are sent only to people who opted in, and at most two per person every seven
+days.
+
+| Setting                                                                                                                                                                                                                                              | What it controls                                                                                                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Notification poller** (`AV_NOTIFICATIONS_ENABLED`)                                                                                                                                                                                                 | Master switch for event-driven emails. When `true`, every channel switch below must also be set explicitly and readiness must pass.                                                                                           |
+| **Seller welcome email** (`AV_WELCOME_EMAIL_NOTIFICATIONS_ENABLED`)                                                                                                                                                                                  | Enables the Brevo seller-welcome send when the poller is enabled and its template/sender configuration is complete.                                                                                                           |
+| **Lifecycle campaigns** (`AV_BREVO_CAMPAIGNS_ENABLED`)                                                                                                                                                                                               | Enables the campaigns above. Keep `false` until the templates, consent flow, and Live data have passed the release smoke test.                                                                                                |
+| **Brevo API Key** (`BREVO_API_KEY`)                                                                                                                                                                                                                  | Connects to the Brevo account for the newsletter form and enabled email sends. Keep private.                                                                                                                                  |
+| **Brevo List ID** (`BREVO_LIST_ID`)                                                                                                                                                                                                                  | The newsletter list subscribers are added to when they use the newsletter signup form; also required by enabled lifecycle campaigns.                                                                                          |
+| **Sender email / name** (`BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`)                                                                                                                                                                                  | The verified "from" address and display name (e.g. `Archivo Vintach`). Keep them identical to the Sharetribe Live sender so both systems look like one sender.                                                                |
+| **Template IDs** (`BREVO_TEMPLATE_SELLER_WELCOME`, `BREVO_TEMPLATE_VIEWED_LISTING_A`/`_B`, `BREVO_TEMPLATE_ABANDONED_CHECKOUT`, `BREVO_TEMPLATE_MATCHING_LISTINGS_A`/`_B`, `BREVO_TEMPLATE_SIGNUP_NO_LISTING`, `BREVO_TEMPLATE_LISTING_NO_ACTIVITY`) | The Brevo template used for each email. Each is required when its email is enabled. The templates are written in Brevo ([Spanish templates](integrations/brevo-templates-es.md)).                                             |
+| **Brevo webhook secret** (`BREVO_WEBHOOK_SECRET`)                                                                                                                                                                                                    | Lets Brevo report bounces, complaints and unsubscribes back to the marketplace (`/api/brevo/webhook`, secret in the `x-av-brevo-webhook-secret` header, never in the URL).                                                    |
+| **Consent attributes** (`BREVO_CONSENT_ATTRIBUTES_ENABLED`)                                                                                                                                                                                          | `true` also copies each contact's consent evidence into Brevo contact attributes (after those attributes are created in Brevo). Default `false`.                                                                              |
+| **Notification database** (`DATABASE_URL`, deployment-managed secret)                                                                                                                                                                                | Durable poller cursor, leadership, send claims, consent records, and label-purchase claims. Migrations and readiness must be healthy before notifications or labels launch.                                                   |
+| **Readiness token** (`AV_NOTIFICATION_READINESS_TOKEN`)                                                                                                                                                                                              | Secret that lets engineering read the detailed readiness report ([19.8](#198-notification-operations)). Never put it in a URL.                                                                                                |
+| **Tuning** (`AV_DATABASE_POOL_MAX`, `AV_EVENT_POLLER_MAX_PAGES_PER_POLL`, `AV_EVENT_POLLER_PAGE_DELAY_MS`, `AV_EVENT_POLLER_LAG_ALERT_MS`, `AV_NOTIFICATION_STALE_CLAIM_MINUTES`, `AV_SHIPPING_LABEL_STALE_CLAIM_MINUTES`)                           | Optional engineering limits: database connections, how fast the 5-minute event poller catches up, when a backlog alert fires, and how long an interrupted send or label purchase waits before it can be retried (15 minutes). |
+
+### WhatsApp notifications
+
+| Setting                                                    | What it controls                                                                                                         |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **WhatsApp enabled** (`AV_WHATSAPP_NOTIFICATIONS_ENABLED`) | Keep `false`. WhatsApp is code-level release-locked out of the first release; the flag cannot override that lock.        |
+| **WhatsApp Access Token** (`WHATSAPP_ACCESS_TOKEN`)        | Permanent Meta system-user token for server-side sends. Keep private.                                                    |
+| **WhatsApp Phone Number ID** (`WHATSAPP_PHONE_NUMBER_ID`)  | Numeric ID of the registered WhatsApp sender number.                                                                     |
+| **Admin Phone** (`WHATSAPP_ADMIN_PHONE`)                   | Consenting operator destination for admin alerts, stored as canonical E.164 (`+` plus country code and national number). |
+
+The sender implementation is retained for a future release, but event sends and operator retries are
+blocked and signup does not collect the WhatsApp phone field. Existing contact/shipping phone fields
+and the bulk-import WhatsApp support link are separate and remain available. See the
+[WhatsApp guide](integrations/whatsapp.md) and [pending blockers](pending/notifications.md) before a
+reviewed code change removes the release lock.
+
+### Shipping (eShip)
+
+Buyer shipping prices are quoted live from eShip at checkout. Shipping labels are enabled as a
+capability, but purchase is **manual by default**: after payment, the seller clicks **Generar
+guía**. Automatic purchase happens only when the label capability and `ESHIP_LABEL_AUTOBUY=true` are
+both enabled.
+
+| Setting                                                      | What it controls                                                                                                                                                                                                                                                                                               |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **eShip API Key** (`ESHIP_API_KEY`)                          | Connects to the eShip carrier account used to quote shipping and buy labels. Without it, buyers see _Contactar a AV_ instead of priced options. Keep private.                                                                                                                                                  |
+| **eShip Base URL** (`ESHIP_BASE_URL`)                        | Which eShip environment to use — the test/QA carrier system or the live one. Set by the dev team per environment.                                                                                                                                                                                              |
+| **Shipping markup** (`ESHIP_MARKUP_PCT`)                     | The margin buffer added on top of the raw carrier cost to get the buyer's shipping price, rounded up to the next peso. Default: 18%; Live runs with 0 (the commission includes the margin).                                                                                                                    |
+| **Label capability** (`AV_SHIPPING_LABELS_ENABLED`)          | Enables label-purchase storage, readiness checks, the seller action, and the shared poller path. It does not turn on auto-buy by itself.                                                                                                                                                                       |
+| **Auto-buy labels** (`ESHIP_LABEL_AUTOBUY`)                  | `true` plus enabled label capability = buy automatically after confirmed payment. Default/unset/`false` = seller buys with **Generar guía**. Keep off until cancellation/refund policy is approved.                                                                                                            |
+| **Label retry operators** (`SHIPPING_LABEL_OPERATOR_EMAILS`) | Comma-separated support emails authorized to use the label API for any seller. There is no operator UI; cross-seller or unknown retries require the approved engineering procedure. Sellers retry their own labels in the sale UI.                                                                             |
+| **Pickup email** (`AV_ESHIP_TRACKING_EMAILS_ENABLED`)        | Enables one native Sharetribe buyer email after the carrier reports `TRANSIT/picked_up`. Requires the new hosted purchase-process version, migration 009, and webhook setup.                                                                                                                                   |
+| **eShip webhook secret** (`ESHIP_WEBHOOK_SECRET`)            | At least 32 random bytes shared between the server and the eShip dashboard, so the marketplace can tell a real carrier update from a forged one. In the eShip dashboard it is entered as the `X-AV-Webhook-Secret` header — never in the webhook URL (see below). Keep private and rotate both sides together. |
+| **Debug: carrier errors** (`ESHIP_API_DEBUG`)                | `true` includes the carrier's error text in failed quote responses, for troubleshooting in Test. Leave off in Live.                                                                                                                                                                                            |
+| **Debug: raw rates** (`ESHIP_WEB_DEBUG`)                     | `true` lists every raw carrier rate below the Express/Estándar options at checkout. Leave off in Live.                                                                                                                                                                                                         |
+
+> The eShip carrier account is billed directly for every label, so **the marketplace (not the
+> seller) pays the carrier**. Because of that, the buyer's shipping payment is kept by the
+> marketplace to cover the label cost — it is **not** added to the seller's payout. (Provider
+> commission is charged on the item price only, so it is unaffected.)
+>
+> A purchased-label cancellation/refund policy and final IVA treatment are still business/accounting
+> decisions. Follow [pending work](pending/README.md) and do not improvise an automatic refund or
+> carrier-cost adjustment.
+
+**Where the pickup email comes from.** eShip notifies the marketplace when the carrier scans a
+package. In the eShip dashboard (**Ver tus Webhooks**), the notification address is the marketplace
+address followed by `/api/shipping/eship-webhook`, and the shared secret goes in the **Encabezados**
+table as key `X-AV-Webhook-Secret` with the secret as its value. The secret must **not** go in the
+URL: web hosts and error monitoring routinely record full URLs in their logs, so a secret in the URL
+ends up stored in those logs, while a header does not. The marketplace rejects a secret sent after
+`?secret=` in the URL. If a dashboard ever had the secret in its URL, ask the dev team to rotate it.
+Treat the secret like a password. The dev team sets this up per environment; the test and production
+marketplaces use different secrets.
+
+### Instagram feed
+
+| Setting                                        | What it controls                                                                                                                                                                                                                      |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Instagram token** (`INSTAGRAM_ACCESS_TOKEN`) | Long-lived Instagram token for the `av-insta-feed` block ([Block ID shorthands](#block-id-shorthands)). It is only the starting value: the server refreshes the token daily and keeps the working copy in its database. Keep private. |
+
+If the landing page's Instagram feed disappears, the token has most likely expired: the block shows
+nothing rather than an error. Ask the development team to re-mint it
+([Instagram guide](integrations/instagram.md)).
+
+### Sign-in, maps, analytics and monitoring
+
+| Setting                                                                        | What it controls                                                                                             |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| **Facebook sign-in** (`REACT_APP_FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`)      | Shows "continue with Facebook" on the sign-up and login pages when set.                                      |
+| **Google sign-in** (`REACT_APP_GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`)      | Shows "continue with Google" when set.                                                                       |
+| **Maps** (`REACT_APP_MAPBOX_ACCESS_TOKEN` or `REACT_APP_GOOGLE_MAPS_API_KEY`)  | Map and address search provider. Archivo Vintach listings have no location step, so maps are rarely visible. |
+| **Analytics** (`REACT_APP_GOOGLE_ANALYTICS_ID`, `REACT_APP_PLAUSIBLE_DOMAINS`) | Google Analytics 4 measurement ID and/or Plausible domains. Unset = no analytics script.                     |
+| **Error monitoring** (`REACT_APP_SENTRY_DSN`)                                  | Sends site errors to Sentry.                                                                                 |
+
+### Security and search indexing
+
+| Setting                                                                | What it controls                                                                                                                                               |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **HTTPS** (`REACT_APP_SHARETRIBE_USING_SSL`)                           | `true` on every deployed site: redirects HTTP to HTTPS and marks login cookies secure.                                                                         |
+| **Proxy hops** (`SERVER_SHARETRIBE_TRUST_PROXY`)                       | `1` on Heroku, `3` on Render, so the server sees each visitor's real address (rate limits, consent records). Never `true`.                                     |
+| **Content Security Policy** (`REACT_APP_CSP`)                          | `report` while testing, `block` in production.                                                                                                                 |
+| **Hide from search engines** (`AV_NOINDEX`)                            | `true` on Render staging; unset on Heroku production (removed at the Live cutover). Any address other than the main site address is always hidden from search. |
+| **Password protection** (`BASIC_AUTH_USERNAME`, `BASIC_AUTH_PASSWORD`) | When both are set, the whole site asks for this username and password first. For private staging only; unset on Live.                                          |
+
+### Performance and debugging
+
+| Setting                                                 | What it controls                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Console data cache** (`TTL`, `TTL_ASSETS_BY_VERSION`) | `TTL`: how many seconds the server keeps the current Console data (pages, translations, configuration) before reading it again — unset means no caching; when set, Console changes can take up to that long to appear. `TTL_ASSETS_BY_VERSION`: cache time for fixed, versioned copies (default one day; they never change). |
+| **Debug** (`VERBOSE`, `PREVENT_DATA_LOADING_IN_SSR`)    | Engineering troubleshooting switches; unset in normal operation.                                                                                                                                                                                                                                                             |
+
+---
+
+## 19. Marketplace Operations
 
 This section is the day-to-day runbook for the people responsible for the marketplace. Identify the
 environment and record IDs first, then take the smallest reversible action that resolves the issue.
 
-### 14.1 Access and Environment Safety
+### 19.1 Access and Environment Safety
 
 Archivo Vintach has separate Sharetribe **Test** and **Live** environments. Their users, listings,
 transactions, API applications, Integration API credentials, Stripe modes, and operational data are
@@ -2800,7 +3215,7 @@ Operator access is not one universal role:
 
 Review these grants periodically and remove access when a staff member no longer needs it.
 
-### 14.2 Content and Configuration Releases
+### 19.2 Content and Configuration Releases
 
 Use Test as the editing and approval environment whenever the change can be staged.
 
@@ -2820,17 +3235,10 @@ Do not edit transaction process aliases, unit types, payment settings, or payout
 routine content change. Those changes require engineering review, a matching hosted process, and a
 full Test-environment transaction pass.
 
-### 14.3 User Management
+### 19.3 User Management
 
-Console defines two user types. There is no buyer type: any signed-in user can buy.
-
-| User type         | Console label | Operational meaning                                                                                                                        |
-| ----------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `vendedor`        | Persona       | Individual seller; receives the seller onboarding experience and may set an original ("was") price.                                        |
-| `vendedor-tienda` | Tienda        | Store seller; receives store wording, hides the buyer-side menu entries, and appears in the Diseño Local menu when Local Design is **Si**. |
-
-`vendedor-stock` is still recognized by the original-price rule in code (`configAV.sellerUserTypes`),
-but no Console user type uses it; do not assign it.
+User types (Persona `vendedor`, Tienda `vendedor-tienda`), user fields and store-seller behaviour
+are described in [Section 9](#9-users-sellers-and-stores).
 
 For a user-support or moderation request:
 
@@ -2840,9 +3248,8 @@ For a user-support or moderation request:
 3. For seller issues, also verify Stripe payout onboarding and the shipping-origin requirement.
 4. For store-directory (Diseño Local menu) issues, follow
    [Dropdown 3 — Diseño Local](#dropdown-3--diseño-local-automatic): the user must be **Tienda**,
-   have a useful display name, and have **Local Design** set to **Si**.
-   For a negotiated commission rate, follow
-   [Section 14.6](#146-commission-rate-changes): the seller's **Comisión (%)** field.
+   have a useful display name, and have **Local Design** set to **Si**. For a negotiated commission
+   rate, follow [Section 19.6](#196-commission-rate-changes): the seller's **Comisión (%)** field.
 5. Use only the moderation/status actions exposed by the current Console. Do not change protected
    data or impersonate a user merely to make the UI look correct.
 6. Record the UUID, reason, action, and operator. Avoid copying phone numbers or addresses unless
@@ -2851,7 +3258,7 @@ For a user-support or moderation request:
 Changing an account's email does not automatically grant bulk-import or label-operator privileges;
 those allowlists are deployment settings and need a controlled configuration change.
 
-### 14.4 Listing Moderation
+### 19.4 Listing Moderation
 
 Open **Console → Manage → Listings** and check the following before featuring, reopening, or
 investigating a listing:
@@ -2872,11 +3279,12 @@ listing. Closed, deleted, draft, or otherwise unpublished listings do not belong
 sections. If a carousel still references one, remove the stale block UUID or tag rather than
 republishing the listing to fill the slot.
 
-For a bulk-import problem, keep the job summary and failing CSV row numbers, then use Section 8. Do
-not rerun a large ZIP blindly: rows that succeeded already created listings and a retry can create
-duplicates.
+For a bulk-import problem, keep the job summary and failing CSV row numbers, then use Section 8.
+Re-uploading the **same, unchanged** file within 24 hours is safe — finished rows are skipped. Do
+not re-upload an **edited** copy to "retry": a row whose content changed counts as a new listing and
+creates a duplicate of the one already imported.
 
-### 14.5 Transaction and Refund Support
+### 19.5 Transaction and Refund Support
 
 For every payment, dispute, cancellation, delivery, or offer case, first open **Console → Manage →
 Transactions** in the correct environment, find the transaction by UUID, and record:
@@ -2920,7 +3328,7 @@ Negotiation listings follow a different state machine from purchase listings. Th
 mode begins with a customer quote request and a provider's first numeric offer; it is not a direct
 buyer-bid shortcut. Do not change listing process aliases to resolve an individual support case.
 
-### 14.6 Commission Rate Changes
+### 19.6 Commission Rate Changes
 
 Every sale pays the marketplace a seller commission of **22 % of the item price plus a fixed
 \$15.00**, deducted from the seller's payout. The buyer never pays it: changing it changes what the
@@ -3037,23 +3445,23 @@ What the seller receives, by price and percentage:
 At 25 % a \$20.00 item leaves the seller nothing, which is why 25 % is the ceiling while the minimum
 listing price is \$20.00. If a percentage and the fixed fee ever add up to more than the price, the
 sale still completes: the fixed fee is reduced to what is left and the server logs
-`Provider fixed fee clamped` (Section 9, "Minimum listing price").
+`Provider fixed fee clamped` (Section 18, "Minimum listing price").
 
 #### Changing the rate for every seller
 
-| Part                | Where it is changed                                                      | Format                                                    | Who              |
-| ------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------- | ---------------- |
-| Percentage (22 %)   | **Console → Build → Transactions**, provider (seller) commission         | A plain number of percent: `22`, `15`, `0`. No `%` sign.  | Operator         |
-| Fixed fee (\$15.00) | Deployment setting `REACT_APP_PROVIDER_COMMISSION_FIXED_FEE` (Section 9) | Centavos, a whole number: `1500` = \$15.00, `0` = no fee. | Development team |
+| Part                | Where it is changed                                                                                                    | Format                                                    | Who              |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ---------------- |
+| Percentage (22 %)   | **Console → Build → Transactions**, provider (seller) commission                                                       | A plain number of percent: `22`, `15`, `0`. No `%` sign.  | Operator         |
+| Fixed fee (\$15.00) | Deployment setting `REACT_APP_PROVIDER_COMMISSION_FIXED_FEE` ([Section 18](#commission-and-seller-earnings-estimator)) | Centavos, a whole number: `1500` = \$15.00, `0` = no fee. | Development team |
 
 1. Make and check the change in **Test** first
-   ([Section 14.2](#142-content-and-configuration-releases)). Record the current value, the new
+   ([Section 19.2](#192-content-and-configuration-releases)). Record the current value, the new
    value, and the date it must be reverted.
 2. In **Live**, open **Build → Transactions**, set the seller commission percentage, and publish.
 3. Raising the percentage above 25 % also means raising the minimum transaction size on the same
-   page (see "Minimum listing price" in [Section 9](#seller-earnings-estimator)): the minimum must
-   be at least \$15.00 ÷ (1 − percentage). The current \$20.00 covers any percentage up to 25 %.
-   Lowering the percentage never needs a new minimum.
+   page (see "Minimum listing price" in [Section 18](#commission-and-seller-earnings-estimator)):
+   the minimum must be at least \$15.00 ÷ (1 − percentage). The current \$20.00 covers any
+   percentage up to 25 %. Lowering the percentage never needs a new minimum.
 
 Sellers with a **Comisión (%)** value keep their own percentage when the marketplace percentage
 changes; everyone else follows it. The fixed fee is not in Console: it is compiled into the site, so
@@ -3110,7 +3518,7 @@ instead of signing in to a real seller's account.
 | The rate appears on the seller's public profile.                | **Show on profile** is on for the field.                                                                                                                               | Turn it off and publish. The value itself is unaffected.                                                                                                  |
 | A sale was charged the old rate.                                | The buyer paid before the change was saved, or the order is older than the change.                                                                                     | Expected; past transactions are never recalculated (see When it takes effect). Do not adjust it by hand.                                                  |
 | A seller asks what rate they pay.                               | Sellers cannot see the field.                                                                                                                                          | Point them to the earnings estimator in the listing editor, which shows their percentage + \$15.00.                                                       |
-| Buyers get an error at checkout on every listing of one seller. | Rare: the server could not load the seller while pricing, so it stops rather than guess the rate. No sale is created at a wrong rate.                                  | Ask the buyer to retry. If it persists, escalate to development (Section 14.9) with the listing ID; the server log shows `Listing author unavailable`.    |
+| Buyers get an error at checkout on every listing of one seller. | Rare: the server could not load the seller while pricing, so it stops rather than guess the rate. No sale is created at a wrong rate.                                  | Ask the buyer to retry. If it persists, escalate to development (Section 19.9) with the listing ID; the server log shows `Listing author unavailable`.    |
 
 The development team can search the server logs (Heroku for Live, Render for Test) for
 `[providerCommission] Ignoring invalid avCommissionPercentage for user <id>`, which names the seller
@@ -3119,7 +3527,7 @@ and the stored value whenever a sale is priced with an ignored value.
 #### Change record
 
 Record every per-seller or marketplace-wide change, in the same place as other operator actions
-(Section 14.9):
+(Section 19.9):
 
 | Item            | Example                                            |
 | --------------- | -------------------------------------------------- |
@@ -3131,7 +3539,8 @@ Record every per-seller or marketplace-wide change, in the same place as other o
 | Changed by, on  | Name, 2026-11-01                                   |
 | Review / end    | 2027-02-01, owner: name (or "open-ended")          |
 | Verified        | Estimator checked; first sale's line items checked |
-### 14.7 Shipping and Label Support
+
+### 19.7 Shipping and Label Support
 
 When checkout shows **Contactar AV** instead of a price, check in this order:
 
@@ -3146,13 +3555,13 @@ After payment, the normal launch posture is seller-triggered label purchase with
 `AV_SHIPPING_LABELS_ENABLED=true` enables the capability; it does not auto-buy unless
 `ESHIP_LABEL_AUTOBUY=true` is also set.
 
-| Label state                           | Operator action                                                                                                                                                                                                                      |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Purchased / **Descargar guía**        | Verify tracking and PDF; do not buy another label.                                                                                                                                                                                   |
-| Definitive failure / **Generar guía** | The seller can retry in their sale UI. An allowlisted operator has API authorization only and must use the approved engineering procedure.                                                                                           |
-| Processing                            | Wait for completion; do not send another purchase request.                                                                                                                                                                           |
-| Unknown outcome                       | Check the eShip dashboard first. The carrier may have charged AV even though the app lost the response. After proving no label exists, an allowlisted operator uses the approved API/engineering procedure; there is no operator UI. |
-| `especial` / Contactar AV             | No automatic quote or label; follow the approved manual arrangement.                                                                                                                                                                 |
+| Label state                                                                                            | Operator action                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Purchased / **Descargar guía**                                                                         | Verify tracking and PDF; do not buy another label.                                                                                                                                                                                                                                                                                                                                                                                   |
+| Definitive failure / **Generar guía**                                                                  | The seller can retry in their sale UI. An allowlisted operator has API authorization only and must use the approved engineering procedure.                                                                                                                                                                                                                                                                                           |
+| Processing                                                                                             | Wait for completion; do not send another purchase request.                                                                                                                                                                                                                                                                                                                                                                           |
+| Unknown outcome                                                                                        | Check the eShip dashboard first. The carrier may have charged AV even though the app lost the response. After proving no label exists, an allowlisted operator uses the approved API/engineering procedure; there is no operator UI.                                                                                                                                                                                                 |
+| `especial` / Contactar AV                                                                              | No automatic quote or label; follow the approved manual arrangement.                                                                                                                                                                                                                                                                                                                                                                 |
 | Refused (no label control on a paid shipping order, or "No es posible generar la guía de este pedido") | The app only offers and buys a label when the transaction charged the buyer the recorded shipping price, so the sale page hides the control where the server would refuse it. A price mismatch, or an older transaction whose buyer opened a dispute, is refused on purpose; a pickup order never shows it. Do not buy a label manually in eShip; check the order's delivery method and price breakdown and escalate to engineering. |
 
 For the pickup email, confirm the eShip dashboard webhook uses the correct environment URL and the
@@ -3165,7 +3574,7 @@ without carrier verification.
 Keep `ESHIP_LABEL_AUTOBUY=false` until the purchased-label cancellation/refund policy is approved.
 For money-flow and IVA details, use the [eShip integration guide](integrations/eship.md).
 
-### 14.8 Notification Operations
+### 19.8 Notification Operations
 
 The production notification pipeline is healthy only when:
 
@@ -3195,16 +3604,16 @@ For Brevo/newsletter cases:
 
 Resending a failed email is an engineering command (`yarn notifications:retry`), run only after
 checking Brevo. Campaign (marketing) emails are never resent as they were stored: the retry checks
-again that the person still consents, still has that email address, has not had two campaign
-emails this week, and that the listing or order still qualifies. If any check fails the retry is
-refused with the reason and nothing is sent — that is expected, not an error. Seller welcome emails
-are resent as stored.
+again that the person still consents, still has that email address, has not had two campaign emails
+this week, and that the listing or order still qualifies. If any check fails the retry is refused
+with the reason and nothing is sent — that is expected, not an error. Seller welcome emails are
+resent as stored.
 
 When the public readiness endpoint returns `503`, record the environment and timestamp and escalate
 it. Engineering can capture named missing/failed checks from the bearer-protected detailed endpoint.
 Do not enable more channels until readiness is restored, and never put its token in a URL or log.
 
-### 14.9 Incident Records and Escalation
+### 19.9 Incident Records and Escalation
 
 For an incident, record enough evidence to reproduce it without exposing secrets:
 
@@ -3223,6 +3632,6 @@ Releases are tested on Render (Test) and then rebuilt on Heroku (Live): see the
 [deployment topology](operations/deployment.md) and the
 [release checklist](operations/release-checklist.md). The
 [Heroku Test-to-Live runbook](operations/heroku-deployment.md) records the initial cutover. Never
-switch the production app to Test, whether for support or for testing. After an operator-visible fix, update this canonical guide
-first, rebuild the English shareable HTML, and synchronize every translated edition intended for
-distribution.
+switch the production app to Test, whether for support or for testing. After an operator-visible
+fix, update this canonical guide first, rebuild the English shareable HTML, and synchronize every
+translated edition intended for distribution.
